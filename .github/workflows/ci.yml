@@ -5,9 +5,13 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
       DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
@@ -24,10 +28,13 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
+
+      - name: Check project configuration
+        run: pnpm project:doctor
 
       - name: Generate Prisma client
         run: pnpm prisma:generate

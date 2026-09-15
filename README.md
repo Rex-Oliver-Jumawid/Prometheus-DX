@@ -16,9 +16,10 @@ Those belong to later phases in `.context/phases.md`.
 ## Repository structure
 
 ```text
-.context/      Product requirements, user flows, data model, tech stack, and implementation phases
+.context/      Product requirements, user flows, data model, tech stack, implementation phases, and template-adoption notes
 .model/        HTML interaction prototypes used as references only
 .testcases/    Manual acceptance gates for each implementation phase
+scripts/       Repository health and maintenance scripts
 src/           React application
 server/        NestJS API
 shared/        Contracts shared between frontend and backend
@@ -44,9 +45,15 @@ When references disagree, resolve the planning documents before encoding the beh
 
 Requirements:
 
-- Node.js 22 or newer
+- Node.js 22
 - pnpm 10 or newer
 - A Supabase project for the real database and Auth configuration
+
+Use the repository Node version when `nvm` is available:
+
+```bash
+nvm use
+```
 
 Install dependencies:
 
@@ -61,6 +68,12 @@ cp .env.example .env
 ```
 
 Replace the placeholder Supabase PostgreSQL and Auth values in `.env`.
+
+Check the repository configuration:
+
+```bash
+pnpm project:doctor
+```
 
 Generate the Prisma client:
 
@@ -96,6 +109,7 @@ The page checks:
 ## Verification commands
 
 ```bash
+pnpm project:doctor
 pnpm lint
 pnpm typecheck
 pnpm test
@@ -103,10 +117,17 @@ pnpm build
 pnpm test:e2e
 ```
 
-Or run the non-browser checks together:
+Run the non-browser checks together:
 
 ```bash
-pnpm check
+pnpm verify
+```
+
+Check or apply code formatting with:
+
+```bash
+pnpm format:check
+pnpm format
 ```
 
 Use `.testcases/phase-00-foundation-tests.md` as the manual Phase 00 acceptance gate before starting Phase 01.
@@ -129,3 +150,6 @@ For each phase:
 4. Fix failed acceptance checks before beginning the next phase.
 
 The implementation must preserve the separation between organization authority, Project Lead authority, Project Member access, and Outcome Membership.
+
+See `CONTRIBUTING.md` for the repository contribution workflow.
+See `.context/template-adoption.md` for which conventions were adopted from `prometheus-inc/app-template` and which framework-specific pieces were intentionally excluded.
