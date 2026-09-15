@@ -25,10 +25,19 @@ Use this hierarchy:
 - `.context/data-model.md` owns persistent entities, relationships, constraints, history, and derived state.
 - `.context/tech-stack.md` owns technical architecture and approved technologies.
 - `.context/phases.md` owns implementation order, phase scope, dependencies, and exit criteria.
-- Figma owns visual design.
-- `.model/` files are secondary interaction and prototype references only.
+- `.model/finalmodel.html` is the approved functional UI prototype and interaction reference for the main application where it does not conflict with canonical requirements.
+- `.model/login-page.html` is the authentication UI prototype and interaction reference.
+- Figma owns visual design and visual detail.
 - `.testcases/` owns phase acceptance gates.
 - `.docs/phases/` records what was actually implemented, important decisions, difficult problems, lessons, and next approaches.
+
+For substantial user-facing implementation, inspect both the relevant `.model/` interaction and the relevant Figma frame before coding when both are available.
+
+Use `.model/` to understand intended UI behavior such as navigation, tabs, toggles, drawers, modals, expansion, scrolling, and interaction sequencing.
+
+Use Figma to verify visual details such as layout, spacing, typography, colors, dimensions, icons, and hierarchy.
+
+Neither prototype JavaScript nor Figma may override canonical authorization, persistence, business rules, or production architecture.
 
 When sources disagree, use the source that owns that type of decision.
 
@@ -274,8 +283,8 @@ NestJS enforces protected business rules.
 
 React presents that state.
 
-Figma defines intended visual design.
+The functional HTML prototypes define intended UI interactions where canonical requirements do not override them.
 
-The prototypes provide secondary interaction reference.
+Figma defines intended visual design.
 
 Tests verify the behavior users depend on.
