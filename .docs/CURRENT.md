@@ -51,6 +51,7 @@ Before making implementation changes in a new session:
 6. Read `.testcases/phase-02-registry-tests.md`.
 7. Read the Registry-related requirements in the SRS, user flows, data model, and tech stack.
 8. Inspect the current Registry frontend, backend, Prisma model, and authorization implementation before changing code.
+9. For user-facing implementation, load `.agents/skills/prometheus-ui-implementation/SKILL.md` and inspect the Figma design through the connected Figma tooling before writing or substantially changing UI.
 
 Load additional project skills when relevant:
 
@@ -58,11 +59,33 @@ Load additional project skills when relevant:
 - Debugging: `.agents/skills/prometheus-debugging/SKILL.md`
 - Prisma or persistent data changes: `.agents/skills/prometheus-database-change/SKILL.md`
 
+## Current Figma Reference
+
+Use this user-selected Prometheus Figma reference during implementation:
+
+`https://www.figma.com/design/8zgQ4pcWtku7rSWzjlP9K9/Prometheus?node-id=17-4603&t=9bvq2LAHiC0GPJs7-1`
+
+File key: `8zgQ4pcWtku7rSWzjlP9K9`
+
+Starting node: `17:4603`
+
+The node is accessible through the connected Figma integration and is currently named `Outcome Workspace Top`.
+
+Treat it as a visual entry point into the current Prometheus design file, including the shared authenticated workspace shell and visual language.
+
+When implementing a specific Phase 2 screen, use the Figma integration to inspect the relevant Registry-specific frame or descendant/reference in the same file rather than guessing from screenshots or from this starting node alone.
+
+Do not infer authorization, persistence, or business rules from Figma.
+
+Those remain governed by the canonical repository requirements.
+
 ## Next Action
 
 Begin Phase 2 by reviewing the canonical Registry requirements and the existing implementation, then define the first complete vertical slice before writing production code.
 
 Do not jump directly into UI construction without first resolving the Phase 2 data model, API boundaries, authorization requirements, and acceptance cases that the first slice depends on.
+
+When the first user-facing Registry slice is ready to implement, inspect the current Figma reference and the relevant Registry frame through the Figma integration before coding the visual layer.
 
 ## Phase 2 Working Rules
 
@@ -75,11 +98,12 @@ Do not jump directly into UI construction without first resolving the Phase 2 da
 - For each major decision or difficult problem, record what was difficult, the root cause or constraint, options considered, proposed solution, final decision, result, lesson learned, and next approach.
 - Implement in complete vertical slices.
 - Run focused verification after meaningful changes.
+- Inspect Figma through the connected integration for substantial user-facing work instead of relying only on screenshots or prototype HTML.
 - Do not mark Phase 2 complete until its acceptance gate, previous-phase regression, and phase documentation are complete.
 
 ## Handoff Maintenance Rule
 
-Update this file whenever the active phase changes, a major blocking issue changes the next step, or a session ends at a materially different point than the one documented here.
+Update this file whenever the active phase changes, a major blocking issue changes the next step, the primary Figma implementation reference changes, or a session ends at a materially different point than the one documented here.
 
 Do not turn this into a detailed engineering diary.
 
