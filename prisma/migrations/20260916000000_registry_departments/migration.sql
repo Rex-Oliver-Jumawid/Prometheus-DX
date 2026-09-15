@@ -1,6 +1,7 @@
 CREATE TABLE "departments" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "name" TEXT NOT NULL,
+    "short_label" VARCHAR(12) NOT NULL,
     "description" TEXT,
     "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -8,6 +9,8 @@ CREATE TABLE "departments" (
 );
 
 CREATE INDEX "departments_name_idx" ON "departments"("name");
+
+CREATE UNIQUE INDEX "members_email_lower_key" ON "members"(LOWER("email"));
 
 ALTER TABLE "members" ADD COLUMN "department_id" UUID;
 

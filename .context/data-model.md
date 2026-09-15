@@ -216,12 +216,15 @@ Department
 ----------
 id
 name
+short_label
 description
 created_at
 updated_at
 ```
 
 Departments are organizational and reporting metadata rather than security boundaries.
+
+`short_label` is a compact display label of at most 12 characters used where the full Department name does not fit.
 
 The semantics are:
 

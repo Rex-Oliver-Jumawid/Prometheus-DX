@@ -19,16 +19,26 @@ const navigation: NavigationItem[] = [
   { label: 'VisiWork', path: '/visiwork', icon: 'visiwork' },
   { label: 'Schedule', path: '/schedule', icon: 'schedule' },
   { label: 'Team', path: '/team', icon: 'team' },
-  { label: 'Notifications', path: '/notifications', icon: 'notifications' },
 ];
 
 export function navigationForRole(role: WorkspaceRole): NavigationItem[] {
-  return role === 'ADMINISTRATOR'
-    ? [
-        ...navigation,
-        { label: 'Registry', path: '/registry', icon: 'registry' },
-      ]
-    : navigation;
+  void role;
+  return navigation;
+}
+
+export function utilityNavigationForRole(
+  role: WorkspaceRole,
+): NavigationItem[] {
+  return [
+    ...(role === 'ADMINISTRATOR'
+      ? [{ label: 'Registry', path: '/registry', icon: 'registry' as const }]
+      : []),
+    {
+      label: 'Notifications',
+      path: '/notifications',
+      icon: 'notifications',
+    },
+  ];
 }
 
 export function breadcrumbsForPath(pathname: string): string[] {

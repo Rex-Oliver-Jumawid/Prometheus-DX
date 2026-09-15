@@ -10,6 +10,7 @@ const activeMember = {
   authUserId: '55555555-5555-4555-8555-555555555555',
   email: 'member@example.com',
   fullName: 'Member Example',
+  departmentId: null,
   workspaceRole: 'MEMBER',
   status: 'ACTIVE',
   position: null,

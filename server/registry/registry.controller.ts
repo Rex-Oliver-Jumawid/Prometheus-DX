@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -11,7 +12,9 @@ import {
 } from '@nestjs/common';
 import {
   CreateDepartmentRequestSchema,
+  CreateMemberRequestSchema,
   UpdateDepartmentRequestSchema,
+  UpdateMemberRequestSchema,
 } from '../../shared/contracts/registry';
 import { RolesGuard } from '../auth/roles.guard';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
@@ -22,7 +25,10 @@ import { RegistryService } from './registry.service';
 @UseGuards(SupabaseAuthGuard, RolesGuard)
 @WorkspaceRoles('ADMINISTRATOR')
 export class RegistryController {
-  constructor(private readonly registryService: RegistryService) {}
+  constructor(
+    @Inject(RegistryService)
+    private readonly registryService: RegistryService,
+  ) {}
 
   @Get('access')
   access() {
@@ -60,5 +66,37 @@ export class RegistryController {
     }
 
     return this.registryService.updateDepartment(departmentId, parsed.data);
+  }
+
+  @Get('members')
+  listMembers() {
+    return this.registryService.listMembers();
+  }
+
+  @Post('members')
+  createMember(@Body() body: unknown) {
+    const parsed = CreateMemberRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        parsed.error.issues[0]?.message ?? 'Invalid member data.',
+      );
+    }
+
+    return this.registryService.createMember(parsed.data);
+  }
+
+  @Patch('members/:memberId')
+  updateMember(
+    @Param('memberId', new ParseUUIDPipe({ version: '4' })) memberId: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = UpdateMemberRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        parsed.error.issues[0]?.message ?? 'Invalid member data.',
+      );
+    }
+
+    return this.registryService.updateMember(memberId, parsed.data);
   }
 }

@@ -4,9 +4,9 @@ import { expect, test, type Page } from '@playwright/test';
 const prisma = new PrismaClient();
 const hasRegistryCredentials = Boolean(
   process.env.VITE_SUPABASE_URL &&
-    process.env.VITE_SUPABASE_ANON_KEY &&
-    process.env.E2E_MEMBER_EMAIL &&
-    process.env.E2E_MEMBER_PASSWORD,
+  process.env.VITE_SUPABASE_ANON_KEY &&
+  process.env.E2E_MEMBER_EMAIL &&
+  process.env.E2E_MEMBER_PASSWORD,
 );
 
 const createdNames = new Set<string>();
@@ -28,7 +28,8 @@ test.afterAll(async () => {
 async function signIn(page: Page) {
   const email = process.env.E2E_MEMBER_EMAIL;
   const password = process.env.E2E_MEMBER_PASSWORD;
-  if (!email || !password) throw new Error('E2E credentials are not configured.');
+  if (!email || !password)
+    throw new Error('E2E credentials are not configured.');
 
   await page.goto('/login');
   await page.getByLabel('Company email').fill(email);
@@ -60,6 +61,8 @@ test('administrator creates and edits a department with persistence', async ({
   const updatedName = `E2E Platform ${suffix}`;
   const originalDescription = 'Created through the Registry browser flow.';
   const updatedDescription = 'Edited through the Registry browser flow.';
+  const originalShortLabel = `E${suffix.slice(-5)}`.slice(0, 12);
+  const updatedShortLabel = `P${suffix.slice(-5)}`.slice(0, 12);
   createdNames.add(originalName);
   createdNames.add(updatedName);
 
@@ -69,10 +72,31 @@ test('administrator creates and edits a department with persistence', async ({
     page.getByRole('heading', { name: 'Registry', exact: true }),
   ).toBeVisible();
 
-  await page.getByRole('button', { name: /Add department/ }).first().click();
+  const addDepartmentButton = page
+    .getByRole('button', { name: /Add department/ })
+    .first();
+  await addDepartmentButton.click();
   await expect(
     page.getByRole('dialog', { name: 'Add department' }),
   ).toBeVisible();
+  await expect(page.getByLabel('Department name')).toBeFocused();
+
+  await page.keyboard.press('Escape');
+  await expect(
+    page.getByRole('dialog', { name: 'Add department' }),
+  ).toHaveCount(0);
+  await expect(addDepartmentButton).toBeFocused();
+
+  await addDepartmentButton.click();
+  await page
+    .locator('.registry-dialog-backdrop')
+    .click({ position: { x: 4, y: 4 } });
+  await expect(
+    page.getByRole('dialog', { name: 'Add department' }),
+  ).toHaveCount(0);
+  await expect(addDepartmentButton).toBeFocused();
+
+  await addDepartmentButton.click();
 
   await page
     .getByRole('button', { name: 'Create department', exact: true })
@@ -80,6 +104,7 @@ test('administrator creates and edits a department with persistence', async ({
   await expect(page.getByText('Enter a department name.')).toBeVisible();
 
   await page.getByLabel('Department name').fill(originalName);
+  await page.getByLabel('Short label').fill(originalShortLabel);
   await page.getByLabel('Description').fill(originalDescription);
   await page
     .getByRole('button', { name: 'Create department', exact: true })
@@ -89,6 +114,7 @@ test('administrator creates and edits a department with persistence', async ({
     page.getByRole('button', { name: `Edit ${originalName}` }),
   ).toBeVisible();
   await expect(page.getByText(originalDescription)).toBeVisible();
+  await expect(page.getByText(originalShortLabel)).toBeVisible();
 
   await page.reload();
   await expect(
@@ -100,6 +126,7 @@ test('administrator creates and edits a department with persistence', async ({
     page.getByRole('dialog', { name: 'Edit department' }),
   ).toBeVisible();
   await page.getByLabel('Department name').fill(updatedName);
+  await page.getByLabel('Short label').fill(updatedShortLabel);
   await page.getByLabel('Description').fill(updatedDescription);
   await page.getByRole('button', { name: 'Save changes', exact: true }).click();
 
@@ -107,6 +134,7 @@ test('administrator creates and edits a department with persistence', async ({
     page.getByRole('button', { name: `Edit ${updatedName}` }),
   ).toBeVisible();
   await expect(page.getByText(updatedDescription)).toBeVisible();
+  await expect(page.getByText(updatedShortLabel)).toBeVisible();
 
   await page.reload();
   await expect(

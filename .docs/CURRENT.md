@@ -36,8 +36,12 @@ Phase 0 - Foundation is also complete.
 - Prometheus workspace authorization is separate from Supabase authentication.
 - Protected routes, session persistence, profile/sign-out, role-aware navigation, Registry gating, Member restriction, and deactivated-member denial have been verified.
 - Phase 2 Registry is in progress.
-- The first Phase 2 vertical slice implements persisted department list, create, and edit behavior behind Administrator-only Registry APIs.
-- The Department Prisma model, staged Member-to-Department foreign key, shared Registry contracts, Registry page, department dialog, and focused browser acceptance test are now part of the implementation.
+- The Department slice implements persisted list, create, and edit behavior, including the prototype short label, behind Administrator-only Registry APIs.
+- The member slice implements persistent listing, Department-ID assignment, invited-member creation, editing, organization role and status changes, duplicate-email protection, and backend-derived authentication linkage status.
+- The application shell has been reconciled against `.model/finalmodel.html` and Figma Registry node `11:1887`, including removal of invented collapse and duplicate top-right controls.
+- Shared navigation and content surfaces now use the intended translucent glass treatment at desktop, compact, and mobile widths.
+- The configured Supabase database has all three migrations applied.
+- `pnpm verify` passes and the live Playwright suite passes 10/10.
 - Existing Phase 1 members intentionally retain a nullable `department_id` until the member-assignment slice provides a deliberate backfill path.
 - Project workflows are split between concise always-on rules in `AGENTS.md` and reusable procedures under `.agents/skills/`.
 - `.context/ui-reference.md` now defines `.model/finalmodel.html` as the prototype source of truth for the main application experience.
@@ -76,51 +80,35 @@ If the current implementation differs from the prototype, reconcile the differen
 
 The production implementation should preserve the prototype experience while replacing prototype-only mock logic with real React, NestJS, Prisma, PostgreSQL, Supabase, validation, and backend authorization.
 
-Figma is a helper reference only.
+Figma is the visual source of truth for measurements, spacing, typography, icons, hierarchy, glass treatment, and responsive presentation.
 
-Use Figma MCP or the connected Figma integration for measurements, screenshots, variables, spacing, typography, icons, frame structure, and other visual details that help reproduce the prototype accurately.
+Use Figma MCP or the connected Figma integration to inspect those details before substantial shell or page changes.
 
-If Figma and `finalmodel.html` disagree about the application experience, follow `finalmodel.html` unless an explicit newer user decision says otherwise.
+If Figma and `finalmodel.html` disagree, use Figma for presentation and `finalmodel.html` for functionality and interaction unless a canonical rule or explicit newer product decision overrides them.
 
-Current Figma helper reference:
+Current Figma reference:
 
-`https://www.figma.com/design/8zgQ4pcWtku7rSWzjlP9K9/Prometheus?node-id=17-4603&t=9bvq2LAHiC0GPJs7-1`
+`https://www.figma.com/design/8zgQ4pcWtku7rSWzjlP9K9/Prometheus?node-id=11-1887`
 
 File key: `8zgQ4pcWtku7rSWzjlP9K9`
 
-Starting node: `17:4603`
+Registry frame already inspected: `11:1887`, named `Registry`.
 
-Registry helper frame already inspected: `11:1887`, named `Registry`.
+## Phase 2 Prototype Reconciliation
 
-## Phase 2 Prototype Reconciliation Required
+The Department `Short label` mismatch is resolved across the canonical data model, Prisma migration, shared contract, protected API, production dialog, and browser acceptance coverage.
 
-The Registry department prototype in `.model/finalmodel.html` includes `name`, `Short label`, and `description` in the add-department flow.
-
-The current production slice intentionally omitted `Short label` because the existing canonical Department model did not contain that field.
-
-Under the updated prototype-source-of-truth policy, that omission is now an unresolved prototype-to-data-model mismatch rather than a settled implementation decision.
-
-Before treating the department slice as final, inspect the prototype behavior again and reconcile the missing `Short label` capability with the canonical requirements, data model, API contract, migration, UI, and acceptance coverage, unless the user explicitly decides to remove that field from the prototype itself.
-
-Do not silently keep the production omission merely because the first slice was already implemented.
-
-The existing Phase 2 journal entry P2-D05 should be revisited under this updated source-of-truth policy.
+The shell mismatch is also resolved by removing UI absent from the prototype and Figma and aligning the navigation hierarchy and shared glass surfaces.
 
 ## Next Action
 
-First reconcile the current Registry department implementation against `.model/finalmodel.html`, especially the prototype-only `Short label` field and any other visible behavior that the current production slice omitted.
+Continue with the next coherent Phase 2 slice for invitation delivery and account-setup completion.
 
-Then apply `prisma/migrations/20260916000000_registry_departments/migration.sql` or its reconciled successor to the configured development database and run the focused Registry department browser acceptance flow.
+Keep Supabase authentication separate from Prometheus membership and do not mark invited members active until an authoritative auth linkage exists.
 
-Compare the rendered `/registry` workflow directly against `finalmodel.html` in a browser.
+Provide a deliberate workflow for assigning the existing unassigned Phase 1 member, then evaluate tightening `members.department_id` to `NOT NULL`.
 
-Use Figma frame `11:1887` only as an additional visual helper for fine details.
-
-After the department slice matches the intended prototype behavior and passes verification, continue with the next complete vertical slice for member listing and add/edit member workflows, including Department-ID assignment and Administrator-only backend enforcement.
-
-Do not implement authentication-mode labels by guessing from frontend state.
-
-Resolve detailed authentication status from a trustworthy backend source when that member slice reaches the authentication-status requirement.
+Detailed Google, Password, or combined provider labels remain deferred until a trustworthy backend source is available.
 
 ## Phase 2 Working Rules
 
@@ -134,7 +122,7 @@ Resolve detailed authentication status from a trustworthy backend source when th
 - Implement in complete vertical slices.
 - Run focused verification after meaningful changes.
 - Treat `.model/finalmodel.html` as the prototype source of truth for the main application experience.
-- Use Figma and Figma MCP as supporting implementation helpers, not as the authority over the prototype.
+- Use Figma and Figma MCP as the visual authority while keeping prototype behavior and canonical business rules in their own ownership boundaries.
 - Do not silently omit prototype fields or interactions because the current production model lacks them; reconcile the mismatch instead.
 - Preserve backend security, authorization, persistence, and data-integrity guarantees while reproducing the prototype experience.
 - Do not mark Phase 2 complete until its acceptance gate, previous-phase regression, prototype reconciliation, and phase documentation are complete.

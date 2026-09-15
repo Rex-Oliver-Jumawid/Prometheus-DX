@@ -31,23 +31,19 @@ The Registry prototype uses an Administrator-only Registry page with separate De
 
 Its department flow opens a modal from `+ Add department`, focuses the department-name field, supports backdrop and Escape dismissal, validates the required name, and confirms creation before returning to the Registry view.
 
-The prototype also includes a `Short label` field, but that field is intentionally not implemented because it is absent from the canonical Department data model.
+The prototype's `Short label` field is implemented as persisted Department metadata with a 12-character maximum.
 
 Use this user-selected Prometheus Figma reference during Phase 2 user-facing implementation:
 
-`https://www.figma.com/design/8zgQ4pcWtku7rSWzjlP9K9/Prometheus?node-id=17-4603&t=9bvq2LAHiC0GPJs7-1`
+`https://www.figma.com/design/8zgQ4pcWtku7rSWzjlP9K9/Prometheus?node-id=11-1887`
 
 File key: `8zgQ4pcWtku7rSWzjlP9K9`
 
-Starting node: `17:4603`
+Registry node: `11:1887`
 
-The connected Figma integration can access this node, which is currently named `Outcome Workspace Top`.
+The inspected frame includes the surrounding application shell as well as the Registry content.
 
-This node should be treated as an entry point into the current Prometheus visual system and authenticated workspace shell, not as a replacement for a Registry-specific frame.
-
-The Registry-specific frame inspected for the first user-facing slice is `11:1887` and is named `Registry`.
-
-Figma governs visual design only.
+Figma governs visual layout and presentation while `.model/finalmodel.html` governs functional interaction.
 
 Registry behavior, access control, persistence, validation, and workflow remain governed by the canonical repository requirements.
 
@@ -106,13 +102,13 @@ It runs end to end through the Prisma model and migration, Administrator-protect
 
 The slice includes department listing, persisted creation, persisted editing, member-count display, loading and error states, empty state handling, and accessible create/edit dialog interactions.
 
-Member CRUD, department assignment, workspace role changes, activation/deactivation, and authentication-mode status remain for the next slices.
+The second vertical slice adds member listing, Department-ID assignment, invited-member creation, member editing, organization role changes, member status changes, and backend-derived authentication linkage status.
 
 ## Database Changes
 
 Migration: `prisma/migrations/20260916000000_registry_departments/migration.sql`
 
-The migration adds the `departments` table with `id`, `name`, `description`, `created_at`, and `updated_at`.
+The migration adds the `departments` table with `id`, `name`, `short_label`, `description`, `created_at`, and `updated_at`.
 
 The migration adds `members.department_id`, its index, and a foreign key to `departments.id` with delete restriction.
 
@@ -122,17 +118,28 @@ The relationship should be tightened only after the member-assignment slice prov
 
 No uniqueness constraint is currently applied to department names because the canonical requirements do not define one.
 
+The migration also adds a case-insensitive unique index on `LOWER(members.email)` because one email address must identify at most one Prometheus membership regardless of letter casing.
+
+A pre-migration query confirmed that the configured database contained no conflicting case-insensitive member emails.
+
+The migration has been applied to the configured Supabase database and `prisma migrate status` reports the schema as up to date.
+
 ## API Changes
 
 All Registry endpoints remain protected by `SupabaseAuthGuard`, `RolesGuard`, and the class-level `ADMINISTRATOR` workspace-role requirement.
 
-The first slice adds:
+The current slices add:
 
 - `GET /api/registry/departments`
 - `POST /api/registry/departments`
 - `PATCH /api/registry/departments/:departmentId`
+- `GET /api/registry/members`
+- `POST /api/registry/members`
+- `PATCH /api/registry/members/:memberId`
 
 Create and edit requests use the shared Zod department schema and reject blank department names before persistence.
+
+Member writes validate the Department ID, normalize email input, enforce case-insensitive email uniqueness at both service and database boundaries, and prevent an unlinked invited member from being marked active.
 
 The frontend API helper now supports JSON request bodies and explicit HTTP methods while preserving the existing response-schema validation and API error handling.
 
@@ -146,11 +153,27 @@ The create interaction follows `.model/finalmodel.html` by opening a focused dep
 
 The production dialog adds edit mode because department editing is a canonical Phase 2 requirement even though the current prototype only demonstrates creation.
 
-The prototype-only `Short label` input is omitted because the canonical Department model defines only `name` and `description`; Figma and prototype state do not create new persistence requirements.
+The department dialog persists the prototype's `Short label` input and derives an eight-character fallback from the Department name when it is left blank.
 
 The department dialog traps focus while open, restores focus to the invoking control when closed, labels every form control, exposes validation errors, and prevents accidental dismissal while a save request is pending.
 
-The Members panel currently carries only the canonical membership context because member management is outside this first vertical slice.
+The Members panel now lists real persistent membership data and exposes add and edit dialogs for full name, email, Department, position, organization role, and lifecycle status.
+
+New members begin in `INVITED` state and must use a persisted Department ID.
+
+Existing Phase 1 members remain visible as unassigned until an Administrator edits their record.
+
+Authentication status is derived on the backend from the stable Supabase `auth_user_id` linkage and is displayed only as `Linked` or `Setup pending`.
+
+Provider combinations such as Google, Password, or Google plus Password are not fabricated because the current backend does not have a trustworthy provider-detail source.
+
+The application shell was reconciled against the full Registry Figma frame and `.model/finalmodel.html`.
+
+The invented `Collapse sidebar` row, duplicate top-right profile control, duplicate notification control, and redundant opaque content cards were removed.
+
+Registry and Notifications now occupy the intended sidebar footer, the single profile card remains at the bottom, root-page breadcrumbs stay hidden, and shared shell surfaces use the Figma-aligned translucent glass treatment.
+
+At narrow widths the desktop rail becomes an overlay drawer opened by the existing menu affordance without adding a persistent collapse control.
 
 ## Environment / Configuration Changes
 
@@ -166,7 +189,7 @@ Acceptance source:
 .testcases/phase-02-registry-tests.md
 ```
 
-The first slice adds `tests/e2e/registry-departments.spec.ts` for the Administrator browser flow.
+The current slices add `tests/e2e/registry-departments.spec.ts` and `tests/e2e/registry-members.spec.ts` for Administrator browser flows.
 
 The test exercises blank-name prevention, department creation, persistence after refresh, department editing, and persistence after a second refresh.
 
@@ -180,7 +203,21 @@ When the shared live E2E member credential is configured, Playwright uses one wo
 
 Phase 1 authentication-shell regression must continue to pass before Phase 2 can exit.
 
-Focused CI and live browser results should be recorded here after this slice is pushed and exercised against a configured database.
+The member test exercises invalid email validation, invited-member creation, Department assignment, setup-pending authentication display, persistence after refresh, case-insensitive duplicate rejection, editing, role and status changes, and persistence after a second refresh.
+
+The Phase 1 shell regression now also verifies that a normal Member receives `403` from the member Registry API and cannot navigate to `/registry`.
+
+Verification completed on 2026-09-16:
+
+- `pnpm prisma:validate` passed.
+- `pnpm prisma:generate` passed.
+- `pnpm exec prisma migrate status` reported three migrations and an up-to-date database.
+- `pnpm verify` passed, including project doctor, lint, typecheck, 16 unit tests, web build, and API build.
+- `pnpm test:e2e tests/e2e/registry-members.spec.ts` passed 1/1.
+- `pnpm test:e2e` passed 10/10 across Phase 0, Phase 1, Departments, and Members.
+- Authenticated rendered inspection passed at 1244 by 642, 900 by 700, and 390 by 844 viewports with no document-level horizontal overflow.
+- The mobile navigation overlay and internal member-table scrolling were inspected after transition completion.
+- Department and member dialogs were verified for initial focus, Escape dismissal, backdrop dismissal, and focus restoration to the invoking control.
 
 # Decision & Challenge Log
 
@@ -395,7 +432,7 @@ Introduce deliberate role-specific E2E fixtures before the Phase 2 full acceptan
 - `tests/e2e/auth-shell.spec.ts`
 - `tests/e2e/registry-departments.spec.ts`
 
-### P2-D05 - Keep prototype interaction without adding prototype-only Department fields
+### P2-D05 - Persist the prototype Department short label
 
 **Status:** Accepted
 
@@ -405,41 +442,41 @@ Introduce deliberate role-specific E2E fixtures before the Phase 2 full acceptan
 
 #### What gave us a hard time
 
-The current `.model/finalmodel.html` department modal contains a `Short label` input, while the canonical Department data model defines only `name` and `description`.
+The current `.model/finalmodel.html` department modal contains a `Short label` input that the first production slice omitted.
 
 #### Root cause / constraint
 
-Repository rules make the prototype authoritative for intended interaction behavior but explicitly keep canonical requirements authoritative for persistence and business rules.
+The field is part of the approved product workflow and has a clear persistence purpose, but the earlier canonical data-model document had not recorded it.
 
 #### Options considered
 
-1. Add a new `short_label` field to the database because the prototype contains it.
-2. Ignore the prototype entirely and design a different department interaction.
-3. Preserve the modal interaction while omitting the prototype-only field that is not part of the canonical model.
+1. Keep omitting the field.
+2. Store it only in frontend state.
+3. Reconcile the canonical model and persist the field through the full vertical slice.
 
 #### Proposed solution
 
-Use the prototype's add-department modal behavior and Figma's Registry visuals without expanding the Department persistence contract beyond canonical requirements.
+Add `Department.short_label` with the prototype's 12-character limit and carry it through migration, contract, API, UI, and acceptance coverage.
 
 #### Decision
 
-The production dialog uses the prototype's modal interaction with canonical `name` and optional `description` fields only.
+The production dialog persists `name`, `shortLabel`, and optional `description`.
 
 #### Why we chose it
 
-This keeps interaction fidelity without allowing a prototype implementation detail to create an undocumented business field.
+This makes the approved product behavior explicit in the canonical data model rather than maintaining a known mismatch.
 
 #### Result
 
-Department creation behaves like the documented prototype and persists only canonical Department data.
+Department create and edit now persist the short label, including across reloads.
 
 #### What we learned
 
-Prototype and Figma review works best when each source is used for its intended layer instead of copying every visible field into production architecture.
+Prototype reconciliation must be resolved explicitly when the prototype exposes durable product metadata that the canonical model has not yet recorded.
 
 #### Next approach
 
-Apply the same reconciliation rule to member-management UI: prototype for interaction, Figma for visuals, and canonical requirements for data and authorization.
+Continue using prototype behavior, Figma presentation, and canonical authorization together without silently dropping visible product fields.
 
 #### Related changes
 
@@ -448,19 +485,128 @@ Apply the same reconciliation rule to member-management UI: prototype for intera
 - `src/features/registry/RegistryPage.tsx`
 - `shared/contracts/registry.ts`
 
+### P2-D06 - Reconcile the shared shell before expanding Registry
+
+**Status:** Accepted
+
+**Area:** Frontend, Product
+
+**Impact:** High
+
+#### What gave us a hard time
+
+The production shell had drifted into a generic dashboard with a persistent collapse row, duplicate account and notification controls, and opaque nested cards.
+
+#### Root cause / constraint
+
+Earlier implementation approximated the shell without treating the complete Registry Figma frame and the real prototype as one product surface.
+
+#### Options considered
+
+1. Preserve existing controls and only restyle them.
+2. Redesign the shell from common dashboard patterns.
+3. Remove unreferenced controls and rebuild the shared surfaces from the prototype and Figma evidence.
+
+#### Proposed solution
+
+Use one reusable liquid-glass shell treatment, keep the prototype navigation hierarchy, and remove controls not supported by the prototype, Figma, or canonical requirements.
+
+#### Decision
+
+Registry and Notifications live in the sidebar footer above one profile card, root breadcrumbs are hidden, and there is no persistent desktop collapse row or duplicate top-right account area.
+
+#### Why we chose it
+
+This preserves the actual Prometheus product identity and removes UI that had no product source.
+
+#### Result
+
+The shell now matches the Figma frame at desktop and compact widths and uses an overlay rail on mobile without document-level overflow.
+
+#### What we learned
+
+Shell fidelity requires inspecting the entire reference frame, not only the page content or individual components.
+
+#### Next approach
+
+Reuse the same shell primitives as later phase pages replace their placeholders.
+
+#### Related changes
+
+- `src/features/shell/*`
+- `src/styles/globals.css`
+- `tests/e2e/auth-shell.spec.ts`
+
+### P2-D07 - Enforce member email identity and report only trustworthy authentication state
+
+**Status:** Accepted
+
+**Area:** Backend, Database, Security, Frontend
+
+**Impact:** High
+
+#### What gave us a hard time
+
+The prototype displays detailed authentication labels, but current Prometheus persistence only has a stable Supabase user linkage and does not expose authoritative provider combinations.
+
+#### Root cause / constraint
+
+Frontend inference would fabricate security-relevant state, while email duplicates differing only by case could create ambiguous membership identity.
+
+#### Options considered
+
+1. Infer provider labels from member status or email.
+2. Display only durable linkage state and defer provider detail.
+3. Hide all authentication information.
+
+#### Proposed solution
+
+Derive `Linked` versus `Setup pending` from `auth_user_id`, normalize email input, and enforce case-insensitive email uniqueness in PostgreSQL as well as the service layer.
+
+#### Decision
+
+The Registry reports only trustworthy linkage state and rejects duplicate emails regardless of letter casing with a useful `409` response.
+
+#### Why we chose it
+
+Authentication presentation must come from backend authority, and database integrity must remain correct under concurrent writes.
+
+#### Result
+
+Member creation and editing are reliable without pretending to know whether Google, Password, or both are configured.
+
+#### What we learned
+
+It is better to expose a narrower truthful status than a visually richer guessed status.
+
+#### Next approach
+
+Add provider-detail labels only after a backend integration can query them authoritatively.
+
+#### Related changes
+
+- `prisma/migrations/20260916000000_registry_departments/migration.sql`
+- `server/registry/registry.service.ts`
+- `shared/contracts/registry.ts`
+- `tests/e2e/registry-members.spec.ts`
+
 ## Known Limitations
 
-Member list management, department assignment, role changes, activation/deactivation, and detailed authentication status are not implemented yet.
+Invitation email delivery and account-setup completion are not implemented yet.
+
+Detailed authentication-provider combinations are unresolved because the current backend only has the stable Supabase user linkage.
 
 Existing Phase 1 Member rows may have `department_id = NULL` until the next Registry slice assigns them deliberately.
 
-The live Registry E2E test requires configured Supabase browser credentials and an Administrator member account, so credential-free CI skips that acceptance path.
+The live Registry E2E tests require configured Supabase browser credentials and an Administrator member account, so credential-free CI skips those acceptance paths.
 
 ## Technical Debt
 
 The nullable `members.department_id` relationship is intentional transitional debt and should be revisited before Phase 2 exit.
 
 The current live E2E setup still depends on one mutable shared account and should move to dedicated role-specific fixtures.
+
+The web production bundle still emits the existing Vite chunk-size warning and should be split when page-level loading boundaries are introduced.
 
 ## Lessons From This Phase
 
@@ -472,12 +618,10 @@ The Department entity is a useful first persistence boundary because later membe
 
 ## Recommendations / Next Approach
 
-- Apply the new migration to the configured development database.
-- Run the focused Registry browser acceptance test with the Administrator E2E credential.
-- Inspect the rendered Registry page against Figma frame `11:1887` at desktop and narrow viewport sizes.
-- Keep the Phase 1 browser suite green.
-- Build the next slice around member listing plus add/edit member workflows, using Department IDs rather than free-text organization fields.
-- Resolve authentication-mode status from a trustworthy backend source rather than inferring it from UI state.
+- Implement real invitation delivery and account-setup completion without weakening the separation between Supabase authentication and Prometheus membership.
+- Provide an Administrator workflow to assign the existing unassigned Phase 1 member, then evaluate the follow-up `department_id NOT NULL` migration.
+- Add authoritative authentication-provider detail only if the backend can obtain it from Supabase.
+- Complete the remaining Phase 2 activation, deactivation, and project-impact acceptance cases as their dependent project records become available.
 - Introduce dedicated role-specific E2E fixtures before the complete Phase 2 acceptance run.
 
 ## Phase Exit Result

@@ -1,30 +1,41 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CreateDepartmentRequestSchema,
+  CreateMemberRequestSchema,
   RegistryDepartmentSchema,
   RegistryDepartmentsResponseSchema,
+  RegistryMemberSchema,
+  RegistryMembersResponseSchema,
+  UpdateMemberRequestSchema,
   type CreateDepartmentRequest,
   type DepartmentFormValues,
+  type MemberFormValues,
   type RegistryDepartment,
+  type RegistryMember,
+  type UpdateMemberRequest,
 } from '../../../shared/contracts/registry';
 import { apiFetch } from '../../lib/api';
 import './registry.css';
 
 const departmentsQueryKey = ['registry', 'departments'] as const;
+const membersQueryKey = ['registry', 'members'] as const;
 
 type DepartmentDialogState =
-  | { mode: 'create' }
-  | { mode: 'edit'; department: RegistryDepartment };
+  { mode: 'create' } | { mode: 'edit'; department: RegistryDepartment };
 
 type SaveDepartmentInput = {
   departmentId?: string;
   request: CreateDepartmentRequest;
+};
+
+type MemberDialogState =
+  { mode: 'create' } | { mode: 'edit'; member: RegistryMember };
+
+type SaveMemberInput = {
+  memberId?: string;
+  request: UpdateMemberRequest;
 };
 
 function messageFromError(error: unknown): string {
@@ -56,7 +67,11 @@ function DepartmentDialog({
 }) {
   const department = state.mode === 'edit' ? state.department : undefined;
   const dialogRef = useRef<HTMLElement>(null);
-  const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null,
+  );
   const {
     clearErrors,
     formState: { errors },
@@ -68,30 +83,30 @@ function DepartmentDialog({
   } = useForm<DepartmentFormValues>({
     defaultValues: {
       name: department?.name ?? '',
+      shortLabel: department?.shortLabel ?? '',
       description: department?.description ?? '',
     },
   });
 
   useEffect(() => {
-    restoreFocusRef.current =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
+    const restoreFocusTo = restoreFocusRef.current;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
     return () => {
       document.body.style.overflow = previousOverflow;
-      restoreFocusRef.current?.focus();
+      restoreFocusTo?.focus();
     };
   }, []);
 
   useEffect(() => {
     reset({
       name: department?.name ?? '',
+      shortLabel: department?.shortLabel ?? '',
       description: department?.description ?? '',
     });
-    setFocus('name');
+    const focusFrame = window.requestAnimationFrame(() => setFocus('name'));
+    return () => window.cancelAnimationFrame(focusFrame);
   }, [department, reset, setFocus]);
 
   useEffect(() => {
@@ -130,7 +145,11 @@ function DepartmentDialog({
     if (!parsed.success) {
       for (const issue of parsed.error.issues) {
         const field = issue.path[0];
-        if (field === 'name' || field === 'description') {
+        if (
+          field === 'name' ||
+          field === 'shortLabel' ||
+          field === 'description'
+        ) {
           setError(field, { type: 'validate', message: issue.message });
         }
       }
@@ -148,7 +167,7 @@ function DepartmentDialog({
     <div
       className="registry-dialog-backdrop"
       role="presentation"
-      onMouseDown={(event) => {
+      onClick={(event) => {
         if (event.target === event.currentTarget && !isSaving) onClose();
       }}
     >
@@ -169,9 +188,7 @@ function DepartmentDialog({
             <h2 id="department-dialog-title">
               {state.mode === 'create' ? 'Add department' : 'Edit department'}
             </h2>
-            <p>
-              Define the organization unit used to group members and work.
-            </p>
+            <p>Define the organization unit used to group members and work.</p>
           </div>
           <button
             type="button"
@@ -185,31 +202,47 @@ function DepartmentDialog({
         </header>
 
         <form className="registry-form" onSubmit={submit} noValidate>
-          <label className="registry-field">
-            <span>Department name</span>
-            <input
-              {...register('name')}
-              aria-invalid={Boolean(errors.name)}
-              autoComplete="off"
-              placeholder="e.g. Research & Development"
-            />
-            {errors.name?.message && <small>{errors.name.message}</small>}
-          </label>
+          <div className="registry-form-row">
+            <label className="registry-field">
+              <span>Department name</span>
+              <input
+                {...register('name')}
+                aria-invalid={Boolean(errors.name)}
+                autoFocus
+                autoComplete="off"
+                placeholder="e.g. Finance"
+              />
+              {errors.name?.message && <small>{errors.name.message}</small>}
+            </label>
+
+            <label className="registry-field registry-short-label-field">
+              <span>Short label</span>
+              <input
+                {...register('shortLabel')}
+                aria-invalid={Boolean(errors.shortLabel)}
+                autoComplete="off"
+                maxLength={12}
+                placeholder="e.g. FIN"
+              />
+              {errors.shortLabel?.message && (
+                <small>{errors.shortLabel.message}</small>
+              )}
+            </label>
+          </div>
 
           <label className="registry-field">
             <span>Description</span>
-            <textarea
+            <input
               {...register('description')}
               aria-invalid={Boolean(errors.description)}
-              rows={4}
-              placeholder="What does this department own?"
+              placeholder="What this department is responsible for"
             />
             {errors.description?.message && (
               <small>{errors.description.message}</small>
             )}
           </label>
 
-          {saveError && (
+          {Boolean(saveError) && (
             <p className="registry-form-error" role="alert">
               {messageFromError(saveError)}
             </p>
@@ -242,16 +275,302 @@ function DepartmentDialog({
   );
 }
 
+function MemberDialog({
+  state,
+  departments,
+  isSaving,
+  saveError,
+  onClose,
+  onSave,
+}: {
+  state: MemberDialogState;
+  departments: RegistryDepartment[];
+  isSaving: boolean;
+  saveError: unknown;
+  onClose: () => void;
+  onSave: (input: UpdateMemberRequest) => Promise<void>;
+}) {
+  const member = state.mode === 'edit' ? state.member : undefined;
+  const dialogRef = useRef<HTMLElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null,
+  );
+  const {
+    clearErrors,
+    formState: { errors },
+    handleSubmit,
+    register,
+    reset,
+    setError,
+    setFocus,
+  } = useForm<MemberFormValues>({
+    defaultValues: {
+      fullName: member?.fullName ?? '',
+      email: member?.email ?? '',
+      departmentId: member?.departmentId ?? departments[0]?.id ?? '',
+      position: member?.position ?? '',
+      workspaceRole: member?.workspaceRole ?? 'MEMBER',
+      status: member?.status ?? 'INVITED',
+    },
+  });
+
+  useEffect(() => {
+    const restoreFocusTo = restoreFocusRef.current;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      restoreFocusTo?.focus();
+    };
+  }, []);
+
+  useEffect(() => {
+    reset({
+      fullName: member?.fullName ?? '',
+      email: member?.email ?? '',
+      departmentId: member?.departmentId ?? departments[0]?.id ?? '',
+      position: member?.position ?? '',
+      workspaceRole: member?.workspaceRole ?? 'MEMBER',
+      status: member?.status ?? 'INVITED',
+    });
+    const focusFrame = window.requestAnimationFrame(() => setFocus('fullName'));
+    return () => window.cancelAnimationFrame(focusFrame);
+  }, [departments, member, reset, setFocus]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isSaving) {
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not(:disabled), input:not(:disabled), select:not(:disabled)',
+        ) ?? [],
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isSaving, onClose]);
+
+  const submit = handleSubmit(async (values) => {
+    clearErrors();
+    const parsed = (
+      state.mode === 'create'
+        ? CreateMemberRequestSchema
+        : UpdateMemberRequestSchema
+    ).safeParse(values);
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        const field = issue.path[0];
+        if (
+          field === 'fullName' ||
+          field === 'email' ||
+          field === 'departmentId' ||
+          field === 'position' ||
+          field === 'workspaceRole' ||
+          field === 'status'
+        ) {
+          setError(field, { type: 'validate', message: issue.message });
+        }
+      }
+      return;
+    }
+
+    try {
+      await onSave(parsed.data);
+    } catch {
+      // The mutation exposes its error state inside the dialog.
+    }
+  });
+
+  return (
+    <div
+      className="registry-dialog-backdrop"
+      role="presentation"
+      onClick={(event) => {
+        if (event.target === event.currentTarget && !isSaving) onClose();
+      }}
+    >
+      <section
+        ref={dialogRef}
+        className="registry-dialog registry-member-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="member-dialog-title"
+      >
+        <header className="registry-dialog-header">
+          <div>
+            <p className="registry-kicker">AUTHORIZED MEMBER</p>
+            <h2 id="member-dialog-title">
+              {state.mode === 'create' ? 'Add member' : 'Edit member'}
+            </h2>
+            <p>Manage organization details and workspace authorization.</p>
+          </div>
+          <button
+            type="button"
+            className="registry-icon-button"
+            aria-label="Close member dialog"
+            onClick={onClose}
+            disabled={isSaving}
+          >
+            ×
+          </button>
+        </header>
+
+        <form className="registry-form" onSubmit={submit} noValidate>
+          <div className="registry-member-form-grid">
+            <label className="registry-field">
+              <span>Full name</span>
+              <input
+                {...register('fullName')}
+                aria-invalid={Boolean(errors.fullName)}
+                autoFocus
+              />
+              {errors.fullName?.message && (
+                <small>{errors.fullName.message}</small>
+              )}
+            </label>
+            <label className="registry-field">
+              <span>Email address</span>
+              <input
+                {...register('email')}
+                type="email"
+                autoComplete="off"
+                aria-invalid={Boolean(errors.email)}
+              />
+              {errors.email?.message && <small>{errors.email.message}</small>}
+            </label>
+            <label className="registry-field">
+              <span>Department</span>
+              <select
+                {...register('departmentId')}
+                aria-invalid={Boolean(errors.departmentId)}
+              >
+                <option value="">Choose a department</option>
+                {departments.map((department) => (
+                  <option key={department.id} value={department.id}>
+                    {department.name}
+                  </option>
+                ))}
+              </select>
+              {errors.departmentId?.message && (
+                <small>{errors.departmentId.message}</small>
+              )}
+            </label>
+            <label className="registry-field">
+              <span>Position</span>
+              <input
+                {...register('position')}
+                aria-invalid={Boolean(errors.position)}
+              />
+              {errors.position?.message && (
+                <small>{errors.position.message}</small>
+              )}
+            </label>
+            <label className="registry-field">
+              <span>Workspace role</span>
+              <select {...register('workspaceRole')}>
+                <option value="MEMBER">Member</option>
+                <option value="ADMINISTRATOR">Administrator</option>
+              </select>
+            </label>
+            <label className="registry-field">
+              <span>Member status</span>
+              <select
+                {...register('status')}
+                disabled={state.mode === 'create'}
+              >
+                <option value="INVITED">Invited</option>
+                <option value="ACTIVE">Active</option>
+                <option value="DEACTIVATED">Deactivated</option>
+              </select>
+            </label>
+          </div>
+
+          <p className="registry-form-note">
+            {state.mode === 'create'
+              ? 'New members begin invited. Authentication is linked by the backend after successful account setup.'
+              : 'Authentication is linked by the backend. An invited member cannot become active until that identity is connected.'}
+          </p>
+
+          {Boolean(saveError) && (
+            <p className="registry-form-error" role="alert">
+              {messageFromError(saveError)}
+            </p>
+          )}
+
+          <footer className="registry-dialog-actions">
+            <button
+              type="button"
+              className="registry-secondary-button"
+              onClick={onClose}
+              disabled={isSaving}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="registry-primary-button"
+              disabled={isSaving || departments.length === 0}
+            >
+              {isSaving
+                ? 'Saving...'
+                : state.mode === 'create'
+                  ? 'Add member'
+                  : 'Save changes'}
+            </button>
+          </footer>
+        </form>
+      </section>
+    </div>
+  );
+}
+
+function memberInitials(fullName: string): string {
+  return fullName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
+}
+
 export function RegistryPage({ accessToken }: { accessToken?: string }) {
   const queryClient = useQueryClient();
   const [dialogState, setDialogState] = useState<DepartmentDialogState | null>(
     null,
   );
+  const [memberDialogState, setMemberDialogState] =
+    useState<MemberDialogState | null>(null);
 
   const departments = useQuery({
     queryKey: departmentsQueryKey,
     queryFn: ({ signal }) =>
       apiFetch('/registry/departments', RegistryDepartmentsResponseSchema, {
+        accessToken,
+        signal,
+      }),
+    retry: false,
+  });
+
+  const members = useQuery({
+    queryKey: membersQueryKey,
+    queryFn: ({ signal }) =>
+      apiFetch('/registry/members', RegistryMembersResponseSchema, {
         accessToken,
         signal,
       }),
@@ -286,6 +605,35 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
     },
   });
 
+  const saveMember = useMutation({
+    mutationFn: ({ memberId, request }: SaveMemberInput) =>
+      apiFetch(
+        memberId ? `/registry/members/${memberId}` : '/registry/members',
+        RegistryMemberSchema,
+        {
+          accessToken,
+          method: memberId ? 'PATCH' : 'POST',
+          body: request,
+        },
+      ),
+    onSuccess: (savedMember) => {
+      queryClient.setQueryData<RegistryMember[]>(
+        membersQueryKey,
+        (current = []) =>
+          [
+            ...current.filter((member) => member.id !== savedMember.id),
+            savedMember,
+          ].sort((left, right) =>
+            left.fullName.localeCompare(right.fullName, undefined, {
+              sensitivity: 'base',
+            }),
+          ),
+      );
+      void queryClient.invalidateQueries({ queryKey: departmentsQueryKey });
+      setMemberDialogState(null);
+    },
+  });
+
   const departmentCount = departments.data?.length ?? 0;
   const totalAssignedMembers = useMemo(
     () =>
@@ -295,6 +643,9 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
       ) ?? 0,
     [departments.data],
   );
+  const administratorCount =
+    members.data?.filter((member) => member.workspaceRole === 'ADMINISTRATOR')
+      .length ?? 0;
 
   const openCreate = () => {
     saveDepartment.reset();
@@ -316,6 +667,30 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
     const departmentId =
       dialogState?.mode === 'edit' ? dialogState.department.id : undefined;
     await saveDepartment.mutateAsync({ departmentId, request });
+  };
+
+  const openCreateMember = () => {
+    saveMember.reset();
+    setMemberDialogState({ mode: 'create' });
+  };
+
+  const openEditMember = (member: RegistryMember) => {
+    saveMember.reset();
+    setMemberDialogState({ mode: 'edit', member });
+  };
+
+  const closeMemberDialog = () => {
+    if (saveMember.isPending) return;
+    saveMember.reset();
+    setMemberDialogState(null);
+  };
+
+  const saveRegistryMember = async (request: UpdateMemberRequest) => {
+    const memberId =
+      memberDialogState?.mode === 'edit'
+        ? memberDialogState.member.id
+        : undefined;
+    await saveMember.mutateAsync({ memberId, request });
   };
 
   return (
@@ -342,14 +717,16 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
           <small>Organization units</small>
         </article>
         <article className="registry-summary-card">
-          <span>Assigned members</span>
-          <strong>{departments.isPending ? '...' : totalAssignedMembers}</strong>
-          <small>Linked to a department</small>
+          <span>Authorized members</span>
+          <strong>
+            {members.isPending ? '...' : (members.data?.length ?? 0)}
+          </strong>
+          <small>{totalAssignedMembers} assigned to a department</small>
         </article>
         <article className="registry-summary-card registry-summary-context">
           <span>Registry authority</span>
-          <strong>Admin</strong>
-          <small>Protected by workspace role</small>
+          <strong>{members.isPending ? '...' : administratorCount}</strong>
+          <small>Can manage access</small>
         </article>
       </div>
 
@@ -371,7 +748,10 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
           </header>
 
           {departments.isPending && (
-            <div className="registry-department-list" aria-label="Loading departments">
+            <div
+              className="registry-department-list"
+              aria-label="Loading departments"
+            >
               {[0, 1, 2].map((item) => (
                 <div className="registry-department-skeleton" key={item} />
               ))}
@@ -410,12 +790,18 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
           {departments.isSuccess && departments.data.length > 0 && (
             <div className="registry-department-list">
               {departments.data.map((department) => (
-                <article className="registry-department-card" key={department.id}>
+                <article
+                  className="registry-department-card"
+                  key={department.id}
+                >
                   <div className="registry-department-icon" aria-hidden="true">
                     ⌁
                   </div>
                   <div className="registry-department-copy">
-                    <strong>{department.name}</strong>
+                    <strong>
+                      {department.name}
+                      <span>{department.shortLabel}</span>
+                    </strong>
                     <p>{department.description || 'No description yet.'}</p>
                   </div>
                   <span className="registry-member-count">
@@ -436,26 +822,140 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
           )}
         </section>
 
-        <aside className="registry-panel registry-members-context">
-          <div>
-            <p className="registry-kicker">MEMBERSHIP</p>
-            <h2>Members</h2>
-            <p>
-              Membership authorizes workspace access. Authentication remains
-              separate.
-            </p>
-          </div>
-          <div className="registry-context-card">
-            <span aria-hidden="true">◎</span>
+        <section
+          className="registry-panel registry-members-panel"
+          aria-labelledby="members-title"
+        >
+          <header className="registry-panel-header">
             <div>
-              <strong>Department structure is live</strong>
+              <p className="registry-kicker">MEMBERSHIP</p>
+              <h2 id="members-title">Members</h2>
               <p>
-                Member assignment and authentication status build on these
-                persisted organization units.
+                Membership authorizes workspace access. Authentication remains
+                separate.
               </p>
             </div>
-          </div>
-        </aside>
+            <button
+              type="button"
+              className="registry-primary-button registry-add-button"
+              onClick={openCreateMember}
+              disabled={!departments.data?.length}
+            >
+              + Add member
+            </button>
+          </header>
+
+          {members.isPending && (
+            <div
+              className="registry-member-loading"
+              aria-label="Loading members"
+            >
+              {[0, 1, 2, 3].map((item) => (
+                <div className="registry-department-skeleton" key={item} />
+              ))}
+            </div>
+          )}
+
+          {members.isError && (
+            <div className="registry-state-card" role="alert">
+              <strong>Members could not be loaded.</strong>
+              <p>{messageFromError(members.error)}</p>
+              <button
+                type="button"
+                className="registry-secondary-button"
+                onClick={() => void members.refetch()}
+              >
+                Try again
+              </button>
+            </div>
+          )}
+
+          {members.isSuccess && members.data.length === 0 && (
+            <div className="registry-state-card registry-empty-state">
+              <strong>No members yet</strong>
+              <p>Add the first authorized Prometheus member.</p>
+            </div>
+          )}
+
+          {members.isSuccess && members.data.length > 0 && (
+            <div className="registry-table-wrap">
+              <table className="registry-members-table">
+                <thead>
+                  <tr>
+                    <th>Member</th>
+                    <th>Department</th>
+                    <th>Position</th>
+                    <th>Role</th>
+                    <th>Access</th>
+                    <th>Authentication</th>
+                    <th>
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {members.data.map((member) => (
+                    <tr key={member.id}>
+                      <td>
+                        <div className="registry-member-identity">
+                          <span>{memberInitials(member.fullName)}</span>
+                          <div>
+                            <strong>{member.fullName}</strong>
+                            <small>{member.email}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>{member.department?.name ?? 'Unassigned'}</td>
+                      <td>{member.position ?? 'Not set'}</td>
+                      <td>
+                        <span className="registry-badge role">
+                          {member.workspaceRole === 'ADMINISTRATOR'
+                            ? 'Administrator'
+                            : 'Member'}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className={`registry-badge status ${member.status.toLowerCase()}`}
+                        >
+                          {member.status === 'DEACTIVATED'
+                            ? 'Deactivated'
+                            : member.status === 'INVITED'
+                              ? 'Invited'
+                              : 'Active'}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className={`registry-auth-status ${member.authenticationStatus.toLowerCase()}`}
+                        >
+                          {member.authenticationStatus === 'LINKED'
+                            ? 'Linked'
+                            : 'Setup pending'}
+                        </span>
+                        <small className="registry-auth-caption">
+                          {member.authenticationStatus === 'LINKED'
+                            ? 'Authentication identity connected'
+                            : 'Waiting for first account setup'}
+                        </small>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="registry-edit-button"
+                          onClick={() => openEditMember(member)}
+                          aria-label={`Edit ${member.fullName}`}
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       </div>
 
       {dialogState && (
@@ -465,6 +965,16 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
           saveError={saveDepartment.error}
           onClose={closeDialog}
           onSave={save}
+        />
+      )}
+      {memberDialogState && (
+        <MemberDialog
+          state={memberDialogState}
+          departments={departments.data ?? []}
+          isSaving={saveMember.isPending}
+          saveError={saveMember.error}
+          onClose={closeMemberDialog}
+          onSave={saveRegistryMember}
         />
       )}
     </section>

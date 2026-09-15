@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { breadcrumbsForPath, navigationForRole } from './navigation';
+import { breadcrumbsForPath, utilityNavigationForRole } from './navigation';
 
 describe('shell navigation', () => {
   it('shows Registry only to Administrators', () => {
     expect(
-      navigationForRole('ADMINISTRATOR').map((item) => item.label),
+      utilityNavigationForRole('ADMINISTRATOR').map((item) => item.label),
     ).toContain('Registry');
-    expect(navigationForRole('MEMBER').map((item) => item.label)).not.toContain(
-      'Registry',
-    );
+    expect(
+      utilityNavigationForRole('MEMBER').map((item) => item.label),
+    ).not.toContain('Registry');
   });
 
   it('only creates breadcrumbs for deeper routes', () => {

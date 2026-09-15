@@ -15,7 +15,8 @@ test.afterAll(async () => {
 async function signIn(page: Page) {
   const email = process.env.E2E_MEMBER_EMAIL;
   const password = process.env.E2E_MEMBER_PASSWORD;
-  if (!email || !password) throw new Error('E2E credentials are not configured.');
+  if (!email || !password)
+    throw new Error('E2E credentials are not configured.');
   await page.goto('/login');
   await page.getByLabel('Company email').fill(email);
   await page.getByLabel('Password', { exact: true }).fill(password);
@@ -44,13 +45,18 @@ test('login validates required credentials without submitting twice', async ({
 test('unknown account is rejected without leaking account details', async ({
   page,
 }) => {
-  test.skip(!hasSupabaseBrowserConfig, 'Requires Supabase browser auth config.');
+  test.skip(
+    !hasSupabaseBrowserConfig,
+    'Requires Supabase browser auth config.',
+  );
 
   await page.goto('/login');
   await page
     .getByLabel('Company email')
     .fill(`phase1-unknown-${Date.now()}@example.com`);
-  await page.getByLabel('Password', { exact: true }).fill('not-a-real-password');
+  await page
+    .getByLabel('Password', { exact: true })
+    .fill('not-a-real-password');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('alert')).toHaveText(
     'Sign-in failed. Check your email and password and try again.',
@@ -98,18 +104,12 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
     page.getByRole('navigation', { name: 'Primary navigation' }),
   ).toBeVisible();
 
-  await page.getByRole('button', { name: 'Collapse sidebar' }).click();
   await expect(
-    page.getByRole('button', { name: 'Expand sidebar' }),
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Expand sidebar' }).click();
+    page.getByRole('button', { name: /Collapse sidebar|Expand sidebar/ }),
+  ).toHaveCount(0);
   await expect(
-    page.getByRole('button', { name: 'Collapse sidebar' }),
+    page.getByRole('navigation', { name: 'Workspace utilities' }),
   ).toBeVisible();
-
-  await page.getByRole('button', { name: 'Notifications' }).click();
-  await expect(page.getByText('You’re all caught up.')).toBeVisible();
-  await page.getByRole('button', { name: 'Notifications' }).click();
 
   await page.getByRole('link', { name: 'Team' }).click();
   await expect(page).toHaveURL(/\/team$/);
@@ -165,6 +165,23 @@ test('normal Member cannot see or open Registry', async ({ page }) => {
     await signIn(page);
     await expect(page).not.toHaveURL(/\/login$/);
     await expect(page.getByRole('link', { name: 'Registry' })).toHaveCount(0);
+    const registryApiStatus = await page.evaluate(async () => {
+      const storageKey = Object.keys(localStorage).find(
+        (key) => key.startsWith('sb-') && key.endsWith('-auth-token'),
+      );
+      const session = storageKey
+        ? (JSON.parse(localStorage.getItem(storageKey) ?? '{}') as {
+            access_token?: string;
+          })
+        : {};
+      const response = await fetch('/api/registry/members', {
+        headers: session.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : {},
+      });
+      return response.status;
+    });
+    expect(registryApiStatus).toBe(403);
     await page.goto('/registry');
     await expect(
       page.getByRole('heading', {
