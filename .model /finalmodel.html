@@ -6152,7 +6152,51 @@ body{
 
 /* Add outcome modal */
 #pwOutcomeModal{z-index:150}
-#pwOutcomeModal .modal{background:rgba(255,252,249,.96);backdrop-filter:blur(24px)}
+#pwOutcomeModal.show{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+#pwOutcomeModal .modal{
+  position:relative;
+  left:auto;
+  top:auto;
+  transform:none;
+  width:min(620px,100%);
+  height:min(680px,calc(100dvh - 48px));
+  max-height:calc(100dvh - 48px);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  background:rgba(255,252,249,.96);
+  backdrop-filter:blur(24px);
+}
+#pwOutcomeModal .modal-head,
+#pwOutcomeModal .modal-foot{
+  flex:0 0 auto;
+  background:rgba(255,252,249,.98);
+}
+#pwOutcomeModal .modal-body{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+@supports not (height:100dvh){
+  #pwOutcomeModal .modal{
+    height:min(680px,calc(100vh - 48px));
+    max-height:calc(100vh - 48px);
+  }
+}
+@media(max-width:700px){
+  #pwOutcomeModal.show{padding:12px}
+  #pwOutcomeModal .modal{
+    height:calc(100dvh - 24px);
+    max-height:calc(100dvh - 24px);
+  }
+}
 
 @media(max-width:980px){
   .pw-project-meta{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -10574,6 +10618,228 @@ body,
     min-height:0;
     overflow-y:auto;
   }
+}
+
+
+/* ================================================================
+   PROJECT WORKSPACE MODAL PORTAL FIX
+   Keep +Outcome / Add outcome to stage / +Stage as true viewport popups.
+   ================================================================ */
+body.pw-modal-open{overflow:hidden}
+
+#pwOutcomeModal,
+#pwStageModal{
+  position:fixed!important;
+  inset:0!important;
+  z-index:5000!important;
+  display:none;
+  place-items:center;
+  padding:32px;
+  overflow:hidden;
+  background:rgba(37,31,28,.30);
+  backdrop-filter:blur(7px) saturate(1.04);
+  -webkit-backdrop-filter:blur(7px) saturate(1.04);
+}
+
+#pwOutcomeModal.show,
+#pwStageModal.show{
+  display:grid!important;
+}
+
+#pwOutcomeModal > .modal,
+#pwStageModal > .modal{
+  position:relative!important;
+  left:auto!important;
+  top:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  transform:none!important;
+  margin:0!important;
+  width:min(620px,calc(100vw - 64px));
+  max-width:100%;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.90);
+  border-radius:14px;
+  background:rgba(255,252,249,.98);
+  box-shadow:0 28px 80px rgba(42,31,26,.24), inset 0 1px 0 rgba(255,255,255,.95);
+}
+
+#pwOutcomeModal > .modal{
+  height:min(680px,calc(100dvh - 64px));
+  max-height:calc(100dvh - 64px);
+}
+
+#pwStageModal > .modal{
+  width:min(470px,calc(100vw - 64px));
+  height:auto;
+  max-height:calc(100dvh - 64px);
+}
+
+#pwOutcomeModal .modal-head,
+#pwOutcomeModal .modal-foot,
+#pwStageModal .modal-head,
+#pwStageModal .modal-foot{
+  flex:0 0 auto;
+  background:rgba(255,252,249,.99);
+}
+
+#pwOutcomeModal .modal-body,
+#pwStageModal .modal-body{
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+
+#pwOutcomeModal .modal-body{
+  flex:1 1 auto;
+}
+
+/* These controls used to inherit their styling from #pwProjectPage.
+   The modals are portaled to <body>, so keep the same visual language here. */
+#pwOutcomeModal .pw-multi-check-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+}
+#pwOutcomeModal .pw-multi-check-grid label{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-height:36px;
+  padding:7px 9px;
+  border:1px solid #E4DDD8;
+  border-radius:8px;
+  background:#FAF8F6;
+  color:#625852;
+  font-size:8.5px;
+  font-weight:650;
+  cursor:pointer;
+  text-transform:none;
+  letter-spacing:0;
+}
+#pwOutcomeModal .pw-multi-check-grid label:has(input:checked){
+  border-color:rgba(244,81,30,.26);
+  background:#FFF4EF;
+  color:#A84728;
+}
+#pwOutcomeModal .pw-multi-check-grid input{
+  width:auto;
+  margin:0;
+  accent-color:#F4511E;
+}
+#pwOutcomeModal .pw-field-hint{
+  margin-left:4px;
+  color:#A69A93;
+  font-size:7px;
+  font-weight:600;
+  text-transform:none;
+  letter-spacing:0;
+}
+#pwOutcomeModal .pw-form-message{
+  min-height:16px;
+  margin-top:-3px;
+  color:#B14B2D;
+  font-size:8px;
+}
+#pwOutcomeModal .pw-criteria-builder{
+  padding:10px;
+  border:1px solid #E7DFDA;
+  border-radius:10px;
+  background:rgba(250,248,246,.70);
+}
+#pwOutcomeModal .pw-criteria-builder-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:8px;
+}
+#pwOutcomeModal .pw-criteria-builder-head label{margin:0}
+#pwOutcomeModal .pw-criteria-builder-head p{
+  margin:4px 0 0;
+  color:#91857E;
+  font-size:8px;
+  line-height:1.45;
+}
+#pwOutcomeModal .pw-add-criterion-btn{flex:0 0 auto;white-space:nowrap}
+#pwOutcomeModal .pw-criteria-rows{display:grid;gap:6px}
+#pwOutcomeModal .pw-criterion-row{
+  display:grid;
+  grid-template-columns:22px minmax(0,1fr) 30px;
+  gap:6px;
+  align-items:center;
+}
+#pwOutcomeModal .pw-criterion-number{
+  display:grid;
+  place-items:center;
+  width:22px;
+  height:22px;
+  border-radius:7px;
+  background:#F1ECE8;
+  color:#8B7F78;
+  font:750 7px var(--mono);
+}
+#pwOutcomeModal .pw-criterion-row input{
+  width:100%;
+  min-width:0;
+  padding:8px 9px;
+  border:1px solid #DED6D1;
+  border-radius:8px;
+  background:#FFF;
+  color:#4A423D;
+  font-size:9px;
+}
+#pwOutcomeModal .pw-criterion-remove{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:1px solid #E4DDD8;
+  border-radius:8px;
+  background:#FFF;
+  color:#9B8E87;
+  font-size:14px;
+  line-height:1;
+  cursor:pointer;
+}
+#pwOutcomeModal .pw-criterion-remove:hover{
+  border-color:rgba(181,80,53,.24);
+  background:#FFF5F1;
+  color:#B55035;
+}
+#pwOutcomeModal .pw-criterion-remove:disabled{
+  opacity:.30;
+  cursor:not-allowed;
+  background:#F7F4F2;
+}
+
+@supports not (height:100dvh){
+  #pwOutcomeModal > .modal{
+    height:min(680px,calc(100vh - 64px));
+    max-height:calc(100vh - 64px);
+  }
+  #pwStageModal > .modal{max-height:calc(100vh - 64px)}
+}
+
+@media(max-width:700px){
+  #pwOutcomeModal,
+  #pwStageModal{padding:12px}
+  #pwOutcomeModal > .modal,
+  #pwStageModal > .modal{
+    width:100%;
+    max-width:100%;
+  }
+  #pwOutcomeModal > .modal{
+    height:calc(100dvh - 24px);
+    max-height:calc(100dvh - 24px);
+  }
+  #pwStageModal > .modal{max-height:calc(100dvh - 24px)}
+  #pwOutcomeModal .pw-multi-check-grid{grid-template-columns:1fr}
+  #pwOutcomeModal .pw-criteria-builder-head{flex-direction:column}
 }
 
 </style>
@@ -20549,6 +20815,19 @@ window.PW=(()=>{
     return id;
   }
 
+  function mountProjectModal(modal){
+    if(!modal)return null;
+    if(modal.parentElement!==document.body)document.body.appendChild(modal);
+    return modal;
+  }
+
+  function syncProjectModalOpenState(){
+    document.body.classList.toggle(
+      'pw-modal-open',
+      Boolean(document.querySelector('#pwOutcomeModal.show, #pwStageModal.show'))
+    );
+  }
+
   function openStageModal(stageId=null){
     if(!isLead())return;
     const s=S();
@@ -20564,8 +20843,12 @@ window.PW=(()=>{
       ? 'Renaming the stage keeps its outcomes, dependencies, and history in place.'
       : 'The stage will be added as a new column in this project. It starts empty so you can add outcomes afterward.';
 
-    $('pwStageModal')?.classList.add('show');
+    const stageModal=mountProjectModal($('pwStageModal'));
+    stageModal?.classList.add('show');
+    syncProjectModalOpenState();
     requestAnimationFrame(()=>{
+      const modalBody=stageModal?.querySelector('.modal-body');
+      if(modalBody)modalBody.scrollTop=0;
       input?.focus();
       if(existing)input?.select();
     });
@@ -20574,6 +20857,7 @@ window.PW=(()=>{
   function closeStageModal(){
     editingStageId=null;
     $('pwStageModal')?.classList.remove('show');
+    syncProjectModalOpenState();
   }
 
   function createStage(){
@@ -20660,7 +20944,7 @@ window.PW=(()=>{
       openStageModal();
       return;
     }
-    const modal=$('pwOutcomeModal');
+    const modal=mountProjectModal($('pwOutcomeModal'));
     $('pwNewOutcomeStage').innerHTML=S().stages.map(st=>`<option value="${esc(st.id)}" ${stageId===st.id?'selected':''}>${esc(st.name)}</option>`).join('');
 
     $('pwNewOutcomeMembers').innerHTML=vwState.members.map(m=>`
@@ -20678,9 +20962,18 @@ window.PW=(()=>{
     $('pwNewOutcomeDesc').value='';
     renderOutcomeCriteriaRows(['']);
     $('pwOutcomeOwnershipMessage').textContent='';
-    modal.classList.add('show');
+    const modalBody=modal?.querySelector('.modal-body');
+    if(modalBody)modalBody.scrollTop=0;
+    modal?.classList.add('show');
+    syncProjectModalOpenState();
+    requestAnimationFrame(()=>{
+      if(modalBody)modalBody.scrollTop=0;
+    });
   }
-  function closeOutcomeModal(){$('pwOutcomeModal').classList.remove('show')}
+  function closeOutcomeModal(){
+    $('pwOutcomeModal')?.classList.remove('show');
+    syncProjectModalOpenState();
+  }
   function createOutcome(){
     if(!isLead())return;
     const stageId=$('pwNewOutcomeStage').value;
