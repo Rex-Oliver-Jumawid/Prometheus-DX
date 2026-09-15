@@ -49,6 +49,16 @@ describe('AuthService', () => {
     );
   });
 
+  it('denies an authenticated identity with no Prometheus membership', async () => {
+    const service = new AuthService(
+      prisma(null),
+      supabase({ id: '66666666-6666-4666-8666-666666666666' }),
+    );
+    await expect(service.resolveActiveMember('token')).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+  });
+
   it('denies a deactivated member', async () => {
     const member = {
       ...activeMember,
