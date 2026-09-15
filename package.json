@@ -18,8 +18,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "format": "prettier --write src server shared tests .github package.json index.html eslint.config.mjs playwright.config.ts postcss.config.cjs tailwind.config.cjs vite.config.ts tsconfig*.json",
-    "format:check": "prettier --check src server shared tests .github package.json index.html eslint.config.mjs playwright.config.ts postcss.config.cjs tailwind.config.cjs vite.config.ts tsconfig*.json",
+    "format": "prettier --write src server shared tests prisma scripts .github package.json index.html eslint.config.mjs playwright.config.ts postcss.config.cjs tailwind.config.cjs vite.config.ts vitest.config.ts tsconfig*.json",
+    "format:check": "prettier --check src server shared tests prisma scripts .github package.json index.html eslint.config.mjs playwright.config.ts postcss.config.cjs tailwind.config.cjs vite.config.ts vitest.config.ts tsconfig*.json",
     "project:doctor": "node scripts/doctor.mjs",
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",
@@ -28,7 +28,7 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "prisma:studio": "prisma studio",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "verify": "pnpm check"
+    "verify": "pnpm project:doctor && pnpm check"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.0",
