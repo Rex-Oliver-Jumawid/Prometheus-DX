@@ -18,19 +18,15 @@ Keep changes phase-focused, easy to review, and aligned with the Prometheus sour
 
 ## Verification
 
-Run the project configuration check first:
-
-```bash
-pnpm project:doctor
-```
-
 Run the non-browser verification suite before opening a pull request:
 
 ```bash
 pnpm verify
 ```
 
-Formatting can be checked separately:
+`pnpm verify` includes the repository configuration doctor, linting, TypeScript checks, unit tests, and the production build.
+
+Formatting remains a separate explicit check until the current stylesheet and UI source are normalized:
 
 ```bash
 pnpm format:check

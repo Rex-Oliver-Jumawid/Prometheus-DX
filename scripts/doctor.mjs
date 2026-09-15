@@ -20,7 +20,10 @@ const requiredFiles = [
   '.env.example',
   '.gitignore',
   '.nvmrc',
+  '.prettierignore',
+  '.prettierrc.json',
   'AGENTS.md',
+  'CONTRIBUTING.md',
   'README.md',
   'eslint.config.mjs',
   'package.json',
@@ -29,6 +32,7 @@ const requiredFiles = [
   'src/main.tsx',
   'server/main.ts',
   'vite.config.ts',
+  'vitest.config.ts',
 ];
 
 for (const file of requiredFiles) {
@@ -43,6 +47,10 @@ const requiredScripts = [
   'typecheck',
   'test',
   'test:e2e',
+  'format',
+  'format:check',
+  'project:doctor',
+  'verify',
   'prisma:generate',
   'prisma:validate',
 ];
@@ -55,6 +63,12 @@ for (const script of requiredScripts) {
 
 if (packageJson.private !== true) {
   errors.push('package.json must keep "private": true.');
+}
+
+if (!/^pnpm@10\./.test(packageJson.packageManager ?? '')) {
+  errors.push(
+    `package.json must pin pnpm 10 through packageManager. Found: ${packageJson.packageManager ?? '(missing)'}.`,
+  );
 }
 
 const nodeMajor = Number(process.versions.node.split('.')[0]);
