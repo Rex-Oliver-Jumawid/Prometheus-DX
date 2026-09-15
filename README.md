@@ -15,7 +15,7 @@ Registry, project, schedule, notification, reporting, and collaboration business
 ## Repository structure
 
 ```text
-.context/      Product requirements, user flows, data model, tech stack, implementation phases, and template-adoption notes
+.context/      Product requirements, user flows, data model, tech stack, and implementation phases
 .model/        HTML interaction prototypes used as references only
 .testcases/    Manual acceptance gates for each implementation phase
 scripts/       Repository health and maintenance scripts
@@ -45,7 +45,7 @@ When references disagree, resolve the planning documents before encoding the beh
 Requirements:
 
 - Node.js 22
-- pnpm 10 or newer
+- pnpm version declared by the `packageManager` field in `package.json`
 - A Supabase project for the real database and Auth configuration
 
 Use the repository Node version when `nvm` is available:
@@ -164,4 +164,3 @@ For each phase:
 The implementation must preserve the separation between organization authority, Project Lead authority, Project Member access, and Outcome Membership.
 
 See `CONTRIBUTING.md` for the repository contribution workflow.
-See `.context/template-adoption.md` for which conventions were adopted from `prometheus-inc/app-template` and which framework-specific pieces were intentionally excluded.
