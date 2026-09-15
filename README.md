@@ -18,7 +18,7 @@ Registry, project, schedule, notification, reporting, and collaboration business
 .agents/skills/ Vendor-neutral reusable workflows for coding agents
 .context/       Product requirements, user flows, data model, tech stack, and implementation phases
 .docs/phases/   Per-phase implementation journals, decisions, lessons, and final acceptance records
-.model/         HTML interaction prototypes used as references only
+.model/         Functional HTML prototypes for approved UI interactions and design reference
 .testcases/     Manual acceptance gates for each implementation phase
 scripts/        Repository health and maintenance scripts
 src/            React application
@@ -37,7 +37,7 @@ Detailed procedures live under `.agents/skills/` and are loaded when relevant:
 
 - `prometheus-phase-delivery` for phase implementation, acceptance, regression, and phase journals.
 - `prometheus-debugging` for diagnosis and root-cause fixes.
-- `prometheus-ui-implementation` for Figma-driven UI work, responsive behavior, accessibility, and browser verification.
+- `prometheus-ui-implementation` for functional prototype plus Figma-driven UI work, responsive behavior, accessibility, and browser verification.
 - `prometheus-database-change` for Prisma schema, migrations, constraints, and persistence changes.
 
 Agents that do not support automatic skill discovery can read the corresponding `SKILL.md` directly because `AGENTS.md` routes each workflow to its file.
@@ -49,10 +49,19 @@ Agents that do not support automatic skill discovery can read the corresponding 
 - `.context/data-model.md` defines persistent entities, relationships, constraints, and derived state.
 - `.context/tech-stack.md` defines implementation architecture and technology choices.
 - `.context/phases.md` defines implementation order.
-- Figma defines visual design.
-- `.model/finalmodel.html` and `.model/login-page.html` are prototype and interaction references only.
+- `.model/finalmodel.html` defines the approved functional UI interaction reference for the main application where it does not conflict with canonical requirements.
+- `.model/login-page.html` defines the authentication UI interaction reference.
+- Figma defines visual design and visual detail.
 - `.testcases/` contains the manual acceptance gates for each phase.
 - `.docs/phases/` records what was actually implemented, important decisions and challenges, lessons learned, and the final phase result.
+
+For substantial UI work, inspect both the relevant `.model/` interaction and the relevant Figma frame when both are available.
+
+Use `.model/` to understand intended interactions such as navigation, tabs, toggles, drawers, modals, expansion, scrolling, and interaction sequencing.
+
+Use Figma for visual details such as layout, spacing, typography, colors, dimensions, icons, and hierarchy.
+
+Neither prototype JavaScript nor Figma may override canonical authorization, persistence, business rules, or production architecture.
 
 When references disagree, resolve the planning documents before encoding the behavior in application code.
 
@@ -176,6 +185,8 @@ Only variables prefixed with `VITE_` are exposed to browser code.
 For phase work, use `.agents/skills/prometheus-phase-delivery/SKILL.md`.
 
 The workflow requires agents to read the active phase and canonical requirements, keep the phase journal live, implement complete vertical slices, run acceptance and regression checks, and finalize lessons and the next approach before declaring the phase complete.
+
+For substantial UI work, also use `.agents/skills/prometheus-ui-implementation/SKILL.md`, which requires reviewing the functional HTML prototype and the relevant Figma design before implementation.
 
 A phase is not complete until its acceptance gate and required regression checks pass and its implementation journal is finalized.
 
