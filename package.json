@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently -k -n api,web \"pnpm dev:api\" \"pnpm dev:web\"",
     "dev:web": "vite --host 0.0.0.0",
-    "dev:api": "tsx watch server/main.ts",
+    "dev:api": "tsx --tsconfig tsconfig.server.json watch server/main.ts",
     "build": "pnpm build:web && pnpm build:api",
     "build:web": "vite build",
     "build:api": "tsc -p tsconfig.build.json",
