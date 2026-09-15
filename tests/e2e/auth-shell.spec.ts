@@ -2,6 +2,9 @@ import { PrismaClient } from '@prisma/client';
 import { expect, test, type Page } from '@playwright/test';
 
 const prisma = new PrismaClient();
+const hasSupabaseBrowserConfig = Boolean(
+  process.env.VITE_SUPABASE_URL && process.env.VITE_SUPABASE_ANON_KEY,
+);
 
 test.describe.configure({ mode: 'serial' });
 
@@ -39,6 +42,8 @@ test('login validates required credentials without submitting twice', async ({
 test('unknown account is rejected without leaking account details', async ({
   page,
 }) => {
+  test.skip(!hasSupabaseBrowserConfig, 'Requires Supabase browser auth config.');
+
   await page.goto('/login');
   await page
     .getByLabel('Company email')
@@ -55,7 +60,10 @@ test('known account with a wrong password is rejected generically', async ({
   page,
 }) => {
   const email = process.env.E2E_MEMBER_EMAIL;
-  test.skip(!email, 'Requires E2E_MEMBER_EMAIL in .env.');
+  test.skip(
+    !hasSupabaseBrowserConfig || !email,
+    'Requires Supabase browser auth config and E2E_MEMBER_EMAIL.',
+  );
 
   await page.goto('/login');
   await page.getByLabel('Company email').fill(email!);
@@ -75,8 +83,8 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
   const email = process.env.E2E_MEMBER_EMAIL;
   const password = process.env.E2E_MEMBER_PASSWORD;
   test.skip(
-    !email || !password,
-    'Requires E2E_MEMBER_EMAIL and E2E_MEMBER_PASSWORD in .env.',
+    !hasSupabaseBrowserConfig || !email || !password,
+    'Requires Supabase browser auth config and E2E member credentials.',
   );
 
   await page.goto('/projects');
@@ -131,8 +139,8 @@ test('normal Member cannot see or open Registry', async ({ page }) => {
   const email = process.env.E2E_MEMBER_EMAIL;
   const password = process.env.E2E_MEMBER_PASSWORD;
   test.skip(
-    !email || !password,
-    'Requires E2E_MEMBER_EMAIL and E2E_MEMBER_PASSWORD in .env.',
+    !hasSupabaseBrowserConfig || !email || !password,
+    'Requires Supabase browser auth config and E2E member credentials.',
   );
 
   const member = await prisma.member.findFirst({
@@ -167,8 +175,8 @@ test('deactivated Prometheus member is denied after authentication', async ({
   const email = process.env.E2E_MEMBER_EMAIL;
   const password = process.env.E2E_MEMBER_PASSWORD;
   test.skip(
-    !email || !password,
-    'Requires E2E_MEMBER_EMAIL and E2E_MEMBER_PASSWORD in .env.',
+    !hasSupabaseBrowserConfig || !email || !password,
+    'Requires Supabase browser auth config and E2E member credentials.',
   );
 
   const member = await prisma.member.findFirst({
