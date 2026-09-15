@@ -11,7 +11,6 @@ import type { ApiErrorResponse } from '../../../shared/contracts/api-error';
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
-    console.error(exception);
     const http = host.switchToHttp();
     const response = http.getResponse<Response>();
     const request = http.getRequest<Request>();
