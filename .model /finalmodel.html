@@ -718,7 +718,7 @@ body{
   padding:10px 11px;
   border-radius:8px;
   color:#475467;
-  font-size:11px;
+  font-size:13px;
   margin:0;
   border:1px solid transparent;
 }
@@ -10898,6 +10898,479 @@ body.pw-modal-open{overflow:hidden}
 }
 
 </style>
+
+<style id="home-font-size-tuning">
+/* Home dashboard typography - increased for readability while preserving hierarchy. */
+#promHomePage .prom-eyebrow{font-size:8.5px}
+#promHomePage .prom-home-hero h1{font-size:28px}
+#promHomePage .prom-home-hero p{font-size:11px}
+#promHomePage .prom-home-date{font-size:8.5px}
+
+#promHomePage .prom-kpi-label{font-size:7.5px}
+#promHomePage .prom-kpi-value{font-size:22px}
+#promHomePage .prom-kpi-note{font-size:8px}
+
+#promHomePage .prom-section-title{font-size:12px}
+#promHomePage .prom-section-sub{font-size:8px}
+#promHomePage .prom-project-summary-viewall{font-size:9px}
+
+#promHomePage .prom-my-projects-group-head strong,
+#promHomePage .prom-my-projects-group-head span{font-size:8px}
+#promHomePage .prom-my-project-title{font-size:10.5px}
+#promHomePage .prom-my-project-meta{font-size:8px}
+#promHomePage .prom-my-project-role{font-size:7px}
+#promHomePage .prom-my-project-progress strong{font-size:9.5px}
+#promHomePage .prom-my-project-empty{font-size:8.5px}
+
+#promHomePage .prom-presence-row strong{font-size:9.5px}
+#promHomePage .prom-presence-row span{font-size:7.5px}
+#promHomePage .prom-presence-avatar{font-size:7.5px}
+
+#promHomePage .prom-attention-row strong{font-size:9.5px}
+#promHomePage .prom-attention-row span{font-size:7.5px}
+#promHomePage .prom-attention-state{font-size:6.5px!important}
+
+#promHomePage .prom-quick-grid button{font-size:8.5px}
+</style>
+
+<style id="all-sections-font-size-tuning">
+/* App-wide content readability pass. Home keeps its existing tuned scale; all other sections are increased to match it. */
+/* promReportsPage */
+#promReportsPage .prom-report-hero h1{font-size:24.5px!important}
+#promReportsPage .prom-report-hero p{font-size:10.5px!important}
+#promReportsPage .prom-section-title{font-size:11.5px!important}
+#promReportsPage .prom-section-sub{font-size:8.5px!important}
+#promReportsPage table th{font-size:9.5px!important}
+#promReportsPage table td{font-size:9.5px!important}
+/* promNotificationsPage */
+#promNotificationsPage .ntf-header h1{font-size:24.5px!important}
+#promNotificationsPage .ntf-header p{font-size:10.5px!important}
+#promNotificationsPage .ntf-mark-all{font-size:10px!important}
+#promNotificationsPage .ntf-filter{font-size:10px!important}
+#promNotificationsPage .ntf-filter span{font-size:8.5px!important}
+#promNotificationsPage .ntf-summary{font-size:9.5px!important}
+/* pwProjectPage */
+#pwProjectPage .kicker{font-size:10.5px!important}
+#pwProjectPage .meta-label{font-size:10px!important}
+#pwProjectPage .tab-btn{font-size:11.5px!important}
+#pwProjectPage .tab-badge{font-size:9.5px!important}
+#pwProjectPage .toolbar-title{font-size:13.5px!important}
+#pwProjectPage .toolbar-sub{font-size:10.5px!important}
+#pwProjectPage .btn{font-size:10.5px!important}
+#pwProjectPage .readonly{font-size:9px!important}
+#pwProjectPage .state{font-size:9.5px!important}
+#pwProjectPage .output-status{font-size:9px!important}
+#pwProjectPage .chat-head strong{font-size:12.5px!important}
+#pwProjectPage .chat-compose input{font-size:10.5px!important}
+#pwProjectPage .side-title{font-size:10px!important}
+#pwProjectPage .modal-title{font-size:13px!important}
+#pwProjectPage .field label{font-size:9.5px!important}
+#pwProjectPage .field input{font-size:10.5px!important}
+#pwProjectPage .field select{font-size:10.5px!important}
+#pwProjectPage .field textarea{font-size:10.5px!important}
+#pwProjectPage .preview{font-size:10px!important}
+#pwProjectPage .empty{font-size:10.5px!important}
+#pwProjectPage .workspace-title{font-size:21.5px!important}
+#pwProjectPage .workspace-desc{font-size:10.5px!important}
+#pwProjectPage .acceptance-label{font-size:9.5px!important}
+#pwProjectPage .acceptance-text{font-size:11px!important}
+#pwProjectPage .work-section-head h3{font-size:12.5px!important}
+#pwProjectPage .work-section-head p{font-size:10px!important}
+#pwProjectPage .locked-workspace-banner{font-size:10px!important}
+#pwProjectPage .add-feature-large{font-size:10px!important}
+#pwProjectPage .rail-stat{font-size:10px!important}
+#pwProjectPage .rail-stat strong{font-size:10.5px!important}
+#pwProjectPage .prereq-rail{font-size:10px!important}
+#pwProjectPage .workspace-kicker-row .kicker{font-size:9px!important}
+#pwProjectPage .rail-icon{font-size:12.5px!important}
+#pwProjectPage .ring-number{font-size:17.5px!important}
+#pwProjectPage .ring-label{font-size:9px!important}
+#pwProjectPage .ownership-avatar{font-size:9px!important}
+#pwProjectPage .ownership-profile strong{font-size:10px!important}
+#pwProjectPage .gallery-eyebrow{font-size:9px!important}
+#pwProjectPage .gallery-rail .state{font-size:8.5px!important}
+#pwProjectPage .workspace-back-button{font-size:10.5px!important}
+#pwProjectPage .workspace-back-button span:first-child{font-size:14px!important}
+#pwProjectPage .board-scope-btn{font-size:10.5px!important}
+#pwProjectPage .vw-chat-head .kicker{font-size:7.5px!important}
+#pwProjectPage .pw-project-header h1{font-size:23.5px!important}
+#pwProjectPage .pw-project-header p{font-size:11.5px!important}
+#pwProjectPage .pw-project-meta-card>strong{font-size:11px!important}
+#pwProjectPage .pw-project-meta-card>div{font-size:11px!important}
+#pwProjectPage .pw-dependency-actions .btn{font-size:10px!important}
+#pwProjectPage .pw-readonly-note{font-size:10px!important}
+#pwProjectPage .pw-feature-composer input{font-size:10px!important}
+#pwProjectPage .pw-output-current strong{font-size:10.5px!important}
+#pwProjectPage .pw-output-current small{font-size:9.5px!important}
+#pwProjectPage .pw-revision-context strong{font-size:10.5px!important}
+#pwProjectPage .pw-revision-context span{font-size:10px!important}
+#pwProjectPage .pw-revision-feedback{font-size:10px!important}
+#pwProjectPage .pw-lead-review-head strong{font-size:10.5px!important}
+#pwProjectPage .pw-review-meta span{font-size:9.5px!important}
+#pwProjectPage .pw-review-box{font-size:10px!important}
+#pwProjectPage .pw-review-checks-head{font-size:10px!important}
+#pwProjectPage .pw-review-decision{font-size:9.5px!important}
+#pwProjectPage .pw-submission-history h4{font-size:10.5px!important}
+#pwProjectPage .pw-submission-history p{font-size:8px!important}
+#pwProjectPage .pw-announcement-head p{font-size:9.5px!important}
+#pwProjectPage .pw-announcement-composer input{font-size:10px!important}
+#pwProjectPage .pw-announcement-composer textarea{font-size:10px!important}
+#pwProjectPage .pw-announcement-compose-foot label{font-size:9.5px!important}
+#pwProjectPage .pw-activity-head h2{font-size:18.5px!important}
+#pwProjectPage .pw-activity-head p{font-size:10px!important}
+#pwProjectPage .pw-activity-summary strong{font-size:17px!important}
+#pwProjectPage .pw-activity-summary span{font-size:9.5px!important}
+#pwProjectPage .pw-activity-filter{font-size:9.5px!important}
+#pwProjectPage .pw-activity-member select{font-size:10px!important}
+#pwProjectPage{font-size:11.5px!important}
+#pwProjectPage .pw-project-kicker{font-size:10px!important}
+#pwProjectPage .pw-project-meta-card>span{font-size:9.5px!important}
+#pwProjectPage .pw-project-state-select{font-size:10px!important}
+#pwProjectPage .pw-project-state-pill{font-size:10px!important}
+#pwProjectPage .stage-num{font-size:9.5px!important}
+#pwProjectPage .count{font-size:9.5px!important}
+#pwProjectPage .stage-title{font-size:12.5px!important}
+#pwProjectPage .outcome-title{font-size:11.5px!important}
+#pwProjectPage .outcome-desc{font-size:10px!important}
+#pwProjectPage .dept{font-size:9.5px!important}
+#pwProjectPage .member{font-size:9.5px!important}
+#pwProjectPage .tiny{font-size:9.5px!important}
+#pwProjectPage .linkish{font-size:10px!important}
+#pwProjectPage .pw-card-action{font-size:10px!important}
+#pwProjectPage .pw-dependency-head strong{font-size:9.5px!important}
+#pwProjectPage .pw-dependency-node strong{font-size:10px!important}
+#pwProjectPage .pw-dependency-node span{font-size:9.5px!important}
+#pwProjectPage .criterion{font-size:10px!important}
+#pwProjectPage .feature-name{font-size:11px!important}
+#pwProjectPage .feature-description{font-size:10px!important}
+#pwProjectPage .feature-progress{font-size:9.5px!important}
+#pwProjectPage .task-title{font-size:10.25px!important}
+#pwProjectPage .task-status{font-size:9px!important}
+#pwProjectPage .pw-task-actions input{font-size:10px!important}
+#pwProjectPage .output-editor input{font-size:10.5px!important}
+#pwProjectPage .output-editor textarea{font-size:10.5px!important}
+#pwProjectPage .activity-text{font-size:10px!important}
+#pwProjectPage .activity-time{font-size:9px!important}
+#pwProjectPage .pw-output-current span{font-size:9px!important}
+#pwProjectPage .pw-review-check{font-size:10px!important}
+#pwProjectPage .pw-history-notes{font-size:10px!important}
+#pwProjectPage .pw-history-feedback{font-size:10px!important}
+#pwProjectPage .pw-history-meta{font-size:9.5px!important}
+#pwProjectPage .pw-history-title{font-size:10px!important}
+#pwProjectPage .pw-announcement-kicker{font-size:9px!important}
+#pwProjectPage .pw-announcement-title{font-size:10px!important}
+#pwProjectPage .pw-announcement-body{font-size:10px!important}
+#pwProjectPage .pw-announcement-meta{font-size:9px!important}
+#pwProjectPage .pw-activity-member{font-size:9.5px!important}
+#pwProjectPage .pw-activity-actor{font-size:9.5px!important}
+#pwProjectPage .pw-activity-outcome{font-size:9.5px!important}
+#pwProjectPage .pw-activity-decision{font-size:9.5px!important}
+#pwProjectPage .pw-activity-time{font-size:9.5px!important}
+#pwProjectPage .pw-activity-title{font-size:10px!important}
+#pwProjectPage .pw-activity-detail{font-size:10px!important}
+#pwProjectPage .msg-author{font-size:9.5px!important}
+#pwProjectPage .msg-text{font-size:10.5px!important}
+#pwProjectPage .msg-time{font-size:9px!important}
+#pwProjectPage #vwAddProjectModal .modal-title{font-size:14px!important}
+#pwProjectPage #vwAddProjectModal .field label{font-size:10px!important}
+#pwProjectPage #vwAddProjectModal .field input{font-size:11.5px!important}
+#pwProjectPage #vwAddProjectModal .field textarea{font-size:11.5px!important}
+#pwProjectPage #vwAddProjectModal .field select{font-size:11.5px!important}
+#pwProjectPage #vwAddProjectModal .preview{font-size:10.5px!important}
+#pwProjectPage .pw-empty-stage-icon{font-size:18.5px!important}
+#pwProjectPage .pw-empty-stage-state strong{font-size:13px!important}
+#pwProjectPage .pw-empty-stage-state p{font-size:10.5px!important}
+#pwProjectPage #pwStageModal .preview{font-size:10.5px!important}
+#pwProjectPage .pw-stage-edit{font-size:12.5px!important}
+#pwProjectPage .pw-multi-check-grid label{font-size:10px!important}
+#pwProjectPage .pw-field-hint{font-size:9px!important}
+#pwProjectPage .pw-form-message{font-size:10px!important}
+#pwProjectPage .pw-criteria-builder-head p{font-size:10px!important}
+#pwProjectPage .pw-criterion-row input{font-size:10.5px!important}
+#pwProjectPage .pw-criterion-remove{font-size:15px!important}
+#pwProjectPage .pw-history-open{font-size:9.5px!important}
+#pwProjectPage #pwOutcomeModal .pw-multi-check-grid label{font-size:10px!important}
+#pwProjectPage #pwOutcomeModal .pw-field-hint{font-size:9px!important}
+#pwProjectPage #pwOutcomeModal .pw-form-message{font-size:10px!important}
+#pwProjectPage #pwOutcomeModal .pw-criteria-builder-head p{font-size:10px!important}
+/* vwProjectsLandingPage */
+#vwProjectsLandingPage .btn{font-size:10.5px!important}
+#vwProjectsLandingPage .vw-project-search-icon{font-size:14px!important}
+#vwProjectsLandingPage .vw-project-search-wrap input{font-size:10.5px!important}
+#vwProjectsLandingPage .vw-project-scope-button{font-size:10px!important}
+#vwProjectsLandingPage .vw-project-relation-badge{font-size:9px!important}
+#vwProjectsLandingPage .pw-dependency-actions .btn{font-size:8px!important}
+#vwProjectsLandingPage .vw-overview-project-kicker{font-size:9.2px!important}
+#vwProjectsLandingPage .vw-overview-project-title{font-size:13.5px!important}
+#vwProjectsLandingPage .vw-overview-project-status{font-size:9px!important}
+#vwProjectsLandingPage .vw-overview-project-desc{font-size:9.9px!important}
+#vwProjectsLandingPage .vw-overview-progress-head span{font-size:9.2px!important}
+#vwProjectsLandingPage .vw-overview-progress-head strong{font-size:10px!important}
+#vwProjectsLandingPage .vw-overview-meta-label{font-size:8.8px!important}
+#vwProjectsLandingPage .vw-overview-meta-value{font-size:9.8px!important}
+#vwProjectsLandingPage .vw-overview-dept{font-size:8.8px!important}
+#vwProjectsLandingPage .vw-overview-worker{font-size:8.8px!important}
+#vwProjectsLandingPage .vw-overview-no-workers{font-size:9px!important}
+#vwProjectsLandingPage .vw-overview-stage-line{font-size:9.2px!important}
+#vwProjectsLandingPage .vw-overview-project-foot>span{font-size:9px!important}
+#vwProjectsLandingPage .vw-overview-open{font-size:9.8px!important}
+#vwProjectsLandingPage .vw-project-group-name{font-size:12.5px!important}
+#vwProjectsLandingPage .vw-project-group-count{font-size:11px!important}
+/* vwProjectPage */
+#vwProjectPage .kicker{font-size:10.5px!important}
+#vwProjectPage .desc{font-size:13px!important}
+#vwProjectPage .meta-label{font-size:10px!important}
+#vwProjectPage .meta-value{font-size:12.5px!important}
+#vwProjectPage .status-pill{font-size:10px!important}
+#vwProjectPage .tab-btn{font-size:10.5px!important}
+#vwProjectPage .tab-badge{font-size:9px!important}
+#vwProjectPage .toolbar-title{font-size:14px!important}
+#vwProjectPage .toolbar-sub{font-size:10px!important}
+#vwProjectPage .btn{font-size:10.5px!important}
+#vwProjectPage .readonly{font-size:9px!important}
+#vwProjectPage .state{font-size:9px!important}
+#vwProjectPage .output-status{font-size:9px!important}
+#vwProjectPage .chat-head strong{font-size:12.5px!important}
+#vwProjectPage .chat-compose input{font-size:10.5px!important}
+#vwProjectPage .side-title{font-size:10px!important}
+#vwProjectPage .member-row{font-size:10px!important}
+#vwProjectPage .avatar{font-size:9px!important}
+#vwProjectPage .field label{font-size:9px!important}
+#vwProjectPage .field input{font-size:10.5px!important}
+#vwProjectPage .field select{font-size:10.5px!important}
+#vwProjectPage .field textarea{font-size:10.5px!important}
+#vwProjectPage .workspace-title{font-size:19.5px!important}
+#vwProjectPage .workspace-desc{font-size:10px!important}
+#vwProjectPage .acceptance-label{font-size:8px!important}
+#vwProjectPage .acceptance-text{font-size:10.5px!important}
+#vwProjectPage .work-section-head h3{font-size:12.5px!important}
+#vwProjectPage .work-section-head p{font-size:9px!important}
+#vwProjectPage .locked-workspace-banner{font-size:10px!important}
+#vwProjectPage .add-feature-large{font-size:10px!important}
+#vwProjectPage .rail-stat{font-size:10px!important}
+#vwProjectPage .rail-stat strong{font-size:10.5px!important}
+#vwProjectPage .prereq-rail{font-size:10px!important}
+#vwProjectPage .outcome-strip-title{font-size:14px!important}
+#vwProjectPage .carousel-button{font-size:18.5px!important}
+#vwProjectPage .workspace-kicker-row .kicker{font-size:9px!important}
+#vwProjectPage .feature-composer-fields input{font-size:10px!important}
+#vwProjectPage .rail-icon{font-size:12.5px!important}
+#vwProjectPage .activity-view-all{font-size:8.5px!important}
+#vwProjectPage .ring-number{font-size:17.5px!important}
+#vwProjectPage .ring-label{font-size:9px!important}
+#vwProjectPage .ownership-avatar{font-size:9px!important}
+#vwProjectPage .ownership-profile strong{font-size:10px!important}
+#vwProjectPage .gallery-eyebrow{font-size:9px!important}
+#vwProjectPage .outcome-gallery-hero h2{font-size:25px!important}
+#vwProjectPage .outcome-gallery-hero p{font-size:10.5px!important}
+#vwProjectPage .gallery-summary-number{font-size:20.5px!important}
+#vwProjectPage .gallery-summary-label{font-size:8px!important}
+#vwProjectPage .gallery-rail .outcome-strip-icon{font-size:19.5px!important}
+#vwProjectPage .gallery-rail .outcome-strip-dept{font-size:9px!important}
+#vwProjectPage .gallery-rail .outcome-strip-name{font-size:14px!important}
+#vwProjectPage .gallery-rail .state{font-size:8.5px!important}
+#vwProjectPage .gallery-rail .strip-percent{font-size:10.5px!important}
+#vwProjectPage .gallery-rail .strip-task-line{font-size:9.5px!important}
+#vwProjectPage .gallery-tip{font-size:10px!important}
+#vwProjectPage .workspace-back-button{font-size:10.5px!important}
+#vwProjectPage .workspace-back-button span:first-child{font-size:14px!important}
+#vwProjectPage .hero h1{font-size:28px!important}
+#vwProjectPage .board-scope-btn{font-size:9px!important}
+#vwProjectPage .feature-composer-error{font-size:8.5px!important}
+#vwProjectPage .vw-chat-head .kicker{font-size:7.5px!important}
+#vwProjectPage .pw-dependency-actions .btn{font-size:8px!important}
+#vwProjectPage #vwAddProjectModal .field label{font-size:10px!important}
+#vwProjectPage #vwAddProjectModal .field input{font-size:11.5px!important}
+#vwProjectPage #vwAddProjectModal .field textarea{font-size:11.5px!important}
+#vwProjectPage #vwAddProjectModal .field select{font-size:11.5px!important}
+/* vwStandardProjectPage */
+#vwStandardProjectPage .kicker{font-size:10.5px!important}
+#vwStandardProjectPage .desc{font-size:13px!important}
+#vwStandardProjectPage .meta-label{font-size:10px!important}
+#vwStandardProjectPage .meta-value{font-size:12.5px!important}
+#vwStandardProjectPage .status-pill{font-size:10px!important}
+#vwStandardProjectPage .tab-btn{font-size:10.5px!important}
+#vwStandardProjectPage .tab-badge{font-size:9px!important}
+#vwStandardProjectPage .toolbar-title{font-size:14px!important}
+#vwStandardProjectPage .toolbar-sub{font-size:10px!important}
+#vwStandardProjectPage .btn{font-size:10.5px!important}
+#vwStandardProjectPage .readonly{font-size:9px!important}
+#vwStandardProjectPage .state{font-size:9px!important}
+#vwStandardProjectPage .output-status{font-size:9px!important}
+#vwStandardProjectPage .chat-head strong{font-size:12.5px!important}
+#vwStandardProjectPage .chat-compose input{font-size:10.5px!important}
+#vwStandardProjectPage .side-title{font-size:10px!important}
+#vwStandardProjectPage .member-row{font-size:10px!important}
+#vwStandardProjectPage .avatar{font-size:9px!important}
+#vwStandardProjectPage .field label{font-size:9px!important}
+#vwStandardProjectPage .field input{font-size:10.5px!important}
+#vwStandardProjectPage .field select{font-size:10.5px!important}
+#vwStandardProjectPage .field textarea{font-size:10.5px!important}
+#vwStandardProjectPage .workspace-title{font-size:19.5px!important}
+#vwStandardProjectPage .workspace-desc{font-size:10px!important}
+#vwStandardProjectPage .acceptance-label{font-size:8px!important}
+#vwStandardProjectPage .acceptance-text{font-size:10.5px!important}
+#vwStandardProjectPage .work-section-head h3{font-size:12.5px!important}
+#vwStandardProjectPage .work-section-head p{font-size:9px!important}
+#vwStandardProjectPage .locked-workspace-banner{font-size:10px!important}
+#vwStandardProjectPage .add-feature-large{font-size:10px!important}
+#vwStandardProjectPage .rail-stat{font-size:10px!important}
+#vwStandardProjectPage .rail-stat strong{font-size:10.5px!important}
+#vwStandardProjectPage .prereq-rail{font-size:10px!important}
+#vwStandardProjectPage .outcome-strip-title{font-size:14px!important}
+#vwStandardProjectPage .carousel-button{font-size:18.5px!important}
+#vwStandardProjectPage .workspace-kicker-row .kicker{font-size:9px!important}
+#vwStandardProjectPage .feature-composer-fields input{font-size:10px!important}
+#vwStandardProjectPage .rail-icon{font-size:12.5px!important}
+#vwStandardProjectPage .activity-view-all{font-size:8.5px!important}
+#vwStandardProjectPage .ring-number{font-size:17.5px!important}
+#vwStandardProjectPage .ring-label{font-size:9px!important}
+#vwStandardProjectPage .ownership-avatar{font-size:9px!important}
+#vwStandardProjectPage .ownership-profile strong{font-size:10px!important}
+#vwStandardProjectPage .gallery-eyebrow{font-size:9px!important}
+#vwStandardProjectPage .outcome-gallery-hero h2{font-size:25px!important}
+#vwStandardProjectPage .outcome-gallery-hero p{font-size:10.5px!important}
+#vwStandardProjectPage .gallery-summary-number{font-size:20.5px!important}
+#vwStandardProjectPage .gallery-summary-label{font-size:8px!important}
+#vwStandardProjectPage .gallery-rail .outcome-strip-icon{font-size:19.5px!important}
+#vwStandardProjectPage .gallery-rail .outcome-strip-dept{font-size:9px!important}
+#vwStandardProjectPage .gallery-rail .outcome-strip-name{font-size:14px!important}
+#vwStandardProjectPage .gallery-rail .state{font-size:8.5px!important}
+#vwStandardProjectPage .gallery-rail .strip-percent{font-size:10.5px!important}
+#vwStandardProjectPage .gallery-rail .strip-task-line{font-size:9.5px!important}
+#vwStandardProjectPage .gallery-tip{font-size:10px!important}
+#vwStandardProjectPage .workspace-back-button{font-size:10.5px!important}
+#vwStandardProjectPage .workspace-back-button span:first-child{font-size:14px!important}
+#vwStandardProjectPage .hero h1{font-size:28px!important}
+#vwStandardProjectPage .board-scope-btn{font-size:9px!important}
+#vwStandardProjectPage .feature-composer-error{font-size:8.5px!important}
+#vwStandardProjectPage .vw-chat-head .kicker{font-size:7.5px!important}
+#vwStandardProjectPage .std-board-empty{font-size:10px!important}
+#vwStandardProjectPage .pw-dependency-actions .btn{font-size:8px!important}
+#vwStandardProjectPage #vwAddProjectModal .field label{font-size:10px!important}
+#vwStandardProjectPage #vwAddProjectModal .field input{font-size:11.5px!important}
+#vwStandardProjectPage #vwAddProjectModal .field textarea{font-size:11.5px!important}
+#vwStandardProjectPage #vwAddProjectModal .field select{font-size:11.5px!important}
+/* vwGenericProjectPage */
+#vwGenericProjectPage .kicker{font-size:10.5px!important}
+#vwGenericProjectPage .desc{font-size:13px!important}
+#vwGenericProjectPage .tab-btn{font-size:10.5px!important}
+#vwGenericProjectPage .tab-badge{font-size:9px!important}
+#vwGenericProjectPage .toolbar-title{font-size:14px!important}
+#vwGenericProjectPage .toolbar-sub{font-size:10px!important}
+#vwGenericProjectPage .btn{font-size:10.5px!important}
+#vwGenericProjectPage .readonly{font-size:9px!important}
+#vwGenericProjectPage .chat-head strong{font-size:12.5px!important}
+#vwGenericProjectPage .chat-compose input{font-size:10.5px!important}
+#vwGenericProjectPage .side-title{font-size:10px!important}
+#vwGenericProjectPage .workspace-kicker-row .kicker{font-size:9px!important}
+#vwGenericProjectPage .hero h1{font-size:28px!important}
+#vwGenericProjectPage .vw-chat-head .kicker{font-size:7.5px!important}
+#vwGenericProjectPage .pw-dependency-actions .btn{font-size:8px!important}
+/* vwVisiWorkPage */
+#vwVisiWorkPage .kicker{font-size:10.5px!important}
+#vwVisiWorkPage .btn{font-size:10.5px!important}
+#vwVisiWorkPage .readonly{font-size:9px!important}
+#vwVisiWorkPage .workspace-kicker-row .kicker{font-size:9px!important}
+#vwVisiWorkPage .workspace-back-button{font-size:10.5px!important}
+#vwVisiWorkPage .workspace-back-button span:first-child{font-size:14px!important}
+#vwVisiWorkPage .board-scope-btn{font-size:10.75px!important}
+#vwVisiWorkPage .vw-section-head strong{font-size:12.5px!important}
+#vwVisiWorkPage .vw-section-head span{font-size:10px!important}
+#vwVisiWorkPage .vw-room-head h2{font-size:18.5px!important}
+#vwVisiWorkPage .vw-room-head p{font-size:10.25px!important}
+#vwVisiWorkPage .vw-chat-head .kicker{font-size:9.25px!important}
+#vwVisiWorkPage .vw-chat-head strong{font-size:12.5px!important}
+#vwVisiWorkPage .vw-chat-head span:not(.vw-live){font-size:9.6px!important}
+#vwVisiWorkPage .vw-chat-compose input{font-size:10.25px!important}
+#vwVisiWorkPage .vw-dept-name{font-size:14px!important}
+#vwVisiWorkPage .vw-dept-tagline{font-size:10.25px!important}
+#vwVisiWorkPage .vw-working-count{font-size:10.25px!important}
+#vwVisiWorkPage .vw-member-tile strong{font-size:10.75px!important}
+#vwVisiWorkPage .vw-member-status{font-size:9.75px!important}
+#vwVisiWorkPage .vw-project-top strong{font-size:11.5px!important}
+#vwVisiWorkPage .vw-project-pct{font-size:9.75px!important}
+#vwVisiWorkPage .vw-project-desc{font-size:10px!important}
+#vwVisiWorkPage .vw-worker{font-size:9.1px!important}
+#vwVisiWorkPage .vw-no-worker{font-size:9.25px!important}
+#vwVisiWorkPage .vw-dept-footer>span{font-size:9.6px!important}
+#vwVisiWorkPage .vw-dept-footer button{font-size:10.25px!important}
+#vwVisiWorkPage .vw-back-link{font-size:10.25px!important}
+#vwVisiWorkPage .vw-detail-project-row strong{font-size:11.75px!important}
+#vwVisiWorkPage .vw-detail-progress{font-size:9.6px!important}
+#vwVisiWorkPage .vw-detail-desc{font-size:10px!important}
+#vwVisiWorkPage .vw-stage-head strong{font-size:10.75px!important}
+#vwVisiWorkPage .vw-stage-head span{font-size:9.3px!important}
+#vwVisiWorkPage .vw-outcome-title{font-size:10.25px!important}
+#vwVisiWorkPage .vw-person-chip{font-size:8.8px!important}
+#vwVisiWorkPage .vw-outcome-state{font-size:8.8px!important}
+#vwVisiWorkPage .vw-empty{font-size:10.25px!important}
+#vwVisiWorkPage .vw-live{font-size:9.25px!important}
+#vwVisiWorkPage .vw-message-avatar{font-size:8.5px!important}
+#vwVisiWorkPage .vw-bubble{font-size:10.25px!important}
+#vwVisiWorkPage .vw-msg-meta{font-size:8.8px!important}
+#vwVisiWorkPage .vw-overview-project-kicker{font-size:9px!important}
+#vwVisiWorkPage .vw-overview-project-title{font-size:12.5px!important}
+#vwVisiWorkPage .vw-overview-project-status{font-size:8.8px!important}
+#vwVisiWorkPage .vw-overview-project-desc{font-size:10px!important}
+#vwVisiWorkPage .vw-overview-progress-head span{font-size:9px!important}
+#vwVisiWorkPage .vw-overview-progress-head strong{font-size:10px!important}
+#vwVisiWorkPage .vw-overview-meta-label{font-size:8.6px!important}
+#vwVisiWorkPage .vw-overview-meta-value{font-size:10px!important}
+#vwVisiWorkPage .vw-overview-dept{font-size:8.7px!important}
+#vwVisiWorkPage .vw-overview-worker{font-size:8.7px!important}
+#vwVisiWorkPage .vw-overview-no-workers{font-size:9px!important}
+#vwVisiWorkPage .vw-overview-stage-line{font-size:9px!important}
+#vwVisiWorkPage .vw-overview-project-foot span{font-size:9.25px!important}
+#vwVisiWorkPage .vw-overview-open{font-size:10px!important}
+#vwVisiWorkPage .pw-dependency-actions .btn{font-size:8px!important}
+#vwVisiWorkPage .vw-overview-project-foot>span{font-size:9px!important}
+/* psSchedulePage */
+#psSchedulePage .btn{font-size:10.5px!important}
+#psSchedulePage .board-scope-btn{font-size:9px!important}
+#psSchedulePage .ps-page-head h1{font-size:23.5px!important}
+#psSchedulePage .ps-page-head p{font-size:10.5px!important}
+#psSchedulePage .ps-config-title p{font-size:10.5px!important}
+#psSchedulePage .ps-calendar-head p{font-size:10.5px!important}
+#psSchedulePage .ps-note-card p{font-size:10.5px!important}
+#psSchedulePage .ps-filter-control{font-size:10px!important}
+#psSchedulePage .ps-filter-select{font-size:10px!important}
+#psSchedulePage .ps-static-value{font-size:10px!important}
+#psSchedulePage .ps-config-field input{font-size:10px!important}
+#psSchedulePage .ps-filter-summary strong{font-size:10px!important}
+#psSchedulePage .ps-filter-menu label{font-size:10px!important}
+#psSchedulePage .ps-config-title h2{font-size:14px!important}
+#psSchedulePage .ps-calendar-head h2{font-size:14px!important}
+#psSchedulePage .ps-config-help{font-size:9.5px!important}
+#psSchedulePage .ps-selected-tools strong{font-size:10px!important}
+#psSchedulePage .ps-config-message{font-size:9.5px!important}
+#psSchedulePage .ps-calendar-legend{font-size:9px!important}
+#psSchedulePage .ps-note-icon{font-size:13px!important}
+#psSchedulePage .ps-note-card strong{font-size:10px!important}
+#psSchedulePage .ps-person-overview-head h2{font-size:17px!important}
+#psSchedulePage .ps-person-overview-head p{font-size:10px!important}
+#psSchedulePage .ps-week-stat strong{font-size:17.5px!important}
+#psSchedulePage .ps-week-stat small{font-size:8.5px!important}
+#psSchedulePage .ps-comparison-head strong{font-size:10.5px!important}
+#psSchedulePage .ps-comparison-head span{font-size:8.5px!important}
+#psSchedulePage .ps-shifts-filter-copy strong{font-size:10.5px!important}
+#psSchedulePage .ps-shifts-filter-copy span{font-size:8.5px!important}
+#psSchedulePage .ps-week-nav-btn{font-size:17.5px!important}
+#psSchedulePage .ps-week-nav-current{font-size:10px!important}
+#psSchedulePage .pw-dependency-actions .btn{font-size:8px!important}
+/* psTeamPage */
+#psTeamPage .ps-page-head h1{font-size:23.5px!important}
+#psTeamPage .ps-page-head p{font-size:10.5px!important}
+/* promAdminPage */
+#promAdminPage .admin-hero h1{font-size:28px!important}
+#promAdminPage .admin-hero p{font-size:10px!important}
+#promAdminPage .admin-panel h2{font-size:14px!important}
+#promAdminPage .admin-panel p{font-size:8.5px!important}
+#promAdminPage .admin-table td{font-size:8.3px!important}
+#promAdminPage table th{font-size:8.5px!important}
+#promAdminPage table td{font-size:8.5px!important}
+</style>
+
 </head>
 <body>
 
