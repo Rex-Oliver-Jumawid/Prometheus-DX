@@ -3,7 +3,10 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const rootDir = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+);
 const errors = [];
 
 function read(relativePath) {
@@ -73,12 +76,16 @@ if (!/^pnpm@10\./.test(packageJson.packageManager ?? '')) {
 
 const nodeMajor = Number(process.versions.node.split('.')[0]);
 if (!Number.isInteger(nodeMajor) || nodeMajor < 22) {
-  errors.push(`Node.js 22 or newer is required. Current version: ${process.versions.node}.`);
+  errors.push(
+    `Node.js 22 or newer is required. Current version: ${process.versions.node}.`,
+  );
 }
 
 const nvmVersion = read('.nvmrc').trim();
 if (nvmVersion !== '22') {
-  errors.push(`.nvmrc must pin Node.js 22 for this repository. Found: ${nvmVersion || '(empty)'}.`);
+  errors.push(
+    `.nvmrc must pin Node.js 22 for this repository. Found: ${nvmVersion || '(empty)'}.`,
+  );
 }
 
 const envExample = read('.env.example');
@@ -106,7 +113,9 @@ const browserEnvKeys = [...envExample.matchAll(/^([A-Z0-9_]+)=/gm)]
 
 for (const key of browserEnvKeys) {
   if (/(DATABASE|DIRECT|SERVICE_ROLE|SECRET)/.test(key)) {
-    errors.push(`Browser-exposed environment variable looks sensitive: ${key}.`);
+    errors.push(
+      `Browser-exposed environment variable looks sensitive: ${key}.`,
+    );
   }
 }
 

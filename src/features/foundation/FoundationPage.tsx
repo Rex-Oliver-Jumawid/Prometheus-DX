@@ -28,14 +28,18 @@ function StatusCard({
     <article className="foundation-card">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-[rgb(var(--text-muted))]">{title}</p>
+          <p className="text-sm font-medium text-[rgb(var(--text-muted))]">
+            {title}
+          </p>
           <p className="mt-2 text-xl font-semibold" data-testid={testId}>
             {label}
           </p>
         </div>
         <span className={`status-dot status-dot-${state}`} aria-hidden="true" />
       </div>
-      <p className="mt-4 text-sm leading-6 text-[rgb(var(--text-muted))]">{detail}</p>
+      <p className="mt-4 text-sm leading-6 text-[rgb(var(--text-muted))]">
+        {detail}
+      </p>
     </article>
   );
 }
@@ -64,8 +68,9 @@ export function FoundationPage() {
               Prometheus foundation
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[rgb(var(--text-muted))] sm:text-base">
-              Minimal production scaffold for validating the browser, NestJS API, Prisma database path,
-              and Supabase Auth configuration before product screens are built.
+              Minimal production scaffold for validating the browser, NestJS
+              API, Prisma database path, and Supabase Auth configuration before
+              product screens are built.
             </p>
           </div>
           <button
@@ -81,10 +86,19 @@ export function FoundationPage() {
           </button>
         </header>
 
-        <section className="grid gap-4 md:grid-cols-3" aria-label="Foundation status">
+        <section
+          className="grid gap-4 md:grid-cols-3"
+          aria-label="Foundation status"
+        >
           <StatusCard
             title="NestJS API"
-            state={apiHealth.isPending ? 'checking' : apiHealth.isSuccess ? 'success' : 'error'}
+            state={
+              apiHealth.isPending
+                ? 'checking'
+                : apiHealth.isSuccess
+                  ? 'success'
+                  : 'error'
+            }
             testId="api-status"
             detail={
               apiHealth.isSuccess
@@ -97,7 +111,11 @@ export function FoundationPage() {
           <StatusCard
             title="Supabase PostgreSQL"
             state={
-              databaseHealth.isPending ? 'checking' : databaseHealth.isSuccess ? 'success' : 'error'
+              databaseHealth.isPending
+                ? 'checking'
+                : databaseHealth.isSuccess
+                  ? 'success'
+                  : 'error'
             }
             detail={
               databaseHealth.isSuccess
@@ -122,8 +140,9 @@ export function FoundationPage() {
           <p className="eyebrow">Current boundary</p>
           <h2 className="mt-2 text-xl font-semibold">Foundation only</h2>
           <p className="mt-3 text-sm leading-6 text-[rgb(var(--text-muted))]">
-            Authentication flows, Registry, Projects, and business workflows intentionally remain out of
-            scope until their implementation phases. Use the Phase 00 testcase file as the acceptance gate.
+            Authentication flows, Registry, Projects, and business workflows
+            intentionally remain out of scope until their implementation phases.
+            Use the Phase 00 testcase file as the acceptance gate.
           </p>
         </section>
       </div>

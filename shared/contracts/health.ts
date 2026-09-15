@@ -15,4 +15,6 @@ export const DatabaseHealthResponseSchema = z.object({
 });
 
 export type HealthResponse = z.infer<typeof HealthResponseSchema>;
-export type DatabaseHealthResponse = z.infer<typeof DatabaseHealthResponseSchema>;
+export type DatabaseHealthResponse = z.infer<
+  typeof DatabaseHealthResponseSchema
+>;

@@ -15,5 +15,6 @@ export const useShellStore = create<ShellState>((set) => ({
   profileOpen: false,
   setMobileNavigationOpen: (open) => set({ mobileNavigationOpen: open }),
   setProfileOpen: (open) => set({ profileOpen: open }),
-  toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+  toggleSidebar: () =>
+    set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
 }));

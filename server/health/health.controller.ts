@@ -1,4 +1,9 @@
-import { Controller, Get, Inject, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Inject,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import {
   DatabaseHealthResponseSchema,
   HealthResponseSchema,
@@ -31,7 +36,9 @@ export class HealthController {
         timestamp: new Date().toISOString(),
       });
     } catch {
-      throw new ServiceUnavailableException('Database is currently unavailable.');
+      throw new ServiceUnavailableException(
+        'Database is currently unavailable.',
+      );
     }
   }
 }

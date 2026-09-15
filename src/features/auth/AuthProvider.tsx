@@ -23,7 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     const { data } = client.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
-      if (!nextSession) queryClient.removeQueries({ queryKey: ['current-member'] });
+      if (!nextSession)
+        queryClient.removeQueries({ queryKey: ['current-member'] });
     });
 
     return () => {

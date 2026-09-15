@@ -8,8 +8,25 @@ const descriptions: Record<string, string> = {
   Registry: 'Member and department administration begins in Phase 2.',
 };
 
-export function PlaceholderPage({ title }: { title: keyof typeof descriptions }) {
+export function PlaceholderPage({
+  title,
+}: {
+  title: keyof typeof descriptions;
+}) {
   return (
-    <section className="placeholder-page" aria-labelledby="page-title"><p className="page-kicker">PROMETHEUS WORKSPACE</p><h1 id="page-title">{title}</h1><div className="placeholder-card"><span aria-hidden="true">{title.slice(0, 1)}</span><div><h2>{title} is ready for its next phase</h2><p>{descriptions[title]}</p><small>The authenticated shell is active; no sample business data is shown.</small></div></div></section>
+    <section className="placeholder-page" aria-labelledby="page-title">
+      <p className="page-kicker">PROMETHEUS WORKSPACE</p>
+      <h1 id="page-title">{title}</h1>
+      <div className="placeholder-card">
+        <span aria-hidden="true">{title.slice(0, 1)}</span>
+        <div>
+          <h2>{title} is ready for its next phase</h2>
+          <p>{descriptions[title]}</p>
+          <small>
+            The authenticated shell is active; no sample business data is shown.
+          </small>
+        </div>
+      </div>
+    </section>
   );
 }

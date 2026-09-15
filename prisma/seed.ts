@@ -15,7 +15,9 @@ const SeedSchema = z.array(SeedMemberSchema);
 async function seed(): Promise<void> {
   const configured = process.env.PROMETHEUS_SEED_MEMBERS_JSON;
   if (!configured) {
-    console.info('No development members seeded. Set PROMETHEUS_SEED_MEMBERS_JSON to opt in.');
+    console.info(
+      'No development members seeded. Set PROMETHEUS_SEED_MEMBERS_JSON to opt in.',
+    );
     return;
   }
 
@@ -36,7 +38,8 @@ async function seed(): Promise<void> {
         position: member.position ?? null,
         deactivatedAt: member.status === 'DEACTIVATED' ? new Date() : null,
       };
-      if (existing) await prisma.member.update({ where: { id: existing.id }, data });
+      if (existing)
+        await prisma.member.update({ where: { id: existing.id }, data });
       else await prisma.member.create({ data });
     }
   } finally {

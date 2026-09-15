@@ -1,10 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { CurrentMemberSchema, MemberStatusSchema, WorkspaceRoleSchema } from './member';
+import {
+  CurrentMemberSchema,
+  MemberStatusSchema,
+  WorkspaceRoleSchema,
+} from './member';
 
 describe('member contracts', () => {
   it('accepts canonical member roles and statuses', () => {
     expect(WorkspaceRoleSchema.options).toEqual(['ADMINISTRATOR', 'MEMBER']);
-    expect(MemberStatusSchema.options).toEqual(['INVITED', 'ACTIVE', 'DEACTIVATED']);
+    expect(MemberStatusSchema.options).toEqual([
+      'INVITED',
+      'ACTIVE',
+      'DEACTIVATED',
+    ]);
   });
 
   it('does not expose auth linkage in the current-member response', () => {

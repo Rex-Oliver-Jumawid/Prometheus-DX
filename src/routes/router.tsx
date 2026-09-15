@@ -17,18 +17,23 @@ export const router = createBrowserRouter([
   },
   {
     element: <AuthGate />,
-    children: [{
-      element: <AppShell />,
-      children: [
-        { path: '/', element: <PlaceholderPage title="Home" /> },
-        { path: '/projects', element: <PlaceholderPage title="Projects" /> },
-        { path: '/visiwork', element: <PlaceholderPage title="VisiWork" /> },
-        { path: '/schedule', element: <PlaceholderPage title="Schedule" /> },
-        { path: '/team', element: <PlaceholderPage title="Team" /> },
-        { path: '/notifications', element: <PlaceholderPage title="Notifications" /> },
-        { path: '/registry', element: <RegistryGate /> },
-      ],
-    }],
+    children: [
+      {
+        element: <AppShell />,
+        children: [
+          { path: '/', element: <PlaceholderPage title="Home" /> },
+          { path: '/projects', element: <PlaceholderPage title="Projects" /> },
+          { path: '/visiwork', element: <PlaceholderPage title="VisiWork" /> },
+          { path: '/schedule', element: <PlaceholderPage title="Schedule" /> },
+          { path: '/team', element: <PlaceholderPage title="Team" /> },
+          {
+            path: '/notifications',
+            element: <PlaceholderPage title="Notifications" />,
+          },
+          { path: '/registry', element: <RegistryGate /> },
+        ],
+      },
+    ],
   },
   {
     path: '*',

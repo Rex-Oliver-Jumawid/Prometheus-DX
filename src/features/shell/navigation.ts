@@ -3,7 +3,14 @@ import type { WorkspaceRole } from '../../../shared/contracts/member';
 export interface NavigationItem {
   label: string;
   path: string;
-  icon: 'home' | 'projects' | 'visiwork' | 'schedule' | 'team' | 'notifications' | 'registry';
+  icon:
+    | 'home'
+    | 'projects'
+    | 'visiwork'
+    | 'schedule'
+    | 'team'
+    | 'notifications'
+    | 'registry';
 }
 
 const navigation: NavigationItem[] = [
@@ -17,12 +24,17 @@ const navigation: NavigationItem[] = [
 
 export function navigationForRole(role: WorkspaceRole): NavigationItem[] {
   return role === 'ADMINISTRATOR'
-    ? [...navigation, { label: 'Registry', path: '/registry', icon: 'registry' }]
+    ? [
+        ...navigation,
+        { label: 'Registry', path: '/registry', icon: 'registry' },
+      ]
     : navigation;
 }
 
 export function breadcrumbsForPath(pathname: string): string[] {
   const segments = pathname.split('/').filter(Boolean);
   if (segments.length < 2) return [];
-  return segments.map((segment) => segment.replace(/-/g, ' ').replace(/^./, (value) => value.toUpperCase()));
+  return segments.map((segment) =>
+    segment.replace(/-/g, ' ').replace(/^./, (value) => value.toUpperCase()),
+  );
 }

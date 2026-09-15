@@ -19,8 +19,13 @@ const activeMember = {
   updatedAt: new Date(),
 } satisfies Member;
 
-function supabase(user: Partial<User> | null, error: { message: string } | null = null): SupabaseAuthClient {
-  return { auth: { getUser: vi.fn().mockResolvedValue({ data: { user }, error }) } } as SupabaseAuthClient;
+function supabase(
+  user: Partial<User> | null,
+  error: { message: string } | null = null,
+): SupabaseAuthClient {
+  return {
+    auth: { getUser: vi.fn().mockResolvedValue({ data: { user }, error }) },
+  } as SupabaseAuthClient;
 }
 
 function prisma(member: Member | null) {
@@ -35,18 +40,37 @@ function prisma(member: Member | null) {
 
 describe('AuthService', () => {
   it('resolves the active member from the verified Supabase identity', async () => {
-    const service = new AuthService(prisma(activeMember), supabase({ id: activeMember.authUserId! }));
-    await expect(service.resolveActiveMember('token')).resolves.toEqual(activeMember);
+    const service = new AuthService(
+      prisma(activeMember),
+      supabase({ id: activeMember.authUserId! }),
+    );
+    await expect(service.resolveActiveMember('token')).resolves.toEqual(
+      activeMember,
+    );
   });
 
   it('denies a deactivated member', async () => {
-    const member = { ...activeMember, status: 'DEACTIVATED', deactivatedAt: new Date() } satisfies Member;
-    const service = new AuthService(prisma(member), supabase({ id: activeMember.authUserId! }));
-    await expect(service.resolveActiveMember('token')).rejects.toBeInstanceOf(ForbiddenException);
+    const member = {
+      ...activeMember,
+      status: 'DEACTIVATED',
+      deactivatedAt: new Date(),
+    } satisfies Member;
+    const service = new AuthService(
+      prisma(member),
+      supabase({ id: activeMember.authUserId! }),
+    );
+    await expect(service.resolveActiveMember('token')).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
   });
 
   it('distinguishes an invalid authentication token from workspace denial', async () => {
-    const service = new AuthService(prisma(null), supabase(null, { message: 'invalid' }));
-    await expect(service.resolveActiveMember('bad-token')).rejects.toBeInstanceOf(UnauthorizedException);
+    const service = new AuthService(
+      prisma(null),
+      supabase(null, { message: 'invalid' }),
+    );
+    await expect(
+      service.resolveActiveMember('bad-token'),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });

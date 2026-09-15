@@ -8,12 +8,16 @@ function context(role: Member['workspaceRole']): ExecutionContext {
   return {
     getHandler: () => function handler() {},
     getClass: () => class Controller {},
-    switchToHttp: () => ({ getRequest: () => ({ currentMember: { workspaceRole: role } }) }),
+    switchToHttp: () => ({
+      getRequest: () => ({ currentMember: { workspaceRole: role } }),
+    }),
   } as unknown as ExecutionContext;
 }
 
 describe('RolesGuard', () => {
-  const reflector = { getAllAndOverride: () => ['ADMINISTRATOR'] } as unknown as Reflector;
+  const reflector = {
+    getAllAndOverride: () => ['ADMINISTRATOR'],
+  } as unknown as Reflector;
   const guard = new RolesGuard(reflector);
 
   it('allows an Administrator through an Administrator-only API gate', () => {
@@ -21,6 +25,8 @@ describe('RolesGuard', () => {
   });
 
   it('denies a Member at the API gate', () => {
-    expect(() => guard.canActivate(context('MEMBER'))).toThrow(ForbiddenException);
+    expect(() => guard.canActivate(context('MEMBER'))).toThrow(
+      ForbiddenException,
+    );
   });
 });

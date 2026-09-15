@@ -3,8 +3,12 @@ import { z } from 'zod';
 
 const ServerEnvironmentSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3001),
-  CLIENT_ORIGINS: z.string().default('http://localhost:5173,http://localhost:4173'),
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  CLIENT_ORIGINS: z
+    .string()
+    .default('http://localhost:5173,http://localhost:4173'),
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_ANON_KEY: z.string().min(1).optional(),
 });

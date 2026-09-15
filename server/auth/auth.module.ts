@@ -1,5 +1,9 @@
 import { Global, Module } from '@nestjs/common';
-import { AuthService, createSupabaseAuthClient, SUPABASE_AUTH_CLIENT } from './auth.service';
+import {
+  AuthService,
+  createSupabaseAuthClient,
+  SUPABASE_AUTH_CLIENT,
+} from './auth.service';
 import { MeController } from './me.controller';
 import { RolesGuard } from './roles.guard';
 import { SupabaseAuthGuard } from './supabase-auth.guard';

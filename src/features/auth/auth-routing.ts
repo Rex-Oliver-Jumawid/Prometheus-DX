@@ -1,6 +1,7 @@
 import type { ApiRequestError } from '../../lib/api';
 
-export type ProtectedResolution = 'loading' | 'login' | 'denied' | 'authorized' | 'error';
+export type ProtectedResolution =
+  'loading' | 'login' | 'denied' | 'authorized' | 'error';
 
 export function resolveProtectedState(input: {
   sessionResolved: boolean;
@@ -9,7 +10,8 @@ export function resolveProtectedState(input: {
   hasMember: boolean;
   error: Error | null;
 }): ProtectedResolution {
-  if (!input.sessionResolved || (input.hasSession && input.memberPending)) return 'loading';
+  if (!input.sessionResolved || (input.hasSession && input.memberPending))
+    return 'loading';
   if (!input.hasSession) return 'login';
   if (input.hasMember) return 'authorized';
   const status = (input.error as ApiRequestError | null)?.statusCode;
@@ -19,7 +21,9 @@ export function resolveProtectedState(input: {
 }
 
 export function safeReturnPath(value: unknown): string {
-  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')
+  return typeof value === 'string' &&
+    value.startsWith('/') &&
+    !value.startsWith('//')
     ? value
     : '/';
 }

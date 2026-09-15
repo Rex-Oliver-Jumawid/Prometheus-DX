@@ -1,6 +1,9 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import type { Member } from '@prisma/client';
-import { CurrentMemberSchema, type CurrentMember as CurrentMemberResponse } from '../../shared/contracts/member';
+import {
+  CurrentMemberSchema,
+  type CurrentMember as CurrentMemberResponse,
+} from '../../shared/contracts/member';
 import { CurrentMember } from './current-member.decorator';
 import { SupabaseAuthGuard } from './supabase-auth.guard';
 

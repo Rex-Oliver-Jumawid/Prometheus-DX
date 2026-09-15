@@ -4,7 +4,9 @@ import type { AuthenticatedRequest } from './auth.types';
 
 export const CurrentMember = createParamDecorator(
   (_data: unknown, context: ExecutionContext): Member => {
-    const member = context.switchToHttp().getRequest<AuthenticatedRequest>().currentMember;
+    const member = context
+      .switchToHttp()
+      .getRequest<AuthenticatedRequest>().currentMember;
     if (!member) {
       throw new Error('CurrentMember used without SupabaseAuthGuard.');
     }

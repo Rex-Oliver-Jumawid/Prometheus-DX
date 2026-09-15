@@ -24,7 +24,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
       exception instanceof HttpException ? exception.getResponse() : undefined;
 
     const message =
-      typeof rawResponse === 'object' && rawResponse !== null && 'message' in rawResponse
+      typeof rawResponse === 'object' &&
+      rawResponse !== null &&
+      'message' in rawResponse
         ? Array.isArray(rawResponse.message)
           ? rawResponse.message.join(', ')
           : String(rawResponse.message)
