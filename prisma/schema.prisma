@@ -19,11 +19,25 @@ enum MemberStatus {
   DEACTIVATED
 }
 
+model Department {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  members     Member[]
+
+  @@index([name])
+  @@map("departments")
+}
+
 model Member {
   id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   authUserId       String?       @unique @map("auth_user_id") @db.Uuid
   email            String
   fullName         String        @map("full_name")
+  departmentId     String?       @map("department_id") @db.Uuid
+  department       Department?   @relation(fields: [departmentId], references: [id], onDelete: Restrict)
   workspaceRole    WorkspaceRole @default(MEMBER) @map("workspace_role")
   status           MemberStatus  @default(INVITED)
   position         String?
@@ -32,6 +46,7 @@ model Member {
   createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  @@index([departmentId])
   @@index([status])
   @@map("members")
 }

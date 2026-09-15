@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { RegistryAccessResponseSchema } from '../../../shared/contracts/member';
 import { apiFetch } from '../../lib/api';
 import { useAuth } from '../auth/auth-context';
-import { PlaceholderPage } from './PlaceholderPage';
+import { RegistryPage } from '../registry/RegistryPage';
 
 export function RegistryGate() {
   const { member, session } = useAuth();
@@ -16,6 +16,7 @@ export function RegistryGate() {
       }),
     retry: false,
   });
+
   if (member?.workspaceRole !== 'ADMINISTRATOR') {
     return (
       <section className="placeholder-page">
@@ -32,14 +33,17 @@ export function RegistryGate() {
       </section>
     );
   }
-  if (access.isPending)
+
+  if (access.isPending) {
     return (
       <section className="placeholder-page" aria-busy="true">
         <p className="page-kicker">REGISTRY</p>
-        <h1>Checking administrator access…</h1>
+        <h1>Checking administrator access...</h1>
       </section>
     );
-  if (access.isError)
+  }
+
+  if (access.isError) {
     return (
       <section className="placeholder-page">
         <p className="page-kicker">REGISTRY</p>
@@ -60,5 +64,7 @@ export function RegistryGate() {
         </div>
       </section>
     );
-  return <PlaceholderPage title="Registry" />;
+  }
+
+  return <RegistryPage accessToken={session?.access_token} />;
 }

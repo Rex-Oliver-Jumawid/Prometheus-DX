@@ -35,10 +35,11 @@ Phase 0 - Foundation is also complete.
 - Google OAuth works.
 - Prometheus workspace authorization is separate from Supabase authentication.
 - Protected routes, session persistence, profile/sign-out, role-aware navigation, Registry gating, Member restriction, and deactivated-member denial have been verified.
-- Phase documentation exists under `.docs/phases/`.
-- Phase 2 Registry journal has been initialized.
-- Project workflows are now split between concise always-on rules in `AGENTS.md` and reusable procedures under `.agents/skills/`.
-- Substantial UI work now requires both the functional HTML prototype and the relevant Figma frame when both are available.
+- Phase 2 Registry is in progress.
+- The first Phase 2 vertical slice implements persisted department list, create, and edit behavior behind Administrator-only Registry APIs.
+- The Department Prisma model, staged Member-to-Department foreign key, shared Registry contracts, Registry page, department dialog, and focused browser acceptance test are now part of the implementation.
+- Existing Phase 1 members intentionally retain a nullable `department_id` until the member-assignment slice provides a deliberate backfill path.
+- Project workflows are split between concise always-on rules in `AGENTS.md` and reusable procedures under `.agents/skills/`.
 
 ## Required Session Startup
 
@@ -52,7 +53,8 @@ Before making implementation changes in a new session:
 6. Read `.testcases/phase-02-registry-tests.md`.
 7. Read the Registry-related requirements in the SRS, user flows, data model, and tech stack.
 8. Inspect the current Registry frontend, backend, Prisma model, and authorization implementation before changing code.
-9. For user-facing implementation, load `.agents/skills/prometheus-ui-implementation/SKILL.md`, inspect the relevant interaction in `.model/finalmodel.html`, and inspect the relevant Figma frame through the connected Figma tooling before writing or substantially changing UI.
+9. For substantial user-facing implementation, inspect the relevant interaction in `.model/finalmodel.html` and load `.agents/skills/prometheus-ui-implementation/SKILL.md`.
+10. Inspect the relevant Figma design through the connected Figma tooling before writing or substantially changing production UI.
 
 Load additional project skills when relevant:
 
@@ -60,21 +62,13 @@ Load additional project skills when relevant:
 - Debugging: `.agents/skills/prometheus-debugging/SKILL.md`
 - Prisma or persistent data changes: `.agents/skills/prometheus-database-change/SKILL.md`
 
-## Current Functional UI Prototype
+## Current Prototype and Figma References
 
-Use `.model/finalmodel.html` as the primary functional UI interaction reference for the main authenticated application.
+For Registry interaction behavior, inspect `.model/finalmodel.html`.
 
-Use `.model/login-page.html` for authentication-specific UI interaction.
+The current department prototype opens `+ Add department` in a modal and includes name, short label, and description fields.
 
-For the screen being implemented, inspect the relevant prototype interaction to understand approved behavior such as navigation, tabs, toggles, drawers, modals, expansion, scrolling, control behavior, and interaction sequencing.
-
-When practical, inspect the prototype as an interactive page instead of only reading its HTML or JavaScript source.
-
-The prototype defines intended UI interaction behavior, not production architecture, backend authorization, persistence, or domain rules.
-
-If prototype behavior conflicts with the SRS, user flows, data model, or security requirements, follow the canonical repository requirements.
-
-## Current Figma Reference
+Production intentionally omits the prototype-only short label because the canonical Department model contains only name and description.
 
 Use this user-selected Prometheus Figma reference during implementation:
 
@@ -88,9 +82,9 @@ The node is accessible through the connected Figma integration and is currently 
 
 Treat it as a visual entry point into the current Prometheus design file, including the shared authenticated workspace shell and visual language.
 
-When implementing a specific Phase 2 screen, use the Figma integration to inspect the relevant Registry-specific frame or descendant/reference in the same file rather than guessing from screenshots or from this starting node alone.
+The Registry-specific frame already inspected for Phase 2 is `11:1887`, named `Registry`.
 
-Use Figma for visual details such as layout, spacing, typography, colors, dimensions, icons, and hierarchy.
+When implementing another Phase 2 state or interaction, inspect the relevant Registry-specific frame or descendant/reference in the same file rather than guessing from screenshots or from this starting node alone.
 
 Do not infer authorization, persistence, or business rules from Figma.
 
@@ -98,13 +92,15 @@ Those remain governed by the canonical repository requirements.
 
 ## Next Action
 
-Begin Phase 2 by reviewing the canonical Registry requirements and the existing implementation, then define the first complete vertical slice before writing production code.
+Apply `prisma/migrations/20260916000000_registry_departments/migration.sql` to the configured development database and run the focused Registry department browser acceptance flow.
 
-Do not jump directly into UI construction without first resolving the Phase 2 data model, API boundaries, authorization requirements, and acceptance cases that the first slice depends on.
+Inspect the rendered `/registry` page against Figma frame `11:1887` at desktop and narrow viewport sizes, and correct any visual or interaction regressions before expanding scope.
 
-When the first user-facing Registry slice is ready to implement, inspect the relevant Registry behavior in `.model/finalmodel.html` and the relevant Registry frame through the Figma integration before coding the visual layer.
+After the department slice is verified, continue with the next complete vertical slice for member listing and add/edit member workflows, including Department-ID assignment and Administrator-only backend enforcement.
 
-Rebuild the approved interaction and design using maintainable React production architecture rather than copying prototype JavaScript or DOM structure.
+Do not implement authentication-mode labels by guessing from frontend state.
+
+Resolve detailed authentication status from a trustworthy backend source when that member slice reaches the authentication-status requirement.
 
 ## Phase 2 Working Rules
 
@@ -117,13 +113,13 @@ Rebuild the approved interaction and design using maintainable React production 
 - For each major decision or difficult problem, record what was difficult, the root cause or constraint, options considered, proposed solution, final decision, result, lesson learned, and next approach.
 - Implement in complete vertical slices.
 - Run focused verification after meaningful changes.
-- Inspect `.model/finalmodel.html` for intended UI interaction behavior and Figma for visual design before substantial user-facing work.
-- Never copy prototype-only state or permission logic into production as backend authority.
+- Inspect the relevant `.model/` interaction and Figma through the connected integration for substantial user-facing work.
+- Use `.model/` for intended interaction behavior, Figma for visual detail, and canonical requirements for data, authorization, and persistence.
 - Do not mark Phase 2 complete until its acceptance gate, previous-phase regression, and phase documentation are complete.
 
 ## Handoff Maintenance Rule
 
-Update this file whenever the active phase changes, a major blocking issue changes the next step, the primary functional prototype or Figma implementation reference changes, or a session ends at a materially different point than the one documented here.
+Update this file whenever the active phase changes, a major blocking issue changes the next step, the primary Figma implementation reference changes, or a session ends at a materially different point than the one documented here.
 
 Do not turn this into a detailed engineering diary.
 

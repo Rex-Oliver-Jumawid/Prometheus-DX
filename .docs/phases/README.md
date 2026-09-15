@@ -109,7 +109,7 @@ List important files, migrations, tests, commits, or routes.
 | --- | --- | --- | --- |
 | 0 | Foundation | Complete | `phase-00-foundation.md` |
 | 1 | Authentication and Application Shell | Complete | `phase-01-auth-shell.md` |
-| 2 | Registry | Not started | `phase-02-registry.md` when implementation begins |
+| 2 | Registry | In progress | `phase-02-registry.md` |
 | 3 | Project Core | Not started | To be created |
 | 4 | Project Workflow Structure | Not started | To be created |
 | 5 | Outcome Work, Submission, Review, and Dependencies | Not started | To be created |
