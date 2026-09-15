@@ -20,24 +20,43 @@ Before implementing behavior, identify which artifact owns the decision.
 
 Use this hierarchy:
 
-- `.context/Software Requirements Specification - Prometheus Centralized Workflow Management System.md` owns functional requirements, business rules, and product behavior.
-- `.context/user-flows.md` owns canonical user workflows and access-control behavior.
-- `.context/data-model.md` owns persistent entities, relationships, constraints, history, and derived state.
+- `.context/Software Requirements Specification - Prometheus Centralized Workflow Management System.md` owns functional requirements, business rules, and product intent.
+- `.context/user-flows.md` owns canonical authorization and workflow rules that must be enforced in production.
+- `.context/data-model.md` owns the current persistent entities, relationships, constraints, history, and derived state.
 - `.context/tech-stack.md` owns technical architecture and approved technologies.
 - `.context/phases.md` owns implementation order, phase scope, dependencies, and exit criteria.
-- `.model/finalmodel.html` is the approved functional UI prototype and interaction reference for the main application where it does not conflict with canonical requirements.
-- `.model/login-page.html` is the authentication UI prototype and interaction reference.
-- Figma owns visual design and visual detail.
+- `.context/ui-reference.md` owns the UI implementation reference policy.
+- `.model/finalmodel.html` is the prototype source of truth for the main authenticated application's user-visible behavior and experience.
+- `.model/login-page.html` is the prototype source of truth for the authentication screen's user-visible behavior and experience.
+- Figma is a supporting visual helper, not the primary source of truth for how the application should behave or look when it conflicts with the HTML prototype.
 - `.testcases/` owns phase acceptance gates.
 - `.docs/phases/` records what was actually implemented, important decisions, difficult problems, lessons, and next approaches.
 
-For substantial user-facing implementation, inspect both the relevant `.model/` interaction and the relevant Figma frame before coding when both are available.
+For substantial user-facing implementation, inspect the relevant workflow in `.model/finalmodel.html` before coding.
 
-Use `.model/` to understand intended UI behavior such as navigation, tabs, toggles, drawers, modals, expansion, scrolling, and interaction sequencing.
+The production application is intended to turn that prototype into a real working application.
 
-Use Figma to verify visual details such as layout, spacing, typography, colors, dimensions, icons, and hierarchy.
+Everything demonstrated by the relevant prototype workflow should be reflected in production unless the user explicitly changes that product decision.
 
-Neither prototype JavaScript nor Figma may override canonical authorization, persistence, business rules, or production architecture.
+This includes navigation, visible fields, buttons, tabs, toggles, drawers, modals, expansion, scrolling, visible state changes, interaction sequencing, and screen-level workflows.
+
+Do not invent a different interaction simply because it is easier to implement.
+
+Use Figma and Figma MCP or an equivalent connected integration as a helper for measurements, spacing, typography, icons, variables, frame structure, and visual detail.
+
+When Figma and `.model/finalmodel.html` disagree about the application experience, follow `finalmodel.html` unless an explicit newer product decision says otherwise.
+
+Do not silently drop a prototype feature because the current data model does not yet support it.
+
+If a prototype feature requires a missing persistent field or relationship, identify the mismatch and reconcile the canonical requirements and data model rather than deleting the prototype behavior from production.
+
+Prototype JavaScript, mock state, DOM structure, and frontend-only permission checks are not production architecture.
+
+Preserve the prototype experience while implementing it through React, NestJS, Prisma, PostgreSQL, Supabase, and the approved backend authorization model.
+
+Security, authorization, and data-integrity rules must still be enforced on the backend.
+
+If a genuine conflict exists between the required prototype experience and a security or persistence invariant, surface and resolve the conflict explicitly instead of silently weakening either side.
 
 When sources disagree, use the source that owns that type of decision.
 
@@ -283,8 +302,10 @@ NestJS enforces protected business rules.
 
 React presents that state.
 
-The functional HTML prototypes define intended UI interactions where canonical requirements do not override them.
+`.model/finalmodel.html` is the prototype source of truth for the main application experience that production is expected to reproduce.
 
-Figma defines intended visual design.
+`.model/login-page.html` is the prototype source of truth for authentication UI behavior.
+
+Figma is a supporting visual helper.
 
 Tests verify the behavior users depend on.
