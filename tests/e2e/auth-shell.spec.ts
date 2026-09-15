@@ -27,7 +27,9 @@ test('signed-out direct protected navigation returns to login', async ({
 }) => {
   await page.goto('/projects');
   await expect(page).toHaveURL(/\/login$/);
-  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Sign in', exact: true }),
+  ).toBeVisible();
 });
 
 test('login validates required credentials without submitting twice', async ({
@@ -111,18 +113,24 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
 
   await page.getByRole('link', { name: 'Team' }).click();
   await expect(page).toHaveURL(/\/team$/);
-  await expect(page.getByRole('heading', { name: 'Team' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Team', exact: true }),
+  ).toBeVisible();
   await page.goBack();
   await expect(page).toHaveURL(/\/projects$/);
   await page.goForward();
   await expect(page).toHaveURL(/\/team$/);
 
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Team' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Team', exact: true }),
+  ).toBeVisible();
 
   await page.goto('/schedule');
   await expect(page).toHaveURL(/\/schedule$/);
-  await expect(page.getByRole('heading', { name: 'Schedule' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Schedule', exact: true }),
+  ).toBeVisible();
 
   await page
     .getByRole('button', { name: 'Open profile and account' })
@@ -159,7 +167,10 @@ test('normal Member cannot see or open Registry', async ({ page }) => {
     await expect(page.getByRole('link', { name: 'Registry' })).toHaveCount(0);
     await page.goto('/registry');
     await expect(
-      page.getByRole('heading', { name: 'Registry is for administrators' }),
+      page.getByRole('heading', {
+        name: 'Registry is for administrators',
+        exact: true,
+      }),
     ).toBeVisible();
   } finally {
     await prisma.member.update({
@@ -193,7 +204,10 @@ test('deactivated Prometheus member is denied after authentication', async ({
     await signIn(page);
     await expect(page).toHaveURL(/\/access-denied$/);
     await expect(
-      page.getByRole('heading', { name: 'This account can’t enter Prometheus' }),
+      page.getByRole('heading', {
+        name: 'This account can’t enter Prometheus',
+        exact: true,
+      }),
     ).toBeVisible();
   } finally {
     await prisma.member.update({
