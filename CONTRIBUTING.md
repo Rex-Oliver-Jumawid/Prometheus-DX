@@ -7,7 +7,10 @@ Keep changes phase-focused, easy to review, and aligned with the Prometheus sour
 - Read `AGENTS.md` for always-active repository rules.
 - Load the relevant workflow under `.agents/skills/` for phase delivery, debugging, UI work, or database changes.
 - Read the relevant section in `.context/phases.md` before starting implementation work.
-- Read the matching requirements in `.context/`, then use Figma and `.model/` only as visual and interaction references.
+- Read the matching requirements in `.context/` before implementing behavior.
+- For substantial user-facing work, inspect the relevant interaction in `.model/finalmodel.html` or `.model/login-page.html` and inspect the relevant Figma frame through the available Figma integration before coding the production UI.
+- Use `.model/` for intended UI interaction behavior where it does not conflict with canonical requirements, and use Figma for visual design and visual detail.
+- Do not treat prototype JavaScript, DOM structure, or frontend-only permission checks as production architecture or backend authority.
 - Read the matching implementation journal in `.docs/phases/` when one already exists so previous decisions and lessons are carried forward.
 - Resolve requirement, access-control, and data-model conflicts in the canonical planning documents before encoding them in code.
 
@@ -43,6 +46,8 @@ pnpm test:e2e
 For bug fixes, follow `.agents/skills/prometheus-debugging/SKILL.md`.
 
 For each implementation phase, follow `.agents/skills/prometheus-phase-delivery/SKILL.md` and complete the matching acceptance checks in `.testcases/`.
+
+For substantial UI work, also follow `.agents/skills/prometheus-ui-implementation/SKILL.md`.
 
 ## Database and configuration changes
 
