@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
 import { PrismaClient } from '@prisma/client';
+import { expect, test, type Page } from '@playwright/test';
 
 const prisma = new PrismaClient();
 
@@ -9,7 +9,7 @@ test.afterAll(async () => {
   await prisma.$disconnect();
 });
 
-async function signIn(page: Parameters<typeof test>[0] extends never ? never : any) {
+async function signIn(page: Page) {
   const email = process.env.E2E_MEMBER_EMAIL;
   const password = process.env.E2E_MEMBER_PASSWORD;
   if (!email || !password) throw new Error('E2E credentials are not configured.');
@@ -89,9 +89,13 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
   ).toBeVisible();
 
   await page.getByRole('button', { name: 'Collapse sidebar' }).click();
-  await expect(page.getByRole('button', { name: 'Expand sidebar' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Expand sidebar' }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Expand sidebar' }).click();
-  await expect(page.getByRole('button', { name: 'Collapse sidebar' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Collapse sidebar' }),
+  ).toBeVisible();
 
   await page.getByRole('button', { name: 'Notifications' }).click();
   await expect(page.getByText('You’re all caught up.')).toBeVisible();
