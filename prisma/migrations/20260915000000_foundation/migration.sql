@@ -1,0 +1,3 @@
+-- Phase 0 baseline migration.
+-- Business tables are intentionally introduced in later implementation phases.
+-- This migration establishes a tracked Prisma migration history on a clean database.

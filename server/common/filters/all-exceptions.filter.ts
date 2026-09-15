@@ -1,0 +1,45 @@
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
+import type { Request, Response } from 'express';
+import type { ApiErrorResponse } from '../../../shared/contracts/api-error';
+
+@Catch()
+export class AllExceptionsFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost): void {
+    const http = host.switchToHttp();
+    const response = http.getResponse<Response>();
+    const request = http.getRequest<Request>();
+
+    const statusCode =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    const rawResponse =
+      exception instanceof HttpException ? exception.getResponse() : undefined;
+
+    const message =
+      typeof rawResponse === 'object' && rawResponse !== null && 'message' in rawResponse
+        ? Array.isArray(rawResponse.message)
+          ? rawResponse.message.join(', ')
+          : String(rawResponse.message)
+        : exception instanceof Error && statusCode < 500
+          ? exception.message
+          : 'An unexpected server error occurred.';
+
+    const body: ApiErrorResponse = {
+      statusCode,
+      message,
+      error: statusCode >= 500 ? 'Server Error' : 'Request Error',
+      timestamp: new Date().toISOString(),
+      path: request.originalUrl,
+    };
+
+    response.status(statusCode).json(body);
+  }
+}
