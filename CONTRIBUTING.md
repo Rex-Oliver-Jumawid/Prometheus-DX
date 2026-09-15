@@ -4,7 +4,8 @@ Keep changes phase-focused, easy to review, and aligned with the Prometheus sour
 
 ## Before coding
 
-- Read `AGENTS.md` for repository-specific implementation guidance.
+- Read `AGENTS.md` for always-active repository rules.
+- Load the relevant workflow under `.agents/skills/` for phase delivery, debugging, UI work, or database changes.
 - Read the relevant section in `.context/phases.md` before starting implementation work.
 - Read the matching requirements in `.context/`, then use Figma and `.model/` only as visual and interaction references.
 - Read the matching implementation journal in `.docs/phases/` when one already exists so previous decisions and lessons are carried forward.
@@ -39,55 +40,30 @@ Run Playwright for routing, authentication, critical workflow, or UI behavior ch
 pnpm test:e2e
 ```
 
-For bug fixes, reproduce the problem through the closest end-to-end user flow before changing the implementation.
-For each implementation phase, also complete the matching manual acceptance checks in `.testcases/`.
+For bug fixes, follow `.agents/skills/prometheus-debugging/SKILL.md`.
+
+For each implementation phase, follow `.agents/skills/prometheus-phase-delivery/SKILL.md` and complete the matching acceptance checks in `.testcases/`.
 
 ## Database and configuration changes
 
-- Keep Prisma schema changes and their migrations together.
-- Run `pnpm prisma:generate` and `pnpm prisma:validate` after Prisma changes.
-- Update `.env.example` whenever a new required environment variable is introduced, but never commit real secrets.
-- Keep database credentials, direct connection strings, and future service-role secrets out of `VITE_*` variables.
+For persistent data-model or migration work, follow `.agents/skills/prometheus-database-change/SKILL.md`.
+
+Keep Prisma schema changes and their migrations together.
+
+Run `pnpm prisma:generate` and `pnpm prisma:validate` after Prisma changes.
+
+Update `.env.example` whenever a new required environment variable is introduced, but never commit real secrets.
+
+Keep database credentials, direct connection strings, and future service-role secrets out of `VITE_*` variables.
 
 ## Documentation
 
 Update the canonical document when behavior, configuration, architecture, access rules, or workflows change.
+
 Do not duplicate a rule into multiple documents when a pointer to the source of truth is enough.
 
-Each implementation phase must also maintain a phase journal under `.docs/phases/`.
+Each implementation phase must maintain a phase journal under `.docs/phases/`.
 
-The phase journal records what actually happened during implementation, not only what was planned. It should include:
+Use `.docs/phases/README.md` for the journal format and `.agents/skills/prometheus-phase-delivery/SKILL.md` for the delivery workflow.
 
-- delivered scope
-- architecture/data-flow changes
-- database and API changes
-- security decisions
-- acceptance results
-- known limitations and technical debt
-- lessons learned
-- recommended next approach
-
-For meaningful engineering problems and decisions, add a stable Decision & Challenge Log entry such as `P2-D01`.
-
-Each major entry should record:
-
-1. what gave us a hard time
-2. root cause or constraint
-3. options considered
-4. proposed solution
-5. final decision
-6. why it was chosen
-7. observed result
-8. what was learned
-9. the next approach for future work
-10. related files, migrations, tests, or commits
-
-Do not create decision entries for routine formatting or trivial fixes unless they reveal a reusable engineering lesson.
-
-A phase is not complete until:
-
-- its implementation and acceptance checks pass
-- previous completed phases pass the required regression checks
-- its `.docs/phases/phase-XX-*.md` journal is finalized with the actual results and important decisions
-
-See `.docs/phases/README.md` for the phase documentation standard.
+A phase is not complete until its acceptance gate and required regression checks pass and its phase journal reflects the actual delivered result, meaningful decisions, lessons learned, limitations, and next approach.
