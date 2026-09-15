@@ -22,7 +22,23 @@ Create the organization-level source of truth for departments, members, workspac
 - Authentication status display
 - Administrator-only Registry APIs
 
-## Current Figma Implementation Reference
+## Current UI Implementation References
+
+Use both the functional HTML prototype and Figma before implementing the Registry visual layer.
+
+### Functional prototype
+
+Use `.model/finalmodel.html` to inspect the intended Registry interaction behavior and functional UI flow.
+
+Inspect the relevant Registry state to understand the approved behavior for navigation, views, tabs or toggles, drawers or modals, scrolling, controls, state changes, and interaction sequencing.
+
+When practical, inspect the prototype interactively rather than only reading the source.
+
+The prototype is a functional design reference, not production architecture or an authorization boundary.
+
+Do not copy prototype JavaScript state, DOM structure, or frontend-only access checks into production as authoritative behavior.
+
+### Figma visual reference
 
 Use this user-selected Prometheus Figma reference during Phase 2 user-facing implementation:
 
@@ -38,9 +54,13 @@ This node should be treated as an entry point into the current Prometheus visual
 
 Before implementing the Registry visual layer, inspect the relevant Registry frame in the same Figma file through the connected Figma tooling.
 
-Figma governs visual design only.
+Use Figma for visual detail such as layout, spacing, typography, colors, dimensions, icons, and hierarchy.
 
 Registry behavior, access control, persistence, validation, and workflow remain governed by the canonical repository requirements.
+
+If prototype behavior conflicts with canonical requirements, follow the canonical requirements.
+
+If the prototype and Figma differ only visually, follow Figma unless a newer design decision is documented.
 
 ## Security Rules Carried Forward From Phase 1
 
@@ -70,6 +90,9 @@ Shared contracts and validation
         |
         v
 Registry queries and mutations
+        |
+        v
+Inspect Registry interaction in finalmodel.html
         |
         v
 Inspect Registry-specific Figma frame
@@ -152,7 +175,9 @@ Initial recommendations inherited from Phase 1:
 - use accessible semantic form controls so browser tests do not depend on brittle selectors
 - introduce deliberate test fixtures/data for multiple member roles rather than depending indefinitely on one real Administrator account
 - preserve Phase 1 browser regression coverage
+- inspect the relevant Registry interaction in `.model/finalmodel.html` before implementing the production UI
 - inspect the relevant Figma design through the connected Figma tooling before implementing or substantially changing the Registry UI
+- rebuild the approved prototype behavior using maintainable React instead of copying prototype JavaScript architecture
 
 ## Phase Exit Result
 
