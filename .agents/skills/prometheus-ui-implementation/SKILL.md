@@ -1,73 +1,107 @@
 ---
 name: prometheus-ui-implementation
-description: Use when implementing or substantially changing Prometheus user-facing UI. Requires inspecting both the functional HTML prototype and the relevant Figma design, while preserving canonical product, authorization, and persistence rules.
+description: Use when implementing or substantially changing Prometheus user-facing UI. Treats .model/finalmodel.html as the prototype source of truth and Figma as a supporting implementation helper while preserving production security and architecture.
 ---
 
 # Prometheus UI Implementation
 
 Use this workflow for pages, components, navigation, drawers, modals, responsive behavior, visual refinements, and substantial interaction changes.
 
-## 1. Inspect both implementation references before coding
+Read `.context/ui-reference.md` before substantial UI work.
 
-For substantial user-facing work, inspect both the functional HTML prototype and the relevant Figma design before implementing the production UI.
+## 1. Start from the functional prototype
 
-Do not use only one of them when both are available.
+For the main authenticated application, `.model/finalmodel.html` is the prototype source of truth.
 
-### Functional HTML prototype
+The goal is to turn that prototype into the real working Prometheus application.
 
-Primary functional prototype:
+Do not treat it as loose inspiration.
 
-`.model/finalmodel.html`
+Inspect the relevant prototype workflow before implementing the production screen.
 
-Authentication-specific prototype:
+When practical, run and interact with the prototype instead of only reading its source.
 
-`.model/login-page.html`
+Assume user-visible behavior demonstrated by the prototype should exist in production unless the user explicitly changes that product decision.
 
-Use the relevant prototype to understand the approved UI interaction behavior, including where applicable:
+Capture all relevant details, including where applicable:
 
-- navigation flow
-- page composition and screen transitions
+- page and screen composition
+- navigation flow and destinations
+- visible fields
+- buttons and actions
 - tabs and toggles
 - drawers and modals
+- backdrop, Escape, and close behavior
 - expandable and collapsible regions
 - scrolling behavior
-- button behavior
+- state changes visible to the user
+- loading, empty, success, and error presentation demonstrated by the prototype
 - repeated open and close behavior
-- visible UI state after user actions
+- profile and settings interactions
+- sidebar behavior
 - interaction sequencing
-- functional relationships between controls on the screen
+- functional relationships between controls
 
-When practical, inspect the prototype as an interactive page rather than only reading its source.
+If production differs from `finalmodel.html`, do not automatically preserve the production difference.
 
-The prototype is a functional design reference, not production architecture.
+Treat the difference as something to reconcile.
 
-Do not copy prototype JavaScript state, DOM structure, local state, or frontend-only permission checks into production as authoritative business logic.
+Authentication-specific user-visible behavior should follow `.model/login-page.html`.
+
+## 2. Preserve the experience, not the prototype implementation technique
+
+The prototype is authoritative for the intended application experience, but its JavaScript and DOM are not production architecture.
+
+Do not copy prototype JavaScript state, mock data, DOM structure, local persistence, or frontend-only permission checks as the real implementation.
 
 Do not migrate `finalmodel.html` into one giant React component.
 
-Rebuild the approved behavior using maintainable production React components and the architecture defined in `.context/tech-stack.md`.
+Rebuild the demonstrated experience using maintainable production code and `.context/tech-stack.md`.
 
-### Figma visual design
+Use real APIs, backend authorization, validation, and PostgreSQL persistence where the prototype only simulates them.
 
-#### Figma MCP / connected integration prerequisite
+If a prototype feature requires a field, state, or relationship missing from the current production data model, do not silently omit the feature.
 
-For the best design fidelity, configure Figma MCP or an equivalent connected Figma integration before substantial Prometheus UI implementation.
+Identify the mismatch and reconcile the requirements and persistence model before continuing.
 
-The integration should be able to access the target Prometheus Figma file and the specific node or frame being implemented.
+## 3. Use Figma as a helper, not the source of truth
 
-Use the live Figma connection to inspect the actual design context, node structure, screenshots, variables, dimensions, components, and other available design metadata instead of relying only on a pasted URL, memory, or static screenshots.
+Figma is a supporting visual implementation reference.
 
-Before coding a substantial UI change, verify that the Figma connection can open the relevant file and node.
+It should help the agent inspect details that are easier to extract from structured design data than from the HTML prototype.
 
-If Figma MCP or the equivalent integration is unavailable, disconnected, or cannot access the file, state that limitation explicitly.
+Use Figma for things such as:
 
-Do not pretend live Figma inspection occurred when it did not.
+- measurements
+- spacing
+- typography
+- colors
+- icons
+- design tokens and variables
+- component details
+- frame structure
+- screenshots
+- fine visual alignment
 
-Non-visual/backend work may continue when Figma access is unavailable, but visual implementation or visual verification should be treated as incomplete until the relevant design can be inspected.
+When Figma and `.model/finalmodel.html` disagree about the application experience, follow `finalmodel.html` unless an explicit newer product decision says otherwise.
 
-When live Figma access is unavailable, use `.model/finalmodel.html` plus any accessible Figma exports or screenshots as the fallback reference.
+Do not redesign prototype behavior merely to match an inconsistent Figma frame.
 
-Current user-selected Prometheus Figma reference:
+### Figma MCP / connected integration
+
+For better visual accuracy, configure Figma MCP or an equivalent connected Figma integration when available.
+
+The integration should be able to access the target Prometheus Figma file and the specific node or frame relevant to the implementation.
+
+Use the live connection to inspect design context, screenshots, variables, dimensions, components, and node structure instead of relying only on a pasted URL.
+
+If the Figma connection is unavailable or cannot access the file, state that limitation explicitly.
+
+Do not claim live Figma inspection occurred when it did not.
+
+Lack of Figma access does not make `finalmodel.html` secondary and does not block implementation when the prototype contains the required interaction and design reference.
+
+Current Prometheus Figma helper reference:
 
 `https://www.figma.com/design/8zgQ4pcWtku7rSWzjlP9K9/Prometheus?node-id=17-4603&t=9bvq2LAHiC0GPJs7-1`
 
@@ -75,50 +109,24 @@ File key: `8zgQ4pcWtku7rSWzjlP9K9`
 
 Starting node: `17:4603`
 
-Before implementing or substantially changing user-facing UI, access the Figma file through the available Figma integration rather than relying only on the URL, screenshots, or memory.
+If the current phase or `.docs/CURRENT.md` provides a more specific Figma node, inspect that node as a helper for the relevant screen.
 
-Use the provided starting node as an entry point into the current design file, then inspect the exact page or frame relevant to the screen being implemented.
+## 4. Resolve conflicts correctly
 
-If the current phase or `.docs/CURRENT.md` provides a more specific Figma node, prefer that node.
+Apply this order when implementation references disagree:
 
-Use Figma as the source of truth for visual details such as:
+1. `.model/finalmodel.html` owns the intended user-visible prototype behavior and main application experience.
+2. `.model/login-page.html` owns the authentication-screen prototype experience.
+3. SRS and `user-flows.md` define business and authorization intent that production must enforce securely behind that experience.
+4. `data-model.md` defines the current persistence model, but a mismatch with a required prototype feature must be reconciled rather than solved by silently deleting the feature.
+5. `tech-stack.md` owns production architecture.
+6. Figma is a helper for visual implementation detail.
 
-- layout
-- spacing
-- typography
-- colors
-- component appearance
-- visual hierarchy
-- icons
-- dimensions
-- responsive visual intent
+If a real security or data-integrity conflict remains, surface it explicitly and resolve it instead of silently changing the prototype behavior or weakening backend safeguards.
 
-## 2. Resolve reference conflicts correctly
+## 5. Reuse canonical assets
 
-Use the canonical repository requirements for product behavior, authorization, persistence, and domain rules.
-
-Use `.model/finalmodel.html` as the approved functional UI interaction reference where it does not conflict with canonical requirements.
-
-Use Figma as the approved visual reference.
-
-When references disagree:
-
-- SRS owns functional requirements and business rules.
-- `user-flows.md` owns authorization and canonical workflow behavior.
-- `data-model.md` owns persistent relationships and state.
-- `tech-stack.md` owns production architecture.
-- `.model/finalmodel.html` owns intended UI interaction behavior where canonical requirements do not override it.
-- Figma owns visual design.
-
-If Figma and `finalmodel.html` differ only in visual detail, follow Figma unless a newer design decision is documented.
-
-If the prototype conflicts with canonical access control, persistence, or business rules, follow the canonical requirements.
-
-Do not infer authorization or database behavior from either Figma or prototype JavaScript.
-
-## 3. Reuse canonical assets
-
-Use repository assets instead of recreating them when the design calls for them.
+Use repository assets instead of recreating them when the prototype or supporting design calls for them.
 
 Authentication assets:
 
@@ -129,9 +137,9 @@ Authenticated workspace background:
 
 - `/backgrounds/editorial-gradient.webp`
 
-Do not duplicate these assets into `src/` or approximate them with CSS unless a specific design requirement calls for a different treatment.
+Do not duplicate these assets into `src/` or approximate them with CSS unless the intended prototype experience requires a different treatment.
 
-## 4. Preserve frontend architecture
+## 6. Preserve frontend architecture
 
 Use the approved frontend stack from `.context/tech-stack.md`.
 
@@ -145,20 +153,24 @@ General boundaries:
 
 Do not duplicate persistent server-managed business state into frontend-only stores.
 
-## 5. Treat visual and interaction correctness as functional correctness
+## 7. Treat prototype fidelity as part of correctness
 
 Inspect the production implementation in a real browser whenever possible.
 
-Compare it against both the relevant prototype interaction and the relevant Figma frame.
+Compare the working application directly against the relevant workflow in `finalmodel.html`.
+
+Use Figma as an additional helper for fine visual comparison when available.
 
 Check:
 
 - interaction sequence
 - navigation result
+- fields and controls present
 - modal and drawer behavior
 - tab and toggle state
 - expand and collapse behavior
 - scrolling behavior
+- visible state changes
 - alignment
 - spacing
 - typography
@@ -173,11 +185,11 @@ Check:
 - icon consistency
 - visual hierarchy
 
-Do not preserve an obvious prototype defect merely for prototype fidelity.
+An unexplained user-visible difference from the prototype should be treated as a defect or unresolved product conflict.
 
-If an interaction in the prototype is clearly inconsistent with canonical requirements, implement the canonical behavior and document the difference when it is meaningful.
+Do not preserve an obvious accidental prototype bug when it clearly contradicts an explicit user decision, security requirement, or later documented correction.
 
-## 6. Verify responsive behavior
+## 8. Verify responsive behavior
 
 Do not optimize only for the development viewport.
 
@@ -195,26 +207,26 @@ Watch for accidental overflow caused by:
 
 Collapsed navigation must remain usable and important actions must remain discoverable.
 
-Fixed-height dashboard areas may use intentional internal vertical scrolling where the approved interaction calls for it.
+Fixed-height areas may use intentional internal scrolling when that matches the prototype behavior.
 
-## 7. Handle overlays correctly
+## 9. Handle overlays correctly
 
 For modals and drawers:
 
-- Match the intended interaction shown in the functional prototype.
+- Match the interaction demonstrated in `finalmodel.html`.
 - Keep modal content inside an overlay rather than normal page flow.
 - Use internal scrolling when content exceeds the intended height.
 - Keep drawers attached to the intended screen edge.
 - Do not let drawers unexpectedly reflow the underlying page.
 - Prevent duplicate dialogs or duplicate confirmation interfaces.
-- Consider Escape behavior where appropriate.
+- Match Escape behavior where demonstrated or appropriate.
 - Provide explicit close actions.
 - Preserve reasonable focus behavior.
 - Consider background interaction, long content, small viewports, and repeated open and close cycles.
 
 Prefer reusable overlay primitives once the same pattern appears repeatedly.
 
-## 8. Preserve accessibility
+## 10. Preserve accessibility
 
 Use semantic interactive elements.
 
@@ -230,14 +242,16 @@ Do not remove accessibility behavior for visual styling.
 
 Design accessible names so automated browser tests can target controls reliably without brittle implementation-specific selectors.
 
-## 9. Browser verification checklist
+## 11. Browser verification checklist
 
-For substantial user-facing changes, verify the intended prototype behavior and inspect relevant visual states:
+For substantial user-facing changes, verify the prototype workflow and relevant visual states:
 
 ```text
-Default
-Primary interaction path
+Prototype primary path
+All visible prototype controls
+Navigation result
 Repeated open and close
+Default
 Hover
 Focus
 Loading
