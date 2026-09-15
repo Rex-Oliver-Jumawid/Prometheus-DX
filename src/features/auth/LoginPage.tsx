@@ -167,6 +167,7 @@ export function LoginPage() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
+                  aria-label="Password"
                   aria-invalid={Boolean(errors.password)}
                   placeholder="Enter your password"
                   {...register('password')}
