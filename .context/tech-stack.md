@@ -6,7 +6,9 @@ Prometheus will be implemented as a single-deployment web application for intern
 
 The system will use a React-based single-page application for the frontend, a NestJS backend for business logic and API handling, Supabase PostgreSQL for persistent data, Supabase Auth for authentication, Brevo for member invitation emails, and Vercel for deployment.
 
-The implementation should use the Software Requirements Specification as the source of truth for system behavior, the Figma design as the source of truth for visual design, and `finalmodel.html` as the current interaction and workflow reference.
+The implementation should use the Software Requirements Specification as the source of truth for functional requirements, `user-flows.md` as the canonical behavioral and access-control reference, Figma as the source of truth for visual design, and `finalmodel.html` as the current prototype and interaction reference.
+
+When these references disagree, the conflict should be resolved explicitly before implementation.
 
 ---
 
@@ -16,7 +18,7 @@ The implementation should use the Software Requirements Specification as the sou
 | --- | --- | --- |
 | Primary Language | TypeScript | Shared language across frontend and backend |
 | Frontend | React | Builds the user interface |
-| Build Tool | Vite | Fast local development and production builds |
+| Build Tool | Vite | Local development and production build pipeline |
 | Routing | React Router | Client-side SPA navigation |
 | Server Data | TanStack Query | API fetching, caching, mutations, and refetching |
 | Shared UI State | Zustand | Shared temporary frontend state |
@@ -31,8 +33,8 @@ The implementation should use the Software Requirements Specification as the sou
 | Database | Supabase PostgreSQL | Primary relational database |
 | Authentication | Supabase Auth | Authentication, sessions, and account identity |
 | Google Sign-In | Google OAuth Client through Supabase Auth | Google account authentication |
-| File Storage | Supabase Storage | Profile images and future project attachments |
-| Realtime | Supabase Realtime | Chat, presence, and live notifications |
+| File Storage | Supabase Storage | Profile images and project/output attachments |
+| Realtime | Supabase Realtime | Chat, presence, and live notifications where useful |
 | Email | Brevo Transactional Email API | Member invitation and account setup emails |
 | Unit Testing | Vitest | Unit and utility testing |
 | Component Testing | React Testing Library | React component behavior testing |
@@ -40,7 +42,7 @@ The implementation should use the Software Requirements Specification as the sou
 | Package Manager | pnpm | Dependency management |
 | Source Control | GitHub | Repository and version control |
 | Continuous Integration | GitHub Actions | Linting, type checking, tests, and build validation |
-| Deployment | Vercel | Single production deployment |
+| Deployment | Vercel | Initial production deployment |
 
 ---
 
@@ -91,6 +93,12 @@ The implementation should use the Software Requirements Specification as the sou
      Notifications
 ```
 
+Authentication identifies the account.
+
+NestJS determines whether that identity is an authorized Prometheus member and evaluates all protected business rules.
+
+The frontend may hide or disable unavailable controls, but it must not be treated as the authority for access control.
+
 ---
 
 ## 4. Frontend
@@ -106,16 +114,18 @@ Primary frontend areas include:
 - Home dashboard
 - Projects
 - Project workspace
+- Project member access management
 - Project stages
 - Outcomes
+- Outcome Membership
 - Features and tasks
-- Outputs and review
+- Shared outcome submissions and review
 - Schedule
 - Shifts and work sessions
 - Team
 - Notifications
 - Reports and analytics
-- Admin registry
+- Admin Registry
 - Profile and account interface
 
 ### 4.2 TypeScript
@@ -140,9 +150,7 @@ Example routes may include:
 /
 /projects
 /projects/:projectId
-/projects/:projectId/outcomes
 /projects/:projectId/outcomes/:outcomeId
-/projects/:projectId/outputs
 /projects/:projectId/chat
 /schedule
 /team
@@ -152,17 +160,20 @@ Example routes may include:
 /profile
 ```
 
+The `/admin` route must require the Administrator organization role.
+
 ### 4.5 TanStack Query
 
 TanStack Query will manage server data in the React application.
 
-It will be used for fetching, caching, updating, invalidating, and refetching data from the NestJS API.
-
-Examples include:
+It will be used for fetching, caching, updating, invalidating, and refetching server-managed data such as:
 
 - Projects
 - Project details
+- Project Member access levels
 - Outcomes
+- Outcome Memberships
+- Shared outcome submission history
 - Tasks
 - Members
 - Departments
@@ -171,7 +182,7 @@ Examples include:
 - Notifications
 - Reports
 
-TanStack Query should be used for server-managed data rather than temporary UI state.
+TanStack Query should be used for server-managed state rather than duplicating persistent business data in frontend-only stores.
 
 ### 4.6 Zustand
 
@@ -185,15 +196,12 @@ Examples include:
 - Selected filters
 - Temporary board scope
 - Temporary schedule view
-- Other shared interface state
 
 Local component state should still use normal React state when global sharing is unnecessary.
 
 ### 4.7 React Hook Form
 
-React Hook Form will manage structured forms.
-
-Examples include:
+React Hook Form will manage structured forms such as:
 
 - Add Member
 - Create Project
@@ -208,36 +216,17 @@ Examples include:
 
 Zod will define and validate data schemas.
 
-Zod schemas should be reusable between the frontend and backend where practical.
+Zod schemas should be reusable between frontend and backend where practical.
 
-Frontend validation improves the user experience, while backend validation remains mandatory because the server must not trust browser input.
+Frontend validation improves user experience, while backend validation remains mandatory because the server must not trust browser input.
 
-### 4.9 Tailwind CSS
+### 4.9 Styling
 
-Tailwind CSS will be the main CSS framework.
-
-It will handle:
-
-- Layout
-- Spacing
-- Typography
-- Responsive behavior
-- Cards
-- Forms
-- Buttons
-- Badges
-- Tabs
-- Common component styling
+Tailwind CSS will handle common layout, spacing, typography, cards, forms, buttons, badges, tabs, and responsive behavior.
 
 Prometheus-specific design tokens will remain centralized through CSS variables.
 
-Custom CSS will still be used where Tailwind becomes awkward, especially for:
-
-- Complex schedule layouts
-- Dragging and resizing
-- Liquid glass effects
-- Advanced animations
-- Special interaction states
+Custom CSS will remain appropriate for complex schedule layouts, liquid glass effects, advanced animations, and interactions that are awkward to express through utility classes.
 
 ---
 
@@ -245,16 +234,17 @@ Custom CSS will still be used where Tailwind becomes awkward, especially for:
 
 ### 5.1 NestJS
 
-NestJS will be the backend framework.
-
 NestJS will be responsible for:
 
 - REST endpoints
 - Authentication verification
-- Authorization
+- Workspace authorization
+- Registry authorization
 - Project permissions
-- Business rules
-- Workflow transitions
+- Project Member access levels
+- Outcome Membership rules
+- Project and outcome state transitions
+- Shared submission history
 - Input validation
 - Database operations
 - Invitation handling
@@ -262,38 +252,57 @@ NestJS will be responsible for:
 
 The frontend must not be the authority for important business rules.
 
-Examples of business rules that belong in NestJS include:
+Current business rules that belong in NestJS include:
 
-- Only authorized users can access Prometheus.
-- Only administrators can manage company members and departments.
-- Project Lead privileges apply only to projects the member leads.
-- A prerequisite can lock a dependent outcome.
-- Accepting or resolving a prerequisite can unlock another outcome.
-- Completing tasks updates outcome progress.
-- Members should not modify another member's schedule unless specifically authorized.
+- Only active authorized Prometheus members may enter the workspace.
+- Only Administrators may access Registry operations.
+- Administrator status does not automatically grant project-level authority.
+- Project creation is available to any active authorized user.
+- Project creation itself grants no continuing special authority to the creator.
+- Project Lead authority applies only to projects the user leads.
+- Project Membership is derived from Outcome Membership.
+- Project Members default to `CAN_VIEW`.
+- Only the Project Lead may grant or revoke `CAN_EDIT` for Project Members.
+- Project Leads and Project Members with `CAN_EDIT` may change project status.
+- A project may be marked `DONE` without every outcome being accepted.
+- A project that remains `DONE` for 14 days becomes `ARCHIVED`.
+- Any active authorized user may join a locked outcome or an outcome that is `FOR_REVIEW` or `NEEDS_REVISION`.
+- Outcome Membership is permanent once created.
+- Outcome Members cannot leave and Project Leads cannot remove them.
+- Each outcome has one shared submission history.
+- Multiple submissions may be `FOR_REVIEW` at the same time.
+- Outcome Members may continue submitting while the outcome is not accepted and submission is not blocked by dependency rules.
+- Only the Project Lead may accept or reopen an outcome.
+- Reopening preserves Outcome Membership, submission history, and acceptance history.
 - Output review and acceptance must be enforced by the backend.
 
 ### 5.2 REST API
 
 Prometheus will use REST for frontend-to-backend communication.
 
-Example endpoints may include:
+Exact endpoint naming will be finalized with the data model, but the API will need operations equivalent to:
 
 ```text
 GET    /api/projects
 POST   /api/projects
 GET    /api/projects/:id
 PATCH  /api/projects/:id
+PATCH  /api/projects/:id/status
+
+GET    /api/projects/:id/members
+PATCH  /api/projects/:id/members/:memberId/access
 
 GET    /api/projects/:id/outcomes
 POST   /api/projects/:id/outcomes
+GET    /api/outcomes/:id
+POST   /api/outcomes/:id/join
+POST   /api/outcomes/:id/submissions
+GET    /api/outcomes/:id/submissions
+POST   /api/outcomes/:id/request-revision
+POST   /api/outcomes/:id/accept
+POST   /api/outcomes/:id/reopen
 
 PATCH  /api/tasks/:id
-
-POST   /api/outcomes/:id/outputs
-POST   /api/outputs/:id/submit
-POST   /api/outputs/:id/accept
-POST   /api/outputs/:id/request-revision
 
 GET    /api/schedule
 PATCH  /api/schedule
@@ -303,6 +312,8 @@ POST   /api/work-sessions/time-out
 
 GET    /api/notifications
 ```
+
+Project Member access, outcome joining, submission creation, acceptance, reopening, and Registry actions must all be rechecked by the backend on every protected request.
 
 ---
 
@@ -314,36 +325,41 @@ Supabase PostgreSQL will be the primary persistent database.
 
 Prometheus has strongly relational data, so PostgreSQL is preferred over a document database.
 
-Core entities are expected to include:
+The final relational schema will be defined in `data-model.md` before the Prisma schema is finalized.
 
-- Users
+Core entities currently expected include:
+
 - Members
 - Departments
 - Projects
-- Project members
-- Project leads
-- Stages
+- Project Member access records
+- Project stages
 - Outcomes
-- Outcome assignments
+- Outcome Memberships
+- Outcome dependencies
 - Acceptance criteria
 - Features
 - Tasks
-- Outputs
-- Output versions
-- Reviews
+- Outcome submissions
+- Submission reviews or review events
+- Outcome acceptance/reopen history
 - Schedules
 - Work sessions
 - Notifications
 - Messages
 - Activity logs
 
+The previous `Outcome assignments` model is no longer canonical.
+
+Participation is based on Outcome Membership created when a user joins an outcome.
+
+The database must preserve historical Outcome Membership and submission/acceptance history rather than replacing those records with only the current state.
+
 ### 6.2 Prisma
 
 Prisma will be used between NestJS and PostgreSQL.
 
-Prisma is not the database.
-
-Its purpose is to provide:
+Prisma will provide:
 
 - Type-safe database queries
 - Relational data access
@@ -389,13 +405,13 @@ The authenticated Google email must match an authorized Prometheus member record
 
 The system should use the verified email returned by Google rather than checking whether an address ends in `@gmail.com`.
 
-This also allows Google Workspace accounts such as `employee@company.com` to authenticate through Google.
+This also allows Google Workspace accounts to authenticate through Google.
 
 ### 7.3 Prometheus Membership
 
 Authentication and Prometheus membership are separate concepts.
 
-An administrator must authorize a member before the account is allowed into Prometheus.
+An Administrator must authorize a member before the account is allowed into Prometheus.
 
 An invited member record may initially contain:
 
@@ -417,13 +433,13 @@ status = ACTIVE
 auth_user_id = authenticated Supabase user ID
 ```
 
-If an authenticated account does not match an authorized Prometheus member, access should be denied.
+If an authenticated account does not match an active authorized Prometheus member, access must be denied.
 
 ---
 
 ## 8. Roles and Permissions
 
-Prometheus must keep organization roles, project relationships, and work ownership separate.
+Prometheus must keep organization role, project authority, project access, and outcome participation separate.
 
 ### Organization Role
 
@@ -432,39 +448,65 @@ ADMINISTRATOR
 MEMBER
 ```
 
-### Project Relationship
+The organization role controls workspace-level capabilities such as Registry access.
+
+### Project Lead
 
 ```text
-LEAD
-PARTICIPANT
+project.lead_user_id
 ```
 
-### Work Ownership
+Project Lead is a relationship to one project, not an organization role.
+
+An Administrator has no automatic Project Lead authority.
+
+### Project Member Access
 
 ```text
-DEPARTMENT
-ASSIGNED MEMBER OR MEMBERS
+CAN_VIEW
+CAN_EDIT
 ```
 
-Project Lead must not be implemented as a permanent organization-wide user role.
+A user becomes a Project Member by belonging to at least one outcome in the project.
 
-A member may simultaneously be:
+Project Members default to `CAN_VIEW`.
+
+Only the Project Lead may change a Project Member's project access to or from `CAN_EDIT`.
+
+`CAN_EDIT` does not equal Project Lead.
+
+### Outcome Membership
 
 ```text
-Organization Role: Member
-
-Project A: Lead
-Project B: Participant
-Project C: Participant
+OUTCOME_MEMBER
 ```
+
+Outcome Membership is created when an active authorized user joins an outcome.
+
+Outcome Membership is permanent and specific to that outcome.
+
+It grants work and submission rights within that outcome according to its current workflow state.
+
+A single member may therefore simultaneously be:
+
+```text
+Organization Role: ADMINISTRATOR
+
+Project A: PROJECT LEAD
+Project B: PROJECT MEMBER - CAN_VIEW
+Project C: PROJECT MEMBER - CAN_EDIT
+
+Outcome A1: OUTCOME MEMBER
+Outcome B2: OUTCOME MEMBER
+```
+
+These relationships must not be collapsed into a single global role field.
 
 ---
 
 ## 9. Member Invitation and Email
 
-Brevo will initially be used only for member invitation and account setup email.
-
-Prometheus does not currently require email notifications for project events.
+Brevo will initially be used for member invitation and account setup email.
 
 The invitation flow will be:
 
@@ -472,7 +514,7 @@ The invitation flow will be:
 Administrator adds member
         |
         v
-NestJS creates member record
+NestJS creates authorized member record
 status = INVITED
         |
         v
@@ -492,7 +534,7 @@ Continue with Google     Email/password setup
              Supabase Auth
                    |
                    v
-NestJS checks authenticated email
+NestJS checks authenticated identity
 against authorized membership
                    |
             +------+------+
@@ -519,11 +561,7 @@ Initial candidates include:
 - Working-now indicators
 - Live notification updates
 
-Persistent work sessions must remain stored in PostgreSQL and must not rely on presence state.
-
-Presence answers whether a user is currently online or active.
-
-Work sessions record actual Time In and Time Out activity.
+Persistent business state such as Outcome Membership, project access, submissions, project status, and work sessions must remain stored in PostgreSQL and must not rely on ephemeral presence state.
 
 ---
 
@@ -535,13 +573,13 @@ Examples include:
 
 - Profile pictures
 - Project attachments
-- Output attachments
+- Outcome submission attachments
 - Screenshots
 - PDFs
 - Documents
 - Exported design files
 
-PostgreSQL should store file metadata and storage references.
+PostgreSQL should store file metadata, ownership/context references, and storage object references.
 
 ---
 
@@ -549,7 +587,7 @@ PostgreSQL should store file metadata and storage references.
 
 ### Vitest
 
-Vitest will be used for unit tests and utility logic.
+Vitest will be used for unit tests and utility/business-rule logic.
 
 ### React Testing Library
 
@@ -561,33 +599,39 @@ Playwright will be the primary end-to-end testing tool.
 
 Important Prometheus workflows should be verified from the end-user perspective.
 
-Example project workflow:
+A representative project workflow is:
 
 ```text
-Admin adds member
+Administrator adds member
         |
 Member activates account
         |
-Lead creates project
+Authorized user creates project
         |
-Lead creates stage
+Project Lead creates stage and outcome
         |
-Lead creates outcome
+Member joins outcome
         |
-Member receives assignment
+Member becomes Outcome Member and Project Member
         |
-Member completes tasks
+Project Lead optionally grants CAN_EDIT
         |
-Member submits output
+Outcome Members submit multiple entries
         |
-Lead reviews output
+Project Lead reviews shared submission history
         |
-Lead requests revision or accepts
+Project Lead requests revision or accepts outcome
         |
-Dependent outcome unlocks
+Project Lead may later reopen outcome
 ```
 
-Example schedule workflow:
+A separate test should verify that a Project Member with `CAN_EDIT` may change project status but may not perform Project Lead-only operations.
+
+A separate test should verify that an Administrator who is not the Project Lead receives no project-level override.
+
+A separate test should verify automatic transition from `DONE` to `ARCHIVED` after 14 days.
+
+The schedule workflow remains:
 
 ```text
 Member configures schedule
@@ -605,21 +649,11 @@ Reports reflect updated work data
 
 ## 13. Deployment
 
-Prometheus will use one Vercel project.
+Prometheus will initially use one Vercel project.
 
 The frontend and backend will remain architecturally separate in the source code but will ship as one deployment.
 
 The same application origin can serve both UI routes and API routes.
-
-Example:
-
-```text
-https://prometheus.example.com/projects
-https://prometheus.example.com/schedule
-
-https://prometheus.example.com/api/projects
-https://prometheus.example.com/api/members
-```
 
 This keeps the initial deployment simple and avoids unnecessary frontend-to-backend CORS configuration.
 
@@ -635,22 +669,19 @@ prometheus/
 ├── src/
 │   ├── app/
 │   ├── routes/
-│   |
 │   ├── features/
 │   │   ├── home/
 │   │   ├── projects/
 │   │   ├── outcomes/
-│   │   ├── outputs/
+│   │   ├── submissions/
 │   │   ├── schedule/
 │   │   ├── team/
 │   │   ├── notifications/
 │   │   ├── reports/
 │   │   └── admin/
-│   |
 │   ├── components/
 │   │   ├── ui/
 │   │   └── layout/
-│   |
 │   ├── hooks/
 │   └── lib/
 │
@@ -660,8 +691,8 @@ prometheus/
 │   ├── departments/
 │   ├── projects/
 │   ├── outcomes/
+│   ├── submissions/
 │   ├── tasks/
-│   ├── outputs/
 │   ├── schedules/
 │   ├── work-sessions/
 │   ├── notifications/
@@ -688,53 +719,23 @@ prometheus/
 
 ## 15. System Design References
 
-The following references should guide implementation.
-
 ### Software Requirements Specification
 
-The SRS defines:
+The SRS defines the functional requirements, business rules, permissions, workflow behavior, and system constraints.
 
-- Functional requirements
-- Business rules
-- Permissions
-- User roles
-- Workflow behavior
-- System constraints
+### `user-flows.md`
 
-The SRS is the primary reference for what the system must do.
+`user-flows.md` is the canonical behavioral reference for authentication, project access, Project Member permissions, Outcome Membership, submission behavior, and lifecycle transitions.
 
 ### Figma
 
-Prometheus Figma design:
-
-https://www.figma.com/design/8zgQ4pcWtku7rSWzjlP9K9/Prometheus?node-id=19-12077&t=WEpRDccEfW56hE0W-1
-
-Figma defines:
-
-- Visual design
-- Layout
-- Typography
-- Colors
-- Spacing
-- Component appearance
-- Responsive design intent
-- UI interaction design
+Figma defines visual design, layout, typography, colors, spacing, component appearance, responsive design intent, and UI interaction design.
 
 ### `finalmodel.html`
 
-The existing prototype defines the current interaction model and implementation reference for:
+The prototype remains an interaction reference for navigation, project boards, stages, outcomes, submission review, modals and drawers, schedule interactions, and workspace behavior.
 
-- Navigation
-- Project boards
-- Stages
-- Outcomes
-- Output review
-- Modals and drawers
-- Schedule interactions
-- Project workspace behavior
-- Current prototype workflows
-
-When the three references disagree, the conflict should be resolved explicitly before implementation rather than silently choosing one source.
+Prototype-only behavior must not override the SRS or `user-flows.md`.
 
 ---
 
@@ -778,7 +779,7 @@ Supabase Realtime
 
 EMAIL
 Brevo Transactional Email API
-Member invitation/account setup only
+Member invitation/account setup
 
 TESTING
 Vitest
@@ -791,13 +792,19 @@ GitHub Actions
 pnpm
 
 DEPLOYMENT
-One Vercel project
+One Vercel project initially
 ```
+
+---
 
 ## 17. Final Architecture Principle
 
-The finalized Prometheus architecture is:
-
-> React, TypeScript, Vite, and Tailwind CSS for the frontend; NestJS for backend business logic; Prisma and Supabase PostgreSQL for persistence; Supabase Auth with Google OAuth for authentication; Supabase Storage and Realtime for supporting services; Brevo for member invitation emails; and one Vercel deployment.
-
 Prometheus should remain modular internally even though the initial version is deployed as one application.
+
+Persistent business state belongs in PostgreSQL.
+
+Authorization and workflow rules belong in NestJS.
+
+The frontend should render the permissions returned by the system rather than inventing them independently.
+
+The relational structure described in the future `data-model.md` should be agreed before the Prisma schema is treated as stable.
