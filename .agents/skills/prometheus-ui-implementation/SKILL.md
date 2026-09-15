@@ -49,6 +49,24 @@ Rebuild the approved behavior using maintainable production React components and
 
 ### Figma visual design
 
+#### Figma MCP / connected integration prerequisite
+
+For the best design fidelity, configure Figma MCP or an equivalent connected Figma integration before substantial Prometheus UI implementation.
+
+The integration should be able to access the target Prometheus Figma file and the specific node or frame being implemented.
+
+Use the live Figma connection to inspect the actual design context, node structure, screenshots, variables, dimensions, components, and other available design metadata instead of relying only on a pasted URL, memory, or static screenshots.
+
+Before coding a substantial UI change, verify that the Figma connection can open the relevant file and node.
+
+If Figma MCP or the equivalent integration is unavailable, disconnected, or cannot access the file, state that limitation explicitly.
+
+Do not pretend live Figma inspection occurred when it did not.
+
+Non-visual/backend work may continue when Figma access is unavailable, but visual implementation or visual verification should be treated as incomplete until the relevant design can be inspected.
+
+When live Figma access is unavailable, use `.model/finalmodel.html` plus any accessible Figma exports or screenshots as the fallback reference.
+
 Current user-selected Prometheus Figma reference:
 
 `https://www.figma.com/design/8zgQ4pcWtku7rSWzjlP9K9/Prometheus?node-id=17-4603&t=9bvq2LAHiC0GPJs7-1`
