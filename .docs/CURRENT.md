@@ -40,6 +40,7 @@ Phase 0 - Foundation is also complete.
 - The Department Prisma model, staged Member-to-Department foreign key, shared Registry contracts, Registry page, department dialog, and focused browser acceptance test are now part of the implementation.
 - Existing Phase 1 members intentionally retain a nullable `department_id` until the member-assignment slice provides a deliberate backfill path.
 - Project workflows are split between concise always-on rules in `AGENTS.md` and reusable procedures under `.agents/skills/`.
+- `.context/ui-reference.md` now defines `.model/finalmodel.html` as the prototype source of truth for the main application experience.
 
 ## Required Session Startup
 
@@ -48,14 +49,14 @@ Before making implementation changes in a new session:
 1. Read `AGENTS.md`.
 2. Read this file.
 3. Read `.agents/skills/prometheus-phase-delivery/SKILL.md`.
-4. Read the Phase 2 section of `.context/phases.md`.
-5. Read `.docs/phases/phase-02-registry.md`.
-6. Read `.testcases/phase-02-registry-tests.md`.
-7. Read the Registry-related requirements in the SRS, user flows, data model, and tech stack.
-8. Inspect the current Registry frontend, backend, Prisma model, and authorization implementation before changing code.
-9. For substantial user-facing implementation, inspect the relevant interaction in `.model/finalmodel.html` and load `.agents/skills/prometheus-ui-implementation/SKILL.md`.
-10. Confirm Figma MCP or an equivalent connected Figma integration is configured and can access the Prometheus design file before substantial production UI work.
-11. Inspect the relevant Figma design through that live connection before writing or substantially changing production UI.
+4. Read `.context/ui-reference.md` before substantial user-facing work.
+5. Read the Phase 2 section of `.context/phases.md`.
+6. Read `.docs/phases/phase-02-registry.md`.
+7. Read `.testcases/phase-02-registry-tests.md`.
+8. Read the Registry-related requirements in the SRS, user flows, data model, and tech stack.
+9. Inspect the current Registry frontend, backend, Prisma model, and authorization implementation before changing code.
+10. For substantial user-facing implementation, run or inspect the relevant workflow in `.model/finalmodel.html` first and load `.agents/skills/prometheus-ui-implementation/SKILL.md`.
+11. Use Figma MCP or an equivalent connected Figma integration as a helper for visual detail when available.
 
 Load additional project skills when relevant:
 
@@ -63,15 +64,25 @@ Load additional project skills when relevant:
 - Debugging: `.agents/skills/prometheus-debugging/SKILL.md`
 - Prisma or persistent data changes: `.agents/skills/prometheus-database-change/SKILL.md`
 
-## Current Prototype and Figma References
+## Prototype Source of Truth
 
-For Registry interaction behavior, inspect `.model/finalmodel.html`.
+For the main authenticated application, `.model/finalmodel.html` is the prototype source of truth.
 
-The current department prototype opens `+ Add department` in a modal and includes name, short label, and description fields.
+The app being built should reproduce the user-visible experience demonstrated there rather than invent a different workflow.
 
-Production intentionally omits the prototype-only short label because the canonical Department model contains only name and description.
+When a control, field, modal, drawer, navigation path, state, or interaction exists in `finalmodel.html`, assume it belongs in production unless the user explicitly changes that product decision.
 
-Use this user-selected Prometheus Figma reference during implementation:
+If the current implementation differs from the prototype, reconcile the difference instead of automatically treating the implementation as correct.
+
+The production implementation should preserve the prototype experience while replacing prototype-only mock logic with real React, NestJS, Prisma, PostgreSQL, Supabase, validation, and backend authorization.
+
+Figma is a helper reference only.
+
+Use Figma MCP or the connected Figma integration for measurements, screenshots, variables, spacing, typography, icons, frame structure, and other visual details that help reproduce the prototype accurately.
+
+If Figma and `finalmodel.html` disagree about the application experience, follow `finalmodel.html` unless an explicit newer user decision says otherwise.
+
+Current Figma helper reference:
 
 `https://www.figma.com/design/8zgQ4pcWtku7rSWzjlP9K9/Prometheus?node-id=17-4603&t=9bvq2LAHiC0GPJs7-1`
 
@@ -79,31 +90,33 @@ File key: `8zgQ4pcWtku7rSWzjlP9K9`
 
 Starting node: `17:4603`
 
-For best design fidelity, future coding sessions should have Figma MCP or an equivalent connected Figma integration configured before substantial UI implementation.
+Registry helper frame already inspected: `11:1887`, named `Registry`.
 
-Use the live Figma connection to inspect the actual node, design context, screenshot, dimensions, variables, components, and other available design metadata instead of relying only on the URL or static screenshots.
+## Phase 2 Prototype Reconciliation Required
 
-If the Figma connection is unavailable or cannot access the file, state that limitation explicitly and treat visual verification as incomplete rather than guessing.
+The Registry department prototype in `.model/finalmodel.html` includes `name`, `Short label`, and `description` in the add-department flow.
 
-The node is accessible through the connected Figma integration in the current ChatGPT environment and is currently named `Outcome Workspace Top`.
+The current production slice intentionally omitted `Short label` because the existing canonical Department model did not contain that field.
 
-Treat it as a visual entry point into the current Prometheus design file, including the shared authenticated workspace shell and visual language.
+Under the updated prototype-source-of-truth policy, that omission is now an unresolved prototype-to-data-model mismatch rather than a settled implementation decision.
 
-The Registry-specific frame already inspected for Phase 2 is `11:1887`, named `Registry`.
+Before treating the department slice as final, inspect the prototype behavior again and reconcile the missing `Short label` capability with the canonical requirements, data model, API contract, migration, UI, and acceptance coverage, unless the user explicitly decides to remove that field from the prototype itself.
 
-When implementing another Phase 2 state or interaction, inspect the relevant Registry-specific frame or descendant/reference in the same file rather than guessing from screenshots or from this starting node alone.
+Do not silently keep the production omission merely because the first slice was already implemented.
 
-Do not infer authorization, persistence, or business rules from Figma.
-
-Those remain governed by the canonical repository requirements.
+The existing Phase 2 journal entry P2-D05 should be revisited under this updated source-of-truth policy.
 
 ## Next Action
 
-Apply `prisma/migrations/20260916000000_registry_departments/migration.sql` to the configured development database and run the focused Registry department browser acceptance flow.
+First reconcile the current Registry department implementation against `.model/finalmodel.html`, especially the prototype-only `Short label` field and any other visible behavior that the current production slice omitted.
 
-Inspect the rendered `/registry` page against Figma frame `11:1887` at desktop and narrow viewport sizes, and correct any visual or interaction regressions before expanding scope.
+Then apply `prisma/migrations/20260916000000_registry_departments/migration.sql` or its reconciled successor to the configured development database and run the focused Registry department browser acceptance flow.
 
-After the department slice is verified, continue with the next complete vertical slice for member listing and add/edit member workflows, including Department-ID assignment and Administrator-only backend enforcement.
+Compare the rendered `/registry` workflow directly against `finalmodel.html` in a browser.
+
+Use Figma frame `11:1887` only as an additional visual helper for fine details.
+
+After the department slice matches the intended prototype behavior and passes verification, continue with the next complete vertical slice for member listing and add/edit member workflows, including Department-ID assignment and Administrator-only backend enforcement.
 
 Do not implement authentication-mode labels by guessing from frontend state.
 
@@ -120,14 +133,15 @@ Resolve detailed authentication status from a trustworthy backend source when th
 - For each major decision or difficult problem, record what was difficult, the root cause or constraint, options considered, proposed solution, final decision, result, lesson learned, and next approach.
 - Implement in complete vertical slices.
 - Run focused verification after meaningful changes.
-- Inspect the relevant `.model/` interaction and Figma through Figma MCP or the connected integration for substantial user-facing work.
-- Use `.model/` for intended interaction behavior, Figma for visual detail, and canonical requirements for data, authorization, and persistence.
-- If live Figma access is unavailable, disclose it and do not claim visual verification is complete.
-- Do not mark Phase 2 complete until its acceptance gate, previous-phase regression, and phase documentation are complete.
+- Treat `.model/finalmodel.html` as the prototype source of truth for the main application experience.
+- Use Figma and Figma MCP as supporting implementation helpers, not as the authority over the prototype.
+- Do not silently omit prototype fields or interactions because the current production model lacks them; reconcile the mismatch instead.
+- Preserve backend security, authorization, persistence, and data-integrity guarantees while reproducing the prototype experience.
+- Do not mark Phase 2 complete until its acceptance gate, previous-phase regression, prototype reconciliation, and phase documentation are complete.
 
 ## Handoff Maintenance Rule
 
-Update this file whenever the active phase changes, a major blocking issue changes the next step, the primary Figma implementation reference changes, or a session ends at a materially different point than the one documented here.
+Update this file whenever the active phase changes, a major blocking issue changes the next step, the prototype source-of-truth policy changes, or a session ends at a materially different point than the one documented here.
 
 Do not turn this into a detailed engineering diary.
 
