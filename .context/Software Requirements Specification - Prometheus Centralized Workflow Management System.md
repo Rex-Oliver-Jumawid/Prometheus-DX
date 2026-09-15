@@ -217,7 +217,6 @@ The current prototype already supports departments, members, acceptance criteria
 ## 4.4 Feature and Task
 
 Features represent major pieces of work required to achieve an outcome.
-
 Tasks represent smaller actionable items under a feature.
 
 Tasks shall be capable of being marked as incomplete or complete.
@@ -437,7 +436,6 @@ Notifications may be generated for events including:
 - Outcome progress changed
 - User added to a project
 - Project-related replies
-
 Users shall be able to distinguish read and unread notifications.
 
 The system shall allow users to mark notifications as read.
@@ -482,6 +480,10 @@ Administrators shall be able to:
 ---
 
 ## FR-16 Member Administration
+
+The Registry shall be restricted to users with the Administrator organizational role.
+
+Non-administrator users shall not be permitted to access the Registry interface or its administrative API endpoints.
 
 Administrators shall be able to:
 
@@ -579,6 +581,18 @@ Shared schedules shall provide visibility into other members' availability witho
 
 ---
 
+## BR-07 Registry Access
+
+Only users with the Administrator organizational role shall be authorized to access the Registry.
+
+Hiding the Registry from the user interface shall not be considered sufficient access control.
+
+The backend shall verify Administrator authorization for all Registry operations and administrative API endpoints.
+
+Members and Project Leads who are not Administrators shall not gain Registry access through their project responsibilities.
+
+---
+
 # 7. Non-Functional Requirements
 
 The following requirements are proposed baseline implementation requirements and are not directly defined by the current prototype.
@@ -657,7 +671,6 @@ The system architecture should support growth in:
 The system shall use a modular architecture that allows individual areas such as Projects, Schedule, Reports, Notifications, and Administration to evolve without requiring extensive changes to unrelated functionality.
 
 ---
-
 # 8. Data Requirements
 
 The system shall maintain persistent records for at least the following data:
