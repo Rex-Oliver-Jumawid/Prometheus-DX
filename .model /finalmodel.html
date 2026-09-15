@@ -3980,9 +3980,9 @@ body{
 .vw-project-scope-toggle{
   position:relative;
   display:inline-grid;
-  grid-template-columns:1fr 1fr;
+  grid-template-columns:repeat(3,1fr);
   align-items:center;
-  min-width:190px;
+  min-width:292px;
   padding:3px;
   border:1px solid #ddd6d1;
   border-radius:999px;
@@ -3995,7 +3995,7 @@ body{
   top:3px;
   bottom:3px;
   left:3px;
-  width:calc(50% - 3px);
+  width:calc(33.333% - 2px);
   border-radius:999px;
   background:#fff;
   box-shadow:0 1px 4px rgba(46,37,32,.10);
@@ -4004,6 +4004,9 @@ body{
 }
 .vw-project-scope-toggle[data-scope="mine"]:before{
   transform:translateX(100%);
+}
+.vw-project-scope-toggle[data-scope="archives"]:before{
+  transform:translateX(200%);
 }
 .vw-project-scope-button{
   position:relative;
@@ -4048,6 +4051,40 @@ body{
   font-size:7px;
   line-height:1;
 }
+
+.vw-archive-shell{
+  border:1px solid #e7e0db;
+  border-radius:14px;
+  background:rgba(255,255,255,.72);
+  overflow:hidden;
+  box-shadow:0 8px 28px rgba(47,35,29,.035);
+}
+.vw-archive-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;border-bottom:1px solid #eee8e4;background:rgba(255,255,255,.74)}
+.vw-archive-head strong{color:#3d3733;font-size:11px}
+.vw-archive-head span{display:block;margin-top:3px;color:#968b84;font-size:7.5px}
+.vw-archive-count{flex:0 0 auto;padding:5px 8px;border:1px solid #e0d7d1;border-radius:999px;background:#f7f4f2;color:#766b64;font:750 7px var(--mono)}
+.vw-archive-list{display:flex;flex-direction:column}
+.vw-archive-project-row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(115px,.55fr) minmax(140px,.65fr) auto;gap:18px;align-items:center;min-height:76px;padding:12px 16px;border-bottom:1px solid #f0ebe8}
+.vw-archive-project-row:last-child{border-bottom:0}
+.vw-archive-project-row:hover{background:rgba(255,249,246,.72)}
+.vw-archive-project-title{color:#3e3733;font-size:10px;font-weight:800}
+.vw-archive-project-desc{margin-top:4px;color:#93877f;font-size:7px;line-height:1.45;max-width:620px}
+.vw-archive-meta-label{color:#a0958e;font:750 6px var(--mono);text-transform:uppercase;letter-spacing:.06em}
+.vw-archive-meta-value{margin-top:4px;color:#554b45;font-size:8px;font-weight:700}
+.vw-archive-depts{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.vw-archive-depts span{padding:3px 6px;border:1px solid #e4ddd8;border-radius:999px;background:#faf8f6;color:#736861;font-size:6.5px}
+.vw-archive-open{white-space:nowrap;border:0;background:transparent;color:#cf4b22;font-size:8px;font-weight:800;padding:7px 0}
+.vw-archive-empty{padding:38px 18px;text-align:center;color:#9b8f88;font-size:8px}
+@media(max-width:850px){.vw-project-scope-toggle{min-width:260px}.vw-archive-project-row{grid-template-columns:minmax(0,1fr) auto;gap:10px}.vw-archive-project-row .vw-archive-meta{display:none}}
+
+.pw-outcome-review-modal.show{display:grid;place-items:center;padding:22px;background:rgba(45,34,29,.34);backdrop-filter:blur(7px);z-index:260}
+.pw-outcome-review-dialog{width:min(900px,calc(100vw - 34px));max-height:min(820px,calc(100vh - 44px));margin:0;padding:0;overflow:hidden;border:1px solid rgba(126,99,84,.16);border-radius:18px;background:#fffdfb;box-shadow:0 34px 100px rgba(43,31,25,.24)}
+.pw-outcome-review-dialog .pw-lead-review-head{position:sticky;top:0;z-index:2;padding:16px 18px 13px;border-bottom:1px solid #eee6e1;background:rgba(255,253,251,.97);backdrop-filter:blur(12px)}
+.pw-outcome-review-head-actions{display:flex;align-items:center;gap:8px}
+.pw-outcome-review-close{width:30px;height:30px;display:grid;place-items:center;padding:0;border:1px solid #e4dbd5;border-radius:50%;background:#fff;color:#776b64;font-size:12px}
+.pw-outcome-review-scroll{max-height:calc(100vh - 150px);overflow:auto;padding:14px 18px 18px}
+.pw-outcome-review-dialog .pw-review-actions{position:sticky;bottom:-18px;margin:14px -18px -18px;padding:12px 18px;border-top:1px solid #eee6e1;background:rgba(255,253,251,.97);backdrop-filter:blur(12px)}
+
 .vw-new-project-depts{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -5493,7 +5530,7 @@ body{
 }
 .pw-project-meta{
   display:grid;
-  grid-template-columns:repeat(4,minmax(105px,1fr));
+  grid-template-columns:repeat(3,minmax(105px,1fr));
   gap:8px;
   margin-top:12px;
 }
@@ -5798,9 +5835,17 @@ body{
   font-size:7px;
   line-height:1.45;
 }
+.pw-output-head-actions{
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+#pwLeadReviewPanel{
+  scroll-margin-top:110px;
+}
 .pw-lead-review{
-  margin:9px 0;
-  padding:10px;
+  margin:12px 0 0;
+  padding:12px;
   border:1px solid rgba(244,81,30,.16);
   border-radius:10px;
   background:linear-gradient(145deg,#fffaf7,#fff);
@@ -5817,6 +5862,78 @@ body{
   margin-top:3px;
   color:#4b403b;
   font-size:8px;
+  line-height:1.4;
+}
+.pw-group-submission-list{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  margin-top:5px;
+}
+.pw-group-submission-item{
+  padding:7px 8px;
+  border:1px solid #eee8e4;
+  border-radius:7px;
+  background:#faf9f8;
+}
+.pw-group-submission-top{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:flex-start;
+}
+.pw-group-submission-top strong{
+  color:#514741;
+  font-size:7px;
+}
+.pw-group-submission-top span{
+  color:#9a8f88;
+  font:750 5.5px var(--mono);
+}
+.pw-group-submission-title{
+  margin-top:3px;
+  color:#5f554f;
+  font-size:7px;
+  line-height:1.4;
+}
+.pw-group-submission-note{
+  margin-top:3px;
+  color:#948880;
+  font-size:6px;
+  line-height:1.35;
+}
+.pw-outcome-accepted-banner{
+  display:grid;
+  grid-template-columns:30px minmax(0,1fr);
+  gap:9px;
+  align-items:center;
+  margin-bottom:9px;
+  padding:9px 10px;
+  border:1px solid rgba(22,163,74,.18);
+  border-radius:8px;
+  background:#f6fbf7;
+}
+.pw-outcome-accepted-icon{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#e8f7ec;
+  color:#15803d;
+  font-size:13px;
+  font-weight:850;
+}
+.pw-outcome-accepted-banner strong{
+  display:block;
+  color:#315b3c;
+  font-size:8px;
+}
+.pw-outcome-accepted-banner span{
+  display:block;
+  margin-top:3px;
+  color:#6f8575;
+  font-size:6.5px;
   line-height:1.4;
 }
 .pw-review-meta{
@@ -6532,6 +6649,138 @@ body{
 }
 
 
+/* Project-level delegated editing */
+#pwProjectPage .pw-member-access-row{
+  align-items:center;
+  gap:10px;
+}
+#pwProjectPage .pw-member-access-identity{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  flex:1;
+}
+#pwProjectPage .pw-member-access-copy{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+#pwProjectPage .pw-member-access-copy strong{
+  color:#344054;
+  font-size:8px;
+  font-weight:750;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#pwProjectPage .pw-member-access-copy span{
+  color:#98A2B3;
+  font-size:6.5px;
+}
+#pwProjectPage .pw-member-access-note{
+  margin:6px 0 2px;
+  color:#98A2B3;
+  font-size:6.5px;
+  line-height:1.45;
+}
+#pwProjectPage .pw-member-access-select{
+  width:88px;
+  flex:0 0 88px;
+  border:1px solid #D0D5DD;
+  background:#FFFFFF;
+  border-radius:7px;
+  padding:6px 7px;
+  color:#344054;
+  font-size:7px;
+  outline:none;
+}
+#pwProjectPage .pw-member-access-select:focus{
+  border-color:#FDA78B;
+  box-shadow:0 0 0 3px rgba(244,81,30,.07);
+}
+#pwProjectPage .pw-access-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:68px;
+  padding:5px 7px;
+  border:1px solid #E4E7EC;
+  border-radius:999px;
+  background:#F8FAFC;
+  color:#667085;
+  font-size:6.5px;
+  font-weight:750;
+  white-space:nowrap;
+}
+#pwProjectPage .pw-access-badge.edit{
+  border-color:#FED7C9;
+  background:#FFF7F3;
+  color:#C2411A;
+}
+#pwProjectPage .pw-access-badge.lead{
+  border-color:#FECDBD;
+  background:#FFF1EC;
+  color:#E84617;
+}
+#pwProjectPage .pw-stage-actions{
+  display:flex;
+  align-items:center;
+  gap:2px;
+}
+#pwProjectPage .pw-stage-delete,
+#pwProjectPage .pw-outcome-delete{
+  display:grid;
+  place-items:center;
+  border:1px solid transparent;
+  background:transparent;
+  color:#98A2B3;
+  cursor:pointer;
+  transition:background .15s ease,border-color .15s ease,color .15s ease;
+}
+#pwProjectPage .pw-stage-delete{
+  width:24px;
+  height:24px;
+  border-radius:7px;
+  font-size:13px;
+}
+#pwProjectPage .pw-stage-delete:hover,
+#pwProjectPage .pw-outcome-delete:hover{
+  border-color:#FECACA;
+  background:#FEF2F2;
+  color:#DC2626;
+}
+#pwProjectPage .pw-outcome-card-actions{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  flex:0 0 auto;
+}
+#pwProjectPage .pw-outcome-delete{
+  width:22px;
+  height:22px;
+  border-radius:6px;
+  font-size:12px;
+}
+#pwProjectPage .pw-workspace-state-actions{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+#pwProjectPage .pw-delete-outcome-button{
+  border-color:#FECACA;
+  color:#B42318;
+  background:#FFFFFF;
+}
+#pwProjectPage .pw-delete-outcome-button:hover{
+  border-color:#FCA5A5;
+  background:#FEF2F2;
+  color:#991B1B;
+}
+
 /* Stage rename + multi-owner outcomes */
 #pwProjectPage .stage-title-row{
   justify-content:flex-start;
@@ -6715,12 +6964,10 @@ body{
 
 
 /* =====================================================================
-   SUBMISSION REVIEW MODAL
-   Project Lead verification lives in Submission History, not inline.
+   SUBMISSION REVIEW MODAL + OUTCOME-LEVEL REVIEW
+   Individual submission records stay read-only. The Project Lead makes
+   one decision for the whole outcome after reviewing the shared history.
    ===================================================================== */
-#pwProjectPage #pwLeadReviewPanel{
-  display:none!important;
-}
 #pwProjectPage .pw-history-clickable{
   cursor:pointer;
   transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease;
@@ -12450,6 +12697,7 @@ body.pw-modal-open{overflow:hidden}
           <div class="vw-project-scope-toggle" id="vwProjectScopeToggle" data-scope="all" role="group" aria-label="Project scope">
             <button class="vw-project-scope-button active" id="vwProjectScopeAll" type="button" aria-pressed="true" onclick="vwSetProjectsScope('all')">All Projects</button>
             <button class="vw-project-scope-button" id="vwProjectScopeMine" type="button" aria-pressed="false" onclick="vwSetProjectsScope('mine')">My Projects</button>
+            <button class="vw-project-scope-button" id="vwProjectScopeArchives" type="button" aria-pressed="false" onclick="vwSetProjectsScope('archives')">Archives</button>
           </div>
           <button class="btn primary vw-add-project-button" id="vwAddProjectButton" type="button">+ Add Project</button>
         </div>
@@ -12467,7 +12715,6 @@ body.pw-modal-open{overflow:hidden}
           <p class="desc">Build a client-facing management platform with onboarding, account tracking, communication history, dashboards, and internal administrative tools.</p>
           <div class="meta">
             <div class="meta-block"><div class="meta-label">Project lead</div><div class="meta-value">Rex Jumawid</div></div>
-            <div class="meta-block"><div class="meta-label">Assistant lead</div><div class="meta-value">Ana Mendoza</div></div>
             <div class="meta-block"><div class="meta-label">State</div><div class="meta-value"><span class="status-pill">● Active</span></div></div>
             <div class="meta-block">
       <div class="meta-label">Progress</div>
@@ -12757,7 +13004,6 @@ body.pw-modal-open{overflow:hidden}
           <div class="side-card">
             <div class="side-title">Project members</div>
             <div class="member-row"><span><span class="avatar">RJ</span></span><span>Rex Jumawid · Lead</span></div>
-            <div class="member-row"><span><span class="avatar">AM</span></span><span>Ana Mendoza · Assistant</span></div>
             <div class="member-row"><span><span class="avatar">BS</span></span><span>Bea Santos · Creatives</span></div>
             <div class="member-row"><span><span class="avatar">NR</span></span><span>Nico Ramos · R&D</span></div>
             <div class="member-row"><span><span class="avatar">MR</span></span><span>Marco Reyes · S&M</span></div>
@@ -12871,7 +13117,6 @@ body.pw-modal-open{overflow:hidden}
 <p class="desc" id="std-projectDescription">Build a client-facing management platform with onboarding, account tracking, communication history, dashboards, and internal administrative tools.</p>
 <div class="meta">
 <div class="meta-block"><div class="meta-label">Project lead</div><div class="meta-value" id="std-projectLead">Rex Jumawid</div></div>
-<div class="meta-block"><div class="meta-label">Assistant lead</div><div class="meta-value" id="std-assistantLead">Ana Mendoza</div></div>
 <div class="meta-block"><div class="meta-label">State</div><div class="meta-value" id="std-projectState"><span class="status-pill">● Active</span></div></div>
 <div class="meta-block">
 <div class="meta-label">Progress</div>
@@ -13128,7 +13373,6 @@ body.pw-modal-open{overflow:hidden}
 <div class="side-card" id="std-projectMembersSide">
 <div class="side-title">Project members</div>
 <div class="member-row"><span><span class="avatar">RJ</span></span><span>Rex Jumawid · Lead</span></div>
-<div class="member-row"><span><span class="avatar">AM</span></span><span>Ana Mendoza · Assistant</span></div>
 <div class="member-row"><span><span class="avatar">BS</span></span><span>Bea Santos · Creatives</span></div>
 <div class="member-row"><span><span class="avatar">NR</span></span><span>Nico Ramos · R&amp;D</span></div>
 <div class="member-row"><span><span class="avatar">MR</span></span><span>Marco Reyes · S&amp;M</span></div>
@@ -13160,10 +13404,6 @@ body.pw-modal-open{overflow:hidden}
           <div class="pw-project-meta-card">
             <span>Project lead</span>
             <strong id="pwProjectLead">Rex Jumawid</strong>
-          </div>
-          <div class="pw-project-meta-card">
-            <span>Assistant lead</span>
-            <strong id="pwAssistantLead">Ana Mendoza</strong>
           </div>
           <div class="pw-project-meta-card">
             <span>State</span>
@@ -13230,7 +13470,10 @@ body.pw-modal-open{overflow:hidden}
                 <h2 class="workspace-title" id="pwWorkspaceTitle">Outcome</h2>
                 <p class="workspace-desc" id="pwWorkspaceDescription"></p>
               </div>
-              <span class="state progress" id="pwWorkspaceState">In Progress</span>
+              <div class="pw-workspace-state-actions">
+                <span class="state progress" id="pwWorkspaceState">In Progress</span>
+                <button class="btn pw-delete-outcome-button hidden" id="pwDeleteOutcome" type="button" onclick="PW.deleteOutcome()">Delete outcome</button>
+              </div>
             </div>
 
             <div class="acceptance-block">
@@ -13286,7 +13529,10 @@ body.pw-modal-open{overflow:hidden}
                       <p id="pwOutputSectionSubtitle">Every submission stays here with its review result and Project Lead feedback.</p>
                     </div>
                   </div>
-                  <span class="output-status draft" id="pwWorkspaceOutputState">Draft</span>
+                  <div class="pw-output-head-actions">
+                    <button class="btn primary hidden" id="pwReviewOutcomeJump" type="button" onclick="PW.openOutcomeReviewModal()">Review outcome</button>
+                    <span class="output-status draft" id="pwWorkspaceOutputState">Draft</span>
+                  </div>
                 </div>
 
                 <div class="output-editor">
@@ -13304,6 +13550,14 @@ body.pw-modal-open{overflow:hidden}
                     <div class="pw-revision-feedback" id="pwRevisionFeedback"></div>
                   </div>
 
+                  <div class="pw-outcome-accepted-banner hidden" id="pwOutcomeAcceptedBanner">
+                    <div class="pw-outcome-accepted-icon">✓</div>
+                    <div>
+                      <strong>Outcome accepted - submissions are closed</strong>
+                      <span>The Project Lead accepted the combined work for this outcome. Members can still view the work and submission history, but no new drafts or submissions can be added.</span>
+                    </div>
+                  </div>
+
                   <div id="pwMemberSubmissionFields">
                     <div class="field">
                       <label>Output name or link</label>
@@ -13317,18 +13571,39 @@ body.pw-modal-open{overflow:hidden}
 
                   <div class="empty hidden" id="pwLeadNoSubmission">No output has been submitted for Project Lead verification yet.</div>
 
-                  <section class="pw-lead-review hidden" id="pwLeadReviewPanel">
+                  <div class="output-actions-row" id="pwMemberOutputActions">
+                    <button class="btn" id="pwSaveOutputButton" type="button" onclick="PW.saveDraft()">Save draft</button>
+                    <button class="btn primary" id="pwSubmitOutputButton" type="button" onclick="PW.submitOutput()">Submit for review</button>
+                  </div>
+
+                  <section class="pw-submission-history">
+                    <div class="pw-submission-history-head">
+                      <div>
+                        <h4>Team submissions</h4>
+                        <p>Every member submission is preserved and reviewed as part of the outcome.</p>
+                      </div>
+                      <span class="readonly" id="pwSubmissionCount">0 submissions</span>
+                    </div>
+                    <div id="pwWorkspaceOutputHistory"></div>
+                  </section>
+
+                  <div class="modal-bg pw-outcome-review-modal" id="pwOutcomeReviewModal" onclick="if(event.target===this)PW.closeOutcomeReviewModal()">
+                  <section class="pw-lead-review hidden pw-outcome-review-dialog" id="pwLeadReviewPanel" role="dialog" aria-modal="true" aria-labelledby="pwOutcomeReviewTitle">
                     <div class="pw-lead-review-head">
                       <div>
                         <div class="acceptance-label">Project Lead verification</div>
-                        <strong>Verify the member's submitted output against the expected outcome before accepting it.</strong>
+                        <strong id="pwOutcomeReviewTitle">Review all member submissions together against the expected outcome before deciding whether the outcome is complete.</strong>
                       </div>
-                      <span class="readonly" id="pwLeadReviewState">For review</span>
+                      <div class="pw-outcome-review-head-actions">
+                        <span class="readonly" id="pwLeadReviewState">For review</span>
+                        <button class="pw-outcome-review-close" type="button" onclick="PW.closeOutcomeReviewModal()" aria-label="Close outcome review">✕</button>
+                      </div>
                     </div>
+                    <div class="pw-outcome-review-scroll">
 
                     <div class="pw-review-meta">
-                      <span>Submitted by <strong id="pwLeadReviewAssignee">-</strong></span>
-                      <span>Version <strong id="pwLeadReviewVersion">-</strong></span>
+                      <span>Contributors <strong id="pwLeadReviewAssignee">-</strong></span>
+                      <span>Submissions <strong id="pwLeadReviewVersion">-</strong></span>
                       <span id="pwLeadReviewSubmittedAt">Submission pending</span>
                     </div>
 
@@ -13338,7 +13613,7 @@ body.pw-modal-open{overflow:hidden}
                         <div id="pwLeadReviewExpected"></div>
                       </div>
                       <div class="pw-review-box">
-                        <div class="acceptance-label">2. Member submission</div>
+                        <div class="acceptance-label">2. Team submissions</div>
                         <div id="pwLeadReviewSubmitted"></div>
                         <div id="pwLeadReviewSubmissionNotes" style="margin-top:5px;color:#948880"></div>
                       </div>
@@ -13353,31 +13628,17 @@ body.pw-modal-open{overflow:hidden}
                     </div>
 
                     <div class="field" style="margin-top:9px">
-                      <label>4. Review feedback</label>
+                      <label>4. Outcome review feedback</label>
                       <textarea id="pwLeadReviewFeedback" placeholder="Record what passed, or explain exactly what must be revised."></textarea>
                     </div>
                     <div class="pw-review-decision" id="pwLeadReviewDecision"></div>
                     <div class="pw-review-actions">
                       <button class="btn" type="button" onclick="PW.requestRevision()">Needs revision</button>
-                      <button class="btn primary" type="button" onclick="PW.acceptOutput()">Accept verified output</button>
+                      <button class="btn primary" type="button" onclick="PW.acceptOutput()">Accept outcome</button>
+                    </div>
                     </div>
                   </section>
-
-                  <div class="output-actions-row" id="pwMemberOutputActions">
-                    <button class="btn" id="pwSaveOutputButton" type="button" onclick="PW.saveDraft()">Save draft</button>
-                    <button class="btn primary" id="pwSubmitOutputButton" type="button" onclick="PW.submitOutput()">Submit for review</button>
                   </div>
-
-                  <section class="pw-submission-history">
-                    <div class="pw-submission-history-head">
-                      <div>
-                        <h4>Submission history</h4>
-                        <p>Previous versions and their feedback are never overwritten.</p>
-                      </div>
-                      <span class="readonly" id="pwSubmissionCount">0 submissions</span>
-                    </div>
-                    <div id="pwWorkspaceOutputHistory"></div>
-                  </section>
                 </div>
               </section>
             </main>
@@ -13515,7 +13776,7 @@ body.pw-modal-open{overflow:hidden}
       <div class="modal-bg" id="pwOutcomeModal">
         <div class="modal">
           <div class="modal-head">
-            <div><div class="kicker" style="margin:0 0 3px">Project lead action</div><div class="modal-title">Add project outcome</div></div>
+            <div><div class="kicker" style="margin:0 0 3px">Project editing</div><div class="modal-title">Add project outcome</div></div>
             <button class="btn ghost" type="button" onclick="PW.closeOutcomeModal()">✕</button>
           </div>
           <div class="modal-body">
@@ -13574,7 +13835,7 @@ body.pw-modal-open{overflow:hidden}
         <div class="modal pw-stage-modal">
           <div class="modal-head">
             <div>
-              <div class="kicker" style="margin:0 0 3px">Project lead action</div>
+              <div class="kicker" style="margin:0 0 3px">Project editing</div>
               <div class="modal-title" id="pwStageModalTitle">Add project stage</div>
             </div>
             <button class="btn ghost" type="button" onclick="PW.closeStageModal()">✕</button>
@@ -15943,7 +16204,7 @@ const vwState={
   chatScope:'general',
   members:[
     {id:'rex',name:'Rex Jumawid',role:'Administrator / Project Lead',homeDept:'x',active:true,workDept:'x',accountStatus:'Active'},
-    {id:'ana',name:'Ana Mendoza',role:'Assistant Lead / Operations',homeDept:'x',active:false,workDept:null},
+    {id:'ana',name:'Ana Mendoza',role:'Operations',homeDept:'x',active:false,workDept:null},
     {id:'nico',name:'Nico Ramos',role:'Software Developer',homeDept:'rd',active:true,workDept:'rd'},
     {id:'justin',name:'Justin Cruz',role:'Software Developer',homeDept:'rd',active:false,workDept:null},
     {id:'bea',name:'Bea Santos',role:'Creative / UI UX',homeDept:'creatives',active:true,workDept:'creatives'},
@@ -15957,6 +16218,84 @@ const vwState={
       status:'Active',
       lead:'Rex Jumawid',
       attached:true
+    },
+    {
+      id:'collab-review',
+      title:'Customer Onboarding Launch',
+      description:'Cross-functional launch project where engineering, design, and sales contribute separate submissions to one shared outcome for final Project Lead acceptance.',
+      status:'Active',
+      lead:'Rex Jumawid',
+      departments:['rd','creatives','sm'],
+      stages:[
+        {name:'Launch Readiness',outcomes:[
+          {
+            id:'collab-review-o1',
+            title:'Release-ready customer onboarding',
+            desc:'The complete onboarding experience is implementation-ready, visually approved, commercially accurate, and supported by evidence from every contributing team.',
+            dept:'rd',
+            departments:['rd','creatives','sm'],
+            members:['nico','bea','marco'],
+            status:'review',
+            progress:100,
+            output:'Cross-functional onboarding release package',
+            outputStatus:'review',
+            feedback:'Six team submissions are waiting for one outcome-level Project Lead decision.',
+            workspace:{
+              criteria:[
+                'The onboarding flow works end to end on desktop and mobile.',
+                'The interface matches the approved visual direction and interaction states.',
+                'Customer-facing copy, activation steps, and launch details are commercially accurate.',
+                'The combined submissions provide enough evidence to approve the outcome for release.'
+              ],
+              features:[
+                {id:'collab-review-f1',name:'Engineering readiness',description:'Implementation and QA evidence for the onboarding flow.',tasks:[
+                  {id:'collab-review-f1-t1',title:'Complete onboarding implementation',done:true},
+                  {id:'collab-review-f1-t2',title:'Run responsive and regression checks',done:true}
+                ]},
+                {id:'collab-review-f2',name:'Experience readiness',description:'Final design polish and responsive states.',tasks:[
+                  {id:'collab-review-f2-t1',title:'Finalize approved onboarding screens',done:true},
+                  {id:'collab-review-f2-t2',title:'Verify empty, loading, and error states',done:true}
+                ]},
+                {id:'collab-review-f3',name:'Launch readiness',description:'Copy, activation flow, and launch checklist.',tasks:[
+                  {id:'collab-review-f3-t1',title:'Approve customer-facing copy',done:true},
+                  {id:'collab-review-f3-t2',title:'Complete launch checklist',done:true}
+                ]}
+              ],
+              outputDraft:'',
+              outputNotes:'',
+              history:[
+                {version:'v6',title:'Final QA evidence and release checklist',state:'For Review',submittedBy:'Nico Ramos',meta:'Submitted Today · 3:35 PM',notes:'Regression, mobile checks, and final launch checklist are complete.',feedback:''},
+                {version:'v5',title:'Approved activation copy and customer handoff notes',state:'For Review',submittedBy:'Marco Reyes',meta:'Submitted Today · 3:08 PM',notes:'Final customer-facing copy and activation handoff were checked against the approved offer.',feedback:''},
+                {version:'v4',title:'Final responsive onboarding screens',state:'For Review',submittedBy:'Bea Santos',meta:'Submitted Today · 2:42 PM',notes:'Desktop and mobile screens include approved loading, empty, and error states.',feedback:''},
+                {version:'v3',title:'Onboarding implementation PR #184',state:'For Review',submittedBy:'Nico Ramos',meta:'Submitted Today · 1:56 PM',notes:'Implementation matches the approved flow and includes validation handling.',feedback:''},
+                {version:'v2',title:'Activation flow and launch messaging approval',state:'For Review',submittedBy:'Marco Reyes',meta:'Submitted Today · 1:20 PM',notes:'Sales and Marketing approved the activation steps, offer wording, and handoff language.',feedback:''},
+                {version:'v1',title:'Approved onboarding UI handoff',state:'For Review',submittedBy:'Bea Santos',meta:'Submitted Today · 12:48 PM',notes:'Final design handoff includes responsive layouts and interaction states.',feedback:''}
+              ],
+              activity:[
+                {text:'Nico Ramos joined the outcome.',time:'Today · 11:10 AM'},
+                {text:'Bea Santos joined the outcome.',time:'Today · 11:12 AM'},
+                {text:'Marco Reyes joined the outcome.',time:'Today · 11:15 AM'},
+                {text:'Six team submissions are ready for Project Lead review.',time:'Today · 3:35 PM'}
+              ],
+              reviewChecks:{}
+            }
+          }
+        ]}
+      ]
+    },
+    {
+      id:'brand-site-v1',
+      title:'Prometheus Brand Site v1',
+      description:'Completed first-release company website covering the public brand, service overview, contact flow, and responsive presentation.',
+      status:'Completed',
+      lead:'Bea Santos',
+      departments:['creatives','rd'],
+      completedAt:'August 28, 2026',
+      stages:[
+        {name:'Release',outcomes:[
+          {id:'brand-site-v1-o1',title:'Production-ready public website',dept:'creatives',departments:['creatives','rd'],members:['bea','nico'],status:'accepted',progress:100,output:'Prometheus Brand Site v1',outputStatus:'accepted',feedback:'Accepted for production release.'}
+        ]}
+      ]
     },
     {
       id:'dx',
@@ -16187,22 +16526,17 @@ function vwProjectMatchesSearch(project){
 }
 function vwSyncProjectScopeToggle(){
   const toggle=document.getElementById('vwProjectScopeToggle');
-  const all=document.getElementById('vwProjectScopeAll');
-  const mine=document.getElementById('vwProjectScopeMine');
+  const buttons={all:document.getElementById('vwProjectScopeAll'),mine:document.getElementById('vwProjectScopeMine'),archives:document.getElementById('vwProjectScopeArchives')};
   if(toggle)toggle.dataset.scope=vwProjectsScope;
-  if(all){
-    const active=vwProjectsScope==='all';
-    all.classList.toggle('active',active);
-    all.setAttribute('aria-pressed',active?'true':'false');
-  }
-  if(mine){
-    const active=vwProjectsScope==='mine';
-    mine.classList.toggle('active',active);
-    mine.setAttribute('aria-pressed',active?'true':'false');
-  }
+  Object.entries(buttons).forEach(([scope,button])=>{
+    if(!button)return;
+    const active=vwProjectsScope===scope;
+    button.classList.toggle('active',active);
+    button.setAttribute('aria-pressed',active?'true':'false');
+  });
 }
 function vwSetProjectsScope(scope){
-  vwProjectsScope=scope==='mine'?'mine':'all';
+  vwProjectsScope=['all','mine','archives'].includes(scope)?scope:'all';
   vwSyncProjectScopeToggle();
   vwRenderProjectsLanding();
 }
@@ -16289,11 +16623,28 @@ function vwBindProjectOpenButtons(root){
   );
 }
 
+function vwArchiveProjectRowMarkup(project){
+  const departments=vwProjectDepartments(project);
+  return `<article class="vw-archive-project-row">
+    <div><div class="vw-archive-project-title">${vwEscape(project.title)}</div><div class="vw-archive-project-desc">${vwEscape(project.description||'Completed project.')}</div></div>
+    <div class="vw-archive-meta"><div class="vw-archive-meta-label">Project Lead</div><div class="vw-archive-meta-value">${vwEscape(vwProjectLeadName(project))}</div></div>
+    <div class="vw-archive-meta"><div class="vw-archive-meta-label">Completed</div><div class="vw-archive-meta-value">${vwEscape(project.completedAt||'Done')}</div><div class="vw-archive-depts">${departments.map(dept=>`<span>${vwEscape(vwDeptName(dept))}</span>`).join('')}</div></div>
+    <button class="vw-archive-open" type="button" data-vw-overview-open="${project.id}">View project →</button>
+  </article>`;
+}
+
 function vwRenderProjectsLanding(){
   const board=document.getElementById('vwProjectsLandingBoard');
   if(!board)return;
 
   vwSyncProjectScopeToggle();
+
+  if(vwProjectsScope==='archives'){
+    const archived=vwState.projects.filter(project=>vwProjectGroupKey(project)==='done'&&vwProjectMatchesSearch(project));
+    board.innerHTML=`<section class="vw-archive-shell"><div class="vw-archive-head"><div><strong>Archived projects</strong><span>Completed work is kept here as a readable project record.</span></div><div class="vw-archive-count">${archived.length} completed</div></div>${archived.length?`<div class="vw-archive-list">${archived.map(vwArchiveProjectRowMarkup).join('')}</div>`:'<div class="vw-archive-empty">No completed projects match your search.</div>'}</section>`;
+    vwBindProjectOpenButtons(board);
+    return;
+  }
 
   const groups=vwProjectsScope==='mine'
     ? [
@@ -16302,13 +16653,13 @@ function vwRenderProjectsLanding(){
       ]
     : [
         {key:'planning',label:'Planning',status:'planning'},
-        {key:'progress',label:'In Progress',status:'progress'},
-        {key:'done',label:'Done',status:'done'}
+        {key:'progress',label:'In Progress',status:'progress'}
       ];
 
   board.innerHTML=groups.map(group=>{
     const projects=vwState.projects.filter(project=>{
       if(vwProjectsScope==='mine'){
+        if(vwProjectGroupKey(project)==='done')return false;
         if(vwProjectRelationship(project)!==group.relation)return false;
       }else if(vwProjectGroupKey(project)!==group.status){
         return false;
@@ -17317,7 +17668,6 @@ function vwStdNormalizeProject(project){
   if(!project)return;
 
   project.lead??='Rex Jumawid';
-  project.assistant??='Ana Mendoza';
 
   if(!Array.isArray(project.stages)){
     project.stages=[];
@@ -17442,7 +17792,6 @@ function vwStdUpdateTopSummary(project){
   set('std-projectTitle',project.title);
   set('std-projectDescription',project.description||'');
   set('std-projectLead',project.lead||'Rex Jumawid');
-  set('std-assistantLead',project.assistant||'Ana Mendoza');
 
   const state=document.getElementById('std-projectState');
   if(state)state.innerHTML=`<span class="status-pill">● ${vwEscape(vwProjectStatusLabel(project))}</span>`;
@@ -19746,7 +20095,7 @@ window.setInterval(()=>{
    versioned submissions, Project Lead verification, joinable outcomes.
    ===================================================================== */
 window.PW=(()=>{
-  const STORAGE_KEY='prometheus-project-workspace-standard-v6';
+  const STORAGE_KEY='prometheus-project-workspace-standard-v7';
   const states={};
   let projectId=null;
   let context='projects';
@@ -19860,6 +20209,7 @@ window.PW=(()=>{
       meta:h.meta||'Project submission',
       notes:h.notes||'',
       feedback:h.feedback||'',
+      submittedBy:h.submittedBy||'',
       verification:Array.isArray(h.verification)?deep(h.verification):[]
     }));
     ws.activity=Array.isArray(ws.activity)?ws.activity:[];
@@ -19873,7 +20223,7 @@ window.PW=(()=>{
       title:p.title,
       description:p.description||'',
       lead:p.lead||'Rex Jumawid',
-      assistant:'Ana Mendoza',
+      memberAccess:p.memberAccess&&typeof p.memberAccess==='object'?deep(p.memberAccess):{},
       projectState:String(p.status||'').toLowerCase().includes('done')?'done':
         String(p.status||'').toLowerCase().includes('plan')?'pending':'in_progress',
       stages:[],
@@ -20004,6 +20354,7 @@ window.PW=(()=>{
     s.announcements=Array.isArray(s.announcements)?s.announcements:[];
     s.chat=Array.isArray(s.chat)?s.chat:[];
     s.activity=Array.isArray(s.activity)?s.activity:[];
+    s.memberAccess={...(p.memberAccess&&typeof p.memberAccess==='object'?p.memberAccess:{}),...(s.memberAccess&&typeof s.memberAccess==='object'?s.memberAccess:{})};
     s.workspaces=s.workspaces||{};
     s.outcomes=(s.outcomes||[]).map((o,i)=>{
       o.participants=Array.isArray(o.participants)?o.participants:[];
@@ -20017,6 +20368,12 @@ window.PW=(()=>{
     return s;
   }
   const S=()=>ensureState(project());
+
+  function projectAccess(name=currentName()){
+    if(name===S().lead)return 'lead';
+    return S().memberAccess?.[name]==='edit'?'edit':'view';
+  }
+  function canEditStructure(){return isLead()||projectAccess()==='edit'}
 
   function outcome(id=outcomeId){return S().outcomes.find(o=>o.id===id)||null}
   function workspace(o=outcome()){return o?S().workspaces[o.id]:null}
@@ -20083,8 +20440,18 @@ window.PW=(()=>{
     const p=project();
     if(!p)return;
     const s=S();
+    p.memberAccess=deep(s.memberAccess||{});
     if(p.attached){
       try{
+        for(let i=stages.length-1;i>=0;i--){
+          if(!s.stages.some(st=>st.id===stages[i].id))stages.splice(i,1);
+        }
+        for(let i=outcomes.length-1;i>=0;i--){
+          if(!s.outcomes.some(o=>o.id===outcomes[i].id)){
+            delete outcomeWorkspaceData[outcomes[i].id];
+            outcomes.splice(i,1);
+          }
+        }
         s.stages.forEach(st=>{
           const existingStage=stages.find(existing=>existing.id===st.id);
           if(existingStage)existingStage.name=st.name;
@@ -20207,7 +20574,7 @@ window.PW=(()=>{
     outcomeId=null;
     activityFilter='all';
     activityMember='all';
-    scope=isLead()?'whole':'mine';
+    scope=canEditStructure()?'whole':'mine';
     ensureState(p);
     hideOtherPages();
     $('pwProjectPage')?.classList.remove('hidden');
@@ -20244,7 +20611,6 @@ window.PW=(()=>{
     $('pwProjectTitle').textContent=s.title;
     $('pwProjectDescription').textContent=s.description;
     $('pwProjectLead').textContent=s.lead;
-    $('pwAssistantLead').textContent=s.assistant;
     const accepted=s.outcomes.filter(o=>o.status==='accepted').length;
     const growth=projectProgress();
     $('pwProjectProgressSummary').textContent=`${accepted} accepted / ${s.outcomes.length} outcomes · ${growth}%`;
@@ -20299,7 +20665,7 @@ window.PW=(()=>{
 
   function cardAction(o){
     if(isLead()&&scope==='whole'){
-      if(o.outputStatus==='review')return 'Verify Output';
+      if(o.outputStatus==='review')return 'Review Submissions';
       if(o.outputStatus==='revision')return 'View Revision Request';
       if(o.outputStatus==='accepted')return 'View Accepted Output';
     }
@@ -20314,16 +20680,18 @@ window.PW=(()=>{
 
     $('pwScopeMine').classList.toggle('active',mineMode);
     $('pwScopeWhole').classList.toggle('active',!mineMode);
-    $('pwScopeWhole').style.order=isLead()?'1':'2';
-    $('pwScopeMine').style.order=isLead()?'2':'1';
+    $('pwScopeWhole').style.order=canEditStructure()?'1':'2';
+    $('pwScopeMine').style.order=canEditStructure()?'2':'1';
 
     $('pwContentBoardSubtitle').textContent=mineMode
       ? `My Work - ${scoped.length} outcome${scoped.length===1?'':'s'} assigned to or joined by ${currentName()}.`
       : isLead()
         ? 'Whole Work - complete project visibility across every stage, department, and assigned member.'
-        : 'Showing the complete project across every department and assigned member.';
+        : canEditStructure()
+          ? 'Whole Work - you have Can edit access for project stages and outcomes.'
+          : 'Showing the complete project across every department and assigned member.';
 
-    if(isLead()){
+    if(canEditStructure()){
       const hasStages=s.stages.length>0;
       $('pwContentActions').innerHTML=`
         <button class="btn pw-outcome-button" type="button" onclick="PW.openOutcomeModal()" ${hasStages?'':'disabled title="Add a stage first"'}>+ Outcome</button>
@@ -20338,7 +20706,7 @@ window.PW=(()=>{
           <div class="pw-empty-stage-icon">＋</div>
           <strong>No stages yet</strong>
           <p>This project is blank. Create the first stage, then add outcomes inside it.</p>
-          ${isLead()?'<button class="btn primary" type="button" onclick="PW.openStageModal()">+ Add first stage</button>':''}
+          ${canEditStructure()?'<button class="btn primary" type="button" onclick="PW.openStageModal()">+ Add first stage</button>':''}
         </section>`;
       return;
     }
@@ -20361,7 +20729,10 @@ window.PW=(()=>{
         <div class="stage-title-row">
           <div class="stage-title">${esc(st.name)}</div>
           <span class="count">${stageOut.length} outcome${stageOut.length===1?'':'s'}</span>
-          ${isLead()?`<button class="pw-stage-edit" type="button" title="Rename stage" aria-label="Rename ${esc(st.name)}" onclick="event.stopPropagation();PW.openStageModal('${esc(st.id)}')">✎</button>`:''}
+          ${canEditStructure()?`<div class="pw-stage-actions">
+            <button class="pw-stage-edit" type="button" title="Rename stage" aria-label="Rename ${esc(st.name)}" onclick="event.stopPropagation();PW.openStageModal('${esc(st.id)}')">✎</button>
+            <button class="pw-stage-delete" type="button" title="Delete stage" aria-label="Delete ${esc(st.name)}" onclick="event.stopPropagation();PW.deleteStage('${esc(st.id)}')">×</button>
+          </div>`:''}
         </div>
       </div><div class="stage-cards"></div>`;
       const cards=column.querySelector('.stage-cards');
@@ -20383,7 +20754,7 @@ window.PW=(()=>{
           if(o.prereq&&s.outcomes.find(x=>x.id===o.prereq)?.stage===st.id)return;
           cards.appendChild(renderOutcomeCard(o));
         });
-        if(isLead()){
+        if(canEditStructure()){
           const add=document.createElement('button');
           add.className='add-outcome';
           add.textContent='+ Add outcome to stage';
@@ -20401,7 +20772,10 @@ window.PW=(()=>{
     card.className=`outcome-card ${o.outputStatus==='review'?'pw-review':''}`;
     card.innerHTML=`<div class="card-top">
       <div class="outcome-title">${esc(o.title)}</div>
-      <span class="state ${state.className}">${esc(state.label)}</span>
+      <div class="pw-outcome-card-actions">
+        <span class="state ${state.className}">${esc(state.label)}</span>
+        ${canEditStructure()?`<button class="pw-outcome-delete" type="button" title="Delete outcome" aria-label="Delete ${esc(o.title)}" onclick="event.stopPropagation();PW.deleteOutcome('${esc(o.id)}')">×</button>`:''}
+      </div>
     </div>
     <p class="outcome-desc">${esc(o.desc)}</p>
     <div class="tags">
@@ -20440,16 +20814,7 @@ window.PW=(()=>{
     renderBreadcrumb();
     renderOutcome();
 
-    const shouldOpenSubmission=Boolean(options?.focusReview&&isLead());
-    if(shouldOpenSubmission){
-      requestAnimationFrame(()=>{
-        const ws=workspace(o);
-        const latest=latestSubmission(ws,o);
-        if(latest)openSubmissionDetail(o.id,0);
-      });
-    }else{
-      window.scrollTo({top:0,behavior:'smooth'});
-    }
+    window.scrollTo({top:0,behavior:'smooth'});
   }
 
   function closeOutcome(){
@@ -20482,7 +20847,7 @@ window.PW=(()=>{
     $('pwWorkspaceStageLabel').textContent=`${st?.name||'Stage'} / ${outcomeDepartments(o).map(shortDept).join(' + ')}`.toUpperCase();
     $('pwWorkspaceTitle').textContent=o.title;
     $('pwWorkspaceDescription').textContent=leadReview
-      ? `You are supervising ${o.member}'s outcome. Inspect the work and verify submitted output when it is ready.`
+      ? `You are supervising a ${contributors(o).length}-member outcome. Review the combined work and all team submissions before making the final outcome decision.`
       : belongs
         ? 'You are participating in this outcome. Its workspace keeps features, tasks, outputs, and history together.'
         : 'You can inspect this outcome workspace. Join it if you want to contribute to its features and tasks.';
@@ -20490,16 +20855,20 @@ window.PW=(()=>{
     const headerState=leadReview&&hasSubmitted(o)?cardState(o):{className:o.status,label:stateText(o.status)};
     $('pwWorkspaceState').className=`state ${headerState.className}`;
     $('pwWorkspaceState').textContent=headerState.label;
+    $('pwDeleteOutcome')?.classList.toggle('hidden',!canEditStructure());
     $('pwWorkspaceCriteria').innerHTML=(ws.criteria||[]).map(c=>`<span class="criterion">${esc(c)}</span>`).join('');
 
-    $('pwWorkPlanTitle').textContent=leadReview?'Member Work Plan':'My Work Plan';
+    $('pwWorkPlanTitle').textContent=leadReview?(contributors(o).length>1?'Team Work Plan':'Member Work Plan'):'My Work Plan';
     $('pwWorkPlanSubtitle').textContent=leadReview
-      ? `Read-only view of how ${o.member} organized the work behind this outcome.`
+      ? `Read-only view of how the contributing members organized the work behind this outcome.`
       : 'Break the outcome into features, then manage the tasks needed to produce the output.';
 
     $('pwReadOnlyNote').classList.toggle('hidden',belongs||isLead());
+    $('pwReadOnlyNote').textContent=o.status==='accepted'
+      ? 'This outcome is accepted and closed. You can inspect its work and submission history, but joining and new contributions are disabled.'
+      : 'You can inspect this outcome. Join it to contribute features, tasks, and output submissions.';
     const join=$('pwJoinOutcome');
-    if(isLead())join.classList.add('hidden');
+    if(isLead()||o.status==='accepted')join.classList.add('hidden');
     else{
       join.classList.remove('hidden');
       join.classList.toggle('joined',belongs);
@@ -20653,6 +21022,7 @@ window.PW=(()=>{
       meta:h.meta||'Project submission',
       notes:h.notes||'',
       feedback:h.feedback||'',
+      submittedBy:h.submittedBy||'',
       verification:Array.isArray(h.verification)?deep(h.verification):[]
     }));
     return ws.history;
@@ -20671,49 +21041,106 @@ window.PW=(()=>{
     return o.outputStatus==='revision'||latest?.state==='Needs Revision';
   }
 
+  function renderOutcomeReviewPanel(o,ws,history){
+    const panel=$('pwLeadReviewPanel');
+    const criteria=ws.criteria||[];
+    const key=currentReviewKey();
+    ws.reviewChecks[key]=ws.reviewChecks[key]||{};
+    criteria.forEach((_,index)=>{
+      if(!(index in ws.reviewChecks[key]))ws.reviewChecks[key][index]=false;
+    });
+    const checks=ws.reviewChecks[key];
+    const submitters=[...new Set(history.map(h=>h.submittedBy).filter(Boolean))];
+    const fallbackContributors=contributors(o);
+    const people=submitters.length?submitters:fallbackContributors;
+
+    panel.classList.remove('hidden');
+    $('pwLeadReviewState').textContent='Outcome review';
+    $('pwLeadReviewAssignee').textContent=people.join(', ')||'Project members';
+    $('pwLeadReviewVersion').textContent=`${history.length} total`;
+    $('pwLeadReviewSubmittedAt').textContent=history[0]?.meta||'Submission history available';
+    $('pwLeadReviewExpected').textContent=o.desc;
+    $('pwLeadReviewSubmitted').innerHTML=`<div class="pw-group-submission-list">${history.map(h=>`
+      <div class="pw-group-submission-item">
+        <div class="pw-group-submission-top">
+          <strong>${esc(h.submittedBy||'Project member')}</strong>
+          <span>${esc(h.version)}</span>
+        </div>
+        <div class="pw-group-submission-title">${submissionValueHtml(h.title)}</div>
+        ${h.notes?`<div class="pw-group-submission-note">${esc(h.notes)}</div>`:''}
+      </div>`).join('')}</div>`;
+    $('pwLeadReviewCriteria').innerHTML=criteria.length?criteria.map((criterion,index)=>`
+      <label class="pw-review-check ${checks[index]?'passed':''}">
+        <input type="checkbox" ${checks[index]?'checked':''} onchange="PW.updateReviewCheck(${index},this.checked)" />
+        <span>${esc(criterion)}</span>
+      </label>`).join(''):'<div class="tiny">No acceptance criteria were defined.</div>';
+    $('pwLeadReviewFeedback').value=(o.feedback&&!/waiting/i.test(o.feedback))?o.feedback:'';
+    $('pwLeadReviewDecision').textContent='';
+    updateReviewProgress();
+  }
+
   function renderOutput(o,ws,execute,leadReview){
     const latest=latestSubmission(ws,o);
     const memberMode=!isLead()||assignedToViewer(o);
     const revision=revisionRequested(o,ws);
     const history=normalizeHistory(ws,o);
+    const accepted=o.status==='accepted'||o.outputStatus==='accepted';
 
     $('pwWorkspaceOutputState').className=`output-status ${o.outputStatus||'draft'}`;
     $('pwWorkspaceOutputState').textContent=outputText(o.outputStatus||'draft');
-
-    /* Verification no longer lives inline in the Outcome Workspace.
-       Project Leads inspect immutable submissions through the history modal. */
+    $('pwOutcomeAcceptedBanner').classList.toggle('hidden',!accepted);
+    $('pwOutcomeReviewModal')?.classList.remove('show');
+    document.body.style.overflow='';
     $('pwLeadReviewPanel').classList.add('hidden');
 
     if(leadReview){
-      $('pwOutputSectionTitle').textContent='Submitted Outputs';
-      $('pwOutputSectionSubtitle').textContent=history.length
-        ? `Open a submitted version to review the work and record verification.`
-        : `No submitted output is available for Project Lead verification yet.`;
+      $('pwOutputSectionTitle').textContent=accepted?'Accepted Outcome':'Outcome Submissions';
+      $('pwOutputSectionSubtitle').textContent=accepted
+        ? `This outcome is final. ${history.length} team submission${history.length===1?' was':'s were'} preserved as the evidence behind the decision.`
+        : history.length
+          ? `Review all ${history.length} team submissions together, verify the acceptance criteria, then make one decision for the outcome.`
+          : `No submitted work is available for Project Lead review yet.`;
 
       $('pwMemberSubmissionFields').classList.add('hidden');
       $('pwMemberOutputActions').classList.add('hidden');
       $('pwWorkingSubmissionBanner').classList.add('hidden');
       $('pwRevisionContext').classList.add('hidden');
       $('pwLeadNoSubmission').classList.toggle('hidden',history.length>0);
+      $('pwReviewOutcomeJump').classList.toggle('hidden',!history.length||accepted);
 
+      if(history.length&&!accepted)renderOutcomeReviewPanel(o,ws,history);
       renderHistory(o,ws,true);
       return;
     }
 
+    if(accepted){
+      $('pwOutputSectionTitle').textContent='Accepted Outcome';
+      $('pwOutputSectionSubtitle').textContent='The Project Lead accepted the combined work. Submission history remains available as a permanent record.';
+      $('pwMemberSubmissionFields').classList.add('hidden');
+      $('pwMemberOutputActions').classList.add('hidden');
+      $('pwWorkingSubmissionBanner').classList.add('hidden');
+      $('pwRevisionContext').classList.add('hidden');
+      $('pwLeadNoSubmission').classList.add('hidden');
+      $('pwReviewOutcomeJump').classList.add('hidden');
+      renderHistory(o,ws,false);
+      return;
+    }
+
     $('pwOutputSectionTitle').textContent='My Outputs & Feedback';
-    $('pwOutputSectionSubtitle').textContent='Every submission stays here with its review result and Project Lead feedback.';
+    $('pwOutputSectionSubtitle').textContent='Your submission is added to the shared outcome record. The Project Lead reviews all team submissions together.';
 
     $('pwMemberSubmissionFields').classList.remove('hidden');
     $('pwMemberOutputActions').classList.remove('hidden');
     $('pwWorkingSubmissionBanner').classList.remove('hidden');
     $('pwLeadNoSubmission').classList.add('hidden');
+    $('pwReviewOutcomeJump').classList.add('hidden');
     $('pwRevisionContext').classList.toggle('hidden',!memberMode||!revision);
 
     const version=nextVersion(ws,o);
-    $('pwOutputVersionLabel').textContent=ws.history.length?`${version} · New version`:'First submission';
+    $('pwOutputVersionLabel').textContent=ws.history.length?`${version} · New submission`:'First submission';
     $('pwOutputCurrentHelp').textContent=revision
-      ? 'Use the Project Lead feedback below to prepare a revised version.'
-      : 'Prepare the output you want the Project Lead to verify.';
+      ? 'Use the Project Lead outcome feedback below to prepare another contribution.'
+      : 'Submit your contribution to the shared outcome record.';
     $('pwWorkspaceOutputInput').value=ws.outputDraft||'';
     $('pwWorkspaceOutputNotes').value=ws.outputNotes||'';
     $('pwWorkspaceOutputInput').disabled=!execute;
@@ -20722,7 +21149,7 @@ window.PW=(()=>{
     $('pwSubmitOutputButton').disabled=!execute;
 
     if(revision){
-      $('pwRevisionFeedback').textContent=latest?.feedback||o.feedback||'The Project Lead requested changes before acceptance.';
+      $('pwRevisionFeedback').textContent=o.feedback||latest?.feedback||'The Project Lead requested changes before outcome acceptance.';
     }
 
     renderHistory(o,ws,false);
@@ -20730,13 +21157,14 @@ window.PW=(()=>{
 
   function renderHistory(o,ws,leadReview=false){
     const history=normalizeHistory(ws,o);
-    $('pwSubmissionCount').textContent=`${history.length} submission${history.length===1?'':'s'}`;
+    const submitterCount=new Set(history.map(h=>h.submittedBy).filter(Boolean)).size;
+    $('pwSubmissionCount').textContent=history.length
+      ? `${history.length} submission${history.length===1?'':'s'}${submitterCount?` · ${submitterCount} member${submitterCount===1?'':'s'}`:''}`
+      : '0 submissions';
 
     $('pwWorkspaceOutputHistory').innerHTML=history.length?history.map((h,index)=>{
-      const stateClass=h.state==='Accepted'?'accepted':h.state==='Needs Revision'?'revision':'review';
-      const action=leadReview && index===0 && h.state==='For Review'
-        ? 'Verify output →'
-        : 'View submission →';
+      const stateClass=submissionStateClass(h.state);
+      const action='View submission →';
 
       return `<article
         class="pw-history-card pw-history-clickable ${index===0?'latest':''}"
@@ -20751,8 +21179,8 @@ window.PW=(()=>{
               ${index===0?'<span class="readonly">Latest</span>':''}
             </div>
             <div class="pw-history-title">${esc(h.title)}</div>
-            <div class="pw-history-meta">${esc(h.meta)}</div>
-            <div class="pw-history-open ${leadReview&&index===0&&h.state==='For Review'?'verify':''}">${action}</div>
+            <div class="pw-history-meta">${h.submittedBy?`Submitted by ${esc(h.submittedBy)} · `:''}${esc(h.meta)}</div>
+            <div class="pw-history-open">${action}</div>
           </div>
           <span class="output-status ${stateClass}">${esc(h.state)}</span>
         </div>
@@ -20764,8 +21192,8 @@ window.PW=(()=>{
     const o=outcome(), ws=workspace(o); if(!o||!canExecute(o))return;
     ws.outputDraft=$('pwWorkspaceOutputInput').value.trim();
     ws.outputNotes=$('pwWorkspaceOutputNotes').value.trim();
-    o.output=ws.outputDraft||'Not submitted';
-    o.outputStatus='draft';
+    o.output=ws.outputDraft||o.output||'Not submitted';
+    if(!normalizeHistory(ws,o).length&&o.outputStatus!=='revision')o.outputStatus='draft';
     ws.activity.unshift({text:'Saved output draft.',time:nowLabel()});
     record('output','Saved output draft',o.id,ws.outputDraft||o.title);
     syncBack(); renderOutcome();
@@ -20781,18 +21209,19 @@ window.PW=(()=>{
 
     ws.outputDraft=output; ws.outputNotes=notes;
     ws.history.unshift({
-      version,title:output,state:'For Review',
-      meta:`Submitted ${nowLabel()} · ${currentName()}`,
+      version,title:output,state:'For Review',submittedBy:currentName(),
+      meta:`Submitted ${nowLabel()}`,
       notes,feedback:''
     });
-    o.output=output; o.outputStatus='review'; o.status='review'; o.feedback='Submitted and waiting for Project Lead review.';
-    ws.activity.unshift({text:`Submitted ${output} for Project Lead review.`,time:nowLabel()});
+    o.output=output; o.outputStatus='review'; o.status='review'; o.feedback='Team submissions are waiting for one Project Lead outcome review.';
+    ws.outputDraft=''; ws.outputNotes='';
+    ws.activity.unshift({text:`${currentName()} submitted ${output} for the shared outcome review.`,time:nowLabel()});
     record('output',resubmission?'Resubmitted output':'Submitted output',o.id,`${version} · ${output}`);
     syncBack(); render();
   }
 
   function submissionStateClass(state){
-    return state==='Accepted'?'accepted':state==='Needs Revision'?'revision':'review';
+    return state==='Accepted'||state==='Included'?'accepted':state==='Needs Revision'?'revision':'review';
   }
 
   function submissionValueHtml(value){
@@ -20870,65 +21299,18 @@ window.PW=(()=>{
 
   function buildSubmissionVerificationPane(o,h,index){
     const ws=workspace(o);
-    const criteria=ws.criteria||[];
-    const isLatest=index===0;
-    const actionable=isLead()&&!assignedToViewer(o)&&isLatest&&h.state==='For Review';
-
-    if(actionable){
-      const checks=modalReviewChecksForSubmission(o,ws,h);
-      const verified=criteria.filter((_,i)=>Boolean(checks[i])).length;
-
-      return `
-        <section class="pw-verification-pane">
-          <div class="pw-split-pane-kicker">Project Lead verification</div>
-          <div class="pw-split-pane-title">Review this submission</div>
-          <div class="pw-split-pane-subtitle">Assess the submitted output against the outcome and its acceptance criteria before making a decision.</div>
-
-          <div class="pw-verification-outcome">
-            <div class="label">Outcome to satisfy</div>
-            <p>${esc(o.desc)}</p>
-          </div>
-
-          <div class="pw-modal-review-section">
-            <div class="pw-modal-review-head">
-              <strong>Acceptance criteria</strong>
-              <span class="pw-submission-review-progress" id="pwSubmissionReviewProgress">${verified} / ${criteria.length} verified</span>
-            </div>
-            <div class="pw-modal-review-list">
-              ${criteria.length?criteria.map((criterion,i)=>`
-                <label class="pw-modal-review-item ${checks[i]?'passed':''}" data-pw-modal-review-row="${i}">
-                  <input type="checkbox" ${checks[i]?'checked':''} onchange="PW.updateSubmissionModalCriterion('${esc(o.id)}',${index},${i},this.checked)" />
-                  <span>${esc(criterion)}</span>
-                </label>`).join(''):`<div class="pw-modal-review-empty">No acceptance criteria were defined.</div>`}
-            </div>
-          </div>
-
-          <div class="pw-modal-review-feedback">
-            <label>Assessment and feedback</label>
-            <textarea id="pwSubmissionModalFeedback" placeholder="Explain what passed, or what the member must revise.">${esc(h.feedback||'')}</textarea>
-          </div>
-          <div class="pw-modal-review-note" id="pwSubmissionModalDecisionNote"></div>
-          <div class="pw-modal-review-actions">
-            <button class="btn" type="button" onclick="PW.requestSubmissionRevision('${esc(o.id)}',${index})">Request Revision</button>
-            <button class="btn primary" type="button" onclick="PW.acceptSubmissionOutput('${esc(o.id)}',${index})">Accept Output</button>
-          </div>
-        </section>`;
-    }
-
-    const reviewed=h.state==='Accepted'||h.state==='Needs Revision';
+    const accepted=o.status==='accepted'||o.outputStatus==='accepted';
     const stateClass=submissionStateClass(h.state);
 
     return `
       <section class="pw-verification-pane">
-        <div class="pw-split-pane-kicker">Verification</div>
-        <div class="pw-split-pane-title">${reviewed?'Recorded assessment':'Awaiting Project Lead review'}</div>
-        <div class="pw-split-pane-subtitle">${
-          reviewed
-            ? 'This assessment belongs to this exact submission version.'
-            : isLead()
-              ? 'Only the latest submission awaiting review can be assessed.'
-              : 'The Project Lead has not reviewed this submission yet.'
-        }</div>
+        <div class="pw-split-pane-kicker">Outcome-level review</div>
+        <div class="pw-split-pane-title">${accepted?'Included in accepted outcome':'Reviewed with the full submission set'}</div>
+        <div class="pw-split-pane-subtitle">${accepted
+          ? 'This submission is preserved as evidence behind the accepted outcome.'
+          : isLead()
+            ? 'This is one team contribution. Return to the outcome workspace to assess all submissions together and make one outcome decision.'
+            : 'The Project Lead reviews this submission together with every other contribution to the outcome.'}</div>
 
         <div class="pw-verification-outcome">
           <div class="label">Outcome to satisfy</div>
@@ -20937,18 +21319,19 @@ window.PW=(()=>{
 
         <div class="pw-modal-review-section">
           <div class="pw-modal-review-head">
-            <strong>Acceptance criteria assessment</strong>
+            <strong>Submission status</strong>
             <span class="output-status ${stateClass}">${esc(h.state)}</span>
           </div>
-          ${reviewed
-            ? recordedVerificationHtml(h,criteria)
-            : '<div class="pw-modal-review-empty">No assessment has been recorded yet.</div>'}
+          <div class="pw-modal-review-empty">Individual submissions are not accepted or rejected separately. The Project Lead accepts the outcome only after considering the combined submission history.</div>
         </div>
 
-        ${reviewed?`
-          <div class="pw-review-result-card ${stateClass}">
-            <div class="pw-review-result-label">Project Lead feedback</div>
-            <div class="pw-review-result-text">${esc(h.feedback||'No written feedback was recorded.')}</div>
+        ${accepted?`
+          <div class="pw-review-result-card accepted">
+            <div class="pw-review-result-label">Outcome decision</div>
+            <div class="pw-review-result-text">${esc(o.feedback||'The combined work satisfied the expected outcome and was accepted by the Project Lead.')}</div>
+          </div>`:isLead()?`
+          <div class="pw-review-actions" style="margin-top:12px">
+            <button class="btn primary" type="button" onclick="PW.continueToOutcomeReview()">Continue to outcome review</button>
           </div>`:''}
       </section>`;
   }
@@ -20965,7 +21348,7 @@ window.PW=(()=>{
     const modal=ensureSubmissionDetailModal();
     $('pwSubmissionDetailTitle').textContent=`${h.version} · ${h.title}`;
 
-    const submittedBy=contributors(o).join(', ')||o.member||'Assigned member';
+    const submittedBy=h.submittedBy||o.member||'Project member';
     const departments=outcomeDepartments(o).map(shortDept).join(', ');
 
     $('pwSubmissionDetailBody').innerHTML=`
@@ -20973,12 +21356,12 @@ window.PW=(()=>{
         <section class="pw-submission-pane">
           <div class="pw-split-pane-kicker">Member submission</div>
           <div class="pw-split-pane-title">${submissionValueHtml(h.title)}</div>
-          <div class="pw-split-pane-subtitle">Immutable record of what the assigned members submitted for this version.</div>
+          <div class="pw-split-pane-subtitle">Immutable record of this member contribution to the shared outcome.</div>
 
           <div class="pw-split-meta-row">
             <span class="pw-split-meta-pill">Version <strong>${esc(h.version)}</strong></span>
             <span class="pw-split-meta-pill">State <strong>${esc(h.state)}</strong></span>
-            <span class="pw-split-meta-pill">Members <strong>${esc(submittedBy)}</strong></span>
+            <span class="pw-split-meta-pill">Submitted by <strong>${esc(submittedBy)}</strong></span>
             <span class="pw-split-meta-pill">Departments <strong>${esc(departments)}</strong></span>
           </div>
 
@@ -21006,6 +21389,51 @@ window.PW=(()=>{
 
   function closeSubmissionDetail(){
     $('pwSubmissionDetailModal')?.classList.remove('show');
+  }
+
+  function openOutcomeReviewModal(){
+    const o=outcome();
+    if(!o||!isLead())return;
+    const ws=workspace(o);
+    const history=normalizeHistory(ws,o);
+    if(!history.length||o.status==='accepted')return;
+
+    // Build the verification UI from the current outcome every time it opens.
+    // This avoids relying on a previously rendered/hidden panel state.
+    renderOutcomeReviewPanel(o,ws,history);
+
+    const panel=$('pwLeadReviewPanel');
+    const modal=$('pwOutcomeReviewModal');
+    if(!panel||!modal)return;
+
+    // Portal the modal to <body> so workspace containers, transforms, overflow,
+    // and stacking contexts can never trap the popup.
+    if(modal.parentElement!==document.body)document.body.appendChild(modal);
+
+    panel.classList.remove('hidden');
+    panel.setAttribute('tabindex','-1');
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden','false');
+    document.body.classList.add('pw-modal-open');
+    document.body.style.overflow='hidden';
+    requestAnimationFrame(()=>panel.focus({preventScroll:true}));
+  }
+
+  function scrollToOutcomeReview(){
+    openOutcomeReviewModal();
+  }
+
+  function closeOutcomeReviewModal(){
+    const modal=$('pwOutcomeReviewModal');
+    modal?.classList.remove('show');
+    modal?.setAttribute('aria-hidden','true');
+    document.body.classList.remove('pw-modal-open');
+    document.body.style.overflow='';
+  }
+
+  function continueToOutcomeReview(){
+    closeSubmissionDetail();
+    window.setTimeout(openOutcomeReviewModal,80);
   }
 
   function updateSubmissionModalCriterion(outcomeIdValue,index,criterionIndex,checked){
@@ -21118,11 +21546,13 @@ window.PW=(()=>{
   }
 
   function currentReviewKey(){
-    const o=outcome(), ws=workspace(o), latest=latestSubmission(ws,o);
-    return o&&latest?`${o.id}:${latest.version||'v1'}`:null;
+    const o=outcome(), ws=workspace(o);
+    if(!o||!ws)return null;
+    const signature=(ws.history||[]).map(h=>h.version||'submission').join('|')||'none';
+    return `${o.id}:outcome:${signature}`;
   }
   function updateReviewProgress(){
-    const o=outcome(), ws=workspace(o), latest=latestSubmission(ws,o); if(!o||!latest)return;
+    const o=outcome(), ws=workspace(o); if(!o||!ws)return;
     const key=currentReviewKey(), checks=ws.reviewChecks[key]||{};
     const total=(ws.criteria||[]).length;
     const checked=Object.values(checks).filter(Boolean).length;
@@ -21139,43 +21569,50 @@ window.PW=(()=>{
   }
 
   function acceptOutput(){
-    const o=outcome(), ws=workspace(o), latest=latestSubmission(ws,o); if(!o||!ws||!latest||!isLead())return;
-    const checks=ws.reviewChecks[currentReviewKey()]||{};
-    if((ws.criteria||[]).some((_,i)=>!checks[i])){
-      $('pwLeadReviewDecision').textContent='Verify every acceptance criterion before accepting the output.';
+    const o=outcome(), ws=workspace(o); if(!o||!ws||!isLead())return;
+    const history=normalizeHistory(ws,o);
+    if(!history.length){
+      $('pwLeadReviewDecision').textContent='There are no team submissions to review yet.';
       return;
     }
-    const feedback=$('pwLeadReviewFeedback').value.trim()||'Verified and accepted by the Project Lead.';
-    latest.state='Accepted'; latest.feedback=feedback; latest.meta=`Accepted ${nowLabel()} · ${currentName()}`;
+    const checks=ws.reviewChecks[currentReviewKey()]||{};
+    if((ws.criteria||[]).some((_,i)=>!checks[i])){
+      $('pwLeadReviewDecision').textContent='Verify every acceptance criterion against the combined submissions before accepting the outcome.';
+      return;
+    }
+    const feedback=$('pwLeadReviewFeedback').value.trim()||'The combined team submissions satisfy the expected outcome and all acceptance criteria.';
+    history.forEach(h=>{
+      if(h.state==='For Review'||h.state==='Submitted')h.state='Included';
+    });
     o.outputStatus='accepted'; o.status='accepted'; o.progress=100; o.feedback=feedback;
-    ws.activity.unshift({text:`Output accepted: ${latest.title}`,time:nowLabel()});
-    record('review','Accepted output',o.id,`Accepted ${latest.version} · ${latest.title}`);
-    // Resolve dependent outcome.
+    ws.activity.unshift({text:`Project Lead accepted the outcome after reviewing ${history.length} team submissions.`,time:nowLabel()});
+    record('review','Accepted outcome',o.id,`Accepted ${o.title} after reviewing ${history.length} team submissions.`);
     if(o.prerequisiteFor){
       const dep=S().outcomes.find(x=>x.id===o.prerequisiteFor);
       if(dep&&dep.status==='locked')dep.status='planned';
     }
+    closeOutcomeReviewModal();
     syncBack(); render();
   }
 
   function requestRevision(){
-    const o=outcome(), ws=workspace(o), latest=latestSubmission(ws,o); if(!o||!ws||!latest||!isLead())return;
+    const o=outcome(), ws=workspace(o); if(!o||!ws||!isLead())return;
     const feedback=$('pwLeadReviewFeedback').value.trim();
     if(!feedback){
-      $('pwLeadReviewDecision').textContent='Explain what must be revised before requesting a revision.';
+      $('pwLeadReviewDecision').textContent='Explain what the team must revise before requesting another submission.';
       $('pwLeadReviewFeedback').focus();
       return;
     }
-    latest.state='Needs Revision'; latest.feedback=feedback; latest.meta=`Reviewed ${nowLabel()} · ${currentName()}`;
     o.outputStatus='revision'; o.status='progress'; o.feedback=feedback;
-    ws.outputDraft=latest.title; ws.outputNotes=latest.notes||'';
-    ws.activity.unshift({text:`Project Lead requested revision: ${feedback}`,time:nowLabel()});
-    record('review','Requested revision',o.id,feedback);
+    ws.outputDraft=''; ws.outputNotes='';
+    ws.activity.unshift({text:`Project Lead requested outcome revision: ${feedback}`,time:nowLabel()});
+    record('review','Requested outcome revision',o.id,feedback);
+    closeOutcomeReviewModal();
     syncBack(); render();
   }
 
   function joinOutcome(){
-    const o=outcome(); if(!o||isLead()||belongsToViewer(o))return;
+    const o=outcome(); if(!o||o.status==='accepted'||isLead()||belongsToViewer(o))return;
     o.participants=o.participants||[];
     o.participants.push(currentName());
     workspace(o).activity.unshift({text:`${currentName()} joined the outcome.`,time:nowLabel()});
@@ -21227,13 +21664,54 @@ window.PW=(()=>{
     input.value=''; save(); renderChat();
   }
 
-  function renderProjectMembers(){
-    const names=new Set([S().lead,S().assistant]);
+  function projectMemberNames(){
+    const names=new Set([S().lead]);
+    (project()?.members||[]).forEach(id=>{const member=memberById(id);if(member?.name)names.add(member.name)});
     S().outcomes.forEach(o=>contributors(o).forEach(n=>names.add(n)));
-    $('pwProjectMembers').innerHTML=[...names].map(name=>{
+    Object.keys(S().memberAccess||{}).forEach(name=>names.add(name));
+    return [...names].filter(Boolean).sort((a,b)=>{
+      if(a===S().lead)return -1;
+      if(b===S().lead)return 1;
+      return a.localeCompare(b);
+    });
+  }
+
+  function renderProjectMembers(){
+    const names=projectMemberNames();
+    const note=isLead()?'<div class="pw-member-access-note">Members default to View only for project structure. Can edit unlocks stage and outcome management without granting Project Lead authority.</div>':'';
+    $('pwProjectMembers').innerHTML=note+names.map(name=>{
       const member=memberByName(name);
-      return `<div class="member-row"><span><span class="avatar">${initials(name)}</span></span><span>${esc(name)}${member?.role?' · '+esc(member.role):''}</span></div>`;
+      const access=projectAccess(name);
+      const role=name===S().lead?'Project Lead':member?.role||'Project Member';
+      const control=isLead()
+        ? name===S().lead
+          ? '<span class="pw-access-badge lead">Project Lead</span>'
+          : `<select class="pw-member-access-select" aria-label="Project access for ${esc(name)}" onchange="PW.setMemberAccess('${esc(name)}',this.value)">
+              <option value="view" ${access==='view'?'selected':''}>View only</option>
+              <option value="edit" ${access==='edit'?'selected':''}>Can edit</option>
+            </select>`
+        : `<span class="pw-access-badge ${access==='edit'?'edit':access==='lead'?'lead':''}">${access==='edit'?'Can edit':access==='lead'?'Project Lead':'View only'}</span>`;
+      return `<div class="member-row pw-member-access-row">
+        <div class="pw-member-access-identity">
+          <span class="avatar">${initials(name)}</span>
+          <div class="pw-member-access-copy"><strong>${esc(name)}</strong><span>${esc(role)}</span></div>
+        </div>
+        ${control}
+      </div>`;
     }).join('');
+  }
+
+  function setMemberAccess(name,level){
+    if(!isLead()||!name||name===S().lead)return;
+    const next=level==='edit'?'edit':'view';
+    const previous=projectAccess(name);
+    if(next==='view')delete S().memberAccess[name];
+    else S().memberAccess[name]='edit';
+    if(previous!==next){
+      record('membership',next==='edit'?'Granted Can edit':'Set View only',null,`${name} now has ${next==='edit'?'Can edit':'View only'} access to project stages and outcomes.`);
+    }
+    syncBack();
+    renderProjectMembers();
   }
 
   function toggleAnnouncementComposer(force){
@@ -21295,7 +21773,7 @@ window.PW=(()=>{
     const lead=isLead();
     document.querySelectorAll('#pwProjectPage .pw-lead-filter').forEach(b=>b.classList.toggle('hidden',!lead));
     $('pwActivityMemberWrap').classList.toggle('hidden',!lead);
-    const names=new Set([S().lead,S().assistant,...S().outcomes.flatMap(contributors),...S().activity.map(a=>a.actor)]);
+    const names=new Set([S().lead,...S().outcomes.flatMap(contributors),...S().activity.map(a=>a.actor)]);
     $('pwActivityMember').innerHTML='<option value="all">All members</option>'+[...names].filter(Boolean).sort().map(n=>`<option value="${esc(n)}" ${activityMember===n?'selected':''}>${esc(n)}</option>`).join('');
 
     let base=lead?S().activity.slice():S().activity.filter(item=>item.actor===currentName());
@@ -21357,7 +21835,7 @@ window.PW=(()=>{
   }
 
   function openStageModal(stageId=null){
-    if(!isLead())return;
+    if(!canEditStructure())return;
     const s=S();
     const existing=stageId?s.stages.find(stage=>stage.id===stageId):null;
     editingStageId=existing?.id||null;
@@ -21389,7 +21867,7 @@ window.PW=(()=>{
   }
 
   function createStage(){
-    if(!isLead())return;
+    if(!canEditStructure())return;
     const input=$('pwNewStageName');
     const name=input?.value.trim()||'';
     if(!name){
@@ -21413,6 +21891,63 @@ window.PW=(()=>{
     closeStageModal();
     syncBack();
     scope='whole';
+    render();
+  }
+
+  function unlinkOutcomeDependencies(o){
+    if(!o)return;
+    if(o.prereq){
+      const prerequisite=S().outcomes.find(item=>item.id===o.prereq);
+      if(prerequisite?.prerequisiteFor===o.id)prerequisite.prerequisiteFor=null;
+    }
+    if(o.prerequisiteFor){
+      const dependent=S().outcomes.find(item=>item.id===o.prerequisiteFor);
+      if(dependent?.prereq===o.id){
+        dependent.prereq=null;
+        if(dependent.status==='locked')dependent.status='planned';
+        dependent.feedback='Prerequisite removed. This outcome can now proceed independently.';
+      }
+    }
+  }
+
+  function deleteOutcome(id=outcomeId){
+    if(!canEditStructure())return;
+    const o=outcome(id);
+    if(!o)return;
+    const ws=S().workspaces[o.id];
+    const submissionCount=Array.isArray(ws?.history)?ws.history.length:0;
+    const warning=submissionCount||o.outputStatus==='accepted'||o.outputStatus==='review'
+      ? `Delete “${o.title}”? This outcome has existing work or submission history. This prototype action permanently removes it.`
+      : `Delete “${o.title}”? This removes the outcome from the project.`;
+    if(!window.confirm(warning))return;
+
+    const title=o.title;
+    record('project','Deleted project outcome',o.id,`Deleted outcome ${title}.`);
+    unlinkOutcomeDependencies(o);
+    S().outcomes=S().outcomes.filter(item=>item.id!==o.id);
+    delete S().workspaces[o.id];
+    if(outcomeId===o.id)outcomeId=null;
+    syncBack();
+    render();
+  }
+
+  function deleteStage(stageId){
+    if(!canEditStructure())return;
+    const stage=S().stages.find(item=>item.id===stageId);
+    if(!stage)return;
+    const stageOutcomes=S().outcomes.filter(o=>o.stage===stageId);
+    const warning=stageOutcomes.length
+      ? `Delete “${stage.name}” and its ${stageOutcomes.length} outcome${stageOutcomes.length===1?'':'s'}? This prototype action permanently removes the stage and those outcomes.`
+      : `Delete “${stage.name}”? The empty stage will be removed.`;
+    if(!window.confirm(warning))return;
+
+    record('project','Deleted project stage',null,`Deleted stage ${stage.name}${stageOutcomes.length?` and ${stageOutcomes.length} outcome${stageOutcomes.length===1?'':'s'}`:''}.`);
+    stageOutcomes.forEach(o=>{unlinkOutcomeDependencies(o);delete S().workspaces[o.id]});
+    const removedIds=new Set(stageOutcomes.map(o=>o.id));
+    S().outcomes=S().outcomes.filter(o=>!removedIds.has(o.id));
+    S().stages=S().stages.filter(item=>item.id!==stageId);
+    if(outcomeId&&removedIds.has(outcomeId))outcomeId=null;
+    syncBack();
     render();
   }
 
@@ -21467,7 +22002,7 @@ window.PW=(()=>{
   }
 
   function openOutcomeModal(stageId){
-    if(!isLead())return;
+    if(!canEditStructure())return;
     if(!S().stages.length){
       openStageModal();
       return;
@@ -21503,7 +22038,7 @@ window.PW=(()=>{
     syncProjectModalOpenState();
   }
   function createOutcome(){
-    if(!isLead())return;
+    if(!canEditStructure())return;
     const stageId=$('pwNewOutcomeStage').value;
     if(!stageId){closeOutcomeModal();openStageModal();return}
 
@@ -21554,7 +22089,7 @@ window.PW=(()=>{
 
   function onViewerChange(){
     if($('pwProjectPage')?.classList.contains('hidden'))return;
-    scope=isLead()?'whole':'mine';
+    scope=canEditStructure()?'whole':'mine';
     outcomeId=null;
     tab='content';
     activityFilter='all'; activityMember='all';
@@ -21565,15 +22100,15 @@ window.PW=(()=>{
     open,hide,render,switchTab,setScope,openOutcome,closeOutcome,
     showFeatureComposer,hideFeatureComposer,addFeature,toggleFeature,deleteFeature,
     addTask,toggleTask,deleteTask,saveDraft,submitOutput,
-    openSubmissionDetail,closeSubmissionDetail,updateSubmissionModalCriterion,
+    openSubmissionDetail,closeSubmissionDetail,openOutcomeReviewModal,scrollToOutcomeReview,closeOutcomeReviewModal,continueToOutcomeReview,updateSubmissionModalCriterion,
     acceptSubmissionOutput,requestSubmissionRevision,
     updateReviewCheck,acceptOutput,requestRevision,
     joinOutcome,skipPrerequisite,setProjectState,
     sendChat,toggleAnnouncementComposer,postAnnouncement,toggleAnnouncementPin,
-    setActivityFilter,setActivityMember,
-    openStageModal,closeStageModal,createStage,
+    setActivityFilter,setActivityMember,setMemberAccess,
+    openStageModal,closeStageModal,createStage,deleteStage,
     addOutcomeCriterion,removeOutcomeCriterion,
-    openOutcomeModal,closeOutcomeModal,createOutcome,
+    openOutcomeModal,closeOutcomeModal,createOutcome,deleteOutcome,
     onViewerChange
   };
 })();
@@ -22479,7 +23014,7 @@ syncSidebarIdentity();
 <script id="prometheus-admin-demo-script">
   const ADMIN_DIRECTORY=[
     {id:'rex',name:'Rex Jumawid',email:'rex.jumawid@gmail.com',department:'x',position:'Project Lead / Leadership',role:'Administrator',status:'Active',auth:{setupComplete:true,google:true,password:false}},
-    {id:'ana',name:'Ana Mendoza',email:'ana@example.com',department:'x',position:'Assistant Lead / Operations',role:'Member',status:'Active',auth:{setupComplete:true,google:false,password:true}},
+    {id:'ana',name:'Ana Mendoza',email:'ana@example.com',department:'x',position:'Operations',role:'Member',status:'Active',auth:{setupComplete:true,google:false,password:true}},
     {id:'nico',name:'Nico Ramos',email:'nico.ramos@gmail.com',department:'rd',position:'Software Developer',role:'Member',status:'Active',auth:{setupComplete:true,google:true,password:true}},
     {id:'justin',name:'Justin Cruz',email:'justin@example.com',department:'rd',position:'Software Developer',role:'Member',status:'Invited',auth:{setupComplete:false,google:false,password:false}},
     {id:'bea',name:'Bea Santos',email:'bea@example.com',department:'creatives',position:'Creative / UI UX',role:'Member',status:'Active',auth:{setupComplete:true,google:false,password:true}},
