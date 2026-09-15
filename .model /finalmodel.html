@@ -10132,6 +10132,61 @@ body,
     justify-content:flex-end;
   }
 }
+
+
+/* =====================================================================
+   BREADCRUMB WIDTH FIX
+   Let deeper breadcrumb trails grow to the available workspace width so the
+   current location stays readable instead of being prematurely ellipsized.
+   ===================================================================== */
+@media(min-width:701px){
+  .topbar,
+  body.app-home-default .topbar{
+    width:auto!important;
+    max-width:calc(100% - 100px)!important;
+  }
+
+  .topbar .breadcrumbs:not(.is-root-page){
+    width:max-content;
+    max-width:100%!important;
+    min-width:0;
+    overflow:visible!important;
+    white-space:nowrap;
+  }
+
+  .topbar .breadcrumbs:not(.is-root-page) .vw-crumb-current{
+    min-width:max-content!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    white-space:nowrap;
+  }
+}
+
+@media(max-width:980px) and (min-width:701px){
+  .topbar,
+  body.app-home-default .topbar{
+    max-width:calc(100% - 64px)!important;
+  }
+}
+
+@media(max-width:700px){
+  .topbar .breadcrumbs:not(.is-root-page){
+    max-width:calc(100vw - 28px)!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    scrollbar-width:none;
+  }
+
+  .topbar .breadcrumbs:not(.is-root-page)::-webkit-scrollbar{
+    display:none;
+  }
+
+  .topbar .breadcrumbs:not(.is-root-page) .vw-crumb-current{
+    min-width:max-content;
+    overflow:visible!important;
+    text-overflow:clip!important;
+  }
+}
 </style>
 
 <style id="prometheus-admin-demo-styles">
