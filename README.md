@@ -16,6 +16,7 @@ Registry, project, schedule, notification, reporting, and collaboration business
 
 ```text
 .context/      Product requirements, user flows, data model, tech stack, and implementation phases
+.docs/phases/  Per-phase implementation journals, decisions, lessons, and final acceptance records
 .model/        HTML interaction prototypes used as references only
 .testcases/    Manual acceptance gates for each implementation phase
 scripts/       Repository health and maintenance scripts
@@ -37,8 +38,11 @@ tests/e2e/     Playwright browser tests
 - Figma defines visual design.
 - `.model/finalmodel.html` and `.model/login-page.html` are prototype and interaction references only.
 - `.testcases/` contains the manual acceptance gates for each phase.
+- `.docs/phases/` records what was actually implemented, important decisions and challenges, lessons learned, and the final phase result.
 
 When references disagree, resolve the planning documents before encoding the behavior in application code.
+
+The phase journals are historical implementation records rather than a replacement for canonical requirements. If a lesson changes a product or architecture rule, update the canonical source of truth as well as the journal.
 
 ## Phase 00 setup
 
@@ -157,10 +161,17 @@ Only variables prefixed with `VITE_` are exposed to browser code.
 For each phase:
 
 1. Read the matching section in `.context/phases.md`.
-2. Implement only the planned phase scope.
-3. Run the matching manual checks in `.testcases/`.
-4. Fix failed acceptance checks before beginning the next phase.
+2. Read the current phase journal in `.docs/phases/` if it already exists, especially its carried-forward lessons and next approach.
+3. Implement only the planned phase scope.
+4. Record meaningful engineering decisions and challenges in the phase journal as they happen.
+5. Run the matching manual checks in `.testcases/` and the relevant automated regression suite.
+6. Fix failed acceptance checks before beginning the next phase.
+7. Finalize the phase journal with delivered scope, acceptance result, limitations, technical debt, lessons learned, and the recommended next approach.
+
+A phase is not complete until its acceptance gate and regression checks pass and its implementation journal is finalized.
+
+Use stable decision IDs such as `P1-D01` and `P2-D01` so later phases can reference earlier architectural decisions without rewriting their history.
 
 The implementation must preserve the separation between organization authority, Project Lead authority, Project Member access, and Outcome Membership.
 
-See `CONTRIBUTING.md` for the repository contribution workflow.
+See `CONTRIBUTING.md` and `.docs/phases/README.md` for the repository contribution and phase-documentation workflow.
