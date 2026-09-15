@@ -1,19 +1,23 @@
 ---
 name: prometheus-phase-delivery
-description: Use when starting, implementing, verifying, documenting, or completing any Prometheus implementation phase. Covers phase scoping, source-of-truth review, vertical-slice delivery, acceptance, regression, and the engineering decision journal.
+description: Use when starting, implementing, verifying, documenting, or completing any Prometheus implementation phase. Covers phase scoping, source-of-truth review, vertical-slice delivery, acceptance, regression, engineering decision journals, and cross-session handoff.
 ---
 
 # Prometheus Phase Delivery
 
 Use this workflow for phase-level implementation work.
 
-The goal is to leave every phase usable, tested, documented, and safe for the next phase.
+The goal is to leave every phase usable, tested, documented, and safe for the next phase or development session.
 
-## 1. Determine the active phase
+## 1. Determine the active phase and handoff state
 
-Read `.context/phases.md` and `.docs/phases/README.md`.
+Read `.docs/CURRENT.md` first when it exists.
 
-If implementation state is unclear, identify the earliest incomplete phase from repository evidence rather than guessing from the navbar or prototype.
+Treat it as the lightweight cross-session handoff, not as a canonical requirements source.
+
+Then read `.context/phases.md` and `.docs/phases/README.md`.
+
+If implementation state is unclear, verify the handoff against repository evidence and identify the earliest incomplete phase rather than guessing from the navbar or prototype.
 
 Do not substantially implement later-phase product behavior unless it is required infrastructure for the active phase.
 
@@ -153,7 +157,26 @@ Sign in
 
 As later Prometheus Core phases become real, extend regression to the complete project workflow defined in `.context/phases.md`.
 
-## 8. Phase completion gate
+## 8. Maintain the cross-session handoff
+
+Keep `.docs/CURRENT.md` concise and current.
+
+Update it when:
+
+- the active phase changes,
+- the next concrete action changes materially,
+- a blocking issue changes what the next session should do,
+- or a work session ends at a materially different point than the existing handoff.
+
+It should contain the current phase, verified current state, the next action, and the minimum startup reading needed by the next agent.
+
+Do not turn `.docs/CURRENT.md` into a permanent engineering diary.
+
+Permanent implementation history belongs in the matching `.docs/phases/phase-XX-*.md` journal.
+
+Canonical requirements belong in `.context/`.
+
+## 9. Phase completion gate
 
 A phase is complete only when all of the following are true:
 
@@ -167,12 +190,13 @@ A phase is complete only when all of the following are true:
 8. Lessons learned and the next approach are recorded.
 9. Known limitations and technical debt are recorded.
 10. The phase exit result is explicit.
+11. `.docs/CURRENT.md` points to the correct next phase or next concrete action.
 
 Do not begin the next phase merely because most of the current phase appears to work.
 
 The acceptance gate and phase journal define completion together.
 
-## 9. Report completion accurately
+## 10. Report completion accurately
 
 When reporting phase work, state:
 
