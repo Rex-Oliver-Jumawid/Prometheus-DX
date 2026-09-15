@@ -9,9 +9,19 @@ Use this workflow for pages, components, navigation, drawers, modals, responsive
 
 ## 1. Inspect the canonical visual source
 
-Prometheus Figma:
+Current user-selected Prometheus Figma reference:
 
-`https://www.figma.com/design/8zgQ4pcWtku7rSWzjlP9K9/Prometheus?node-id=19-12077&t=WEpRDccEfW56hE0W-1`
+`https://www.figma.com/design/8zgQ4pcWtku7rSWzjlP9K9/Prometheus?node-id=17-4603&t=9bvq2LAHiC0GPJs7-1`
+
+File key: `8zgQ4pcWtku7rSWzjlP9K9`
+
+Starting node: `17:4603`
+
+Before implementing or substantially changing user-facing UI, access the Figma file through the available Figma integration rather than relying only on the URL, screenshots, memory, or prototype HTML.
+
+Use the provided starting node as an entry point into the current design file, then inspect the exact page/frame relevant to the screen being implemented.
+
+If the current phase or `.docs/CURRENT.md` provides a more specific Figma node, prefer that node.
 
 Use Figma as the source of truth for:
 
