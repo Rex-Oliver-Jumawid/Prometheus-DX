@@ -1,4 +1,23 @@
 import { expect, test } from '@playwright/test';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+test.describe.configure({ mode: 'serial' });
+
+test.afterAll(async () => {
+  await prisma.$disconnect();
+});
+
+async function signIn(page: Parameters<typeof test>[0] extends never ? never : any) {
+  const email = process.env.E2E_MEMBER_EMAIL;
+  const password = process.env.E2E_MEMBER_PASSWORD;
+  if (!email || !password) throw new Error('E2E credentials are not configured.');
+  await page.goto('/login');
+  await page.getByLabel('Company email').fill(email);
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+}
 
 test('signed-out direct protected navigation returns to login', async ({
   page,
@@ -89,6 +108,10 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Team' })).toBeVisible();
 
+  await page.goto('/schedule');
+  await expect(page).toHaveURL(/\/schedule$/);
+  await expect(page.getByRole('heading', { name: 'Schedule' })).toBeVisible();
+
   await page
     .getByRole('button', { name: 'Open profile and account' })
     .first()
@@ -98,4 +121,72 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
   );
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
+});
+
+test('normal Member cannot see or open Registry', async ({ page }) => {
+  const email = process.env.E2E_MEMBER_EMAIL;
+  const password = process.env.E2E_MEMBER_PASSWORD;
+  test.skip(
+    !email || !password,
+    'Requires E2E_MEMBER_EMAIL and E2E_MEMBER_PASSWORD in .env.',
+  );
+
+  const member = await prisma.member.findFirst({
+    where: { email: { equals: email!, mode: 'insensitive' } },
+  });
+  if (!member) throw new Error('E2E member record was not found.');
+
+  try {
+    await prisma.member.update({
+      where: { id: member.id },
+      data: { workspaceRole: 'MEMBER' },
+    });
+
+    await signIn(page);
+    await expect(page).not.toHaveURL(/\/login$/);
+    await expect(page.getByRole('link', { name: 'Registry' })).toHaveCount(0);
+    await page.goto('/registry');
+    await expect(
+      page.getByRole('heading', { name: 'Registry is for administrators' }),
+    ).toBeVisible();
+  } finally {
+    await prisma.member.update({
+      where: { id: member.id },
+      data: { workspaceRole: member.workspaceRole },
+    });
+  }
+});
+
+test('deactivated Prometheus member is denied after authentication', async ({
+  page,
+}) => {
+  const email = process.env.E2E_MEMBER_EMAIL;
+  const password = process.env.E2E_MEMBER_PASSWORD;
+  test.skip(
+    !email || !password,
+    'Requires E2E_MEMBER_EMAIL and E2E_MEMBER_PASSWORD in .env.',
+  );
+
+  const member = await prisma.member.findFirst({
+    where: { email: { equals: email!, mode: 'insensitive' } },
+  });
+  if (!member) throw new Error('E2E member record was not found.');
+
+  try {
+    await prisma.member.update({
+      where: { id: member.id },
+      data: { status: 'DEACTIVATED', deactivatedAt: new Date() },
+    });
+
+    await signIn(page);
+    await expect(page).toHaveURL(/\/access-denied$/);
+    await expect(
+      page.getByRole('heading', { name: 'This account can’t enter Prometheus' }),
+    ).toBeVisible();
+  } finally {
+    await prisma.member.update({
+      where: { id: member.id },
+      data: { status: member.status, deactivatedAt: member.deactivatedAt },
+    });
+  }
 });
