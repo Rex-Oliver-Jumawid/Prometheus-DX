@@ -14,988 +14,731 @@
 
 This Software Requirements Specification defines the functional and non-functional requirements for the Prometheus Centralized Workflow Management System.
 
-Prometheus is a software company that provides software development services to clients.
-The company handles multiple software projects that may involve different teams, departments, Project Leads, and members.
+Prometheus is an internal web-based platform for project delivery, project collaboration, scheduling, work tracking, output review, notifications, reporting, and administrative management.
 
-As the number of projects and team members increases, project information, schedules, progress updates, deliverables, participation records, and employee work records can become distributed across different tools and communication channels.
+The canonical `user-flows.md` document defines the expected user interaction and access-control behavior of the system.
 
-The proposed system will provide Prometheus with a dedicated centralized platform for managing its internal software development workflow.
+`finalmodel.html` is an interaction prototype and shall not be treated as the production authorization specification.
 
-The system is intended to support project tracking, project creation, open internal project visibility, outcome participation, project management, member tracking, work scheduling, project deliverables, collaboration, performance monitoring, and administrative management within a single platform.
+## 1.2 Core Model
 
-The canonical user flows define the expected interaction and access-control behavior of the system.
+Prometheus separates four concepts:
 
----
+- Organization role.
+- Project Lead authority.
+- Project Member access level.
+- Outcome Membership.
 
-## 1.2 Background
-
-Prometheus develops software solutions for different clients through project-based teams.
-
-A project may involve multiple departments such as Research and Development, Creatives, Sales and Marketing, and other organizational units.
-
-Different members may contribute to several projects simultaneously, while selected members may serve as Project Leads for particular projects.
-
-The system uses an open internal participation model.
-All active authorized Prometheus users may view all projects and their outcomes.
-Any active authorized user may join an available outcome and become an Outcome Member without requiring manual assignment or Project Lead approval.
-
-Project leadership remains specific to an individual project instead of becoming a company-wide organizational role.
-Project participation is derived from Outcome Membership rather than from a separate manually assigned project-participant role.
-
-The existing prototype organizes company operations around Projects, project stages, outcomes, outputs, schedules, team information, notifications, reports, and administrative controls.
+These concepts may exist simultaneously for the same user and shall not be conflated.
 
 ---
 
-## 1.3 Scope
+# 2. User Classes and Relationships
 
-The Prometheus Centralized Workflow Management System will be an internal web-based platform used by authorized Prometheus personnel to manage company projects and related operational activities.
+## 2.1 Administrator
 
-The system will centralize the following major areas:
+An Administrator manages organization-level information and workspace access.
 
-1. Project creation and management
-2. Company-wide internal project visibility
-3. Project leadership
-4. Project stages and workflow tracking
-5. Outcome Membership and participation
-6. Feature and task management
-7. Department participation
-8. Output submission and review
-9. Accepted outcome credit
-10. Team and member monitoring
-11. Work schedules and availability
-12. Time In and Time Out records
-13. Notifications
-14. Project communication
-15. Reports and analytics
-16. User, department, role, and access administration
+Administrators may:
 
-The objective is to provide a single source of truth for the company's project delivery workflow.
-
----
-
-# 2. System Objectives
-
-The system shall provide Prometheus with a centralized platform that allows the company to:
-
-- Track all active, planned, and completed software projects.
-- Allow all active authorized users to view company projects and project outcomes.
-- Allow any active authorized user to create a project.
-- Allow a project creator to assign themselves or another active authorized user as Project Lead.
-- Distinguish organization-level roles from project-specific Project Lead responsibility.
-- Allow authorized users to join available outcomes and become Outcome Members.
-- Identify which projects each member leads or participates in.
-- Derive project participation from Outcome Membership.
-- Break projects into manageable stages, outcomes, features, and tasks.
-- Monitor project and outcome progress.
-- Define measurable acceptance criteria for project outcomes.
-- Submit and review project deliverables.
-- Preserve Outcome Membership when an outcome is accepted.
-- Credit all Outcome Members who belong to an outcome at the time it is accepted.
-- Monitor member availability and current work activity.
-- Compare scheduled working hours against actual recorded work.
-- Notify users of important project events and required actions.
-- Provide management with visibility into project health, workload, outcome participation, and team capacity.
-- Maintain organizational departments, members, roles, and system access.
-
----
-
-# 3. Product Overview
-
-## 3.1 Product Perspective
-
-The Prometheus system will function as the primary internal operations platform for project delivery.
-
-Instead of using independent tools for project management, employee availability, time tracking, deliverable reviews, notifications, and management reporting, the system will connect these activities through shared project, outcome, and member data.
-
-The Home interface will serve as a company command center and will provide information such as the user's projects, members currently working, items requiring attention, and shortcuts to major areas of the system.
-
-All active authorized Prometheus users will be able to browse all projects.
-The My Projects view will distinguish projects the current user leads from projects in which the current user participates through Outcome Membership.
-
----
-
-## 3.2 User Classes
-
-### Administrator
-
-Administrators manage organization-level information and system access.
-
-Administrators shall be able to manage:
-
-- Departments
-- Members
-- Organizational roles
-- Workspace access
-- User authorization
-- Administrative records
-
-Administrator authority does not automatically grant Project Lead authority.
-An Administrator may become Project Lead when explicitly assigned as the lead of a project.
-
-The system shall separate membership authorization from authentication and provide an administrative Registry for departments, members, organizational roles, and workspace authorization.
-
-### Member
-
-A Member is a regular active authorized user of Prometheus.
-
-Members may:
-
-- View all company projects.
-- View project stages and outcomes.
-- Create projects.
-- Assign themselves or another active authorized user as Project Lead when creating a project.
-- Join available outcomes.
-- Become an Outcome Member of multiple outcomes across multiple projects.
-- Work on features and tasks within outcomes they have joined.
-- Submit project outputs for outcomes they have joined.
-- Receive credit when an outcome they belong to is accepted.
-- Configure their own work schedule.
-- Record their own work sessions.
-- Participate in permitted project communication.
-- Receive notifications.
-
-### Project Lead
-
-Project Lead is a project-specific responsibility rather than a permanent company-wide user role.
-
-A Member or Administrator may be the Project Lead of a project.
-A user may lead one project while participating through Outcome Membership in another project.
-
-Project Leads shall have additional authority only within projects they lead, including:
-
-- Managing project stages.
-- Creating and managing outcomes.
-- Defining acceptance criteria.
-- Configuring outcome prerequisites.
-- Monitoring project progress.
-- Monitoring Outcome Membership.
-- Reviewing submitted outputs.
-- Requesting revisions.
-- Accepting completed outcomes.
-- Resolving project dependencies.
-- Changing project state.
-- Viewing project-wide activity required for project management.
-
-Project Leads do not need to manually assign users before those users may participate in an available outcome.
-
-### Outcome Member
-
-Outcome Member is an outcome-specific participation relationship.
-
-Any active authorized Prometheus user may become an Outcome Member by joining an available outcome.
-
-Outcome Members may:
-
-- Work on features and tasks within the outcome they joined.
-- Prepare and submit outputs for that outcome.
-- Revise outputs after a revision request.
-- View review feedback and submission history.
-- View other Outcome Members of the same outcome.
-
-Outcome Membership does not grant Project Lead or Administrator authority.
-
----
-
-# 4. Core System Entities
-
-The system shall manage the following primary entities.
-
-## 4.1 Project
-
-A Project represents a software development engagement undertaken by Prometheus.
-
-A project shall contain information including:
-
-- Project name
-- Description
-- Project status
-- Project creator
-- Project Lead
-- Participating departments
-- Project stages
-- Outcomes
-- Progress
-- Outputs
-- Activity history
-
-Projects may be classified as Planning, In Progress, or Done.
-
-All active authorized Prometheus users shall be able to view all projects.
-
-The system shall distinguish the project creator from the Project Lead.
-Creating a project does not automatically make the creator the Project Lead when another user is selected as the lead.
-
-The My Projects view shall separate projects according to whether the current user is Leading or Participating.
-Participation shall be derived from Outcome Membership.
-
----
-
-## 4.2 Project Stage
-
-A Project Stage represents a major phase in the project workflow.
-
-Example stages may include:
-
-- Discovery and Planning
-- Design
-- Development
-- Testing
-- Deployment
-- Project Completion
-
-Project Leads shall be able to create stages according to the needs of each project.
-
----
-
-## 4.3 Outcome
-
-An Outcome represents a measurable result that must be completed within a project stage.
-
-An outcome may contain:
-
-- Outcome title
-- Description
-- Associated department or departments
-- Outcome Members
-- Acceptance criteria
-- Features
-- Tasks
-- Progress
-- Prerequisite outcomes
-- Submitted outputs
-- Review status
-- Feedback
-
-All active authorized Prometheus users shall be able to view project outcomes.
-
-Available outcomes shall allow active authorized users to join and become Outcome Members.
-Accepted outcomes shall no longer accept new Outcome Members.
-
----
-
-## 4.4 Outcome Membership
-
-Outcome Membership represents a user's participation in a specific outcome.
-
-Outcome Membership shall identify the user and the outcome joined.
-
-A user may hold Outcome Membership in multiple outcomes within the same project or across different projects.
-
-Project participation shall be derived from Outcome Membership.
-A user shall be considered Participating in a project when the user is an Outcome Member of at least one outcome in that project and is not the Project Lead for the purpose of the My Projects grouping.
-
-When an outcome is accepted, its Outcome Member list shall be preserved for history, reporting, and credit.
-
----
-
-## 4.5 Feature and Task
-
-Features represent major pieces of work required to achieve an outcome.
-
-Tasks represent smaller actionable items under a feature.
-
-Tasks shall be capable of being marked as incomplete or complete.
-
-Task completion shall contribute to the progress of the associated feature and outcome.
-
-Outcome Members shall be able to manage permitted features and tasks within outcomes they have joined.
-
----
-
-## 4.6 Output
-
-An Output represents a deliverable submitted as evidence that an outcome has been completed.
-
-Examples may include:
-
-- UI/UX prototype
-- Software build
-- Source implementation
-- Documentation
-- Requirements document
-- Test results
-- Architecture document
-- Client presentation
-
-Outputs may have statuses such as Draft, For Review, Needs Revision, or Accepted.
-
-Output history shall preserve previous submissions, submitters, review decisions, feedback, and related timestamps.
-
----
-
-# 5. Functional Requirements
-
-## FR-01 User Authentication and Workspace Authorization
-
-The system shall provide secure authentication for Prometheus users.
-
-The system shall support authenticated sessions and shall restrict protected areas based on Prometheus workspace authorization.
-
-Authentication and Prometheus workspace authorization shall be treated as separate checks.
-
-The system shall:
-
-- Allow supported users to sign in through configured authentication methods.
-- Support Google authentication through the configured authentication provider.
-- Use the verified identity returned by the authentication provider.
-- Match the authenticated identity to an authorized Prometheus member record.
-- Deny Prometheus workspace access when no authorized active member record matches the authenticated identity.
-- Maintain authenticated sessions.
-- Restrict protected operations based on organization role, Project Lead relationship, and Outcome Membership.
-- Provide account recovery or password reset capabilities where applicable.
-
-A successful Google authentication shall not automatically grant access to Prometheus.
-
----
-
-## FR-02 Home Dashboard
-
-The system shall provide each authenticated and authorized user with a personalized Home dashboard.
-
-The dashboard shall display relevant information including:
-
-- Projects led by the user
-- Projects participated in by the user through Outcome Membership
-- Current project progress
-- Members currently working
-- Items requiring attention
-- Pending reviews for Project Leads
-- Relevant notifications
-- Quick access to major system modules
-
-The dashboard shall derive project participation from Outcome Membership rather than from a manually assigned project-participant role.
-
----
-
-## FR-03 Project Visibility and Creation
-
-All active authorized Prometheus users shall be able to view all projects.
-
-Any active authorized Prometheus user shall be able to create a project.
-
-Project creation shall not be restricted to Administrators or existing Project Leads.
-
-The system shall allow project information including:
-
-- Project title
-- Project description
-- Project status
-- Project creator
-- Project Lead
-- Participating departments
-
-During project creation, the creator shall be able to select themselves or another active authorized Prometheus user as Project Lead.
-
-The system shall store the project creator separately from the Project Lead for auditability.
-
-New projects may initially contain no stages so that the assigned Project Lead can define a workflow appropriate for the project.
-
----
-
-## FR-04 Project Participation
-
-Prometheus shall not require users to be manually assigned as project Participants before joining project work.
-
-Project participation shall be derived from Outcome Membership.
-
-A user shall be considered Participating in a project when the user is an Outcome Member of at least one outcome in that project.
-
-The My Projects view shall provide:
-
-- Leading, for projects where the current user is the Project Lead.
-- Participating, for projects where the current user is an Outcome Member of at least one outcome and is not the Project Lead for that grouping.
-
-A Project Lead may also join outcomes within their own project and become an Outcome Member.
-
----
-
-## FR-05 Project Stage Management
-
-Project Leads shall be able to:
-
-- Create project stages.
-- Rename project stages.
-- Organize project work according to stages.
-- Add outcomes to individual stages.
-- Monitor work contained within each stage.
-
-Project stage management authority shall apply only to projects the user leads.
-
----
-
-## FR-06 Outcome Management
-
-Project Leads shall be able to create and manage project outcomes within projects they lead.
-
-Project Leads shall be able to:
-
-- Create outcomes.
-- Associate outcomes with project stages.
-- Associate departments with outcomes where applicable.
-- Define acceptance criteria.
-- Configure prerequisite outcomes.
-- Monitor outcome progress.
-- Monitor Outcome Membership.
-- Review outcome submissions.
-- Request revisions.
-- Accept outcomes.
-
-All active authorized Prometheus users shall be able to view outcomes.
-
-Any active authorized Prometheus user shall be able to join an outcome that is available for participation without requiring Project Lead approval.
-
-Accepted outcomes shall be considered completed and shall no longer accept new Outcome Members.
-
-Locked outcomes may remain visible while work and submission actions are unavailable until their dependency is resolved.
-
----
-
-## FR-07 Outcome Membership and Feature/Task Management
-
-An active authorized Prometheus user who joins an available outcome shall become an Outcome Member of that outcome.
-
-Outcome Members shall be able to perform permitted work within outcomes they have joined.
-
-The system shall allow Outcome Members to:
-
-- Create features.
-- Add tasks under features.
-- Edit permitted features and tasks.
-- Mark tasks as completed.
-- Monitor feature progress.
-- Monitor outcome progress.
-- Prepare output drafts.
-- View review feedback.
-- View submission history.
-- View other Outcome Members.
-
-A user who has not joined an outcome may view the outcome but shall not perform Outcome Member work actions.
-
-Outcome Membership shall be specific to each outcome and shall not grant Project Lead or Administrator authority.
-
----
-
-## FR-08 Output Submission, Review, and Accepted Outcome Credit
-
-Any Outcome Member shall be able to submit outputs associated with an outcome they have joined.
-
-A user who has not joined an outcome shall not be permitted to submit an output for that outcome.
-
-The system shall allow the Project Lead of the corresponding project to:
-
-- Review submitted outputs.
-- View submission notes.
-- Provide feedback.
-- Request revisions.
-- Accept completed outcomes.
-
-When a revision is requested, existing Outcome Members shall remain members of the outcome and may continue working and resubmitting outputs.
-
-The system shall maintain output history so that previous submissions and review decisions can be traced.
-
-When the Project Lead accepts an outcome:
-
-- The outcome shall become accepted and completed.
-- The current Outcome Member list shall be preserved.
-- Every Outcome Member belonging to the outcome at the time of acceptance shall be considered part of that accepted outcome.
-- Every such Outcome Member shall receive credit for the accepted outcome.
-- No minimum contribution threshold shall be required for Outcome Member credit.
-- New users shall not be able to join the accepted outcome.
-
----
-
-## FR-09 Team and Member Tracking
-
-The system shall provide a Team module containing information about Prometheus members.
-
-The system shall display relevant information including:
-
-- Member name
-- Department
-- Position
-- Availability
-- Current work status
-- Scheduled working hours
-- Actual worked hours
-
-The Team view is intended to provide people, availability, current work status, and weekly commitment information at a glance.
-
----
-
-## FR-10 Schedule Management
-
-Members shall be able to define their planned working schedule.
-
-The system shall allow members to configure:
-
-- Target working hours per week
-- Initial working hours per day
-- Rest days
-- Daily schedule blocks
-
-Members shall be able to redistribute their scheduled hours across available days while maintaining visibility of their weekly commitment.
-
-The Team Schedule shall combine member schedules into a shared weekly calendar.
-
----
-
-## FR-11 Shift and Work Session Tracking
-
-The system shall record actual work performed by members.
-
-The system shall support:
-
-- Time In
-- Time Out
-- Recorded work sessions
-- Weekly work history
-- Scheduled hours
-- Actual worked hours
-- Difference between scheduled and worked hours
-- Work performed within scheduled periods
-- Work performed outside scheduled periods
-
-Members shall record their own work sessions.
-
-The current workflow already calculates scheduled time, worked time, overlap, variance, and work outside the planned schedule.
-
----
-
-## FR-12 Notifications
-
-The system shall provide a centralized notification inbox.
-
-Notifications may be generated for events including:
-
-- Project Lead assignment
-- User joined an outcome
-- Output submitted for review
-- Review completed
-- Revision requested
-- Outcome accepted
-- Outcome dependency unlocked
-- User mentioned
-- Project milestone changed
-- Outcome progress changed
-- Project-related replies
-
-Users shall be able to distinguish read and unread notifications.
-
-The system shall allow users to mark notifications as read.
-
----
-
-## FR-13 Project Communication
-
-Each project shall provide a communication area for project-related discussion.
-
-Authorized Prometheus users shall be able to view project communication according to the system's internal project-visibility model.
-
-Users participating in a project through Project Lead responsibility or Outcome Membership shall be able to participate in project communication where permitted.
-
-Outcome-specific discussion may be associated with the relevant outcome and its Outcome Members.
-
----
-
-## FR-14 Reports and Analytics
-
-The system shall provide management and authorized users with operational reports.
-
-Reports shall include information related to:
-
-- Project health
-- Project progress
-- Outcome pipeline
-- Outcome Membership and accepted outcome credit
-- Team capacity
-- Department workload
-- Scheduled versus actual working hours
-
-Reports shall preserve accepted Outcome Membership so that historical participation and credit remain traceable.
-
----
-
-## FR-15 Department Management
-
-Administrators shall be able to:
-
-- Create departments.
-- Edit department information.
-- View members assigned to departments.
-- Associate departments with projects.
-- Associate departments with outcomes where applicable.
-
-Department membership shall not prevent an active authorized user from viewing projects or joining available outcomes unless a future explicit access rule is introduced.
-
----
-
-## FR-16 Member Administration
-
-The Registry shall be restricted to users with the Administrator organizational role.
-
-Non-administrator users shall not be permitted to access the Registry interface or its administrative API endpoints.
-
-Administrators shall be able to:
-
-- Add members.
-- Edit member information.
-- Assign members to departments.
-- Assign organizational roles.
+- Access Registry.
+- Add and edit members.
+- Manage departments.
+- Assign organization roles.
 - Activate or deactivate workspace access.
 - View authentication status.
 
-When an Administrator adds a member, the system shall create an authorized member record with the appropriate invitation or account status.
+Administrator authority does not automatically grant project-level authority.
 
-The system shall support sending an account setup or invitation email to newly authorized members through the configured transactional email service.
+An Administrator may perform Project Lead actions only when explicitly assigned as the Project Lead of that project.
 
-Authentication identity shall be linked to the authorized Prometheus member record when the user successfully completes authentication and authorization checks.
+## 2.2 Member
+
+A Member is an active authorized Prometheus user.
+
+Members may:
+
+- View all projects and outcomes.
+- Create projects.
+- Assign themselves or another active authorized user as Project Lead during project creation.
+- Join outcomes according to outcome-state rules.
+- Become Outcome Members.
+- Become Project Members through Outcome Membership.
+- Work on joined outcomes.
+- Submit outputs for joined outcomes.
+- Receive accepted-outcome credit.
+- Manage their own schedule and work sessions.
+
+## 2.3 Project Lead
+
+Project Lead is a project-specific responsibility.
+
+A Member or Administrator may be a Project Lead.
+
+The Project Lead controls the project they lead and may:
+
+- View Project Members.
+- Grant or revoke `CAN_EDIT` for Project Members.
+- Change project status.
+- Create and manage stages.
+- Create and manage outcomes.
+- Define acceptance criteria.
+- Configure dependencies.
+- Review shared outcome submission histories.
+- Request revisions.
+- Accept outcomes.
+- Reopen accepted outcomes.
+- Resolve dependencies.
+- View project-wide management activity.
+
+Project Lead authority applies only to projects where the user is assigned as lead.
+
+## 2.4 Project Creator
+
+Project creator is an audit relationship only.
+
+Creating a project shall not grant permanent or special project authority.
+
+If the creator is also the Project Lead, the creator receives Project Lead authority because of that assignment rather than because they created the project.
+
+## 2.5 Project Member
+
+A user becomes a Project Member when the user is an Outcome Member of at least one outcome in that project.
+
+Project Membership is derived from Outcome Membership.
+
+Each Project Member has one project access level:
+
+```text
+CAN_VIEW
+CAN_EDIT
+```
+
+`CAN_VIEW` is the default.
+
+Only the Project Lead may grant or revoke `CAN_EDIT` for Project Members.
+
+Administrator status does not grant the ability to manage project-member access unless that Administrator is also the Project Lead.
+
+`CAN_EDIT` does not make a user the Project Lead.
+
+## 2.6 Outcome Member
+
+Any active authorized Prometheus user may become an Outcome Member by joining an outcome according to its state rules.
+
+Outcome Membership is permanent once created.
+
+Outcome Members cannot leave an outcome.
+
+Project Leads cannot remove Outcome Members.
+
+Outcome Membership does not grant Administrator or Project Lead authority.
 
 ---
 
-## FR-17 Search and Filtering
+# 3. Authentication and Workspace Authorization
 
-The system shall provide search and filtering where appropriate.
+## FR-01 Authentication
 
-Users shall be able to search or filter information including:
+The system shall support secure authentication through configured authentication providers.
 
-- Projects
-- Members
-- Departments
-- Project status
-- Projects led by the current user
-- Projects participated in through Outcome Membership
-- Outcome status
-- Outcome Members
-- Schedule information
-- Notifications
+Initial authentication methods shall include:
 
----
+- Email and password.
+- Continue with Google.
 
-## FR-18 Activity History
+A successful authentication shall not automatically grant Prometheus workspace access.
 
-The system shall maintain records of important activities performed within projects.
+## FR-02 Workspace Authorization
 
-Activity records may include:
+An authenticated identity must match an active authorized Prometheus member record.
 
-- Project creation
-- Project Lead assignment
-- Outcome creation
-- User joined an outcome
-- Feature or task updates
-- Task completion
-- Output submission
-- Revision request
-- Output review
-- Outcome acceptance
-- Dependency resolution
-- Project status changes
-- Schedule changes
-- Administrative changes
+If no authorized active member record matches the authenticated identity, workspace access shall be denied.
 
-Each activity record should identify the responsible user, action performed, related object, and date and time.
+Authentication and Prometheus authorization shall be separate checks.
 
-Accepted Outcome Membership and associated credit shall remain traceable in historical records.
+## FR-03 Member Invitation
+
+Only an Administrator may authorize a new Prometheus member.
+
+When an Administrator adds a member:
+
+- A Prometheus member record shall be created.
+- The initial account status may be `INVITED`.
+- An invitation or account setup email shall be sent through the configured transactional email service.
+- After successful authentication, the authentication identity shall be linked to the authorized member record.
 
 ---
 
-# 6. Business Rules
+# 4. Registry
 
-## BR-01 Organizational Roles
+## FR-04 Registry Access
 
-The system shall distinguish organization-level authorization from project-specific and outcome-specific responsibilities.
+Registry shall be visible and accessible only to Administrators.
 
-A user's organization-level role may be Administrator or Member.
+Non-Administrators shall not see the Registry navigation item.
 
-Project Lead shall be treated as a project-specific responsibility.
+Direct Registry route access and Registry API calls shall also enforce Administrator authorization.
 
-Outcome Member shall be treated as an outcome-specific participation relationship.
-
----
-
-## BR-02 Project Visibility
-
-All active authorized Prometheus users shall be able to view all projects and project outcomes.
-
-Viewing a project or outcome shall not automatically grant Project Lead authority or Outcome Membership.
+Project Lead status does not grant Registry access.
 
 ---
 
-## BR-03 Project Creation
+# 5. Project Visibility and Creation
+
+## FR-05 Project Visibility
+
+All active authorized Prometheus users shall be able to view all projects.
+
+All active authorized Prometheus users shall be able to view project stages, outcomes, Outcome Members, project status, Project Lead, progress, and other company-visible project information.
+
+Viewing a project shall not automatically create Project Membership or edit authority.
+
+## FR-06 Project Creation
 
 Any active authorized Prometheus user may create a project.
 
-The creator may assign themselves or another active authorized user as Project Lead.
+The creator shall be able to assign themselves or another active authorized user as Project Lead.
 
-The project creator and Project Lead shall be stored as separate concepts.
+The system shall store at least:
 
----
+- Project creator.
+- Project Lead.
+- Project name.
+- Description.
+- Participating or associated departments.
+- Project status.
 
-## BR-04 Project Participation
+The project creator and Project Lead shall be stored separately.
 
-Prometheus shall not require a manually assigned project-participant role.
-
-A user shall be considered to participate in a project when the user is an Outcome Member of at least one outcome in that project.
-
-A user may participate in multiple projects simultaneously through Outcome Membership.
-
----
-
-## BR-05 Outcome Membership
-
-Any active authorized Prometheus user may join an outcome that is available for participation.
-
-Joining an outcome shall not require Project Lead approval.
-
-Joining an available outcome shall create Outcome Membership for that user and outcome.
-
-Outcome Membership shall grant work permissions only for the joined outcome.
-
-Outcome Membership shall not grant Project Lead or Administrator authority.
-
-Accepted outcomes shall not accept new Outcome Members.
+Creating a project shall not grant the creator special authority after creation.
 
 ---
 
-## BR-06 Outcome Acceptance and Credit
+# 6. Project Member Access
 
-An outcome shall only be considered accepted after its required acceptance criteria and review requirements have been satisfied by the Project Lead.
+## FR-07 Project Membership
 
-When an outcome is accepted, all users who are Outcome Members at that time shall be considered part of the accepted outcome.
+A user shall become a Project Member when the user is an Outcome Member of at least one outcome in the project.
 
-All such Outcome Members shall receive credit for the accepted outcome.
+The system shall derive project participation from Outcome Membership rather than requiring manual project-participant assignment.
 
-No minimum contribution threshold shall be required for Outcome Member credit.
+## FR-08 Project Member Access Level
 
-The accepted Outcome Member list shall be preserved for history and reporting.
+Every Project Member shall default to:
 
----
+```text
+CAN_VIEW
+```
 
-## BR-07 Project Lead Authority
+The Project Lead may change a Project Member to:
 
-Project Lead privileges shall apply only to projects where the user has been assigned as Project Lead.
+```text
+CAN_EDIT
+```
 
-Being an Administrator shall not automatically grant Project Lead authority.
+The Project Lead may also return a Project Member from `CAN_EDIT` to `CAN_VIEW`.
 
-An Administrator may become Project Lead when explicitly assigned as the lead of a project.
+Only the Project Lead may manage this project-level access.
 
-Being Project Lead shall not automatically grant administrative authority across the organization.
+Administrator status shall not provide an override.
 
----
+## FR-09 Project Member Edit Capability
 
-## BR-08 Schedule Ownership
+A Project Member with `CAN_EDIT` shall be permitted to use project-level edit capabilities explicitly granted to editable Project Members.
 
-Members shall primarily modify their own work schedules.
+At minimum, `CAN_EDIT` shall allow the Project Member to change project status.
 
-Shared schedules shall provide visibility into other members' availability without allowing unauthorized modification.
+`CAN_EDIT` shall not automatically grant Project Lead-only capabilities including:
 
----
+- Creating stages.
+- Creating outcomes.
+- Managing Project Member access.
+- Reviewing submissions.
+- Accepting outcomes.
+- Reopening outcomes.
+- Resolving dependencies.
 
-## BR-09 Registry Access
-
-Only users with the Administrator organizational role shall be authorized to access the Registry.
-
-Hiding the Registry from the user interface shall not be considered sufficient access control.
-
-The backend shall verify Administrator authorization for all Registry operations and administrative API endpoints.
-
-Members and Project Leads who are not Administrators shall not gain Registry access through their project responsibilities.
-
----
-
-## BR-10 Authentication and Authorization Separation
-
-Authentication shall establish account identity but shall not by itself grant access to Prometheus.
-
-An authenticated identity must match an active authorized Prometheus member record before workspace access is granted.
-
-A successful Google authentication without a matching authorized Prometheus member record shall result in denied workspace access.
+Additional `CAN_EDIT` capabilities remain subject to future product decisions.
 
 ---
 
-## BR-11 Department Participation
+# 7. Project Status Lifecycle
 
-A project may involve multiple departments.
+## FR-10 Manual Project Status
 
-An outcome may also be associated with one or more departments depending on the work required.
+Project status shall be configured from inside the project.
 
-Department association shall support organization, filtering, and reporting and shall not by itself determine whether an authorized user may join an available outcome.
+The manually selectable project states shall be:
 
----
+```text
+PLANNING
+IN_PROGRESS
+DONE
+```
 
-# 7. Non-Functional Requirements
+The Project Lead may change project status.
 
-The following requirements are proposed baseline implementation requirements and are not directly defined by the current prototype.
+A Project Member with `CAN_EDIT` may also change project status.
 
-## NFR-01 Usability
+A `CAN_VIEW` Project Member may view but not change project status.
 
-The system shall provide a consistent and understandable user interface.
+## FR-11 Done State
 
-Common actions and information shall follow consistent navigation, terminology, and interaction patterns.
+A project may be manually set to `DONE` without requiring every project outcome to be accepted.
 
----
+Project completion status is therefore a project-level decision and is not calculated solely from outcome acceptance.
 
-## NFR-02 Responsive Design
+## FR-12 Automatic Archival
 
-The system shall support modern desktop and laptop screen sizes.
+A project that remains in `DONE` status for 14 days shall automatically transition to:
 
-Important workflows should remain usable on tablets and mobile devices where practical.
+```text
+ARCHIVED
+```
 
----
+`ARCHIVED` shall be a system-managed status rather than a normal manually selectable state.
 
-## NFR-03 Performance
-
-Normal page navigation and user interactions should respond without noticeable delay under expected company usage.
-
-Data-intensive reports may use loading indicators while information is being processed.
-
----
-
-## NFR-04 Security
-
-The system shall protect company, employee, project, and client-related information from unauthorized external or administrative access.
-
-Authorization checks shall be performed for protected operations.
-
-The frontend shall not be treated as the authority for important authorization rules.
-
-Sensitive authentication information shall not be stored in plain text.
+The system shall retain the date and time when the project entered `DONE` so the archive transition can be evaluated consistently.
 
 ---
 
-## NFR-05 Data Integrity
+# 8. Project Stages and Outcomes
 
-The system shall maintain consistent relationships between members, projects, Project Leads, Outcome Memberships, departments, outcomes, tasks, schedules, and outputs.
+## FR-13 Stage Management
 
-Deletion or deactivation of records shall not unintentionally corrupt related historical data.
+Only the Project Lead shall be able to create and manage stages within the project they lead.
 
-Accepted Outcome Membership and credit records shall remain historically consistent.
+## FR-14 Outcome Management
 
----
+Only the Project Lead shall be able to create and manage project outcomes.
 
-## NFR-06 Reliability
+An outcome may contain:
 
-The system shall prevent user actions from causing unexpected loss of project or operational data.
+- Title.
+- Description.
+- Associated departments.
+- Acceptance criteria.
+- Features.
+- Tasks.
+- Prerequisites.
+- Outcome Members.
+- Shared submission history.
+- Review state.
+- Feedback.
 
-Critical operations should provide confirmation and appropriate error handling.
-
----
-
-## NFR-07 Auditability
-
-Important project, participation, review, scheduling, and administrative actions should be traceable to the user responsible for the action.
-
-The system should preserve the identity of project creators, output submitters, Outcome Members, Project Leads, and administrative actors where relevant.
-
----
-
-## NFR-08 Scalability
-
-The system architecture should support growth in:
-
-- Number of employees
-- Number of departments
-- Number of clients
-- Number of projects
-- Number of outcomes and Outcome Memberships
-- Number of features and tasks
-- Number of outputs and submission versions
-- Number of work and activity records
+All authorized users may view outcomes.
 
 ---
 
-## NFR-09 Maintainability
+# 9. Outcome Membership Lifecycle
 
-The system shall use a modular architecture that allows individual areas such as Projects, Outcomes, Schedule, Reports, Notifications, and Administration to evolve without requiring extensive changes to unrelated functionality.
+## FR-15 Joining Outcomes
 
-Authorization logic should be implemented consistently so that organization role, Project Lead responsibility, and Outcome Membership are not conflated.
+Any active authorized Prometheus user may join an outcome while it is not accepted.
 
----
+Joining shall not require Project Lead approval.
 
-# 8. Data Requirements
+A user may join an outcome while it is:
 
-The system shall maintain persistent records for at least the following data:
+- Open for normal work.
+- Locked by a dependency.
+- `FOR_REVIEW`.
+- `NEEDS_REVISION`.
 
-- Authentication-linked user accounts
-- Member profiles
-- Member authorization and account status
-- Departments
-- Organizational roles
-- Projects
-- Project creators
-- Project Leads
-- Project stages
-- Outcomes
-- Outcome Memberships
-- Accepted Outcome Membership history and credit
-- Acceptance criteria
-- Features
-- Tasks
-- Output submissions
-- Output submission history
-- Reviews and feedback
-- Project messages
-- Work schedules
-- Time In and Time Out sessions
-- Notifications
-- Activity records
+Joining an outcome shall create permanent Outcome Membership.
 
-The system shall not require a separate manually assigned project-participant record when project participation can be derived from Outcome Membership.
+## FR-16 Permanent Outcome Membership
 
-Relationships between these records shall be maintained consistently.
+Once a user joins an outcome:
 
----
+- The user shall not be able to leave the outcome.
+- The Project Lead shall not be able to remove the user from the outcome.
+- The Outcome Membership shall remain historically preserved.
 
-# 9. Assumptions and Constraints
+## FR-17 Locked Outcomes
 
-The initial system is intended primarily for internal Prometheus employees and administrators who have been explicitly authorized as Prometheus members.
+A locked outcome shall remain visible.
 
-Projects managed through the platform are projects undertaken by Prometheus for its software development clients.
+Authorized users may join a locked outcome.
 
-All active authorized Prometheus users may view all projects and outcomes within the internal workspace.
+The lock may prevent work or submission actions until its dependency is resolved.
 
-Any active authorized Prometheus user may create a project and may join any outcome that is available for participation.
+## FR-18 Accepted Outcomes
 
-Members may belong to a primary department while still joining outcomes associated with other departments.
+While an outcome is accepted:
 
-The system shall treat projects as cross-functional workspaces rather than restricting participation to a single department.
+- New users shall not be able to join it.
+- New submissions shall not be accepted.
+- Existing Outcome Membership shall remain preserved.
 
-Project Lead responsibilities shall be independent from the user's organizational role.
+## FR-19 Reopening Accepted Outcomes
 
-Outcome Membership shall be independent from organizational role and department unless a future explicit access rule is introduced.
+The Project Lead may reopen an accepted outcome.
 
-The system shall centralize operational information but does not necessarily replace specialized development tools such as source-code repositories, IDEs, design applications, or deployment platforms.
+Reopening shall:
 
-Integrations with external development services may be introduced in future versions.
+- Preserve all existing Outcome Members.
+- Preserve previous submissions.
+- Preserve previous acceptance history.
+- Allow additional authorized users to join again.
+- Allow Outcome Members to resume work and submit new entries.
 
 ---
 
-# 10. System Success Criteria
+# 10. Feature and Task Work
 
-The system shall be considered successful when Prometheus can use one platform to determine:
+## FR-20 Outcome Work
 
-- What projects currently exist.
-- What stage each project is in.
-- Who created each project.
-- Who leads each project.
-- Which projects each user leads.
-- Which projects each user participates in through Outcome Membership.
-- Which departments are associated with projects and outcomes.
-- What outcomes must be completed.
-- Who has joined each outcome.
-- Which users are Outcome Members of accepted outcomes.
-- Which members receive credit for accepted outcomes.
-- What features and tasks are being worked on.
-- What work has been completed.
-- What outputs are awaiting review.
-- What revisions have been requested.
-- Which outcomes have been accepted.
-- Which items require management attention.
-- Who is currently working.
-- When members are scheduled to work.
-- How many hours members actually worked.
-- Whether scheduled commitments are being fulfilled.
-- How workloads and participation are distributed across departments and members.
-- What major activities and changes have occurred within company projects.
-- Which users are authorized to access the Prometheus workspace.
+Outcome Members shall be able to perform permitted work within outcomes they joined.
 
-The overall objective of the Prometheus Centralized Workflow Management System is to establish a single, reliable source of truth for project delivery and internal operations so that Prometheus can coordinate software development projects more efficiently, maintain clear accountability, support open internal participation, preserve accepted outcome credit, and obtain better visibility into the work required to deliver software successfully to its clients.
+Outcome Members may:
+
+- Create features.
+- Create tasks.
+- Edit permitted features and tasks.
+- Mark tasks complete.
+- Prepare outputs.
+- View feedback.
+- View shared submission history.
+- View other Outcome Members.
+
+Users who have not joined an outcome may view it but may not perform Outcome Member work actions.
+
+---
+
+# 11. Shared Submission History
+
+## FR-21 Shared Submission History
+
+Each outcome shall have one shared submission history.
+
+The submission history belongs to the outcome rather than to an individual user.
+
+Each submission shall preserve at least:
+
+- Outcome identifier.
+- Submitter.
+- Submission timestamp.
+- Submission content or attachment references.
+- Notes.
+- Review information.
+
+## FR-22 Concurrent Review Submissions
+
+Any Outcome Member may add a new submission while the outcome has not been accepted and submission is not blocked by another workflow rule.
+
+A new submission may be added even when one or more previous submissions are already `FOR_REVIEW`.
+
+The system shall not require an earlier submission to be resolved before accepting another submission.
+
+Multiple submissions may therefore be under review simultaneously for the same outcome.
+
+---
+
+# 12. Review and Acceptance
+
+## FR-23 Submission Review
+
+Only the Project Lead shall have authority to perform Project Lead review actions for outcomes in the project they lead.
+
+The Project Lead shall be able to inspect multiple submissions in the outcome's shared submission history.
+
+Administrator status alone shall not grant review authority.
+
+## FR-24 Revision Requests
+
+The Project Lead may request revision of outcome work.
+
+While an outcome is in `NEEDS_REVISION`:
+
+- Existing Outcome Members remain members.
+- New authorized users may still join.
+- Outcome Members may continue work.
+- New submissions may be added.
+
+## FR-25 Outcome Acceptance
+
+Outcome acceptance shall be an outcome-level decision rather than an acceptance of only one user's submission.
+
+The Project Lead may determine that one or more submissions collectively satisfy the outcome and accept the outcome.
+
+When an outcome is accepted:
+
+- New submissions shall stop while it remains accepted.
+- New users shall not join while it remains accepted.
+- The current Outcome Member set shall be preserved.
+- All current Outcome Members shall receive accepted-outcome credit.
+
+No minimum contribution threshold shall be required for accepted-outcome credit.
+
+---
+
+# 13. Dependencies
+
+## FR-26 Outcome Dependencies
+
+An outcome may depend on another outcome.
+
+A dependent outcome may be locked until its prerequisite is resolved.
+
+Only the Project Lead may perform Project Lead dependency decisions such as resolving or skipping a prerequisite where the product permits it.
+
+Outcome Membership may still be created while an outcome is locked.
+
+---
+
+# 14. My Projects
+
+## FR-27 My Projects Classification
+
+The My Projects view shall distinguish:
+
+```text
+Leading
+Participating
+```
+
+A project shall appear under `Leading` when the current user is its Project Lead.
+
+A project shall appear under `Participating` when the current user is an Outcome Member of at least one outcome in the project and is not grouped under `Leading` for that project.
+
+---
+
+# 15. Team, Schedule, and Work Sessions
+
+## FR-28 Team
+
+The system shall provide a Team module containing member information including name, department, position, availability, current work status, scheduled hours, and actual worked hours where available.
+
+## FR-29 Schedule
+
+Members shall primarily manage their own planned work schedules.
+
+Shared schedules may provide visibility into other members' availability without granting unauthorized modification.
+
+## FR-30 Work Sessions
+
+The system shall support:
+
+- Time In.
+- Time Out.
+- Recorded work sessions.
+- Weekly work history.
+- Scheduled versus actual hours.
+
+Members shall record their own work sessions unless a future explicit rule provides otherwise.
+
+---
+
+# 16. Notifications
+
+## FR-31 Notifications
+
+The system shall provide a centralized notification inbox.
+
+Potential notification events include:
+
+- Project Lead assignment.
+- Project Member access changed.
+- Project status changed.
+- User joined an outcome.
+- Submission added.
+- Revision requested.
+- Outcome accepted.
+- Outcome reopened.
+- Dependency unlocked.
+- User mentioned.
+- Project-related reply.
+
+Users shall be able to distinguish read and unread notifications and mark notifications as read.
+
+---
+
+# 17. Communication and Activity
+
+## FR-32 Project Communication
+
+The system shall provide project-related communication functionality according to the visibility and participation rules defined in `user-flows.md`.
+
+Detailed communication-write permissions remain subject to later product decisions.
+
+## FR-33 Activity History
+
+The system shall maintain project activity history for important events including:
+
+- Project creation.
+- Project Lead assignment.
+- Project Member access changes.
+- Project status changes.
+- Automatic archival.
+- Outcome creation.
+- User joining an outcome.
+- Feature and task updates.
+- Submission creation.
+- Revision requests.
+- Outcome acceptance.
+- Outcome reopening.
+- Dependency resolution.
+- Administrative changes.
+
+Each activity record should identify the responsible actor where applicable, the action, related object, and timestamp.
+
+---
+
+# 18. Business Rules
+
+## BR-01 Organization Roles
+
+Organization roles shall be `ADMINISTRATOR` and `MEMBER`.
+
+Project Lead shall not be implemented as an organization-wide role.
+
+## BR-02 Project Creator
+
+Project creator is an audit relationship only and grants no special authority.
+
+## BR-03 Project Lead Authority
+
+Project Lead authority applies only within projects the user leads.
+
+Administrator status does not automatically grant Project Lead authority.
+
+## BR-04 Project Membership
+
+Project Membership shall be derived from Outcome Membership.
+
+## BR-05 Project Member Access
+
+Project Members default to `CAN_VIEW`.
+
+Only the Project Lead may grant or revoke `CAN_EDIT`.
+
+## BR-06 Project Status
+
+Project Lead and Project Members with `CAN_EDIT` may change the project's manual status among `PLANNING`, `IN_PROGRESS`, and `DONE`.
+
+A project does not require all outcomes to be accepted before entering `DONE`.
+
+A project remaining `DONE` for 14 days automatically becomes `ARCHIVED`.
+
+## BR-07 Outcome Membership
+
+Outcome Membership is permanent once created.
+
+Outcome Members cannot leave and Project Leads cannot remove them.
+
+## BR-08 Outcome Joining
+
+Any active authorized user may join an outcome while it is not accepted, including while it is locked, `FOR_REVIEW`, or `NEEDS_REVISION`.
+
+## BR-09 Shared Submission History
+
+Each outcome shall have one shared submission history and may contain multiple simultaneous submissions under review.
+
+## BR-10 Outcome Acceptance
+
+Only the Project Lead may accept or reopen an outcome.
+
+All Outcome Members receive credit when the outcome is accepted.
+
+## BR-11 Reopening
+
+Reopening shall preserve Outcome Membership, submission history, and prior acceptance history.
+
+## BR-12 Registry
+
+Only Administrators may access Registry.
+
+Backend authorization shall enforce this rule.
+
+## BR-13 Authentication Separation
+
+Authentication establishes identity but does not itself grant Prometheus access.
+
+An authenticated identity must match an active authorized member record.
+
+---
+
+# 19. Data Requirements
+
+The system shall maintain persistent records for at least:
+
+- Authentication-linked user accounts.
+- Member profiles.
+- Workspace authorization status.
+- Organization roles.
+- Departments.
+- Projects.
+- Project creators.
+- Project Leads.
+- Project Member access levels.
+- Project status history.
+- Project completion timestamps required for automatic archival.
+- Project stages.
+- Outcomes.
+- Outcome states.
+- Outcome Memberships.
+- Acceptance criteria.
+- Features.
+- Tasks.
+- Shared outcome submissions.
+- Submission review information.
+- Outcome acceptance history.
+- Accepted-outcome credit.
+- Outcome reopening history.
+- Project messages.
+- Work schedules.
+- Work sessions.
+- Notifications.
+- Activity records.
+
+Project participation does not require a separate manually assigned participant record when it can be derived from Outcome Membership.
+
+---
+
+# 20. Non-Functional Requirements
+
+## NFR-01 Security
+
+Important authorization decisions shall be enforced by the backend.
+
+Frontend visibility controls shall not be treated as sufficient security.
+
+## NFR-02 Data Integrity
+
+The system shall preserve relationships among users, projects, Project Leads, Project Members, Outcome Members, submissions, acceptances, and credit records.
+
+Reopening an outcome shall not destroy prior historical data.
+
+## NFR-03 Auditability
+
+Important project, outcome, submission, review, status, access, and administrative actions should be traceable.
+
+## NFR-04 Maintainability
+
+Organization-role logic, Project Lead authority, Project Member access, and Outcome Membership shall remain separate in the implementation.
+
+## NFR-05 Reliability
+
+Critical workflow transitions shall avoid accidental loss of project, submission, membership, or acceptance history.
+
+## NFR-06 Scalability
+
+The architecture should support growth in users, projects, Project Members, Outcome Members, submissions, work records, notifications, and activity history.
+
+---
+
+# 21. Deferred Product Decisions
+
+The following areas remain intentionally open until further product decisions are supplied:
+
+- Detailed data-model choices beyond the required relationships above.
+- Department semantics beyond current project/outcome association.
+- Member deactivation and orphaned Project Lead handling.
+- Detailed notification delivery rules.
+- Detailed formulas for Home, VisiWork, Reports, and progress.
+- Time-tracking edge cases and correction policy.
+- Full audit-event retention policy.
+
+These areas shall not be inferred from the prototype when the canonical user-flow documentation has not yet defined them.
