@@ -8,6 +8,30 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// Phase 0 intentionally defines no business tables yet.
-// Business entities are introduced from the canonical data-model.md in later phases.
-// Prisma is already used for connectivity through $queryRaw in the health endpoint.
+enum WorkspaceRole {
+  ADMINISTRATOR
+  MEMBER
+}
+
+enum MemberStatus {
+  INVITED
+  ACTIVE
+  DEACTIVATED
+}
+
+model Member {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authUserId       String?       @unique @map("auth_user_id") @db.Uuid
+  email            String
+  fullName         String        @map("full_name")
+  workspaceRole    WorkspaceRole @default(MEMBER) @map("workspace_role")
+  status           MemberStatus  @default(INVITED)
+  position         String?
+  profileImagePath String?       @map("profile_image_path")
+  deactivatedAt    DateTime?     @map("deactivated_at") @db.Timestamptz(6)
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status])
+  @@map("members")
+}

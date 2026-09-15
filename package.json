@@ -6,13 +6,13 @@
   "scripts": {
     "dev": "concurrently -k -n api,web \"pnpm dev:api\" \"pnpm dev:web\"",
     "dev:web": "vite --host 0.0.0.0",
-    "dev:api": "tsx --tsconfig tsconfig.server.json watch server/main.ts",
+    "dev:api": "tsx watch --tsconfig tsconfig.server.json server/main.ts",
     "build": "pnpm build:web && pnpm build:api",
     "build:web": "vite build",
     "build:api": "tsc -p tsconfig.build.json",
     "start:api": "node dist/server/main.js",
     "preview": "vite preview --host 0.0.0.0",
-    "lint": "eslint \"{src,server,shared,tests}/**/*.{ts,tsx}\"",
+    "lint": "eslint \"{src,server,shared,tests,prisma}/**/*.{ts,tsx}\"",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.node.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -25,6 +25,7 @@
     "prisma:validate": "prisma validate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:seed": "tsx prisma/seed.ts",
     "prisma:studio": "prisma studio",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "verify": "pnpm check"
@@ -73,5 +74,6 @@
   "engines": {
     "node": ">=22",
     "pnpm": ">=10"
-  }
+  },
+  "packageManager": "pnpm@10.34.5"
 }

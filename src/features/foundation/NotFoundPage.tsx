@@ -9,8 +9,8 @@ export function NotFoundPage() {
         <p className="mt-3 text-sm text-[rgb(var(--text-muted))]">
           This route is not part of the current implementation phase.
         </p>
-        <Link className="foundation-button mt-5 inline-flex" to="/foundation">
-          Open foundation
+        <Link className="foundation-button mt-5 inline-flex" to="/">
+          Open Prometheus
         </Link>
       </section>
     </main>

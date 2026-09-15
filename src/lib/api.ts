@@ -13,12 +13,20 @@ export class ApiRequestError extends Error {
   }
 }
 
-export async function apiFetch<T>(path: string, schema: ZodType<T>): Promise<T> {
+export async function apiFetch<T>(
+  path: string,
+  schema: ZodType<T>,
+  options: { accessToken?: string; signal?: AbortSignal } = {},
+): Promise<T> {
   let response: Response;
 
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
-      headers: { Accept: 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        ...(options.accessToken ? { Authorization: `Bearer ${options.accessToken}` } : {}),
+      },
+      signal: options.signal,
     });
   } catch {
     throw new ApiRequestError('The API could not be reached.');

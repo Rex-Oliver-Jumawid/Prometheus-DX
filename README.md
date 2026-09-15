@@ -6,12 +6,11 @@ Prometheus is an internal web application for project delivery, open internal pr
 
 ## Current status
 
-Phase 00 foundation scaffolding is present.
+Phase 01 authentication and the reusable application shell are implemented on top of the Phase 00 foundation.
 
-The repository now contains a React + TypeScript + Vite frontend, a NestJS API, Prisma connectivity for Supabase PostgreSQL, a Supabase Auth client foundation, shared Zod contracts, Tailwind design tokens, Vitest, Playwright, and CI verification.
+The repository contains real Supabase email/password and Google sign-in, NestJS workspace authorization, a minimal Member model, protected routes, and the role-aware Prometheus shell.
 
-No business screens or production authentication flows are implemented yet.
-Those belong to later phases in `.context/phases.md`.
+Registry, project, schedule, notification, reporting, and collaboration business features remain placeholders for their later phases.
 
 ## Repository structure
 
@@ -68,6 +67,19 @@ cp .env.example .env
 ```
 
 Replace the placeholder Supabase PostgreSQL and Auth values in `.env`.
+
+In Supabase Auth, enable Email and Google as required and add both the local and deployed `/login` URLs to the allowed redirect URLs.
+
+Apply the Prisma migration before starting the authenticated workspace:
+
+```bash
+pnpm prisma:migrate:deploy
+```
+
+For local test members, set `PROMETHEUS_SEED_MEMBERS_JSON` as documented in `.env.example`, then run `pnpm prisma:seed`.
+
+The seed never creates Supabase Auth accounts or passwords.
+Create test identities through Supabase Auth and use only non-production credentials.
 
 Check the repository configuration:
 
@@ -130,7 +142,7 @@ pnpm format:check
 pnpm format
 ```
 
-Use `.testcases/phase-00-foundation-tests.md` as the manual Phase 00 acceptance gate before starting Phase 01.
+Use `.testcases/phase-01-auth-shell-tests.md` as the Phase 01 manual acceptance gate.
 
 ## Environment security
 
