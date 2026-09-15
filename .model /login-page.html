@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <title>Prometheus - Sign in</title>
+  <style>
+    :root {
+      --ink: #26211f;
+      --muted: #776d67;
+      --line: #e2d8d1;
+      --line-strong: #cab9ae;
+      --accent: #cb4d22;
+      --accent-strong: #a93f1c;
+      --paper: #fffdfa;
+      --danger: #a93f1c;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: #ffffff;
+    }
+
+    body {
+      color: var(--ink);
+      font-family:
+        Inter,
+        ui-sans-serif,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .page {
+      height: 100dvh;
+      display: grid;
+      grid-template-columns: minmax(360px, 30%) minmax(0, 70%);
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    .auth-panel {
+      height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-y: auto;
+      padding: clamp(24px, 4vh, 48px) clamp(28px, 3vw, 48px);
+      background: #ffffff;
+    }
+
+    .auth-inner {
+      width: min(100%, 360px);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: clamp(28px, 5vh, 48px);
+    }
+
+    .mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 11px;
+      object-fit: cover;
+      box-shadow: 0 8px 20px rgba(61, 38, 29, 0.1);
+      background: #f4ebe5;
+    }
+
+    .brand-name {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 22px;
+      line-height: 0.95;
+      letter-spacing: -0.03em;
+    }
+
+    .brand-sub,
+    .eyebrow,
+    .field > label {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 750;
+      letter-spacing: 0.18em;
+    }
+
+    .brand-sub {
+      margin-top: 6px;
+      color: #877973;
+      font-size: 7px;
+    }
+
+    .form-header {
+      margin-bottom: 22px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--accent);
+      font-size: 9px;
+    }
+
+    .form-header h1 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(42px, 4vw, 58px);
+      font-weight: 500;
+      line-height: 0.95;
+      letter-spacing: -0.045em;
+    }
+
+    .form-header > p:last-child {
+      max-width: 380px;
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .form {
+      width: 100%;
+    }
+
+    .field {
+      display: block;
+      margin-bottom: 13px;
+    }
+
+    .field > label {
+      display: block;
+      margin-bottom: 8px;
+      color: #665b55;
+      font-size: 8px;
+    }
+
+    .field input[type="email"],
+    .field input[type="password"],
+    .field input[type="text"] {
+      width: 100%;
+      height: 46px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      outline: none;
+      background: var(--paper);
+      color: var(--ink);
+      transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background-color 0.15s ease;
+    }
+
+    .field input:focus {
+      border-color: rgba(203, 77, 34, 0.58);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(203, 77, 34, 0.09);
+    }
+
+    .field input[aria-invalid="true"] {
+      border-color: rgba(169, 63, 28, 0.7);
+    }
+
+    .field input::placeholder {
+      color: #a19791;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    .input-wrap input {
+      padding-right: 52px !important;
+    }
+
+    .eye-button {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      width: 38px;
+      height: 38px;
+      transform: translateY(-50%);
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: #8d817b;
+      cursor: pointer;
+      transition:
+        color 0.15s ease,
+        background 0.15s ease;
+    }
+
+    .eye-button:hover {
+      background: #f6efeb;
+      color: var(--accent);
+    }
+
+    .eye-button svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .form-row {
+      margin: 0 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      font-size: 12px;
+    }
+
+    .remember {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #675e59;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .remember input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: var(--accent);
+    }
+
+    .forgot {
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .forgot:hover {
+      color: var(--accent-strong);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .field-error,
+    .error {
+      color: var(--danger);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .field-error {
+      min-height: 17px;
+      margin: 7px 0 0;
+    }
+
+    .field-error:empty {
+      display: none;
+    }
+
+    .error {
+      display: none;
+      margin: -4px 0 14px;
+      padding: 10px 12px;
+      border: 1px solid rgba(169, 63, 28, 0.18);
+      border-radius: 10px;
+      background: rgba(203, 77, 34, 0.055);
+    }
+
+    .error.is-visible {
+      display: block;
+    }
+
+    .oauth-button {
+      width: 100%;
+      height: 46px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: #ffffff;
+      color: var(--ink);
+      font-weight: 680;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(61, 38, 29, 0.04);
+      transition:
+        transform 0.16s ease,
+        border-color 0.16s ease,
+        background-color 0.16s ease,
+        box-shadow 0.16s ease;
+    }
+
+    .oauth-button:hover {
+      transform: translateY(-1px);
+      border-color: var(--line-strong);
+      background: #fffdfa;
+      box-shadow: 0 7px 16px rgba(61, 38, 29, 0.08);
+    }
+
+    .oauth-button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    .google-icon {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+    }
+
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 18px 0;
+      color: #9b918c;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+      content: "";
+      height: 1px;
+      flex: 1;
+      background: var(--line);
+    }
+
+    .primary-button {
+      width: 100%;
+      height: 46px;
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--accent);
+      color: #ffffff;
+      font-weight: 720;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(169, 63, 28, 0.13);
+      transition:
+        transform 0.16s ease,
+        background-color 0.16s ease,
+        border-color 0.16s ease,
+        box-shadow 0.16s ease;
+    }
+
+    .primary-button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      border-color: var(--accent-strong);
+      background: var(--accent-strong);
+      box-shadow: 0 9px 20px rgba(169, 63, 28, 0.18);
+    }
+
+    .primary-button:disabled {
+      cursor: wait;
+      opacity: 0.66;
+    }
+
+    .primary-button .spinner {
+      display: none;
+      width: 15px;
+      height: 15px;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    .primary-button.is-loading .spinner {
+      display: inline-block;
+    }
+
+    .helper {
+      max-width: 360px;
+      margin: 14px auto 0;
+      color: #9b918c;
+      text-align: center;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .art-panel {
+      position: relative;
+      height: 100dvh;
+      overflow: hidden;
+      isolation: isolate;
+      background: #d46349;
+    }
+
+    .art-base {
+      position: absolute;
+      inset: -8%;
+      z-index: -4;
+      background:
+        linear-gradient(rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.02)),
+        url("https://raw.githubusercontent.com/jstnphlp/Dx/main/public/auth/prometheus-moving-gradient.png")
+          center / cover no-repeat;
+      transform: scale(1.06);
+      will-change: transform, background-position;
+      animation: art-pan 14s ease-in-out infinite alternate;
+    }
+
+    .art-atmosphere {
+      position: absolute;
+      inset: -22%;
+      z-index: -3;
+      opacity: 0.48;
+      filter: blur(80px) saturate(1.08);
+      background:
+        radial-gradient(circle at 23% 26%, rgba(211, 73, 49, 0.92), transparent 34%),
+        radial-gradient(circle at 72% 30%, rgba(247, 227, 195, 0.82), transparent 30%),
+        radial-gradient(circle at 67% 73%, rgba(71, 115, 155, 0.92), transparent 34%);
+      mix-blend-mode: soft-light;
+      will-change: transform;
+      animation: atmosphere-drift 18s ease-in-out infinite alternate;
+    }
+
+    .art-grain {
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      pointer-events: none;
+      opacity: 0.1;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+    }
+
+    .art-vignette {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(41, 18, 17, 0.05), transparent 35%),
+        linear-gradient(0deg, rgba(37, 17, 18, 0.22), transparent 36%);
+    }
+
+    .art-caption {
+      position: absolute;
+      left: clamp(28px, 4vw, 64px);
+      bottom: clamp(28px, 5vh, 54px);
+      display: grid;
+      gap: 10px;
+      color: rgba(255, 251, 246, 0.94);
+      text-shadow: 0 2px 20px rgba(46, 29, 31, 0.25);
+    }
+
+    .art-caption span {
+      font:
+        750 9px/1 ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        monospace;
+      letter-spacing: 0.2em;
+    }
+
+    .art-caption strong {
+      max-width: 390px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(28px, 2.8vw, 44px);
+      font-weight: 500;
+      line-height: 1;
+      letter-spacing: -0.035em;
+    }
+
+    .eye-button:focus-visible,
+    .forgot:focus-visible,
+    .primary-button:focus-visible,
+    .remember input:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    @keyframes art-pan {
+      0% {
+        transform: scale(1.06) translate3d(-2.5%, -1.5%, 0);
+      }
+      50% {
+        transform: scale(1.12) translate3d(2%, 1%, 0);
+      }
+      100% {
+        transform: scale(1.08) translate3d(-1%, 2.5%, 0);
+      }
+    }
+
+    @keyframes atmosphere-drift {
+      0% {
+        transform: translate3d(-5%, -2%, 0) rotate(-2deg) scale(1);
+      }
+      50% {
+        transform: translate3d(4%, 3%, 0) rotate(3deg) scale(1.07);
+      }
+      100% {
+        transform: translate3d(-1%, 6%, 0) rotate(-1deg) scale(1.03);
+      }
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .page {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(120px, 24dvh) minmax(0, 1fr);
+      }
+
+      .art-panel {
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        order: -1;
+      }
+
+      .auth-panel {
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        padding: 24px 28px 30px;
+      }
+
+      .brand {
+        margin-bottom: 22px;
+      }
+
+      .art-caption {
+        display: none;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .page {
+        grid-template-rows: minmax(112px, 22dvh) minmax(0, 1fr);
+      }
+
+      .auth-panel {
+        padding: 20px 22px 24px;
+      }
+
+      .form-row {
+        align-items: flex-start;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .art-base,
+      .art-atmosphere,
+      .spinner {
+        animation: none !important;
+      }
+
+      .primary-button {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="auth-panel" aria-labelledby="login-heading">
+      <div class="auth-inner">
+        <div class="brand">
+          <img
+            class="mark"
+            src="https://raw.githubusercontent.com/jstnphlp/Dx/main/public/auth/prometheus-mark.png"
+            alt=""
+            width="42"
+            height="42"
+          />
+          <div>
+            <div class="brand-name">Prometheus</div>
+            <div class="brand-sub">VIRTUAL OFFICE</div>
+          </div>
+        </div>
+
+        <div class="form-header">
+          <p class="eyebrow">WELCOME BACK</p>
+          <h1 id="login-heading">Sign in</h1>
+          <p>Access your workspace and continue building what matters.</p>
+        </div>
+
+        <form class="form" id="loginForm" novalidate>
+          <div class="field">
+            <label for="email">COMPANY EMAIL</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="name@company.com"
+              autocomplete="email"
+              autofocus
+            />
+            <p id="emailError" class="field-error" aria-live="polite"></p>
+          </div>
+
+          <div class="field">
+            <label for="password">PASSWORD</label>
+            <div class="input-wrap">
+              <input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+              />
+              <button
+                class="eye-button"
+                id="togglePassword"
+                type="button"
+                aria-label="Show password"
+                title="Show password"
+              >
+                <svg id="eyeIcon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
+                  <circle cx="12" cy="12" r="2.6"></circle>
+                </svg>
+              </button>
+            </div>
+            <p id="passwordError" class="field-error" aria-live="polite"></p>
+          </div>
+
+          <div class="form-row">
+            <label class="remember">
+              <input id="remember" name="remember" type="checkbox" />
+              <span>Keep me signed in</span>
+            </label>
+
+            <button class="forgot" id="forgotPassword" type="button">
+              Forgot password?
+            </button>
+          </div>
+
+          <div class="error" id="globalError" role="alert"></div>
+
+          <button class="primary-button" id="submitButton" type="submit">
+            <span class="spinner" aria-hidden="true"></span>
+            <span id="submitText">Sign in</span>
+          </button>
+
+          <div class="auth-divider" aria-hidden="true">or</div>
+
+          <button class="oauth-button" id="googleSignIn" type="button">
+            <svg class="google-icon" viewBox="0 0 18 18" aria-hidden="true">
+              <path fill="#4285F4" d="M17.64 9.205c0-.638-.057-1.252-.164-1.841H9v3.482h4.844a4.14 4.14 0 0 1-1.797 2.715v2.258h2.909c1.702-1.567 2.684-3.875 2.684-6.614Z"/>
+              <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.181l-2.91-2.258c-.805.54-1.834.859-3.046.859-2.344 0-4.329-1.585-5.037-3.714H.956v2.332A9 9 0 0 0 9 18Z"/>
+              <path fill="#FBBC05" d="M3.963 10.706A5.42 5.42 0 0 1 3.682 9c0-.592.102-1.167.281-1.706V4.962H.956A9 9 0 0 0 0 9c0 1.45.347 2.823.956 4.038l3.007-2.332Z"/>
+              <path fill="#EA4335" d="M9 3.58c1.322 0 2.508.454 3.441 1.345l2.581-2.582C13.463.892 11.426 0 9 0A9 9 0 0 0 .956 4.962l3.007 2.332C4.671 5.165 6.656 3.58 9 3.58Z"/>
+            </svg>
+            <span>Continue with Google</span>
+          </button>
+
+          <p class="helper">
+            Your access is managed by your organization. Contact your administrator for login assistance.
+          </p>
+        </form>
+      </div>
+    </section>
+
+    <section class="art-panel" aria-label="Prometheus artwork">
+      <div class="art-base" aria-hidden="true"></div>
+      <div class="art-atmosphere" aria-hidden="true"></div>
+      <div class="art-grain" aria-hidden="true"></div>
+      <div class="art-vignette" aria-hidden="true"></div>
+
+      <div class="art-caption">
+        <span>PEOPLE / WORK / PROGRESS</span>
+        <strong>Bring the work into the light.</strong>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("loginForm");
+    const email = document.getElementById("email");
+    const password = document.getElementById("password");
+    const emailError = document.getElementById("emailError");
+    const passwordError = document.getElementById("passwordError");
+    const globalError = document.getElementById("globalError");
+    const togglePassword = document.getElementById("togglePassword");
+    const submitButton = document.getElementById("submitButton");
+    const submitText = document.getElementById("submitText");
+    const forgotPassword = document.getElementById("forgotPassword");
+    const googleSignIn = document.getElementById("googleSignIn");
+
+    function setFieldError(input, target, message) {
+      target.textContent = message;
+      input.setAttribute("aria-invalid", message ? "true" : "false");
+    }
+
+    function clearErrors() {
+      setFieldError(email, emailError, "");
+      setFieldError(password, passwordError, "");
+      globalError.textContent = "";
+      globalError.classList.remove("is-visible");
+    }
+
+    function isValidEmail(value) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    }
+
+    togglePassword.addEventListener("click", () => {
+      const visible = password.type === "text";
+      password.type = visible ? "password" : "text";
+      togglePassword.setAttribute("aria-label", visible ? "Show password" : "Hide password");
+      togglePassword.setAttribute("title", visible ? "Show password" : "Hide password");
+
+      togglePassword.innerHTML = visible
+        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path><circle cx="12" cy="12" r="2.6"></circle></svg>'
+        : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18"></path><path d="M10.6 6.2A11.3 11.3 0 0 1 12 6c6.5 0 10 6 10 6a17 17 0 0 1-3.1 3.8"></path><path d="M6.2 6.2C3.4 8 2 12 2 12s3.5 6 10 6c1 0 2-.2 2.8-.5"></path><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path></svg>';
+    });
+
+    googleSignIn.addEventListener("click", () => {
+      clearErrors();
+      globalError.textContent =
+        "Prototype only: connect this button to Google OAuth, such as Supabase signInWithOAuth({ provider: 'google' }).";
+      globalError.classList.add("is-visible");
+    });
+
+    forgotPassword.addEventListener("click", () => {
+      globalError.textContent =
+        "Static prototype: connect this button to your /forgot-password route in the application.";
+      globalError.classList.add("is-visible");
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      clearErrors();
+
+      const emailValue = email.value.trim();
+      const passwordValue = password.value;
+
+      let valid = true;
+
+      if (!emailValue) {
+        setFieldError(email, emailError, "Enter your company email.");
+        valid = false;
+      } else if (!isValidEmail(emailValue)) {
+        setFieldError(email, emailError, "Enter a valid email address.");
+        valid = false;
+      }
+
+      if (!passwordValue) {
+        setFieldError(password, passwordError, "Enter your password.");
+        valid = false;
+      } else if (passwordValue.length < 8) {
+        setFieldError(password, passwordError, "Password must contain at least 8 characters.");
+        valid = false;
+      }
+
+      if (!valid) {
+        const firstInvalid = document.querySelector('[aria-invalid="true"]');
+        if (firstInvalid) firstInvalid.focus();
+        return;
+      }
+
+      submitButton.disabled = true;
+      submitButton.classList.add("is-loading");
+      submitText.textContent = "Signing in...";
+
+      window.setTimeout(() => {
+        submitButton.disabled = false;
+        submitButton.classList.remove("is-loading");
+        submitText.textContent = "Sign in";
+        globalError.textContent =
+          "Prototype only: the form is ready to connect to the DX login action or Supabase authentication.";
+        globalError.classList.add("is-visible");
+      }, 650);
+    });
+  </script>
+</body>
+</html>
