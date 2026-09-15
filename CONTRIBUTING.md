@@ -8,11 +8,16 @@ Keep changes phase-focused, easy to review, and aligned with the Prometheus sour
 - Load the relevant workflow under `.agents/skills/` for phase delivery, debugging, UI work, or database changes.
 - Read the relevant section in `.context/phases.md` before starting implementation work.
 - Read the matching requirements in `.context/` before implementing behavior.
-- For substantial user-facing work, inspect the relevant interaction in `.model/finalmodel.html` or `.model/login-page.html` and inspect the relevant Figma frame through the available Figma integration before coding the production UI.
-- Use `.model/` for intended UI interaction behavior where it does not conflict with canonical requirements, and use Figma for visual design and visual detail.
-- Do not treat prototype JavaScript, DOM structure, or frontend-only permission checks as production architecture or backend authority.
+- For substantial user-facing work, read `.context/ui-reference.md` and inspect the relevant workflow in `.model/finalmodel.html` before coding the production UI.
+- Treat `.model/finalmodel.html` as the prototype source of truth for the main authenticated application experience.
+- Treat `.model/login-page.html` as the prototype source of truth for authentication-screen user-visible behavior.
+- Reproduce the demonstrated prototype behavior in production unless the user explicitly changes that product decision.
+- Use Figma and Figma MCP or an equivalent connected integration as supporting helpers for measurements, spacing, typography, icons, variables, frame structure, screenshots, and fine visual detail.
+- When Figma and `finalmodel.html` disagree about the application experience, follow `finalmodel.html` unless a newer explicit user decision says otherwise.
+- Do not silently omit a prototype field or interaction merely because the current data model does not support it. Reconcile the requirements and persistence model instead.
+- Do not treat prototype JavaScript, DOM structure, mock state, or frontend-only permission checks as production architecture or backend authority.
 - Read the matching implementation journal in `.docs/phases/` when one already exists so previous decisions and lessons are carried forward.
-- Resolve requirement, access-control, and data-model conflicts in the canonical planning documents before encoding them in code.
+- Resolve genuine security, authorization, architecture, and data-integrity conflicts explicitly before encoding contradictory production behavior.
 
 ## Branches and commits
 
@@ -47,7 +52,7 @@ For bug fixes, follow `.agents/skills/prometheus-debugging/SKILL.md`.
 
 For each implementation phase, follow `.agents/skills/prometheus-phase-delivery/SKILL.md` and complete the matching acceptance checks in `.testcases/`.
 
-For substantial UI work, also follow `.agents/skills/prometheus-ui-implementation/SKILL.md`.
+For substantial UI work, also follow `.agents/skills/prometheus-ui-implementation/SKILL.md` and compare the working application against the relevant `finalmodel.html` workflow in a browser.
 
 ## Database and configuration changes
 
@@ -60,6 +65,8 @@ Run `pnpm prisma:generate` and `pnpm prisma:validate` after Prisma changes.
 Update `.env.example` whenever a new required environment variable is introduced, but never commit real secrets.
 
 Keep database credentials, direct connection strings, and future service-role secrets out of `VITE_*` variables.
+
+When a required prototype feature exposes a missing persistent field or relationship, update the canonical data model deliberately rather than silently deleting that user-visible capability from production.
 
 ## Documentation
 
