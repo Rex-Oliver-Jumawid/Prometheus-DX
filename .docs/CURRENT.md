@@ -54,7 +54,8 @@ Before making implementation changes in a new session:
 7. Read the Registry-related requirements in the SRS, user flows, data model, and tech stack.
 8. Inspect the current Registry frontend, backend, Prisma model, and authorization implementation before changing code.
 9. For substantial user-facing implementation, inspect the relevant interaction in `.model/finalmodel.html` and load `.agents/skills/prometheus-ui-implementation/SKILL.md`.
-10. Inspect the relevant Figma design through the connected Figma tooling before writing or substantially changing production UI.
+10. Confirm Figma MCP or an equivalent connected Figma integration is configured and can access the Prometheus design file before substantial production UI work.
+11. Inspect the relevant Figma design through that live connection before writing or substantially changing production UI.
 
 Load additional project skills when relevant:
 
@@ -78,7 +79,13 @@ File key: `8zgQ4pcWtku7rSWzjlP9K9`
 
 Starting node: `17:4603`
 
-The node is accessible through the connected Figma integration and is currently named `Outcome Workspace Top`.
+For best design fidelity, future coding sessions should have Figma MCP or an equivalent connected Figma integration configured before substantial UI implementation.
+
+Use the live Figma connection to inspect the actual node, design context, screenshot, dimensions, variables, components, and other available design metadata instead of relying only on the URL or static screenshots.
+
+If the Figma connection is unavailable or cannot access the file, state that limitation explicitly and treat visual verification as incomplete rather than guessing.
+
+The node is accessible through the connected Figma integration in the current ChatGPT environment and is currently named `Outcome Workspace Top`.
 
 Treat it as a visual entry point into the current Prometheus design file, including the shared authenticated workspace shell and visual language.
 
@@ -113,8 +120,9 @@ Resolve detailed authentication status from a trustworthy backend source when th
 - For each major decision or difficult problem, record what was difficult, the root cause or constraint, options considered, proposed solution, final decision, result, lesson learned, and next approach.
 - Implement in complete vertical slices.
 - Run focused verification after meaningful changes.
-- Inspect the relevant `.model/` interaction and Figma through the connected integration for substantial user-facing work.
+- Inspect the relevant `.model/` interaction and Figma through Figma MCP or the connected integration for substantial user-facing work.
 - Use `.model/` for intended interaction behavior, Figma for visual detail, and canonical requirements for data, authorization, and persistence.
+- If live Figma access is unavailable, disclose it and do not claim visual verification is complete.
 - Do not mark Phase 2 complete until its acceptance gate, previous-phase regression, and phase documentation are complete.
 
 ## Handoff Maintenance Rule
