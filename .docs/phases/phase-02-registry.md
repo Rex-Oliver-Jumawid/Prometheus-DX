@@ -22,6 +22,26 @@ Create the organization-level source of truth for departments, members, workspac
 - Authentication status display
 - Administrator-only Registry APIs
 
+## Current Figma Implementation Reference
+
+Use this user-selected Prometheus Figma reference during Phase 2 user-facing implementation:
+
+`https://www.figma.com/design/8zgQ4pcWtku7rSWzjlP9K9/Prometheus?node-id=17-4603&t=9bvq2LAHiC0GPJs7-1`
+
+File key: `8zgQ4pcWtku7rSWzjlP9K9`
+
+Starting node: `17:4603`
+
+The connected Figma integration can access this node, which is currently named `Outcome Workspace Top`.
+
+This node should be treated as an entry point into the current Prometheus visual system and authenticated workspace shell, not as a replacement for a Registry-specific frame.
+
+Before implementing the Registry visual layer, inspect the relevant Registry frame in the same Figma file through the connected Figma tooling.
+
+Figma governs visual design only.
+
+Registry behavior, access control, persistence, validation, and workflow remain governed by the canonical repository requirements.
+
 ## Security Rules Carried Forward From Phase 1
 
 1. Only `ADMINISTRATOR` may access Registry.
@@ -50,6 +70,9 @@ Shared contracts and validation
         |
         v
 Registry queries and mutations
+        |
+        v
+Inspect Registry-specific Figma frame
         |
         v
 Members / Departments UI
@@ -129,6 +152,7 @@ Initial recommendations inherited from Phase 1:
 - use accessible semantic form controls so browser tests do not depend on brittle selectors
 - introduce deliberate test fixtures/data for multiple member roles rather than depending indefinitely on one real Administrator account
 - preserve Phase 1 browser regression coverage
+- inspect the relevant Figma design through the connected Figma tooling before implementing or substantially changing the Registry UI
 
 ## Phase Exit Result
 
