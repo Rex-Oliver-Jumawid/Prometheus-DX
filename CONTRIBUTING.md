@@ -7,6 +7,7 @@ Keep changes phase-focused, easy to review, and aligned with the Prometheus sour
 - Read `AGENTS.md` for repository-specific implementation guidance.
 - Read the relevant section in `.context/phases.md` before starting implementation work.
 - Read the matching requirements in `.context/`, then use Figma and `.model/` only as visual and interaction references.
+- Read the matching implementation journal in `.docs/phases/` when one already exists so previous decisions and lessons are carried forward.
 - Resolve requirement, access-control, and data-model conflicts in the canonical planning documents before encoding them in code.
 
 ## Branches and commits
@@ -52,3 +53,41 @@ For each implementation phase, also complete the matching manual acceptance chec
 
 Update the canonical document when behavior, configuration, architecture, access rules, or workflows change.
 Do not duplicate a rule into multiple documents when a pointer to the source of truth is enough.
+
+Each implementation phase must also maintain a phase journal under `.docs/phases/`.
+
+The phase journal records what actually happened during implementation, not only what was planned. It should include:
+
+- delivered scope
+- architecture/data-flow changes
+- database and API changes
+- security decisions
+- acceptance results
+- known limitations and technical debt
+- lessons learned
+- recommended next approach
+
+For meaningful engineering problems and decisions, add a stable Decision & Challenge Log entry such as `P2-D01`.
+
+Each major entry should record:
+
+1. what gave us a hard time
+2. root cause or constraint
+3. options considered
+4. proposed solution
+5. final decision
+6. why it was chosen
+7. observed result
+8. what was learned
+9. the next approach for future work
+10. related files, migrations, tests, or commits
+
+Do not create decision entries for routine formatting or trivial fixes unless they reveal a reusable engineering lesson.
+
+A phase is not complete until:
+
+- its implementation and acceptance checks pass
+- previous completed phases pass the required regression checks
+- its `.docs/phases/phase-XX-*.md` journal is finalized with the actual results and important decisions
+
+See `.docs/phases/README.md` for the phase documentation standard.
