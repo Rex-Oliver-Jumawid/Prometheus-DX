@@ -293,6 +293,14 @@ function MemberDialog({
   onSave: (input: UpdateMemberRequest) => Promise<void>;
 }) {
   const member = state.mode === 'edit' ? state.member : undefined;
+  const defaultDepartmentId =
+    member?.departmentId ?? departments[0]?.id ?? '';
+  const defaultDepartmentName =
+    departments.find((department) => department.id === defaultDepartmentId)
+      ?.name ?? '';
+  const [departmentSearch, setDepartmentSearch] = useState(
+    defaultDepartmentName,
+  );
   const dialogRef = useRef<HTMLElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(
     document.activeElement instanceof HTMLElement
@@ -307,11 +315,12 @@ function MemberDialog({
     reset,
     setError,
     setFocus,
+    setValue,
   } = useForm<MemberFormValues>({
     defaultValues: {
       fullName: member?.fullName ?? '',
       email: member?.email ?? '',
-      departmentId: member?.departmentId ?? departments[0]?.id ?? '',
+      departmentId: defaultDepartmentId,
       position: member?.position ?? '',
       workspaceRole: member?.workspaceRole ?? 'MEMBER',
       status: member?.status ?? 'INVITED',
@@ -329,14 +338,20 @@ function MemberDialog({
   }, []);
 
   useEffect(() => {
+    const nextDepartmentId =
+      member?.departmentId ?? departments[0]?.id ?? '';
+    const nextDepartmentName =
+      departments.find((department) => department.id === nextDepartmentId)
+        ?.name ?? '';
     reset({
       fullName: member?.fullName ?? '',
       email: member?.email ?? '',
-      departmentId: member?.departmentId ?? departments[0]?.id ?? '',
+      departmentId: nextDepartmentId,
       position: member?.position ?? '',
       workspaceRole: member?.workspaceRole ?? 'MEMBER',
       status: member?.status ?? 'INVITED',
     });
+    setDepartmentSearch(nextDepartmentName);
     const focusFrame = window.requestAnimationFrame(() => setFocus('fullName'));
     return () => window.cancelAnimationFrame(focusFrame);
   }, [departments, member, reset, setFocus]);
@@ -459,17 +474,36 @@ function MemberDialog({
             </label>
             <label className="registry-field">
               <span>Department</span>
-              <select
-                {...register('departmentId')}
+              <input
+                type="search"
+                list="registry-department-options"
+                value={departmentSearch}
+                onChange={(event) => {
+                  const nextSearch = event.target.value;
+                  setDepartmentSearch(nextSearch);
+                  const selectedDepartment = departments.find(
+                    (department) =>
+                      department.name.localeCompare(nextSearch.trim(), undefined, {
+                        sensitivity: 'base',
+                      }) === 0,
+                  );
+                  setValue('departmentId', selectedDepartment?.id ?? '', {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }}
+                placeholder="Search departments"
+                autoComplete="off"
                 aria-invalid={Boolean(errors.departmentId)}
-              >
-                <option value="">Choose a department</option>
+              />
+              <datalist id="registry-department-options">
                 {departments.map((department) => (
-                  <option key={department.id} value={department.id}>
-                    {department.name}
+                  <option key={department.id} value={department.name}>
+                    {department.shortLabel}
                   </option>
                 ))}
-              </select>
+              </datalist>
+              <input type="hidden" {...register('departmentId')} />
               {errors.departmentId?.message && (
                 <small>{errors.departmentId.message}</small>
               )}
