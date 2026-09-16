@@ -8,9 +8,11 @@ Canonical requirements belong in `.context/`.
 
 ## Current Phase
 
-Phase 3 - Project Core
+Phase 4 - Project Workflow Structure
 
-Status: Complete.
+Status: In progress.
+
+Active internal slice: Slice 4 - Project Member access management.
 
 ## Previous Phase
 
@@ -166,9 +168,9 @@ The Projects E2E fixture prefix is `phase3-slice3-` and list/detail React Query 
 
 ## Next Action
 
-Phase 4 is unblocked but has not been started.
+Complete the Project Members UI, Lead-only `CAN_VIEW` and `CAN_EDIT` management, Project status authorization expansion, and direct API authority non-leakage checks.
 
-Before beginning it, use the Phase Delivery and Database Change skills, read the Phase 4 canonical sources, and create the Phase 4 journal entry.
+Then run the full Phase 4 acceptance gate and previous-phase regression before formal closure.
 
 ## Handoff Maintenance Rule
 

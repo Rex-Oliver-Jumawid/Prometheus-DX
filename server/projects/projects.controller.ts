@@ -29,8 +29,8 @@ export class ProjectsController {
   ) {}
 
   @Get()
-  listProjects() {
-    return this.projectsService.listProjects();
+  listProjects(@CurrentMember() currentMember: Member) {
+    return this.projectsService.listProjects(currentMember);
   }
 
   @Get('create-options')
@@ -55,9 +55,10 @@ export class ProjectsController {
 
   @Get(':projectId')
   getProject(
+    @CurrentMember() currentMember: Member,
     @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
   ) {
-    return this.projectsService.getProject(projectId);
+    return this.projectsService.getProject(currentMember, projectId);
   }
 
   @Patch(':projectId/status')

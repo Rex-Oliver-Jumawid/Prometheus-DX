@@ -45,6 +45,7 @@ function projectRecord(overrides: Record<string, unknown> = {}) {
     createdByMember: creator,
     leadMember: lead,
     departments: [{ department }],
+    members: [],
     ...overrides,
   };
 }
@@ -143,7 +144,7 @@ describe('ProjectsService', () => {
     const database = createDatabase({ listedProjects: [projectRecord()] });
     const service = new ProjectsService(database);
 
-    await expect(service.listProjects()).resolves.toMatchObject([
+    await expect(service.listProjects(creator)).resolves.toMatchObject([
       { id: '55555555-5555-4555-8555-555555555555', lead, creator },
     ]);
   });
@@ -258,7 +259,7 @@ describe('ProjectsService', () => {
     const service = new ProjectsService(createDatabase({ foundProject: null }));
 
     await expect(
-      service.getProject('55555555-5555-4555-8555-555555555555'),
+      service.getProject(creator, '55555555-5555-4555-8555-555555555555'),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
@@ -271,7 +272,10 @@ describe('ProjectsService', () => {
     const service = new ProjectsService(database);
 
     await expect(
-      service.getProject('55555555-5555-4555-8555-555555555555'),
+      service.getProject(
+        unrelatedMember,
+        '55555555-5555-4555-8555-555555555555',
+      ),
     ).resolves.toMatchObject({ lead, creator });
     expect(unrelatedMember.id).not.toBe(lead.id);
   });
@@ -284,9 +288,13 @@ describe('ProjectsService', () => {
     const service = new ProjectsService(database);
 
     await expect(
-      service.updateProjectStatus(lead as Member, '55555555-5555-4555-8555-555555555555', {
-        status: 'IN_PROGRESS',
-      }),
+      service.updateProjectStatus(
+        lead as Member,
+        '55555555-5555-4555-8555-555555555555',
+        {
+          status: 'IN_PROGRESS',
+        },
+      ),
     ).resolves.toMatchObject({ status: 'IN_PROGRESS' });
     expect(database.project.update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -355,7 +363,9 @@ describe('ProjectsService', () => {
     );
 
     expect(database.project.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ doneAt: null }) }),
+      expect.objectContaining({
+        data: expect.objectContaining({ doneAt: null }),
+      }),
     );
   });
 
@@ -372,9 +382,77 @@ describe('ProjectsService', () => {
     expect(database.project.update).not.toHaveBeenCalled();
   });
 
+  it('lets a CAN_EDIT Project Member change status without granting Lead authority', async () => {
+    const editableMember = {
+      ...creator,
+      id: '66666666-6666-4666-8666-666666666666',
+    } as Member;
+    const database = createDatabase({
+      foundProject: projectRecord({
+        members: [{ memberId: editableMember.id, accessLevel: 'CAN_EDIT' }],
+      }),
+      updatedProject: projectRecord({
+        status: 'IN_PROGRESS',
+        members: [{ memberId: editableMember.id, accessLevel: 'CAN_EDIT' }],
+      }),
+    });
+    const service = new ProjectsService(database);
+
+    await expect(
+      service.updateProjectStatus(
+        editableMember,
+        '55555555-5555-4555-8555-555555555555',
+        { status: 'IN_PROGRESS' },
+      ),
+    ).resolves.toMatchObject({
+      status: 'IN_PROGRESS',
+      currentMemberAccess: 'CAN_EDIT',
+      canChangeStatus: true,
+    });
+    expect(database.project.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          statusHistory: {
+            create: expect.objectContaining({
+              changedByMemberId: editableMember.id,
+            }),
+          },
+        }),
+      }),
+    );
+  });
+
+  it('denies a CAN_VIEW Project Member status authority', async () => {
+    const viewMember = {
+      ...creator,
+      id: '66666666-6666-4666-8666-666666666666',
+    } as Member;
+    const database = createDatabase({
+      foundProject: projectRecord({
+        members: [{ memberId: viewMember.id, accessLevel: 'CAN_VIEW' }],
+      }),
+    });
+    const service = new ProjectsService(database);
+
+    await expect(
+      service.updateProjectStatus(
+        viewMember,
+        '55555555-5555-4555-8555-555555555555',
+        { status: 'IN_PROGRESS' },
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(database.project.update).not.toHaveBeenCalled();
+  });
+
   it.each([
-    ['an unrelated Member', { ...creator, id: '66666666-6666-4666-8666-666666666666' }],
-    ['an Administrator who is not Lead', { ...creator, workspaceRole: WorkspaceRole.ADMINISTRATOR }],
+    [
+      'an unrelated Member',
+      { ...creator, id: '66666666-6666-4666-8666-666666666666' },
+    ],
+    [
+      'an Administrator who is not Lead',
+      { ...creator, workspaceRole: WorkspaceRole.ADMINISTRATOR },
+    ],
     ['the creator who is not Lead', creator],
   ])('denies status changes to %s', async (_label, actor) => {
     const database = createDatabase({ foundProject: projectRecord() });

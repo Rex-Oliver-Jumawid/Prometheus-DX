@@ -31,38 +31,56 @@ enum ProjectStatusChangeSource {
   SYSTEM
 }
 
+enum ProjectAccessLevel {
+  CAN_VIEW
+  CAN_EDIT
+}
+
+enum OutcomeLifecycleStatus {
+  OPEN
+  NEEDS_REVISION
+  ACCEPTED
+}
+
 model Department {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
-  shortLabel  String   @map("short_label") @db.VarChar(12)
+  shortLabel  String              @map("short_label") @db.VarChar(12)
   description String?
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
   members     Member[]
   projects    ProjectDepartment[]
+  outcomes    OutcomeDepartment[]
 
   @@index([name])
   @@map("departments")
 }
 
 model Member {
-  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  authUserId       String?       @unique @map("auth_user_id") @db.Uuid
-  email            String
-  fullName         String        @map("full_name")
-  departmentId     String        @map("department_id") @db.Uuid
-  department       Department    @relation(fields: [departmentId], references: [id], onDelete: Restrict)
-  workspaceRole    WorkspaceRole @default(MEMBER) @map("workspace_role")
-  status           MemberStatus  @default(INVITED)
-  position         String?
-  profileImagePath String?       @map("profile_image_path")
-  invitationSentAt DateTime?     @map("invitation_sent_at") @db.Timestamptz(6)
-  deactivatedAt    DateTime?     @map("deactivated_at") @db.Timestamptz(6)
-  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
-  createdProjects  Project[]     @relation("ProjectCreatedBy")
-  ledProjects      Project[]     @relation("ProjectLead")
-  projectStatusChanges ProjectStatusHistory[] @relation("ProjectStatusChangedBy")
+  id                          String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authUserId                  String?                      @unique @map("auth_user_id") @db.Uuid
+  email                       String
+  fullName                    String                       @map("full_name")
+  departmentId                String                       @map("department_id") @db.Uuid
+  department                  Department                   @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  workspaceRole               WorkspaceRole                @default(MEMBER) @map("workspace_role")
+  status                      MemberStatus                 @default(INVITED)
+  position                    String?
+  profileImagePath            String?                      @map("profile_image_path")
+  invitationSentAt            DateTime?                    @map("invitation_sent_at") @db.Timestamptz(6)
+  deactivatedAt               DateTime?                    @map("deactivated_at") @db.Timestamptz(6)
+  createdAt                   DateTime                     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                   DateTime                     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdProjects             Project[]                    @relation("ProjectCreatedBy")
+  ledProjects                 Project[]                    @relation("ProjectLead")
+  projectStatusChanges        ProjectStatusHistory[]       @relation("ProjectStatusChangedBy")
+  projectMemberships          ProjectMember[]
+  projectAccessChanges        ProjectMemberAccessHistory[] @relation("ProjectAccessChangedBy")
+  projectAccessHistory        ProjectMemberAccessHistory[] @relation("ProjectAccessTarget")
+  createdOutcomes             Outcome[]                    @relation("OutcomeCreatedBy")
+  outcomeMemberships          OutcomeMember[]
+  resolvedOutcomeDependencies OutcomeDependency[]          @relation("OutcomeDependencyResolvedBy")
 
   @@index([departmentId])
   @@index([status])
@@ -70,20 +88,23 @@ model Member {
 }
 
 model Project {
-  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name              String
-  description       String
-  status            ProjectStatus @default(PLANNING)
-  createdByMemberId String        @map("created_by_member_id") @db.Uuid
-  leadMemberId      String        @map("lead_member_id") @db.Uuid
-  doneAt            DateTime?     @map("done_at") @db.Timestamptz(6)
-  archivedAt        DateTime?     @map("archived_at") @db.Timestamptz(6)
-  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
-  createdByMember   Member        @relation("ProjectCreatedBy", fields: [createdByMemberId], references: [id], onDelete: Restrict)
-  leadMember        Member        @relation("ProjectLead", fields: [leadMemberId], references: [id], onDelete: Restrict)
-  departments       ProjectDepartment[]
-  statusHistory     ProjectStatusHistory[]
+  id                  String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String
+  description         String
+  status              ProjectStatus                @default(PLANNING)
+  createdByMemberId   String                       @map("created_by_member_id") @db.Uuid
+  leadMemberId        String                       @map("lead_member_id") @db.Uuid
+  doneAt              DateTime?                    @map("done_at") @db.Timestamptz(6)
+  archivedAt          DateTime?                    @map("archived_at") @db.Timestamptz(6)
+  createdAt           DateTime                     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime                     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdByMember     Member                       @relation("ProjectCreatedBy", fields: [createdByMemberId], references: [id], onDelete: Restrict)
+  leadMember          Member                       @relation("ProjectLead", fields: [leadMemberId], references: [id], onDelete: Restrict)
+  departments         ProjectDepartment[]
+  statusHistory       ProjectStatusHistory[]
+  stages              Stage[]
+  members             ProjectMember[]
+  memberAccessHistory ProjectMemberAccessHistory[]
 
   @@index([createdByMemberId])
   @@index([leadMemberId])
@@ -117,4 +138,134 @@ model ProjectStatusHistory {
   @@index([projectId])
   @@index([changedByMemberId])
   @@map("project_status_history")
+}
+
+model ProjectMember {
+  projectId   String             @map("project_id") @db.Uuid
+  memberId    String             @map("member_id") @db.Uuid
+  accessLevel ProjectAccessLevel @default(CAN_VIEW) @map("access_level")
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  project     Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  member      Member             @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@id([projectId, memberId])
+  @@index([memberId])
+  @@map("project_members")
+}
+
+model ProjectMemberAccessHistory {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId         String             @map("project_id") @db.Uuid
+  memberId          String             @map("member_id") @db.Uuid
+  previousAccess    ProjectAccessLevel @map("previous_access")
+  newAccess         ProjectAccessLevel @map("new_access")
+  changedByMemberId String             @map("changed_by_member_id") @db.Uuid
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  project           Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  member            Member             @relation("ProjectAccessTarget", fields: [memberId], references: [id], onDelete: Restrict)
+  changedByMember   Member             @relation("ProjectAccessChangedBy", fields: [changedByMemberId], references: [id], onDelete: Restrict)
+
+  @@index([projectId, memberId])
+  @@index([changedByMemberId])
+  @@map("project_member_access_history")
+}
+
+model Stage {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId   String    @map("project_id") @db.Uuid
+  name        String
+  description String?
+  position    Int
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  outcomes    Outcome[]
+
+  @@unique([projectId, position])
+  @@index([projectId])
+  @@map("stages")
+}
+
+model Outcome {
+  id                 String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stageId            String                 @map("stage_id") @db.Uuid
+  title              String
+  description        String?
+  lifecycleStatus    OutcomeLifecycleStatus @default(OPEN) @map("lifecycle_status")
+  position           Int
+  createdByMemberId  String                 @map("created_by_member_id") @db.Uuid
+  acceptedAt         DateTime?              @map("accepted_at") @db.Timestamptz(6)
+  createdAt          DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+  stage              Stage                  @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  createdByMember    Member                 @relation("OutcomeCreatedBy", fields: [createdByMemberId], references: [id], onDelete: Restrict)
+  departments        OutcomeDepartment[]
+  acceptanceCriteria AcceptanceCriterion[]
+  members            OutcomeMember[]
+  prerequisites      OutcomeDependency[]    @relation("DependentOutcome")
+  dependents         OutcomeDependency[]    @relation("PrerequisiteOutcome")
+
+  @@unique([stageId, position])
+  @@index([stageId])
+  @@index([lifecycleStatus])
+  @@index([createdByMemberId])
+  @@map("outcomes")
+}
+
+model OutcomeDepartment {
+  outcomeId    String     @map("outcome_id") @db.Uuid
+  departmentId String     @map("department_id") @db.Uuid
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  outcome      Outcome    @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+
+  @@id([outcomeId, departmentId])
+  @@index([departmentId])
+  @@map("outcome_departments")
+}
+
+model OutcomeMember {
+  outcomeId String   @map("outcome_id") @db.Uuid
+  memberId  String   @map("member_id") @db.Uuid
+  joinedAt  DateTime @default(now()) @map("joined_at") @db.Timestamptz(6)
+  outcome   Outcome  @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@id([outcomeId, memberId])
+  @@index([memberId])
+  @@map("outcome_members")
+}
+
+model OutcomeDependency {
+  id                         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  outcomeId                  String    @map("outcome_id") @db.Uuid
+  prerequisiteOutcomeId      String    @map("prerequisite_outcome_id") @db.Uuid
+  overrideResolvedAt         DateTime? @map("override_resolved_at") @db.Timestamptz(6)
+  overrideResolvedByMemberId String?   @map("override_resolved_by_member_id") @db.Uuid
+  overrideReason             String?   @map("override_reason")
+  createdAt                  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  outcome                    Outcome   @relation("DependentOutcome", fields: [outcomeId], references: [id], onDelete: Cascade)
+  prerequisiteOutcome        Outcome   @relation("PrerequisiteOutcome", fields: [prerequisiteOutcomeId], references: [id], onDelete: Restrict)
+  overrideResolvedByMember   Member?   @relation("OutcomeDependencyResolvedBy", fields: [overrideResolvedByMemberId], references: [id], onDelete: Restrict)
+
+  @@unique([outcomeId, prerequisiteOutcomeId])
+  @@index([outcomeId])
+  @@index([prerequisiteOutcomeId])
+  @@index([overrideResolvedByMemberId])
+  @@map("outcome_dependencies")
+}
+
+model AcceptanceCriterion {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  outcomeId   String   @map("outcome_id") @db.Uuid
+  description String
+  position    Int
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  outcome     Outcome  @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+
+  @@unique([outcomeId, position])
+  @@index([outcomeId])
+  @@map("acceptance_criteria")
 }

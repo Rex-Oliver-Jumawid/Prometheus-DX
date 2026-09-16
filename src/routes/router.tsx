@@ -28,6 +28,10 @@ export const router = createBrowserRouter([
           { path: '/', element: <PlaceholderPage title="Home" /> },
           { path: '/projects', element: <ProjectsPage /> },
           { path: '/projects/:projectId', element: <ProjectOverviewPage /> },
+          {
+            path: '/projects/:projectId/outcomes/:outcomeId',
+            element: <ProjectOverviewPage />,
+          },
           { path: '/visiwork', element: <PlaceholderPage title="VisiWork" /> },
           { path: '/schedule', element: <PlaceholderPage title="Schedule" /> },
           { path: '/team', element: <PlaceholderPage title="Team" /> },

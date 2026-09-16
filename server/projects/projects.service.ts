@@ -27,6 +27,7 @@ const projectInclude = {
       department: { select: { id: true, name: true, shortLabel: true } },
     },
   },
+  members: { select: { memberId: true, accessLevel: true } },
 } satisfies Prisma.ProjectInclude;
 
 type ProjectRecord = Prisma.ProjectGetPayload<{
@@ -37,12 +38,12 @@ type ProjectRecord = Prisma.ProjectGetPayload<{
 export class ProjectsService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
-  async listProjects(): Promise<Project[]> {
+  async listProjects(currentMember: Member): Promise<Project[]> {
     const projects = await this.prisma.project.findMany({
       include: projectInclude,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
-    return projects.map((project) => this.toProject(project));
+    return projects.map((project) => this.toProject(project, currentMember.id));
   }
 
   async getCreateOptions(): Promise<ProjectCreateOptionsResponse> {
@@ -61,13 +62,13 @@ export class ProjectsService {
     return { leads, departments };
   }
 
-  async getProject(projectId: string): Promise<Project> {
+  async getProject(currentMember: Member, projectId: string): Promise<Project> {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       include: projectInclude,
     });
     if (!project) throw new NotFoundException('Project not found.');
-    return this.toProject(project);
+    return this.toProject(project, currentMember.id);
   }
 
   async createProject(
@@ -119,7 +120,7 @@ export class ProjectsService {
       });
     });
 
-    return this.toProject(project);
+    return this.toProject(project, currentMember.id);
   }
 
   async updateProjectStatus(
@@ -134,9 +135,15 @@ export class ProjectsService {
       });
 
       if (!existing) throw new NotFoundException('Project not found.');
-      if (existing.leadMemberId !== currentMember.id) {
+      const currentProjectMember = existing.members.find(
+        ({ memberId }) => memberId === currentMember.id,
+      );
+      if (
+        existing.leadMemberId !== currentMember.id &&
+        currentProjectMember?.accessLevel !== 'CAN_EDIT'
+      ) {
         throw new ForbiddenException(
-          'Only the assigned Project Lead may change project status.',
+          'Only the assigned Project Lead or a Project Member with CAN_EDIT may change project status.',
         );
       }
 
@@ -166,10 +173,13 @@ export class ProjectsService {
       });
     });
 
-    return this.toProject(project);
+    return this.toProject(project, currentMember.id);
   }
 
-  private toProject(project: ProjectRecord): Project {
+  private toProject(project: ProjectRecord, currentMemberId: string): Project {
+    const currentProjectMember = project.members.find(
+      ({ memberId }) => memberId === currentMemberId,
+    );
     return {
       id: project.id,
       name: project.name,
@@ -178,6 +188,13 @@ export class ProjectsService {
       lead: project.leadMember,
       creator: project.createdByMember,
       departments: project.departments.map(({ department }) => department),
+      isParticipating: project.members.some(
+        ({ memberId }) => memberId === currentMemberId,
+      ),
+      currentMemberAccess: currentProjectMember?.accessLevel ?? null,
+      canChangeStatus:
+        project.leadMemberId === currentMemberId ||
+        currentProjectMember?.accessLevel === 'CAN_EDIT',
       doneAt: project.doneAt?.toISOString() ?? null,
       archivedAt: project.archivedAt?.toISOString() ?? null,
       createdAt: project.createdAt.toISOString(),

@@ -7,6 +7,8 @@ export const ProjectStatusSchema = z.enum([
   'ARCHIVED',
 ]);
 
+export const ProjectAccessLevelSchema = z.enum(['CAN_VIEW', 'CAN_EDIT']);
+
 export const ProjectDepartmentSummarySchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1),
@@ -27,6 +29,9 @@ export const ProjectSchema = z.object({
   lead: ProjectMemberSummarySchema,
   creator: ProjectMemberSummarySchema,
   departments: z.array(ProjectDepartmentSummarySchema),
+  isParticipating: z.boolean(),
+  currentMemberAccess: ProjectAccessLevelSchema.nullable(),
+  canChangeStatus: z.boolean(),
   doneAt: z.string().datetime().nullable(),
   archivedAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
@@ -61,6 +66,7 @@ export const UpdateProjectStatusRequestSchema = z.object({
 });
 
 export type ProjectStatus = z.infer<typeof ProjectStatusSchema>;
+export type ProjectAccessLevel = z.infer<typeof ProjectAccessLevelSchema>;
 export type ProjectDepartmentSummary = z.infer<
   typeof ProjectDepartmentSummarySchema
 >;
