@@ -115,6 +115,9 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await signIn(page);
   await page.goto('/registry');
   const addMemberButton = page.getByRole('button', { name: /Add member/ });
+  await expect(
+    page.getByRole('button', { name: `Edit ${existingSuggestionName}` }),
+  ).toBeVisible();
   await addMemberButton.click();
   await expect(page.getByRole('dialog', { name: 'Add member' })).toBeVisible();
   const fullNameInput = page.getByLabel('Full name');
@@ -122,15 +125,19 @@ test('administrator adds and edits a member with duplicate-email protection', as
   const existingMembersList = page.getByRole('listbox', {
     name: 'Existing members',
   });
+  await fullNameInput.focus();
   await expect(existingMembersList).toBeVisible();
+  await fullNameInput.fill(existingSuggestionName);
+  await expect(
+    existingMembersList.getByRole('option').filter({
+      hasText: existingSuggestionName,
+    }),
+  ).toHaveCount(1);
   await expect(
     existingMembersList.getByRole('option').filter({
       hasText: existingSuggestionName,
     }),
   ).toContainText('Already in Registry');
-
-  await fullNameInput.fill(existingSuggestionName);
-  await expect(existingMembersList.getByRole('option')).toHaveCount(1);
   await expect(existingMembersList).toContainText(existingSuggestionEmail);
   await fullNameInput.fill(existingSuggestionEmail);
   await expect(existingMembersList.getByRole('option')).toHaveCount(1);
@@ -213,6 +220,10 @@ test('administrator adds and edits a member with duplicate-email protection', as
   );
 
   await page.keyboard.press('Escape');
+  await expect(existingMembersList).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: 'Add member' })).toBeVisible();
+
+  await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Add member' })).toHaveCount(0);
   await expect(addMemberButton).toBeFocused();
   expect(await page.evaluate(() => document.body.style.overflow)).toBe('');
@@ -238,7 +249,9 @@ test('administrator adds and edits a member with duplicate-email protection', as
 
   await page.getByLabel('Full name').fill('Registry Test Member');
   await page.getByLabel('Email address').fill(email);
-  const departmentSearch = page.getByLabel('Department');
+  const departmentSearch = page
+    .getByRole('dialog', { name: 'Add member' })
+    .getByLabel('Department');
   await departmentSearch.fill('Not a persisted department');
   await page.getByLabel('Position').fill('Product Specialist');
   await page.getByLabel('Workspace role').selectOption('MEMBER');
@@ -278,7 +291,10 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await page.getByRole('button', { name: /Add member/ }).click();
   await page.getByLabel('Full name').fill('Duplicate Member');
   await page.getByLabel('Email address').fill(email.toUpperCase());
-  await page.getByLabel('Department').fill(department.name);
+  await page
+    .getByRole('dialog', { name: 'Add member' })
+    .getByLabel('Department')
+    .fill(department.name);
   await page.getByLabel('Position').fill('Duplicate');
   await page.getByRole('button', { name: 'Add member', exact: true }).click();
   await expect(
@@ -290,7 +306,10 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await page.getByRole('button', { name: 'Edit Registry Test Member' }).click();
   await page.getByLabel('Full name').fill(updatedFullName);
   await page.getByLabel('Position').fill(updatedPosition);
-  await page.getByLabel('Department').fill(reassignedDepartment.name);
+  await page
+    .getByRole('dialog', { name: 'Edit member' })
+    .getByLabel('Department')
+    .fill(reassignedDepartment.name);
   await page.getByLabel('Workspace role').selectOption('ADMINISTRATOR');
   await page.getByLabel('Member status').selectOption('DEACTIVATED');
   await page.getByRole('button', { name: 'Save changes' }).click();
