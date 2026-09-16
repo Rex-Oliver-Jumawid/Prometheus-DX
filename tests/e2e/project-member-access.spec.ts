@@ -12,6 +12,7 @@ let alternateLeadId = '';
 let departmentId = '';
 let projectId = '';
 let stageId = '';
+let mainFlowProjectId = '';
 
 async function signIn(page: Page) {
   await page.goto('/login');
@@ -133,8 +134,9 @@ test.afterAll(async () => {
       data: { workspaceRole: originalWorkspaceRole },
     });
   }
-  if (projectId) {
-    await prisma.project.delete({ where: { id: projectId } });
+  const projectIds = [projectId, mainFlowProjectId].filter(Boolean);
+  if (projectIds.length) {
+    await prisma.project.deleteMany({ where: { id: { in: projectIds } } });
   }
   if (alternateLeadId) {
     await prisma.member.delete({ where: { id: alternateLeadId } });
@@ -145,12 +147,25 @@ test.afterAll(async () => {
   await prisma.$disconnect();
 });
 
-test('F4-28 F4-29 F4-30 F4-31: Lead grants and revokes persisted Project Member access', async ({
+test('F4-28 F4-29: Lead grants and revokes persisted Project Member access', async ({
   page,
 }) => {
   test.skip(!hasCredentials, 'Requires E2E member credentials.');
+  test.slow();
   await signIn(page);
+  const workflowResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/projects/${projectId}/workflow`) &&
+      response.request().method() === 'GET',
+  );
+  const membersResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/projects/${projectId}/members`) &&
+      response.request().method() === 'GET',
+  );
   await page.goto(`/projects/${projectId}`);
+  expect((await workflowResponse).status()).toBe(200);
+  expect((await membersResponse).status()).toBe(200);
   await expect(
     page.getByRole('heading', { name: 'Project Members' }),
   ).toBeVisible();
@@ -169,7 +184,19 @@ test('F4-28 F4-29 F4-30 F4-31: Lead grants and revokes persisted Project Member 
   await alternateAccess.selectOption('CAN_EDIT');
   expect((await grantResponse).status()).toBe(200);
   await expect(alternateAccess).toHaveValue('CAN_EDIT');
+  const persistedWorkflowResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/projects/${projectId}/workflow`) &&
+      response.request().method() === 'GET',
+  );
+  const persistedMembersResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/projects/${projectId}/members`) &&
+      response.request().method() === 'GET',
+  );
   await page.reload();
+  expect((await persistedWorkflowResponse).status()).toBe(200);
+  expect((await persistedMembersResponse).status()).toBe(200);
   await expect(
     page.getByLabel('Project access for Phase Four Access Member'),
   ).toHaveValue('CAN_EDIT');
@@ -189,35 +216,35 @@ test('F4-28 F4-29 F4-30 F4-31: Lead grants and revokes persisted Project Member 
   await expect(
     page.getByLabel('Project access for Phase Four Access Member'),
   ).toHaveValue('CAN_VIEW');
-  expect(
-    await prisma.projectMemberAccessHistory.count({
+  await expect(
+    prisma.projectMemberAccessHistory.findMany({
       where: { projectId, memberId: alternateLeadId },
+      orderBy: { createdAt: 'asc' },
     }),
-  ).toBe(2);
-
-  const currentMember = await prisma.member.findUniqueOrThrow({
-    where: { id: currentMemberId },
-  });
-  const currentAccess = page.getByLabel(
-    `Project access for ${currentMember.fullName}`,
-  );
-  const selfGrantResponse = page.waitForResponse(
-    (response) =>
-      response
-        .url()
-        .endsWith(
-          `/api/projects/${projectId}/members/${currentMemberId}/access`,
-        ) && response.request().method() === 'PATCH',
-  );
-  await currentAccess.selectOption('CAN_EDIT');
-  expect((await selfGrantResponse).status()).toBe(200);
-  await expect(currentAccess).toHaveValue('CAN_EDIT');
+  ).resolves.toEqual([
+    expect.objectContaining({
+      previousAccess: 'CAN_VIEW',
+      newAccess: 'CAN_EDIT',
+      changedByMemberId: currentMemberId,
+    }),
+    expect.objectContaining({
+      previousAccess: 'CAN_EDIT',
+      newAccess: 'CAN_VIEW',
+      changedByMemberId: currentMemberId,
+    }),
+  ]);
 });
 
-test('F4-32 F4-33 F4-35 F4-36: CAN_EDIT changes status but cannot exercise Lead-only authority', async ({
+test('F4-30 F4-32 F4-33 F4-34 F4-35 F4-36: CAN_EDIT changes status but cannot exercise Lead-only authority', async ({
   page,
 }) => {
   test.skip(!hasCredentials, 'Requires E2E member credentials.');
+  await prisma.projectMember.update({
+    where: {
+      projectId_memberId: { projectId, memberId: currentMemberId },
+    },
+    data: { accessLevel: 'CAN_EDIT' },
+  });
   await prisma.project.update({
     where: { id: projectId },
     data: { leadMemberId: alternateLeadId },
@@ -295,19 +322,32 @@ test('F4-32 F4-33 F4-35 F4-36: CAN_EDIT changes status but cannot exercise Lead-
     where: { id: currentMemberId },
     data: { workspaceRole: 'ADMINISTRATOR' },
   });
+  await prisma.projectMember.update({
+    where: {
+      projectId_memberId: { projectId, memberId: currentMemberId },
+    },
+    data: { accessLevel: 'CAN_VIEW' },
+  });
   expect(
     (
       await authenticatedApi(
         page,
         `/projects/${projectId}/members/${currentMemberId}/access`,
         'PATCH',
-        { accessLevel: 'CAN_VIEW' },
+        { accessLevel: 'CAN_EDIT' },
       )
     ).status,
   ).toBe(403);
+  await expect(
+    prisma.projectMember.findUnique({
+      where: {
+        projectId_memberId: { projectId, memberId: currentMemberId },
+      },
+    }),
+  ).resolves.toMatchObject({ accessLevel: 'CAN_VIEW' });
 });
 
-test('F4-34: CAN_VIEW Project Member cannot change Project status', async ({
+test('F4-31: CAN_VIEW Project Member cannot change Project status', async ({
   page,
 }) => {
   test.skip(!hasCredentials, 'Requires E2E member credentials.');
@@ -317,12 +357,28 @@ test('F4-34: CAN_VIEW Project Member cannot change Project status', async ({
     },
     data: { accessLevel: 'CAN_VIEW' },
   });
+  await prisma.project.update({
+    where: { id: projectId },
+    data: { leadMemberId: alternateLeadId, status: 'IN_PROGRESS' },
+  });
   await prisma.member.update({
     where: { id: currentMemberId },
     data: { workspaceRole: originalWorkspaceRole },
   });
   await signIn(page);
+  const workflowResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/projects/${projectId}/workflow`) &&
+      response.request().method() === 'GET',
+  );
+  const membersResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/projects/${projectId}/members`) &&
+      response.request().method() === 'GET',
+  );
   await page.goto(`/projects/${projectId}`);
+  expect((await workflowResponse).status()).toBe(200);
+  expect((await membersResponse).status()).toBe(200);
   await expect(page.getByLabel('Project status')).toHaveCount(0);
   expect(
     (
@@ -337,4 +393,201 @@ test('F4-34: CAN_VIEW Project Member cannot change Project status', async ({
   expect(
     await prisma.project.findUniqueOrThrow({ where: { id: projectId } }),
   ).toMatchObject({ status: 'IN_PROGRESS' });
+});
+
+test('Phase 4 main E2E flow: Lead builds workflow, Member joins, Lead grants CAN_EDIT, and Lead-only authority stays isolated', async ({
+  page,
+}) => {
+  test.skip(!hasCredentials, 'Requires E2E member credentials.');
+  test.slow();
+  const currentMember = await prisma.member.findUniqueOrThrow({
+    where: { id: currentMemberId },
+  });
+  const project = await prisma.project.create({
+    data: {
+      name: `Main Flow Project ${runId}`,
+      description: 'Canonical Phase 4 end-to-end acceptance flow.',
+      createdByMemberId: alternateLeadId,
+      leadMemberId: currentMemberId,
+      departments: { create: { departmentId } },
+    },
+  });
+  mainFlowProjectId = project.id;
+
+  await signIn(page);
+  const initialWorkflowResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/projects/${mainFlowProjectId}/workflow`) &&
+      response.request().method() === 'GET',
+  );
+  await page.goto(`/projects/${mainFlowProjectId}`);
+  expect((await initialWorkflowResponse).status()).toBe(200);
+  await page.getByRole('button', { name: '+ Add Stage' }).click();
+  await page.getByLabel('Stage name').fill('Main Flow Stage');
+  await page.getByRole('button', { name: 'Create stage' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Main Flow Stage' }),
+  ).toBeVisible();
+  const mainStage = await prisma.stage.findFirstOrThrow({
+    where: { projectId: mainFlowProjectId, name: 'Main Flow Stage' },
+  });
+
+  const stage = page.locator('.workflow-stage').filter({
+    has: page.getByRole('heading', { name: 'Main Flow Stage' }),
+  });
+  await stage.getByRole('button', { name: '+ Add Outcome' }).click();
+  const outcomeDialog = page.getByRole('dialog', {
+    name: 'Add project outcome',
+  });
+  await outcomeDialog.getByLabel('Outcome title').fill('Main Flow Outcome');
+  await outcomeDialog.locator(`input[value="${departmentId}"]`).check();
+  await outcomeDialog
+    .getByRole('textbox', { name: 'Acceptance criterion 1', exact: true })
+    .fill('The complete Phase 4 authority flow is verified.');
+  await outcomeDialog.getByRole('button', { name: 'Create outcome' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Main Flow Outcome' }),
+  ).toBeVisible();
+  const mainOutcome = await prisma.outcome.findFirstOrThrow({
+    where: { stageId: mainStage.id, title: 'Main Flow Outcome' },
+  });
+
+  await prisma.project.update({
+    where: { id: mainFlowProjectId },
+    data: { leadMemberId: alternateLeadId },
+  });
+  await page.goto(`/projects/${mainFlowProjectId}/outcomes/${mainOutcome.id}`);
+  const joinResponse = page.waitForResponse(
+    (response) =>
+      response
+        .url()
+        .endsWith(
+          `/api/projects/${mainFlowProjectId}/outcomes/${mainOutcome.id}/join`,
+        ) && response.request().method() === 'POST',
+  );
+  await page.getByRole('button', { name: '+ Join Outcome' }).click();
+  expect((await joinResponse).status()).toBe(201);
+  await expect(
+    prisma.projectMember.findUnique({
+      where: {
+        projectId_memberId: {
+          projectId: mainFlowProjectId,
+          memberId: currentMemberId,
+        },
+      },
+    }),
+  ).resolves.toMatchObject({ accessLevel: 'CAN_VIEW' });
+
+  await page.goto(`/projects/${mainFlowProjectId}`);
+  await expect(page.getByLabel('Project status')).toHaveCount(0);
+  expect(
+    (
+      await authenticatedApi(
+        page,
+        `/projects/${mainFlowProjectId}/status`,
+        'PATCH',
+        { status: 'IN_PROGRESS' },
+      )
+    ).status,
+  ).toBe(403);
+
+  await prisma.project.update({
+    where: { id: mainFlowProjectId },
+    data: { leadMemberId: currentMemberId },
+  });
+  const leadWorkflowResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/projects/${mainFlowProjectId}/workflow`) &&
+      response.request().method() === 'GET',
+  );
+  const leadMembersResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/projects/${mainFlowProjectId}/members`) &&
+      response.request().method() === 'GET',
+  );
+  await page.reload();
+  expect((await leadWorkflowResponse).status()).toBe(200);
+  expect((await leadMembersResponse).status()).toBe(200);
+  const accessControl = page.getByLabel(
+    `Project access for ${currentMember.fullName}`,
+  );
+  await expect(accessControl).toHaveValue('CAN_VIEW');
+  const accessResponse = page.waitForResponse(
+    (response) =>
+      response
+        .url()
+        .endsWith(
+          `/api/projects/${mainFlowProjectId}/members/${currentMemberId}/access`,
+        ) && response.request().method() === 'PATCH',
+  );
+  await accessControl.selectOption('CAN_EDIT');
+  expect((await accessResponse).status()).toBe(200);
+  await expect(
+    prisma.projectMemberAccessHistory.findFirst({
+      where: {
+        projectId: mainFlowProjectId,
+        memberId: currentMemberId,
+        previousAccess: 'CAN_VIEW',
+        newAccess: 'CAN_EDIT',
+        changedByMemberId: currentMemberId,
+      },
+    }),
+  ).resolves.not.toBeNull();
+
+  await prisma.project.update({
+    where: { id: mainFlowProjectId },
+    data: { leadMemberId: alternateLeadId },
+  });
+  await page.reload();
+  const statusResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/projects/${mainFlowProjectId}/status`) &&
+      response.request().method() === 'PATCH',
+  );
+  await page.getByLabel('Project status').selectOption('IN_PROGRESS');
+  expect((await statusResponse).status()).toBe(200);
+  await expect(page.getByLabel('Project status')).toHaveValue('IN_PROGRESS');
+  await expect(page.getByRole('button', { name: '+ Add Stage' })).toHaveCount(
+    0,
+  );
+  await expect(page.getByRole('button', { name: '+ Add Outcome' })).toHaveCount(
+    0,
+  );
+  await expect(page.locator('.project-member-access select')).toHaveCount(0);
+  expect(
+    (
+      await authenticatedApi(
+        page,
+        `/projects/${mainFlowProjectId}/stages`,
+        'POST',
+        { name: 'Forbidden Main Flow Stage' },
+      )
+    ).status,
+  ).toBe(403);
+  expect(
+    (
+      await authenticatedApi(
+        page,
+        `/projects/${mainFlowProjectId}/stages/${mainStage.id}/outcomes`,
+        'POST',
+        {
+          title: 'Forbidden Main Flow Outcome',
+          description: null,
+          departmentIds: [departmentId],
+          acceptanceCriteria: ['This mutation must remain forbidden.'],
+          prerequisiteOutcomeIds: [],
+        },
+      )
+    ).status,
+  ).toBe(403);
+  expect(
+    (
+      await authenticatedApi(
+        page,
+        `/projects/${mainFlowProjectId}/members/${currentMemberId}/access`,
+        'PATCH',
+        { accessLevel: 'CAN_VIEW' },
+      )
+    ).status,
+  ).toBe(403);
 });
