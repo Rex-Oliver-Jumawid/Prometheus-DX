@@ -94,6 +94,14 @@ Apply these checks to every page in this phase:
 
 ## Project Listing Tests
 
+Slice 2 automated coverage status on 2026-09-16:
+
+- F3-01, F3-07 through F3-15 were exercised by `tests/e2e/projects.spec.ts` against real routes, APIs, and persistence.
+- The test covers active Member access, required client validation, selecting the current Member and another active Member as Lead, multiple Departments, the safe request body, persistence of separate creator and Lead records, refresh, duplicate-submit prevention, narrow viewport overflow, and browser console errors.
+- F3-05 is implemented from the persisted Lead relationship.
+- F3-04 is deliberately limited in Slice 2 to current creator-or-Lead relationships only, and must be revisited once canonical participation exists.
+- F3-06 remains deferred to Phase 4 because participation must originate from Outcome Membership.
+
 | ID | Test | Steps | Expected Result |
 | --- | --- | --- | --- |
 | F3-01 | All Projects | Open `/projects`. | All company-visible projects appear. |

@@ -30,6 +30,11 @@ export class ProjectsController {
     return this.projectsService.listProjects();
   }
 
+  @Get('create-options')
+  createOptions() {
+    return this.projectsService.getCreateOptions();
+  }
+
   @Post()
   createProject(@CurrentMember() currentMember: Member, @Body() body: unknown) {
     const parsed = CreateProjectRequestSchema.safeParse(body);

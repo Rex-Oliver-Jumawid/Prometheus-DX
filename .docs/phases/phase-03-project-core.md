@@ -174,3 +174,52 @@ Read the canonical Project model and flows, inspect the existing Prisma schema a
 Implement Slice 2 only: real `/projects` list, Create Project flow, and the intentional empty/loading/error states backed by the new API.
 
 Do not implement `/projects/:projectId` overview or status controls until Slice 3.
+
+## Slice 2 Delivery - 2026-09-16
+
+### Implemented
+
+- Added protected `GET /api/projects/create-options` under the existing active-member guard without an Administrator requirement.
+- The endpoint returns only active Member `id`, `fullName`, and `email` for Lead selection, plus persisted Department `id`, `name`, and `shortLabel` data.
+- Replaced the `/projects` placeholder with real All Projects query rendering, intentional loading, empty, and error states, and a Retry action.
+- Added a keyboard-accessible Create Project dialog with focus management, safe Escape and backdrop behavior, React Hook Form validation, active Lead selection, persisted multi-Department selection, mutation error retention, query invalidation, and synchronous duplicate-submit protection.
+- Added current Phase 3 client filters for Leading and the clearly scoped creator-or-Lead My Projects view.
+- Participating explicitly remains unavailable until Outcome Membership creates the canonical Project participation relationship in Phase 4.
+- Added no migration because Slice 1 persistence already contains every required Project relationship.
+
+### P3-D02 - Keep Project creation options in the Projects domain
+
+**What gave us a hard time:** Every active Member may create a Project, but Registry APIs remain Administrator-only.
+
+**Root cause or constraint:** Reusing Registry list APIs in the Create Project dialog would either leak Registry metadata or make normal Member creation impossible.
+
+**Options considered:** Broaden Registry authorization, duplicate records in the client, or add a narrow Projects-domain query.
+
+**Final decision:** Add `GET /api/projects/create-options` behind only the existing active-member authentication guard and select the smallest fields directly from Member and Department persistence.
+
+**Why it was chosen:** This preserves Registry authority boundaries while giving every authorized creator only the data needed to select a Lead and Departments.
+
+**Observed result:** Focused service coverage verifies the active-member predicate and the narrow response shape, while browser coverage creates a Project as a regular active Member with another active Member as Lead.
+
+**What was learned:** A safe UI option endpoint is a domain-specific read model, not a reason to expose an administrative controller to a broader role.
+
+**Next approach:** Build Slice 3 detail and status behavior on the existing Project read model without creating any Phase 4 participation records.
+
+**Related files:** `shared/contracts/project.ts`, `server/projects/projects.controller.ts`, `server/projects/projects.service.ts`, `src/features/projects/`, and `tests/e2e/projects.spec.ts`.
+
+### Verification
+
+- `pnpm typecheck`: passed.
+- `pnpm lint`: passed.
+- Focused Project service and contract tests: passed within the 44-test Vitest suite.
+- `pnpm exec playwright test tests/e2e/projects.spec.ts`: passed with the real authenticated creation path, Lead and Department persistence checks, refresh, duplicate-submit guard, narrow viewport check, and console-error assertion.
+- `pnpm test:e2e`: did not pass because the pre-existing `tests/e2e/registry-members.spec.ts` Member-edit suggestion assertion failed after the Projects test passed.
+- Focused `pnpm exec playwright test tests/e2e/registry-members.spec.ts` reproduced the Registry failure at the existing suggestion locator, which is outside Slice 2 files and is not changed in this slice.
+- `pnpm verify`: passed with project doctor, lint, typecheck, 44 unit tests, and both production builds.
+- `pnpm prisma migrate status`: six migrations found and database schema up to date.
+
+### Next Slice
+
+Implement Slice 3 only: `/projects/:projectId`, Project Overview, Lead and Department display, Project status controls, Lead-only status mutation permissions, and direct route/not-found behavior.
+
+Do not begin Phase 4 relationships or workflow structures.

@@ -51,6 +51,12 @@ function createDatabase(
     foundLead?: { id: string; status: MemberStatus } | null;
     foundDepartments?: { id: string }[];
     createdProject?: ReturnType<typeof projectRecord>;
+    createOptionLeads?: { id: string; fullName: string; email: string }[];
+    createOptionDepartments?: {
+      id: string;
+      name: string;
+      shortLabel: string;
+    }[];
   } = {},
 ) {
   const database = {
@@ -58,11 +64,18 @@ function createDatabase(
       findUnique: vi
         .fn()
         .mockResolvedValue('foundLead' in options ? options.foundLead : lead),
+      findMany: vi.fn().mockResolvedValue(options.createOptionLeads ?? []),
     },
     department: {
       findMany: vi
         .fn()
-        .mockResolvedValue(options.foundDepartments ?? [{ id: department.id }]),
+        .mockImplementation((query: { where?: unknown }) =>
+          Promise.resolve(
+            query.where
+              ? (options.foundDepartments ?? [{ id: department.id }])
+              : (options.createOptionDepartments ?? [department]),
+          ),
+        ),
     },
     project: {
       findMany: vi.fn().mockResolvedValue(options.listedProjects ?? []),
@@ -91,6 +104,32 @@ const input = {
 };
 
 describe('ProjectsService', () => {
+  it('returns active Members and persisted Departments as narrow create options', async () => {
+    const activeLead = {
+      id: lead.id,
+      fullName: lead.fullName,
+      email: lead.email,
+    };
+    const database = createDatabase({
+      createOptionLeads: [activeLead],
+      createOptionDepartments: [department],
+    });
+    const service = new ProjectsService(database);
+
+    await expect(service.getCreateOptions()).resolves.toEqual({
+      leads: [activeLead],
+      departments: [department],
+    });
+    expect(database.member.findMany).toHaveBeenCalledWith({
+      where: { status: MemberStatus.ACTIVE },
+      select: { id: true, fullName: true, email: true },
+      orderBy: [{ fullName: 'asc' }, { id: 'asc' }],
+    });
+    expect(database.department.findMany).toHaveBeenCalledWith({
+      select: { id: true, name: true, shortLabel: true },
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    });
+  });
   it('lets an active authorized Member list all Projects', async () => {
     const database = createDatabase({ listedProjects: [projectRecord()] });
     const service = new ProjectsService(database);

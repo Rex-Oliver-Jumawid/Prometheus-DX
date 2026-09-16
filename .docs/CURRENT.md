@@ -120,11 +120,35 @@ Before changing Phase 3 implementation:
 11. Inspect `.model/finalmodel.html` before substantial Project UI work.
 12. Use Figma as the visual source of truth when implementing the user-facing Projects experience.
 
+## Completed Phase 3 Slice 2
+
+The `/projects` placeholder is now a real Project list and Create Project flow.
+
+`GET /api/projects/create-options` is available to every active authorized Member and returns only active selectable Leads plus persisted Department display data.
+
+The Projects UI uses real list, creation-options, and create APIs with loading, empty, error, and refresh states.
+
+The Create Project dialog validates required details, selects a real active Member as Lead, supports multiple persisted Departments, and blocks duplicate submits.
+
+All Projects is functional.
+
+Leading is derived from the persisted Lead relationship.
+
+My Projects is explicitly limited to the currently persisted creator-or-Lead relationships and does not infer authority from creation.
+
+Participating is intentionally unavailable until Phase 4 can derive it from Outcome Membership.
+
+No migration was added.
+
+Focused Projects browser acceptance and `pnpm verify` passed.
+
+The full `pnpm test:e2e` regression remains red on a reproduced pre-existing Registry Member-edit suggestion locator failure outside Slice 2.
+
 ## Next Action
 
-Implement Phase 3 Slice 2 only: replace the `/projects` placeholder with the real all-projects list and Create Project flow using the established contracts and APIs.
+Implement Phase 3 Slice 3 only: `/projects/:projectId`, Project Overview, Project Lead and Department display, Project status controls, Lead-only status mutation permissions, and direct-route/not-found behavior.
 
-Do not yet implement Project overview/status controls, stages, outcomes, tasks, submissions, scheduling, chat, or Phase 4 structures.
+Do not begin Stages, Outcomes, Project Membership, Outcome Membership, Tasks, Submissions, Scheduling, Chat, Realtime, or Phase 4 structures.
 
 ## Handoff Maintenance Rule
 

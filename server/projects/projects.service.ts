@@ -7,6 +7,7 @@ import {
 import { MemberStatus, Prisma, type Member } from '@prisma/client';
 import type {
   CreateProjectRequest,
+  ProjectCreateOptionsResponse,
   Project,
 } from '../../shared/contracts/project';
 import { PrismaService } from '../database/prisma.service';
@@ -35,6 +36,22 @@ export class ProjectsService {
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
     return projects.map((project) => this.toProject(project));
+  }
+
+  async getCreateOptions(): Promise<ProjectCreateOptionsResponse> {
+    const [leads, departments] = await Promise.all([
+      this.prisma.member.findMany({
+        where: { status: MemberStatus.ACTIVE },
+        select: { id: true, fullName: true, email: true },
+        orderBy: [{ fullName: 'asc' }, { id: 'asc' }],
+      }),
+      this.prisma.department.findMany({
+        select: { id: true, name: true, shortLabel: true },
+        orderBy: [{ name: 'asc' }, { id: 'asc' }],
+      }),
+    ]);
+
+    return { leads, departments };
   }
 
   async getProject(projectId: string): Promise<Project> {

@@ -36,6 +36,11 @@ export const ProjectSchema = z.object({
 export const ProjectListResponseSchema = z.array(ProjectSchema);
 export const ProjectDetailResponseSchema = ProjectSchema;
 
+export const ProjectCreateOptionsResponseSchema = z.object({
+  leads: z.array(ProjectMemberSummarySchema),
+  departments: z.array(ProjectDepartmentSummarySchema),
+});
+
 export const CreateProjectRequestSchema = z.object({
   name: z.string().trim().min(1, 'Enter a project name.'),
   description: z.string().trim().min(1, 'Enter a project description.'),
@@ -59,4 +64,7 @@ export type ProjectMemberSummary = z.infer<typeof ProjectMemberSummarySchema>;
 export type Project = z.infer<typeof ProjectSchema>;
 export type ProjectListResponse = z.infer<typeof ProjectListResponseSchema>;
 export type ProjectDetailResponse = z.infer<typeof ProjectDetailResponseSchema>;
+export type ProjectCreateOptionsResponse = z.infer<
+  typeof ProjectCreateOptionsResponseSchema
+>;
 export type CreateProjectRequest = z.infer<typeof CreateProjectRequestSchema>;
