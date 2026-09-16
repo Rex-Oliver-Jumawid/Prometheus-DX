@@ -265,12 +265,30 @@ test('administrator adds and edits a member with duplicate-email protection', as
     }),
   ).toHaveCount(1);
   await departmentSearch.fill(department.name);
+  await expect(
+    page
+      .getByRole('dialog', { name: 'Add member' })
+      .locator('input[name="departmentId"]'),
+  ).toHaveValue(department.id);
+  const createMemberRequest = page.waitForRequest(
+    (request) =>
+      request.url().endsWith('/api/registry/members') &&
+      request.method() === 'POST',
+  );
   const createMemberResponse = page.waitForResponse(
     (response) =>
       response.url().endsWith('/api/registry/members') &&
       response.request().method() === 'POST',
   );
   await page.getByRole('button', { name: 'Add member', exact: true }).click();
+  expect((await createMemberRequest).postDataJSON()).toEqual({
+    fullName: 'Registry Test Member',
+    email,
+    departmentId: department.id,
+    position: 'Product Specialist',
+    workspaceRole: 'MEMBER',
+    status: 'INVITED',
+  });
   expect((await createMemberResponse).status()).toBe(201);
 
   await expect(
@@ -333,7 +351,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
     page.locator('.registry-department-card').filter({
       hasText: department.name,
     }),
-  ).toContainText('0 members');
+  ).toContainText('1 member');
   await expect(
     page.locator('.registry-department-card').filter({
       hasText: reassignedDepartment.name,

@@ -4,6 +4,9 @@ import { defineConfig, devices } from '@playwright/test';
 const usesSharedMemberCredential = Boolean(
   process.env.E2E_MEMBER_EMAIL && process.env.E2E_MEMBER_PASSWORD,
 );
+const apiEnvironmentWithoutBrevo = Object.fromEntries(
+  Object.entries(process.env).filter(([key]) => !key.startsWith('BREVO_')),
+);
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -27,7 +30,7 @@ export default defineConfig({
       command: 'pnpm dev:api',
       url: 'http://127.0.0.1:3001/api/health',
       env: {
-        ...process.env,
+        ...apiEnvironmentWithoutBrevo,
         INVITATION_DELIVERY_MODE: 'disabled',
       },
       reuseExistingServer: false,

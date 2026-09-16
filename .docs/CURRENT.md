@@ -47,9 +47,7 @@ Phase 0 - Foundation is also complete.
 - The retained `Brevo Acceptance Test` Member was resent through Registry, `invitation_sent_at` persisted, the UI changed to `Resend invitation`, and the invitation arrived in Gmail.
 - Local Prisma runtime access through the Supabase transaction pooler on port `6543` is verified.
 - The live database has all five Prisma migrations recorded, including the required Member Department migration.
-- The latest direct `pnpm prisma migrate status` attempt is blocked because this machine cannot currently reach the Supabase session pooler on port `5432`.
-- One Wi-Fi network blocked outbound PostgreSQL traffic to Supabase on ports `5432` and `6543` even though normal HTTPS access still worked.
-- A mobile hotspot allowed both PostgreSQL paths, so if Prisma times out on that Wi-Fi, test the pooler ports with `nc` or switch networks before changing database configuration.
+- The latest direct `pnpm prisma migrate status` reports all five migrations applied and the database schema up to date.
 - Every live Member now has a persisted Department relationship.
 - `Member.departmentId` is required in Prisma and `members.department_id` is `NOT NULL` in PostgreSQL.
 - The additive `20260916020000_require_member_department` migration is recorded in Prisma migration history with its repository checksum.
@@ -63,8 +61,8 @@ Phase 0 - Foundation is also complete.
 - The Registry Member E2E coverage now uses the searchable Department control and covers Full Name suggestions, existing-Member edit transition, keyboard behavior, invalid free text, and the existing dialog/mobile behavior.
 - Auth-shell E2E coverage now asserts that restored sessions show neutral Prometheus loading, never flash the login form, and enter Registry without the removed Administrator-check interstitial.
 - `pnpm verify` passes with 27/27 unit tests and both production builds.
-- The latest Playwright closure rerun is blocked by this machine's inability to reach the configured Supabase pooler ports: 7/15 tests passed, 3 live database-dependent tests failed at that boundary, and 5 serial tests did not run.
-- The Supabase management channel remains healthy and independently verified the live invariant, PostgreSQL nullability, and Prisma migration-history record.
+- The focused Registry Member E2E passes 1/1 and the complete Playwright suite passes 15/15 with fresh local API and web subprocesses.
+- The E2E API subprocess now excludes every `BREVO_*` variable while invitation delivery remains disabled.
 - Project workflows are split between concise always-on rules in `AGENTS.md` and reusable procedures under `.agents/skills/`.
 - `.context/ui-reference.md` now defines `.model/finalmodel.html` as the prototype source of truth for the main application experience.
 
@@ -126,7 +124,7 @@ The account-setup workflow now follows the explicit product decision that Gmail 
 
 ## Next Action
 
-Restore direct PostgreSQL connectivity to the configured Supabase pooler and rerun `pnpm exec prisma migrate status`, both focused Playwright files, and `pnpm test:e2e`.
+Keep Phase 2 in progress and do not start Phase 3 until separately requested.
 
 Do not alter live Member or Department data to work around the network boundary.
 

@@ -873,11 +873,68 @@ With API v3 acceptance now verified, restore a routable PostgreSQL connection, r
 - `server/registry/invitation.service.ts`
 - `.docs/CURRENT.md`
 
+### P2-D11 - Prove the Member-create request boundary before awaiting its response
+
+**Status:** Resolved
+
+**Area:** E2E testing, Security, Registry
+
+**Impact:** High
+
+#### What gave us a hard time
+
+The Registry Member E2E waited only for a create response after clicking Add member.
+
+When that waiter timed out, it could not distinguish a blocked client-side submit from a backend request that had no response.
+
+The E2E API subprocess also inherited Brevo credentials even though invitation delivery is explicitly disabled for E2E.
+
+#### Root cause / constraint
+
+The response-only test boundary did not prove the browser emitted a POST.
+
+The later Department-count assertion also expected zero members after reassignment despite the test's existing-member suggestion fixture remaining assigned to the original Department.
+
+#### Options considered
+
+1. Increase the response timeout.
+2. Change invitation delivery behavior again.
+3. Observe the request and response independently, verify the safe submitted fields, and preserve disabled delivery as an immediate failure caught by RegistryService.
+
+#### Decision
+
+The E2E API environment excludes every `BREVO_*` variable before setting `INVITATION_DELIVERY_MODE=disabled`.
+
+The Member-create test now verifies the hidden Department UUID, waits for the POST request, checks its non-sensitive JSON body, and only then awaits the `201` response.
+
+The original Department count is asserted as one because the independent suggestion fixture remains there.
+
+#### Why we chose it
+
+This establishes the frontend/backend boundary without exposing credentials or bearer tokens and keeps the test faithful to its own persisted fixtures.
+
+#### Result
+
+The POST was observed with the expected payload, returned `201`, and the complete Playwright suite passed 15/15 with fresh E2E API and web processes.
+
+The temporary safe backend timing markers showed Supabase authentication and Prisma authorization lookup returned before the successful create path, so they were removed.
+
+#### What we learned
+
+A response waiter alone is insufficient evidence that a browser submit happened.
+
+E2E subprocesses should receive only the environment they need, especially when a disabled integration must never consume production credentials.
+
+#### Next approach
+
+For browser mutations that can be blocked by client validation, assert request emission separately from response and visible-state handling.
+
+#### Related changes
+
+- `playwright.config.ts`
+- `tests/e2e/registry-members.spec.ts`
+
 ## Known Limitations
-
-The latest execution environment cannot reach the configured Supabase PostgreSQL pooler on ports `5432` or `6543`.
-
-This blocks a direct Prisma CLI migration-status observation and the database-dependent Playwright rerun, although the Supabase management channel confirms the live schema, data invariant, and five active Prisma migration-history records.
 
 Detailed authentication-provider combinations are unresolved because the current backend only has the stable Supabase user linkage.
 
@@ -903,7 +960,6 @@ The Department entity is a useful first persistence boundary because later membe
 
 ## Recommendations / Next Approach
 
-- Restore routable Supabase PostgreSQL connectivity and rerun `pnpm exec prisma migrate status`, the two focused Playwright files, and the complete browser suite.
 - Do not change live Member or Department assignments merely to work around the network boundary.
 - Add authoritative authentication-provider detail only if the backend can obtain it from Supabase.
 - Keep F2-21 blocked rather than creating Phase 3 Project persistence solely for a Phase 2 fixture.
@@ -917,4 +973,4 @@ The Department entity is a useful first persistence boundary because later membe
 
 The Department invariant and F2-16 are complete.
 
-Phase 2 remains in progress because the phase test specification literally requires F2-21 against a persisted non-admin Project Lead, which cannot exist before the Phase 3 Project relationship, and because the latest database-dependent Playwright regression could not run through the unreachable pooler.
+Phase 2 remains in progress because the phase test specification literally requires F2-21 against a persisted non-admin Project Lead, which cannot exist before the Phase 3 Project relationship.
