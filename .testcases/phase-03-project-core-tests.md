@@ -12,6 +12,8 @@ Project Lead is project-specific and is not an organization role.
 
 Administrator status does not automatically grant project authority.
 
+Phase 3 must also execute the deferred Phase 2 F2-21 regression as soon as a persisted non-admin Project Lead fixture exists.
+
 ## Required Pages and Interfaces
 
 - `/projects`
@@ -31,7 +33,6 @@ Administrator status does not automatically grant project authority.
 - Member B
 - Member C with no project relationship
 - Inactive member
-
 
 ## How to Execute These Tests
 
@@ -59,6 +60,16 @@ Do not mark a test as passed only because the interface looks correct.
 
 Permission-sensitive tests must be verified against backend behavior as well.
 
+## Deferred Phase 2 Regression
+
+| ID | Test | Steps | Expected Result |
+| --- | --- | --- | --- |
+| F2-21 | Non-admin Project Lead cannot access Registry | Create or use a persisted Project whose Lead is an active `MEMBER`, sign in as that Lead, verify Registry navigation is absent, open `/registry` directly, and call a Registry API. | Project Lead status grants no Registry authority: navigation is absent, direct route is denied, and Registry API returns forbidden. |
+
+Run F2-21 immediately after the Project Lead relationship is persisted and before treating Project Lead authorization as stable.
+
+Do not convert Project Lead into a workspace or organization role to satisfy this regression.
+
 ## Global Visual and Interaction Checks
 
 Apply these checks to every page in this phase:
@@ -78,7 +89,6 @@ Apply these checks to every page in this phase:
 - Browser Back and Forward behave naturally.
 - Direct URL navigation works.
 - There are no unexplained console errors.
-
 
 ## Project Listing Tests
 
@@ -136,6 +146,7 @@ Member A signs in
 -> Opens project
 -> Member B signs in
 -> Project appears under Leading
+-> Member B cannot access Registry unless separately an Administrator
 -> Member C signs in
 -> Project is still visible
 -> Member C cannot perform Lead-only edits
@@ -143,6 +154,7 @@ Member A signs in
 
 ## Phase 3 Exit Checklist
 
+- [ ] Deferred F2-21 Registry regression passes with a persisted non-admin Project Lead.
 - [ ] All projects are visible to authorized users.
 - [ ] Regular members can create projects.
 - [ ] Creator and Lead are stored separately.
