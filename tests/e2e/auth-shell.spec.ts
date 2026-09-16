@@ -270,7 +270,7 @@ test('restored Administrator session stays on neutral loading before Registry', 
   });
 });
 
-test('normal Member cannot see or open Registry', async ({ page }) => {
+test('non-admin Project Lead cannot see or open Registry', async ({ page }) => {
   const email = process.env.E2E_MEMBER_EMAIL;
   const password = process.env.E2E_MEMBER_PASSWORD;
   test.skip(
@@ -283,11 +283,22 @@ test('normal Member cannot see or open Registry', async ({ page }) => {
   });
   if (!member) throw new Error('E2E member record was not found.');
 
+  let projectId: string | undefined;
   try {
     await prisma.member.update({
       where: { id: member.id },
-      data: { workspaceRole: 'MEMBER' },
+      data: { workspaceRole: 'MEMBER', status: 'ACTIVE', deactivatedAt: null },
     });
+    const project = await prisma.project.create({
+      data: {
+        name: `F2-21 Registry isolation ${Date.now()}`,
+        description: 'Playwright fixture for Project Lead Registry isolation.',
+        createdByMemberId: member.id,
+        leadMemberId: member.id,
+        departments: { create: { departmentId: member.departmentId } },
+      },
+    });
+    projectId = project.id;
 
     await signIn(page);
     await expect(page).not.toHaveURL(/\/login$/);
@@ -326,9 +337,16 @@ test('normal Member cannot see or open Registry', async ({ page }) => {
       page.getByRole('heading', { name: 'Registry', exact: true }),
     ).toBeVisible();
   } finally {
+    if (projectId) {
+      await prisma.project.delete({ where: { id: projectId } });
+    }
     await prisma.member.update({
       where: { id: member.id },
-      data: { workspaceRole: member.workspaceRole },
+      data: {
+        workspaceRole: member.workspaceRole,
+        status: member.status,
+        deactivatedAt: member.deactivatedAt,
+      },
     });
   }
 });

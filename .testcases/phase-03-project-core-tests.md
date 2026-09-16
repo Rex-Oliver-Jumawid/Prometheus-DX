@@ -66,7 +66,9 @@ Permission-sensitive tests must be verified against backend behavior as well.
 | --- | --- | --- | --- |
 | F2-21 | Non-admin Project Lead cannot access Registry | Create or use a persisted Project whose Lead is an active `MEMBER`, sign in as that Lead, verify Registry navigation is absent, open `/registry` directly, and call a Registry API. | Project Lead status grants no Registry authority: navigation is absent, direct route is denied, and Registry API returns forbidden. |
 
-Run F2-21 immediately after the Project Lead relationship is persisted and before treating Project Lead authorization as stable.
+Status: `PASS` on 2026-09-16 through `tests/e2e/auth-shell.spec.ts` with a persisted active `MEMBER` Project Lead fixture.
+
+The verified browser result was absent Registry navigation, denied direct `/registry` access, and `403` from the Registry API.
 
 Do not convert Project Lead into a workspace or organization role to satisfy this regression.
 

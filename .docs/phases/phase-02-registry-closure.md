@@ -43,9 +43,9 @@ Final Phase 2 closure verification on 2026-09-16:
 
 - F2-01, F2-02, F2-04 through F2-20, and F2-22 through F2-24: `PASS`.
 - F2-03: `N/A` because canonical requirements do not forbid duplicate Department names.
-- F2-21: `DEFERRED` to Phase 3 and recorded in `.testcases/phase-03-project-core-tests.md`.
+- F2-21: `PASS` on 2026-09-16 during Phase 3 Slice 1 with a real persisted active non-admin Project Lead fixture.
 
-## Required Phase 3 Regression
+## Executed Phase 3 Regression
 
 As soon as Phase 3 persists the first real Project Lead relationship:
 
@@ -54,9 +54,9 @@ As soon as Phase 3 persists the first real Project Lead relationship:
 3. Verify direct `/registry` navigation is denied.
 4. Verify a direct Registry API request returns forbidden.
 
-Do not create a workspace-level Project Lead role.
+The browser regression passed: Registry navigation was absent, direct `/registry` access was denied, and the direct Registry API request returned `403`.
 
-Do not give Administrators automatic Project Lead authority.
+No workspace-level Project Lead role was created.
 
 ## Next Phase
 

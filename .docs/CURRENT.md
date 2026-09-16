@@ -33,23 +33,25 @@ Phase 2 - Registry: Complete.
 Final Phase 2 verification:
 
 - Focused Registry Member Playwright test: 1/1 passed.
-- Full Playwright suite: 15/15 passed.
-- `pnpm verify`: passed with 32 unit tests and both production builds.
-- `pnpm prisma migrate status`: all five migrations applied and database schema up to date.
+- Full Playwright suite: 15/15 passed, including the persisted non-admin Project Lead Registry regression.
+- `pnpm verify`: passed with 42 unit tests and both production builds.
+- `pnpm prisma migrate status`: all six migrations applied and database schema is up to date.
 - Registry is Administrator-only at both frontend route/navigation and backend API boundaries.
 - Member Department relationships are required and `members.department_id` is `NOT NULL`.
 - Real invitation acceptance was verified through Brevo, Gmail, Google-only Gmail setup, normalized-email linkage, activation, persisted `auth_user_id`, no duplicate Member, and successful subsequent access.
 - Routine E2E runs use disabled invitation delivery and the Playwright-owned API subprocess excludes every `BREVO_*` environment variable.
 
-## Deferred Phase 2 Regression
+## Completed Phase 3 Slice 1
 
-F2-21 is intentionally deferred to Phase 3 because a persisted Project Lead relationship does not exist before Project Core.
+Project persistence and authorization are implemented without changing the Projects placeholder UI.
 
-As soon as Phase 3 creates a real non-admin Project Lead, verify that Project Lead status alone does not grant Registry navigation, direct-route access, or Registry API access.
+The `Project`, `ProjectDepartment`, and `ProjectStatusHistory` foundations now persist separate creator and Lead relationships, Department associations, and canonical status values.
 
-The regression is tracked in:
+`GET /api/projects`, `POST /api/projects`, and `GET /api/projects/:projectId` require an active authorized Member.
 
-`.testcases/phase-03-project-core-tests.md`
+Every active authorized Member can list and create Projects, while the server derives the creator from the authenticated Member and validates the selected Lead and Departments.
+
+F2-21 passed with a persisted active `MEMBER` Project Lead who was denied Registry navigation, direct route access, and Registry API access.
 
 ## Phase 3 Goal
 
@@ -120,11 +122,9 @@ Before changing Phase 3 implementation:
 
 ## Next Action
 
-Implement the Phase 3 Project persistence and authorization slice only.
+Implement Phase 3 Slice 2 only: replace the `/projects` placeholder with the real all-projects list and Create Project flow using the established contracts and APIs.
 
-Do not start Phase 4 workflow structures.
-
-After the first persisted non-admin Project Lead exists, execute deferred F2-21 immediately and record the result.
+Do not yet implement Project overview/status controls, stages, outcomes, tasks, submissions, scheduling, chat, or Phase 4 structures.
 
 ## Handoff Maintenance Rule
 

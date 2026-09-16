@@ -19,6 +19,18 @@ enum MemberStatus {
   DEACTIVATED
 }
 
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  DONE
+  ARCHIVED
+}
+
+enum ProjectStatusChangeSource {
+  USER
+  SYSTEM
+}
+
 model Department {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
@@ -27,6 +39,7 @@ model Department {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
   members     Member[]
+  projects    ProjectDepartment[]
 
   @@index([name])
   @@map("departments")
@@ -47,8 +60,61 @@ model Member {
   deactivatedAt    DateTime?     @map("deactivated_at") @db.Timestamptz(6)
   createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdProjects  Project[]     @relation("ProjectCreatedBy")
+  ledProjects      Project[]     @relation("ProjectLead")
+  projectStatusChanges ProjectStatusHistory[] @relation("ProjectStatusChangedBy")
 
   @@index([departmentId])
   @@index([status])
   @@map("members")
+}
+
+model Project {
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  description       String
+  status            ProjectStatus @default(PLANNING)
+  createdByMemberId String        @map("created_by_member_id") @db.Uuid
+  leadMemberId      String        @map("lead_member_id") @db.Uuid
+  doneAt            DateTime?     @map("done_at") @db.Timestamptz(6)
+  archivedAt        DateTime?     @map("archived_at") @db.Timestamptz(6)
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdByMember   Member        @relation("ProjectCreatedBy", fields: [createdByMemberId], references: [id], onDelete: Restrict)
+  leadMember        Member        @relation("ProjectLead", fields: [leadMemberId], references: [id], onDelete: Restrict)
+  departments       ProjectDepartment[]
+  statusHistory     ProjectStatusHistory[]
+
+  @@index([createdByMemberId])
+  @@index([leadMemberId])
+  @@index([status])
+  @@map("projects")
+}
+
+model ProjectDepartment {
+  projectId    String     @map("project_id") @db.Uuid
+  departmentId String     @map("department_id") @db.Uuid
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  project      Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+
+  @@id([projectId, departmentId])
+  @@index([departmentId])
+  @@map("project_departments")
+}
+
+model ProjectStatusHistory {
+  id                String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId         String                    @map("project_id") @db.Uuid
+  fromStatus        ProjectStatus?            @map("from_status")
+  toStatus          ProjectStatus             @map("to_status")
+  changedByMemberId String?                   @map("changed_by_member_id") @db.Uuid
+  changeSource      ProjectStatusChangeSource @map("change_source")
+  createdAt         DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  project           Project                   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  changedByMember   Member?                   @relation("ProjectStatusChangedBy", fields: [changedByMemberId], references: [id], onDelete: Restrict)
+
+  @@index([projectId])
+  @@index([changedByMemberId])
+  @@map("project_status_history")
 }

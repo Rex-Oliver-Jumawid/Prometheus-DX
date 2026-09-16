@@ -2,9 +2,9 @@
 
 ## Status
 
-**Ready to start**
+**In progress - Slice 1 complete**
 
-No Phase 3 implementation has been completed yet.
+Phase 3 Slice 1 - Project persistence and authorization - is complete.
 
 Phase 2 - Registry is complete.
 
@@ -128,3 +128,49 @@ Before Phase 3 exit:
 ## First Action
 
 Read the canonical Project model and flows, inspect the existing Prisma schema and `/projects` placeholder, then design the smallest additive Prisma migration and backend vertical slice for Project list/create/detail with separate creator and Lead relationships.
+
+## Slice 1 Delivery - 2026-09-16
+
+### Implemented
+
+- Added `Project`, `ProjectDepartment`, and `ProjectStatusHistory` persistence with migration `20260916030000_phase_03_project_persistence`.
+- Added canonical `ProjectStatus` values: `PLANNING`, `IN_PROGRESS`, `DONE`, and `ARCHIVED`.
+- Preserved separate `created_by_member_id` and `lead_member_id` relationships with explicit Prisma relation names and lookup indexes.
+- Added shared Zod Project contracts for list, detail, create input, status, Department summaries, and Member summaries.
+- Added protected `GET /api/projects`, `POST /api/projects`, and `GET /api/projects/:projectId` endpoints.
+- The create endpoint derives the creator from the authenticated active Member, validates the selected Lead is active, validates every persisted Department ID, and writes the Project, Department associations, and initial status-history row atomically.
+- The Projects placeholder UI remains intentionally unchanged.
+
+### P3-D01 - Model creator and Lead as independent Project relationships
+
+**What gave us a hard time:** Project creation must preserve audit authorship without turning the creator into a project authority.
+
+**Root cause or constraint:** The canonical model requires an active Member to create a Project and independently allows another active Member to become its Project Lead.
+
+**Options considered:** A single owner relationship would be simpler but would incorrectly grant implied authority and could not represent a creator assigning another Lead.
+
+**Final decision:** Persist non-null `created_by_member_id` and `lead_member_id` foreign keys on `projects` with explicit Prisma relation names, and derive only the former from `currentMember`.
+
+**Why it was chosen:** This encodes the authorization boundary in durable domain data and makes Administrator, creator, and Lead authority remain separate.
+
+**Observed result:** Focused tests confirm a regular Member and an Administrator can create a Project for another active Lead without either creator relationship replacing the selected Lead.
+
+**What was learned:** The API contract must not accept a client-supplied creator ID because it is audit data owned by authenticated server context.
+
+**Next approach:** Build the list and Create Project UI directly on the established contracts, then defer overview and status mutation behavior to the planned Slice 3.
+
+**Related files:** `prisma/schema.prisma`, `prisma/migrations/20260916030000_phase_03_project_persistence/migration.sql`, `server/projects/`, and `shared/contracts/project.ts`.
+
+### Verification
+
+- Focused Project and contract tests: 42/42 unit tests passed.
+- Deferred F2-21 browser regression: 1/1 passed with a real persisted active non-admin Project Lead fixture.
+- `pnpm verify`: passed, including lint, typecheck, 42 unit tests, and both production builds.
+- `pnpm test:e2e`: passed with 15/15 tests.
+- `pnpm prisma migrate status`: six migrations applied and schema up to date.
+
+### Next Slice
+
+Implement Slice 2 only: real `/projects` list, Create Project flow, and the intentional empty/loading/error states backed by the new API.
+
+Do not implement `/projects/:projectId` overview or status controls until Slice 3.
