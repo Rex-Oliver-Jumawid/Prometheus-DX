@@ -4,6 +4,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
 import { ApiRequestError } from '../../lib/api';
 import { getSupabaseClient } from '../../lib/supabase';
+import { AuthLoading } from './AuthGate';
 import { useAuth } from './auth-context';
 import { safeReturnPath } from './auth-routing';
 
@@ -65,6 +66,13 @@ export function LoginPage() {
         'Google sign-in could not be completed. Please try again.',
       );
   }, [location.search]);
+
+  if (
+    auth.session === undefined ||
+    (Boolean(auth.session) && auth.memberPending)
+  ) {
+    return <AuthLoading label="Opening workspace…" />;
+  }
 
   if (auth.member) {
     sessionStorage.removeItem('prometheus:return-to');
