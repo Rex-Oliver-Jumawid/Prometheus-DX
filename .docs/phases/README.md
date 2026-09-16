@@ -112,7 +112,7 @@ List important files, migrations, tests, commits, or routes.
 | 2 | Registry | Complete | `phase-02-registry-closure.md` |
 | 3 | Project Core | Complete | `phase-03-project-core.md` |
 | 4 | Project Workflow Structure | Complete | `phase-04-project-workflow.md` |
-| 5 | Outcome Work, Submission, Review, and Dependencies | Not started | To be created |
+| 5 | Outcome Work, Submission, Review, and Dependencies | In progress | `phase-05-work-review.md` |
 | 6 | Schedule, Work Sessions, and Team | Not started | To be created |
 | 7 | Notifications and Home | Not started | To be created |
 | 8 | VisiWork and Reporting | Not started | To be created |

@@ -510,7 +510,8 @@ ACCEPTED
 
 ```text
 is_locked =
-exists unresolved OutcomeDependency
+Outcome.lifecycle_status != ACCEPTED
+AND exists unresolved OutcomeDependency
 ```
 
 ### Review condition
@@ -618,7 +619,10 @@ Dependencies should reference Outcomes belonging to the same Project.
 
 A dependency is resolved when the prerequisite is currently `ACCEPTED` or a Project Lead override has resolved the dependency.
 
-Whether reopening an accepted prerequisite should relock dependent Outcomes remains intentionally unresolved and must be decided before the dependency API is finalized.
+Reopening an accepted prerequisite relocks unfinished dependent Outcomes unless their dependency edge has an explicit Project Lead override.
+Accepted dependent Outcomes retain their acceptance and credit history; reopening a prerequisite never automatically reopens them.
+If an accepted dependent Outcome is itself later reopened, its unresolved prerequisites block execution and submission again.
+Overrides apply to individual dependency edges and do not change the prerequisite Outcome's lifecycle.
 
 ---
 
@@ -655,6 +659,11 @@ updated_at
 ```
 
 Outcome Members may create and edit Features when the Outcome workflow permits work.
+
+As demonstrated by the canonical prototype, an unresolved dependency allows Outcome Members to plan Features and Tasks.
+It blocks Task completion changes and Output submission until resolved.
+Accepted Outcomes are closed to Feature and Task mutations until reopened.
+Edits carry the last observed `updated_at`; a stale edit is rejected rather than overwriting another Member's work.
 
 ---
 
@@ -699,8 +708,10 @@ OutcomeSubmission
 id
 outcome_id
 submitted_by_member_id
+content
 note
 review_status
+request_id
 created_at
 ```
 
@@ -722,6 +733,20 @@ A new submission does not replace or invalidate older submissions.
 Outcome Members may continue adding submissions while the Outcome is not accepted and submission is not blocked by dependency rules.
 
 Submission records should be append-only whenever practical.
+
+`content` stores the required output name, text, or HTTP(S) link demonstrated by the prototype, separately from optional `note`.
+`request_id` is a client-generated UUID scoped uniquely to the Outcome and submitter, so retrying the same intended submission cannot append duplicate history.
+Reusing a request ID with different content is rejected.
+Version labels are derived from deterministic chronological history ordering rather than stored as another mutable sequence.
+
+### Outcome Output Draft
+
+`OutcomeOutputDraft` stores `outcome_id`, `member_id`, `content`, `note`, and `updated_at`.
+Its primary key is `(outcome_id, member_id)`.
+This implements the prototype's Save draft control with PostgreSQL persistence rather than local storage.
+Only the owning Outcome Member reads or changes their draft.
+Submitting appends to the one shared Outcome history and clears that member's draft atomically.
+Draft edits carry the last observed update timestamp to reject stale overwrites.
 
 ---
 
@@ -754,6 +779,7 @@ id
 submission_id
 reviewed_by_member_id
 review_note
+criteria_snapshot
 created_at
 ```
 
@@ -762,6 +788,16 @@ Only the Project Lead may create review records.
 Reviewing a Submission may change its `review_status` to `REVIEWED` without accepting the Outcome.
 
 Reviewed and unreviewed Submissions may coexist in the same Outcome history.
+
+`criteria_snapshot` preserves the criterion descriptions and verification decisions at review time, even if the Lead later edits the Outcome criteria.
+
+### Outcome Review Draft
+
+`OutcomeReviewDraft` stores `outcome_id`, `member_id`, `criterion_ids`, `note`, and `updated_at`, uniquely per Outcome and reviewing Lead.
+It persists the prototype's review checklist and feedback as unfinished review preparation.
+It grants no authority and does not change submission status or Outcome lifecycle.
+Only the current persisted Project Lead may read or change review preparation.
+Acceptance revalidates the current criteria, Outcome version, and submission set against canonical records.
 
 ---
 
@@ -812,9 +848,18 @@ accepted_by_member_id
 accepted_at
 reopened_by_member_id
 reopened_at
+feedback
+criteria_snapshot
 ```
 
 Every acceptance creates a new row.
+
+Acceptance requires at least one shared submission and verification of every current Acceptance Criterion against the combined submissions.
+It does not require every Task to be complete.
+`feedback` and `criteria_snapshot` preserve the Lead's decision and the criteria evaluated at acceptance time.
+Acceptance resolves outstanding revision requests and marks pending submissions reviewed atomically with the acceptance event and membership credit snapshot.
+Revision requests require feedback and at least one shared submission.
+They preserve existing submission content while recording the Lead's review of currently pending submissions.
 
 When the Project Lead accepts an Outcome:
 
@@ -1380,7 +1425,7 @@ ProjectMember exists
 
 ```text
 TRUE
-if unresolved OutcomeDependency exists
+if Outcome.lifecycle_status != ACCEPTED and unresolved OutcomeDependency exists
 ```
 
 ## Outcome Has Work For Review
@@ -1719,7 +1764,6 @@ The following topics remain unresolved and should be decided before the affected
 
 - Assistant Lead permissions.
 - Whether an archived Project can be restored and who may restore it.
-- Whether reopening an accepted prerequisite automatically relocks dependent Outcomes.
 - The exact maximum duration used to automatically flag an open WorkSession as `NEEDS_CORRECTION`.
 - Detailed data-retention duration if Prometheus later requires deletion or compliance policies.
 

@@ -56,6 +56,7 @@ function outcomeRecord(overrides: Record<string, unknown> = {}) {
       },
     ],
     prerequisites: [],
+    _count: { submissions: 0 },
     members: [],
     ...overrides,
   };
@@ -92,6 +93,7 @@ function createDatabase(
   const projectExists = options.projectExists ?? true;
   let projectAccessLevel = options.projectAccessLevel ?? 'CAN_VIEW';
   const database = {
+    $queryRaw: vi.fn().mockResolvedValue([]),
     project: {
       findUnique: vi
         .fn()
@@ -170,7 +172,10 @@ function createDatabase(
         .fn()
         .mockResolvedValue(outcomeRecord({ title: 'Updated outcome' })),
     },
-    outcomeDependency: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
+    outcomeDependency: {
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+      findMany: vi.fn().mockResolvedValue([]),
+    },
     acceptanceCriterion: {
       deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
@@ -390,13 +395,23 @@ describe('ProjectWorkflowService', () => {
             ],
           }),
           prerequisites: expect.objectContaining({
-            create: [{ prerequisiteOutcomeId: prerequisiteId }],
+            connectOrCreate: [
+              {
+                where: {
+                  outcomeId_prerequisiteOutcomeId: {
+                    outcomeId,
+                    prerequisiteOutcomeId: prerequisiteId,
+                  },
+                },
+                create: { prerequisiteOutcomeId: prerequisiteId },
+              },
+            ],
           }),
         }),
       }),
     );
     expect(database.outcomeDependency.deleteMany).toHaveBeenCalledWith({
-      where: { outcomeId },
+      where: { outcomeId, prerequisiteOutcomeId: { notIn: [prerequisiteId] } },
     });
     expect(database.acceptanceCriterion.deleteMany).toHaveBeenCalledWith({
       where: { outcomeId },

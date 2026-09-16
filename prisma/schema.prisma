@@ -42,6 +42,16 @@ enum OutcomeLifecycleStatus {
   ACCEPTED
 }
 
+enum TaskStatus {
+  TODO
+  DONE
+}
+
+enum SubmissionReviewStatus {
+  FOR_REVIEW
+  REVIEWED
+}
+
 model Department {
   id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
@@ -81,6 +91,19 @@ model Member {
   createdOutcomes             Outcome[]                    @relation("OutcomeCreatedBy")
   outcomeMemberships          OutcomeMember[]
   resolvedOutcomeDependencies OutcomeDependency[]          @relation("OutcomeDependencyResolvedBy")
+  createdFeatures             Feature[]
+  createdTasks                Task[]                       @relation("TaskCreatedBy")
+  completedTasks              Task[]                       @relation("TaskCompletedBy")
+  outputDrafts                OutcomeOutputDraft[]
+  submissions                 OutcomeSubmission[]
+  activity                    ActivityLog[]
+  submissionReviews           SubmissionReview[]
+  requestedRevisions          OutcomeRevisionRequest[]     @relation("RevisionRequestedBy")
+  resolvedRevisions           OutcomeRevisionRequest[]     @relation("RevisionResolvedBy")
+  reviewDrafts                OutcomeReviewDraft[]
+  acceptedOutcomes            OutcomeAcceptance[]          @relation("OutcomeAcceptedBy")
+  reopenedOutcomes            OutcomeAcceptance[]          @relation("OutcomeReopenedBy")
+  acceptanceCredits           OutcomeAcceptanceMember[]
 
   @@index([departmentId])
   @@index([status])
@@ -105,6 +128,7 @@ model Project {
   stages              Stage[]
   members             ProjectMember[]
   memberAccessHistory ProjectMemberAccessHistory[]
+  activity            ActivityLog[]
 
   @@index([createdByMemberId])
   @@index([leadMemberId])
@@ -188,23 +212,30 @@ model Stage {
 }
 
 model Outcome {
-  id                 String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  stageId            String                 @map("stage_id") @db.Uuid
+  id                 String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stageId            String                   @map("stage_id") @db.Uuid
   title              String
   description        String?
-  lifecycleStatus    OutcomeLifecycleStatus @default(OPEN) @map("lifecycle_status")
+  lifecycleStatus    OutcomeLifecycleStatus   @default(OPEN) @map("lifecycle_status")
   position           Int
-  createdByMemberId  String                 @map("created_by_member_id") @db.Uuid
-  acceptedAt         DateTime?              @map("accepted_at") @db.Timestamptz(6)
-  createdAt          DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
-  stage              Stage                  @relation(fields: [stageId], references: [id], onDelete: Cascade)
-  createdByMember    Member                 @relation("OutcomeCreatedBy", fields: [createdByMemberId], references: [id], onDelete: Restrict)
+  createdByMemberId  String                   @map("created_by_member_id") @db.Uuid
+  acceptedAt         DateTime?                @map("accepted_at") @db.Timestamptz(6)
+  createdAt          DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  stage              Stage                    @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  createdByMember    Member                   @relation("OutcomeCreatedBy", fields: [createdByMemberId], references: [id], onDelete: Restrict)
   departments        OutcomeDepartment[]
   acceptanceCriteria AcceptanceCriterion[]
   members            OutcomeMember[]
-  prerequisites      OutcomeDependency[]    @relation("DependentOutcome")
-  dependents         OutcomeDependency[]    @relation("PrerequisiteOutcome")
+  prerequisites      OutcomeDependency[]      @relation("DependentOutcome")
+  dependents         OutcomeDependency[]      @relation("PrerequisiteOutcome")
+  features           Feature[]
+  outputDrafts       OutcomeOutputDraft[]
+  submissions        OutcomeSubmission[]
+  activity           ActivityLog[]
+  reviewDrafts       OutcomeReviewDraft[]
+  revisionRequests   OutcomeRevisionRequest[]
+  acceptances        OutcomeAcceptance[]
 
   @@unique([stageId, position])
   @@index([stageId])
@@ -268,4 +299,176 @@ model AcceptanceCriterion {
   @@unique([outcomeId, position])
   @@index([outcomeId])
   @@map("acceptance_criteria")
+}
+
+model Feature {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  outcomeId         String   @map("outcome_id") @db.Uuid
+  title             String
+  description       String?
+  position          Int
+  createdByMemberId String   @map("created_by_member_id") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  outcome           Outcome  @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+  createdByMember   Member   @relation(fields: [createdByMemberId], references: [id], onDelete: Restrict)
+  tasks             Task[]
+
+  @@unique([outcomeId, position])
+  @@index([createdByMemberId])
+  @@map("features")
+}
+
+model Task {
+  id                  String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  featureId           String     @map("feature_id") @db.Uuid
+  title               String
+  description         String?
+  status              TaskStatus @default(TODO)
+  position            Int
+  createdByMemberId   String     @map("created_by_member_id") @db.Uuid
+  completedByMemberId String?    @map("completed_by_member_id") @db.Uuid
+  completedAt         DateTime?  @map("completed_at") @db.Timestamptz(6)
+  createdAt           DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  feature             Feature    @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  createdByMember     Member     @relation("TaskCreatedBy", fields: [createdByMemberId], references: [id], onDelete: Restrict)
+  completedByMember   Member?    @relation("TaskCompletedBy", fields: [completedByMemberId], references: [id], onDelete: Restrict)
+
+  @@unique([featureId, position])
+  @@index([createdByMemberId])
+  @@index([completedByMemberId])
+  @@map("tasks")
+}
+
+model OutcomeOutputDraft {
+  outcomeId String   @map("outcome_id") @db.Uuid
+  memberId  String   @map("member_id") @db.Uuid
+  content   String
+  note      String
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  outcome   Outcome  @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@id([outcomeId, memberId])
+  @@index([memberId])
+  @@map("outcome_output_drafts")
+}
+
+model OutcomeSubmission {
+  id                  String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  outcomeId           String                 @map("outcome_id") @db.Uuid
+  submittedByMemberId String                 @map("submitted_by_member_id") @db.Uuid
+  content             String
+  note                String
+  reviewStatus        SubmissionReviewStatus @default(FOR_REVIEW) @map("review_status")
+  requestId           String                 @map("request_id") @db.Uuid
+  createdAt           DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  outcome             Outcome                @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+  submittedByMember   Member                 @relation(fields: [submittedByMemberId], references: [id], onDelete: Restrict)
+  reviews             SubmissionReview[]
+
+  @@unique([outcomeId, submittedByMemberId, requestId])
+  @@index([outcomeId, createdAt])
+  @@index([submittedByMemberId])
+  @@index([reviewStatus])
+  @@map("outcome_submissions")
+}
+
+model ActivityLog {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorMemberId String?  @map("actor_member_id") @db.Uuid
+  projectId     String   @map("project_id") @db.Uuid
+  outcomeId     String?  @map("outcome_id") @db.Uuid
+  entityType    String   @map("entity_type")
+  entityId      String   @map("entity_id") @db.Uuid
+  action        String
+  metadata      Json
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  actorMember   Member?  @relation(fields: [actorMemberId], references: [id], onDelete: Restrict)
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  outcome       Outcome? @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+  @@index([outcomeId, createdAt])
+  @@index([actorMemberId])
+  @@map("activity_logs")
+}
+
+model SubmissionReview {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  submissionId       String            @map("submission_id") @db.Uuid
+  reviewedByMemberId String            @map("reviewed_by_member_id") @db.Uuid
+  reviewNote         String            @map("review_note")
+  criteriaSnapshot   Json              @map("criteria_snapshot")
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  submission         OutcomeSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  reviewedByMember   Member            @relation(fields: [reviewedByMemberId], references: [id], onDelete: Restrict)
+
+  @@index([submissionId, createdAt])
+  @@index([reviewedByMemberId])
+  @@map("submission_reviews")
+}
+
+model OutcomeRevisionRequest {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  outcomeId           String    @map("outcome_id") @db.Uuid
+  requestedByMemberId String    @map("requested_by_member_id") @db.Uuid
+  message             String
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  resolvedAt          DateTime? @map("resolved_at") @db.Timestamptz(6)
+  resolvedByMemberId  String?   @map("resolved_by_member_id") @db.Uuid
+  outcome             Outcome   @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+  requestedByMember   Member    @relation("RevisionRequestedBy", fields: [requestedByMemberId], references: [id], onDelete: Restrict)
+  resolvedByMember    Member?   @relation("RevisionResolvedBy", fields: [resolvedByMemberId], references: [id], onDelete: Restrict)
+
+  @@index([outcomeId, createdAt])
+  @@index([requestedByMemberId])
+  @@index([resolvedByMemberId])
+  @@map("outcome_revision_requests")
+}
+
+model OutcomeReviewDraft {
+  outcomeId    String   @map("outcome_id") @db.Uuid
+  memberId     String   @map("member_id") @db.Uuid
+  criterionIds String[] @map("criterion_ids") @db.Uuid
+  note         String
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  outcome      Outcome  @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+  member       Member   @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@id([outcomeId, memberId])
+  @@index([memberId])
+  @@map("outcome_review_drafts")
+}
+
+model OutcomeAcceptance {
+  id                 String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  outcomeId          String                    @map("outcome_id") @db.Uuid
+  acceptedByMemberId String                    @map("accepted_by_member_id") @db.Uuid
+  acceptedAt         DateTime                  @default(now()) @map("accepted_at") @db.Timestamptz(6)
+  reopenedByMemberId String?                   @map("reopened_by_member_id") @db.Uuid
+  reopenedAt         DateTime?                 @map("reopened_at") @db.Timestamptz(6)
+  feedback           String
+  criteriaSnapshot   Json                      @map("criteria_snapshot")
+  outcome            Outcome                   @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+  acceptedByMember   Member                    @relation("OutcomeAcceptedBy", fields: [acceptedByMemberId], references: [id], onDelete: Restrict)
+  reopenedByMember   Member?                   @relation("OutcomeReopenedBy", fields: [reopenedByMemberId], references: [id], onDelete: Restrict)
+  members            OutcomeAcceptanceMember[]
+
+  @@index([outcomeId, acceptedAt])
+  @@index([acceptedByMemberId])
+  @@index([reopenedByMemberId])
+  @@map("outcome_acceptances")
+}
+
+model OutcomeAcceptanceMember {
+  acceptanceId String            @map("acceptance_id") @db.Uuid
+  memberId     String            @map("member_id") @db.Uuid
+  acceptance   OutcomeAcceptance @relation(fields: [acceptanceId], references: [id], onDelete: Cascade)
+  member       Member            @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@id([acceptanceId, memberId])
+  @@index([memberId])
+  @@map("outcome_acceptance_members")
 }

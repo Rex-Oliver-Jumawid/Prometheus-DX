@@ -58,6 +58,7 @@ export const OutcomeSchema = z.object({
   members: z.array(ProjectMemberSummarySchema),
   isLocked: z.boolean(),
   isJoined: z.boolean(),
+  hasForReview: z.boolean(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });

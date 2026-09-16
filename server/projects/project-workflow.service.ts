@@ -22,6 +22,9 @@ import type {
 import { PrismaService } from '../database/prisma.service';
 
 const outcomeInclude = {
+  _count: {
+    select: { submissions: { where: { reviewStatus: 'FOR_REVIEW' as const } } },
+  },
   departments: {
     include: {
       department: { select: { id: true, name: true, shortLabel: true } },
@@ -158,7 +161,9 @@ export class ProjectWorkflowService {
       });
     });
     const response = await this.getProjectMembers(currentMember, projectId);
-    const updated = response.members.find(({ member }) => member.id === memberId);
+    const updated = response.members.find(
+      ({ member }) => member.id === memberId,
+    );
     if (!updated) throw new NotFoundException('Project Member not found.');
     return updated;
   }
@@ -291,7 +296,10 @@ export class ProjectWorkflowService {
         input,
       );
       await transaction.outcomeDependency.deleteMany({
-        where: { outcomeId },
+        where: {
+          outcomeId,
+          prerequisiteOutcomeId: { notIn: input.prerequisiteOutcomeIds },
+        },
       });
       await transaction.acceptanceCriterion.deleteMany({
         where: { outcomeId },
@@ -316,8 +324,16 @@ export class ProjectWorkflowService {
             })),
           },
           prerequisites: {
-            create: input.prerequisiteOutcomeIds.map(
-              (prerequisiteOutcomeId) => ({ prerequisiteOutcomeId }),
+            connectOrCreate: input.prerequisiteOutcomeIds.map(
+              (prerequisiteOutcomeId) => ({
+                where: {
+                  outcomeId_prerequisiteOutcomeId: {
+                    outcomeId,
+                    prerequisiteOutcomeId,
+                  },
+                },
+                create: { prerequisiteOutcomeId },
+              }),
             ),
           },
         },
@@ -333,6 +349,7 @@ export class ProjectWorkflowService {
     outcomeId: string,
   ): Promise<Outcome> {
     const outcome = await this.prisma.$transaction(async (transaction) => {
+      await transaction.$queryRaw`SELECT id FROM projects WHERE id = ${projectId}::uuid FOR UPDATE`;
       const existing = await transaction.outcome.findUnique({
         where: { id: outcomeId },
         select: {
@@ -396,6 +413,7 @@ export class ProjectWorkflowService {
     projectId: string,
     memberId: string,
   ) {
+    await transaction.$queryRaw`SELECT id FROM projects WHERE id = ${projectId}::uuid FOR UPDATE`;
     const project = await transaction.project.findUnique({
       where: { id: projectId },
       select: { leadMemberId: true },
@@ -454,6 +472,28 @@ export class ProjectWorkflowService {
         'Prerequisite Outcomes must belong to the same Project.',
       );
     }
+    if (outcomeId) {
+      const edges = await transaction.outcomeDependency.findMany({
+        where: { outcome: { stage: { projectId } } },
+        select: { outcomeId: true, prerequisiteOutcomeId: true },
+      });
+      const pending = [...input.prerequisiteOutcomeIds];
+      const seen = new Set<string>();
+      while (pending.length) {
+        const id = pending.pop()!;
+        if (id === outcomeId)
+          throw new BadRequestException(
+            'Outcome dependencies cannot form a cycle.',
+          );
+        if (seen.has(id)) continue;
+        seen.add(id);
+        pending.push(
+          ...edges
+            .filter((edge) => edge.outcomeId === id)
+            .map((edge) => edge.prerequisiteOutcomeId),
+        );
+      }
+    }
   }
 
   private toStage(stage: StageRecord, currentMemberId: string): Stage {
@@ -495,7 +535,10 @@ export class ProjectWorkflowService {
       })),
       prerequisites,
       members: outcome.members.map(({ member }) => member),
-      isLocked: prerequisites.some((prerequisite) => !prerequisite.resolved),
+      isLocked:
+        outcome.lifecycleStatus !== 'ACCEPTED' &&
+        prerequisites.some((prerequisite) => !prerequisite.resolved),
+      hasForReview: outcome._count.submissions > 0,
       isJoined: outcome.members.some(
         ({ memberId }) => memberId === currentMemberId,
       ),
