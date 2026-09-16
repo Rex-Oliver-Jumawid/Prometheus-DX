@@ -43,7 +43,7 @@ test('login validates required credentials without submitting twice', async ({
   await expect(page.getByText('Enter your password.')).toBeVisible();
 });
 
-test('invited member account setup preserves the invited email and validates passwords', async ({
+test('non-Gmail invited member account setup preserves the invited email and requires a password', async ({
   page,
 }) => {
   await page.goto('/account-setup?email=Invited%40Example.com');
@@ -54,10 +54,34 @@ test('invited member account setup preserves the invited email and validates pas
     'invited@example.com',
   );
   await expect(page.getByLabel('Invited email')).toHaveAttribute('readonly');
+  await expect(
+    page.getByRole('button', { name: 'Continue with Google' }),
+  ).toHaveCount(0);
   await page.getByLabel('Create password').fill('password-one');
   await page.getByLabel('Confirm password').fill('password-two');
   await page.getByRole('button', { name: 'Create password account' }).click();
   await expect(page.getByText('Passwords must match.')).toBeVisible();
+});
+
+test('Gmail invited member account setup offers Google without password setup', async ({
+  page,
+}) => {
+  await page.goto('/account-setup?email=Invited.User%40Gmail.com');
+  await expect(
+    page.getByRole('heading', { name: 'Set up account', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel('Invited email')).toHaveValue(
+    'invited.user@gmail.com',
+  );
+  await expect(page.getByLabel('Invited email')).toHaveAttribute('readonly');
+  await expect(page.getByLabel('Create password')).toHaveCount(0);
+  await expect(page.getByLabel('Confirm password')).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Create password account' }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Continue with Google' }),
+  ).toBeVisible();
 });
 
 test('unknown account is rejected without leaking account details', async ({
