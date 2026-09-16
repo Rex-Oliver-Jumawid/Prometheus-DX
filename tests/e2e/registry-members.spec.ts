@@ -105,10 +105,57 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await addMemberButton.click();
   await expect(page.getByRole('dialog', { name: 'Add member' })).toBeVisible();
   await expect(page.getByLabel('Full name')).toBeFocused();
+  const desktopOverlay = await page.evaluate(() => {
+    const backdrop = document.querySelector('.registry-dialog-backdrop');
+    const dialog = document.querySelector('.registry-member-dialog');
+    if (!(backdrop instanceof HTMLElement) || !(dialog instanceof HTMLElement))
+      return null;
+    const backdropRect = backdrop.getBoundingClientRect();
+    const dialogRect = dialog.getBoundingClientRect();
+    return {
+      backdropParent: backdrop.parentElement?.tagName,
+      backdropPosition: getComputedStyle(backdrop).position,
+      backdropRect: {
+        top: backdropRect.top,
+        right: backdropRect.right,
+        bottom: backdropRect.bottom,
+        left: backdropRect.left,
+      },
+      dialogRect: {
+        top: dialogRect.top,
+        right: dialogRect.right,
+        bottom: dialogRect.bottom,
+        left: dialogRect.left,
+      },
+      bodyOverflow: document.body.style.overflow,
+      viewport: { width: innerWidth, height: innerHeight },
+    };
+  });
+  expect(desktopOverlay).not.toBeNull();
+  expect(desktopOverlay).toMatchObject({
+    backdropParent: 'BODY',
+    backdropPosition: 'fixed',
+    backdropRect: {
+      top: 0,
+      right: desktopOverlay?.viewport.width,
+      bottom: desktopOverlay?.viewport.height,
+      left: 0,
+    },
+    bodyOverflow: 'hidden',
+  });
+  expect(desktopOverlay!.dialogRect.left).toBeGreaterThan(0);
+  expect(desktopOverlay!.dialogRect.top).toBeGreaterThan(0);
+  expect(desktopOverlay!.dialogRect.right).toBeLessThan(
+    desktopOverlay!.viewport.width,
+  );
+  expect(desktopOverlay!.dialogRect.bottom).toBeLessThan(
+    desktopOverlay!.viewport.height,
+  );
 
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Add member' })).toHaveCount(0);
   await expect(addMemberButton).toBeFocused();
+  expect(await page.evaluate(() => document.body.style.overflow)).toBe('');
 
   await addMemberButton.click();
   await page
@@ -139,7 +186,10 @@ test('administrator adds and edits a member with duplicate-email protection', as
   ).toBeVisible();
   await expect(page.getByText('Setup pending').first()).toBeVisible();
   await expect(
-    page.getByRole('button', { name: /Send invitation|Resend invitation/ }),
+    page
+      .locator('.registry-members-table tbody tr')
+      .filter({ hasText: 'Registry Test Member' })
+      .getByRole('button', { name: /Send invitation|Resend invitation/ }),
   ).toBeVisible();
   await expect(
     page.locator('.registry-department-card').filter({
@@ -222,5 +272,20 @@ test('administrator adds and edits a member with duplicate-email protection', as
         document.documentElement.clientWidth,
     ),
   ).toBe(true);
+  await page.getByRole('button', { name: /Add member/ }).click();
+  const narrowDialog = await page
+    .getByRole('dialog', { name: 'Add member' })
+    .boundingBox();
+  expect(narrowDialog).not.toBeNull();
+  expect(narrowDialog!.x).toBeGreaterThanOrEqual(12);
+  expect(narrowDialog!.x + narrowDialog!.width).toBeLessThanOrEqual(378);
+  expect(narrowDialog!.y).toBeGreaterThanOrEqual(12);
+  expect(narrowDialog!.y + narrowDialog!.height).toBeLessThanOrEqual(832);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.keyboard.press('Escape');
   expect(browserErrors).toEqual([]);
 });

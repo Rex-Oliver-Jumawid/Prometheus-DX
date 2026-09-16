@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -163,7 +164,7 @@ function DepartmentDialog({
     }
   });
 
-  return (
+  return createPortal(
     <div
       className="registry-dialog-backdrop"
       role="presentation"
@@ -271,7 +272,8 @@ function DepartmentDialog({
           </footer>
         </form>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -397,7 +399,7 @@ function MemberDialog({
     }
   });
 
-  return (
+  return createPortal(
     <div
       className="registry-dialog-backdrop"
       role="presentation"
@@ -536,7 +538,8 @@ function MemberDialog({
           </footer>
         </form>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

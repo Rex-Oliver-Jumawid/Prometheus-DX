@@ -245,6 +245,9 @@ Verification completed on 2026-09-16:
 - Authenticated rendered inspection passed at 1244 by 642, 900 by 700, and 390 by 844 viewports with no document-level horizontal overflow.
 - The mobile navigation overlay and internal member-table scrolling were inspected after transition completion.
 - Department and member dialogs were verified for initial focus, Escape dismissal, backdrop dismissal, and focus restoration to the invoking control.
+- The shared Registry dialog overlay was portaled to `body` after the workspace glass surface was found to establish the clipping and stacking context for the fixed backdrop.
+- Add/Edit Member and Add/Edit Department were visually inspected at 1440 by 900 and 520 by 760.
+- The backdrop matched the viewport exactly, the dialog remained centered with narrow-screen margins, body scroll stayed locked, no horizontal overflow occurred, initial focus was correct, and the browser console was clean.
 
 Additional verification completed during the invitation slice on 2026-09-16:
 
@@ -277,7 +280,7 @@ Additional verification completed during the invitation slice on 2026-09-16:
 | F2-13 | PASS | Deactivation during an authenticated session denies workspace access after refresh. |
 | F2-14 | PASS | Reactivation restores workspace access after refresh. |
 | F2-15 | PASS | Unlinked invited Member displays `Setup pending` and backend-derived delivery state. |
-| F2-16 | BLOCKED | Real Supabase first linkage passes without duplication, but literal Brevo delivery and receipt cannot run until sender configuration exists. |
+| F2-16 | BLOCKED | Real Supabase first linkage passes without duplication. A live Registry attempt created the acceptance fixture safely, but Brevo rejected delivery because the configured credential is an SMTP key rather than the required API v3 key. |
 | F2-17 | PASS | Long Member metadata remains usable at the 390 by 844 mobile viewport with no document overflow. |
 | F2-18 | PASS | Registry navigation is absent for `MEMBER`. |
 | F2-19 | PASS | Direct `/registry` navigation is denied for `MEMBER`. |
@@ -769,11 +772,71 @@ Design future first-write identity transitions to be idempotent under concurrent
 - `server/auth/auth.service.test.ts`
 - `tests/e2e/auth-shell.spec.ts`
 
+### P2-D10 - Distinguish Brevo SMTP credentials from API v3 credentials
+
+**Status:** Resolved
+
+**Area:** Infrastructure, Testing
+
+**Impact:** Medium
+
+#### What gave us a hard time
+
+All documented invitation settings were present, but a real Registry invitation remained in `Not sent` state.
+
+#### Root cause / constraint
+
+The configured credential begins with the Brevo SMTP-key prefix.
+
+Prometheus sends through `POST /v3/smtp/email`, whose `api-key` header requires a Brevo API v3 key instead.
+
+Brevo's read-only account and sender endpoints both returned `401 Key not found`, confirming the credential-type mismatch without exposing the key.
+
+#### Options considered
+
+1. Change the application to SMTP transport.
+2. Treat the configured SMTP key as an API key and keep retrying.
+3. Preserve the approved Transactional Email API architecture and replace the environment value with the correct API v3 credential.
+
+#### Proposed solution
+
+Keep the existing Brevo API implementation and configure a v3 API key, which normally begins with `xkeysib-`.
+
+#### Decision
+
+The application remains on the approved Brevo Transactional Email API.
+
+The pending acceptance Member is retained so delivery can be retried without creating another membership record.
+
+#### Why we chose it
+
+This avoids an unnecessary transport redesign and preserves the existing tested delivery, retry, and durable-state boundaries.
+
+#### Result
+
+The live attempt created one `INVITED` Member, kept `invitation_sent_at` null after provider rejection, and exposed the retry action without falsely reporting delivery.
+
+#### What we learned
+
+The presence of a Brevo credential is insufficient configuration evidence because Brevo issues separate SMTP and API-key credential types.
+
+#### Next approach
+
+Validate live Brevo configuration with the read-only account endpoint before the next delivery acceptance run.
+
+#### Related changes
+
+- `.env`
+- `server/registry/invitation.service.ts`
+- `.docs/CURRENT.md`
+
 ## Known Limitations
 
-Live Brevo delivery is not yet accepted because the configured environment does not contain Brevo sender credentials or `APP_URL`.
+Live Brevo delivery is not yet accepted because the configured `BREVO_API_KEY` is an SMTP credential rather than the API v3 credential required by the current integration.
 
 F2-16 is therefore verified through real Supabase first linkage but remains blocked for literal receipt of the Brevo invitation email.
+
+The `Brevo Acceptance Test` Member is intentionally retained in `INVITED` and `Not sent` state for the next delivery retry.
 
 Detailed authentication-provider combinations are unresolved because the current backend only has the stable Supabase user linkage.
 
@@ -803,7 +866,7 @@ The Department entity is a useful first persistence boundary because later membe
 
 ## Recommendations / Next Approach
 
-- Configure Brevo and exercise one real invitation delivery through account setup.
+- Replace the Brevo SMTP key with an API v3 key, resend the retained acceptance invitation, and complete account setup from the recipient mailbox.
 - Use the new Administrator assignment action to place the existing Member in a real Department, then apply the follow-up `department_id NOT NULL` migration.
 - Add authoritative authentication-provider detail only if the backend can obtain it from Supabase.
 - Keep F2-21 blocked rather than creating Phase 3 Project persistence solely for a Phase 2 fixture.

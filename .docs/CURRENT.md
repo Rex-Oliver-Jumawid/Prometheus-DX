@@ -43,6 +43,8 @@ Phase 0 - Foundation is also complete.
 - Registry now highlights unassigned legacy Members and opens a deliberate Department-assignment workflow.
 - The application shell has been reconciled against `.model/finalmodel.html` and Figma Registry node `11:1887`, including removal of invented collapse and duplicate top-right controls.
 - Shared navigation and content surfaces now use the intended translucent glass treatment at desktop, compact, and mobile widths.
+- Registry dialogs now render through a body-level portal so their fixed backdrop covers the viewport instead of being clipped by the workspace glass stacking context.
+- Add/Edit Member and Add/Edit Department share the compact liquid-glass treatment and were visually checked at desktop and narrow viewports.
 - The configured Supabase database has all four current migrations applied.
 - `pnpm verify` passes with 27/27 unit tests, and the expanded live Playwright suite passes 13/13.
 - The first-linkage concurrency race is resolved and five simultaneous live `/api/me` requests were verified successfully.
@@ -106,7 +108,9 @@ The shell mismatch is also resolved by removing UI absent from the prototype and
 
 ## Next Action
 
-Configure a real Brevo sender and exercise one delivered invitation through account setup.
+Replace the configured Brevo SMTP key with a Brevo API v3 key, which normally begins with `xkeysib-`.
+
+Then use the existing `Brevo Acceptance Test` Registry member to send the invitation again and complete account setup from the configured recipient mailbox.
 
 Assign `DX User 1` to the Administrator-selected real Department through Registry.
 
