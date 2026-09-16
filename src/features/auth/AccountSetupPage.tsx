@@ -7,9 +7,14 @@ import { getSupabaseClient } from '../../lib/supabase';
 import { useAuth } from './auth-context';
 import { GoogleIcon } from './LoginPage';
 
-const AccountSetupSchema = z
+const InvitedEmailSchema = z
+  .string()
+  .trim()
+  .email('Enter a valid invited email address.');
+
+const PasswordAccountSetupSchema = z
   .object({
-    email: z.string().trim().email('Enter a valid invited email address.'),
+    email: InvitedEmailSchema,
     password: z.string().min(8, 'Use at least 8 characters for your password.'),
     confirmPassword: z.string(),
   })
@@ -18,7 +23,13 @@ const AccountSetupSchema = z
     message: 'Passwords must match.',
   });
 
-type AccountSetupValues = z.infer<typeof AccountSetupSchema>;
+type AccountSetupValues = z.infer<typeof PasswordAccountSetupSchema>;
+
+function isGmailAddress(email: string) {
+  const parsed = InvitedEmailSchema.safeParse(email);
+  if (!parsed.success) return false;
+  return parsed.data.toLowerCase().endsWith('@gmail.com');
+}
 
 export function AccountSetupPage() {
   const auth = useAuth();
@@ -33,10 +44,13 @@ export function AccountSetupPage() {
     register,
     handleSubmit,
     setError,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<AccountSetupValues>({
     defaultValues: { email: invitedEmail, password: '', confirmPassword: '' },
   });
+  const setupEmail = watch('email').trim().toLowerCase();
+  const usesGoogleAccountSetup = isGmailAddress(setupEmail);
 
   useEffect(() => {
     const query = new URLSearchParams(location.search);
@@ -57,7 +71,15 @@ export function AccountSetupPage() {
   const submit = handleSubmit(async (values) => {
     setGlobalError('');
     setSuccessMessage('');
-    const parsed = AccountSetupSchema.safeParse(values);
+
+    if (isGmailAddress(values.email)) {
+      setGlobalError(
+        'Gmail invitations must continue with Google using the invited address.',
+      );
+      return;
+    }
+
+    const parsed = PasswordAccountSetupSchema.safeParse(values);
     if (!parsed.success) {
       const fieldsWithErrors = new Set<keyof AccountSetupValues>();
       for (const issue of parsed.error.issues) {
@@ -100,6 +122,14 @@ export function AccountSetupPage() {
   async function continueWithGoogle() {
     if (oauthLoading || isSubmitting) return;
     setGlobalError('');
+
+    if (!isGmailAddress(setupEmail)) {
+      setGlobalError(
+        'Google account setup is only available for invited Gmail addresses.',
+      );
+      return;
+    }
+
     const client = getSupabaseClient();
     if (!client) {
       setGlobalError(
@@ -109,12 +139,12 @@ export function AccountSetupPage() {
     }
     setOauthLoading(true);
     const redirectTo = new URL('/account-setup', window.location.origin);
-    if (invitedEmail) redirectTo.searchParams.set('email', invitedEmail);
+    redirectTo.searchParams.set('email', setupEmail);
     const { error } = await client.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: redirectTo.toString(),
-        queryParams: invitedEmail ? { login_hint: invitedEmail } : undefined,
+        queryParams: { login_hint: setupEmail },
       },
     });
     if (error) {
@@ -138,9 +168,9 @@ export function AccountSetupPage() {
             <p className="auth-eyebrow">MEMBER INVITATION</p>
             <h1 id="setup-heading">Set up account</h1>
             <p>
-              Use the invited email with Google or create a password. Prometheus
-              links authentication to the Member record your administrator
-              already created.
+              {usesGoogleAccountSetup
+                ? 'This invitation uses Gmail. Continue with Google using the invited address. Prometheus links that authenticated identity to the Member record your administrator already created.'
+                : 'Create a password for the invited email address. Prometheus links that authenticated identity to the Member record your administrator already created.'}
             </p>
           </header>
           <form
@@ -161,30 +191,36 @@ export function AccountSetupPage() {
                 <small role="alert">{errors.email.message}</small>
               )}
             </label>
-            <label className="auth-field">
-              <span>CREATE PASSWORD</span>
-              <input
-                type="password"
-                autoComplete="new-password"
-                aria-invalid={Boolean(errors.password)}
-                {...register('password')}
-              />
-              {errors.password && (
-                <small role="alert">{errors.password.message}</small>
-              )}
-            </label>
-            <label className="auth-field">
-              <span>CONFIRM PASSWORD</span>
-              <input
-                type="password"
-                autoComplete="new-password"
-                aria-invalid={Boolean(errors.confirmPassword)}
-                {...register('confirmPassword')}
-              />
-              {errors.confirmPassword && (
-                <small role="alert">{errors.confirmPassword.message}</small>
-              )}
-            </label>
+
+            {!usesGoogleAccountSetup && (
+              <>
+                <label className="auth-field">
+                  <span>CREATE PASSWORD</span>
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    aria-invalid={Boolean(errors.password)}
+                    {...register('password')}
+                  />
+                  {errors.password && (
+                    <small role="alert">{errors.password.message}</small>
+                  )}
+                </label>
+                <label className="auth-field">
+                  <span>CONFIRM PASSWORD</span>
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    aria-invalid={Boolean(errors.confirmPassword)}
+                    {...register('confirmPassword')}
+                  />
+                  {errors.confirmPassword && (
+                    <small role="alert">{errors.confirmPassword.message}</small>
+                  )}
+                </label>
+              </>
+            )}
+
             {globalError && (
               <div className="auth-error" role="alert">
                 {globalError}
@@ -195,23 +231,31 @@ export function AccountSetupPage() {
                 {successMessage}
               </div>
             )}
-            <button
-              className="primary-button"
-              type="submit"
-              disabled={isSubmitting || oauthLoading || Boolean(successMessage)}
-            >
-              {isSubmitting ? 'Creating account...' : 'Create password account'}
-            </button>
-            <div className="auth-divider">or</div>
-            <button
-              className="oauth-button"
-              type="button"
-              disabled={oauthLoading || isSubmitting}
-              onClick={() => void continueWithGoogle()}
-            >
-              <GoogleIcon />
-              {oauthLoading ? 'Opening Google...' : 'Continue with Google'}
-            </button>
+
+            {usesGoogleAccountSetup ? (
+              <button
+                className="oauth-button"
+                type="button"
+                disabled={oauthLoading || isSubmitting}
+                onClick={() => void continueWithGoogle()}
+              >
+                <GoogleIcon />
+                {oauthLoading ? 'Opening Google...' : 'Continue with Google'}
+              </button>
+            ) : (
+              <button
+                className="primary-button"
+                type="submit"
+                disabled={
+                  isSubmitting || oauthLoading || Boolean(successMessage)
+                }
+              >
+                {isSubmitting
+                  ? 'Creating account...'
+                  : 'Create password account'}
+              </button>
+            )}
+
             <p className="auth-helper">
               Already set up? <Link to="/login">Sign in</Link>. Only an active
               authorized Prometheus Member can enter the workspace.
