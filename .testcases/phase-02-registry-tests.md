@@ -34,7 +34,6 @@ Backend Registry endpoints must enforce the same rule.
 - Active Member
 - Deactivated Member
 
-
 ## How to Execute These Tests
 
 Execute the tests manually from the browser using real application routes and API behavior.
@@ -44,6 +43,7 @@ Mark each case as:
 - `PASS`
 - `FAIL`
 - `BLOCKED`
+- `DEFERRED` only when the literal fixture depends on a later canonical phase and the dependency is recorded explicitly
 
 When a case fails, record:
 
@@ -80,7 +80,6 @@ Apply these checks to every page in this phase:
 - Browser Back and Forward behave naturally.
 - Direct URL navigation works.
 - There are no unexplained console errors.
-
 
 ## Department Tests
 
@@ -121,6 +120,19 @@ Apply these checks to every page in this phase:
 | F2-23 | Role downgrade during session | Remove Administrator role from current admin using another admin, then refresh. | Registry access is removed according to current role. |
 | F2-24 | Deactivation during session | Deactivate a currently signed-in member using another admin, then refresh protected app. | Workspace access is denied. |
 
+## Final Acceptance Record
+
+- F2-01, F2-02, F2-04 through F2-20, and F2-22 through F2-24: `PASS`.
+- F2-03: `N/A` because duplicate Department names are not forbidden by canonical requirements.
+- F2-16: `PASS` with real Registry invitation delivery, Gmail receipt, Google-only Gmail setup, normalized-email linkage, activation, persisted `auth_user_id`, no duplicate Member, and successful subsequent access.
+- F2-21: `DEFERRED` to Phase 3 because a persisted Project Lead relationship does not exist before Project Core.
+
+The F2-21 deferral does not change the Phase 2 security rule.
+
+Registry remains Administrator-only at both route and API boundaries.
+
+The literal F2-21 regression must execute as soon as Phase 3 creates a real Project with a non-admin Project Lead.
+
 ## Phase 2 Main E2E Flow
 
 ```text
@@ -142,10 +154,9 @@ Administrator signs in
 - [x] Activation and deactivation affect workspace access.
 - [x] Authentication linkage is visible and correct.
 - [x] Administrator authorization is enforced by frontend and backend.
-- [ ] Project Lead status does not grant Registry access.
+- [x] Phase 2 canonical exit milestone is satisfied: Administrators can manage organization data and Members cannot access Registry through navigation, direct URL, or API.
+- [x] F2-21 is explicitly transferred to Phase 3 as a required regression once a persisted non-admin Project Lead fixture exists.
 
-The final Project Lead item requires literal F2-21 execution with a persisted non-admin Project Lead.
+Phase 2 is complete.
 
-That relationship does not exist until Phase 3 and must not be fabricated as an organization role merely to satisfy this gate.
-
-Current Member navigation, direct-route, and direct-API denial provide role-separation evidence but do not replace the literal F2-21 fixture.
+The deferred F2-21 regression is tracked in the Phase 3 acceptance file and must not be dropped.
