@@ -140,13 +140,19 @@ Participating is intentionally unavailable until Phase 4 can derive it from Outc
 
 No migration was added.
 
-Focused Projects browser acceptance and `pnpm verify` passed.
+Prisma generation and validation, focused Projects browser acceptance, the full `pnpm test:e2e` suite, and `pnpm verify` all passed after database connectivity recovered.
 
-The full `pnpm test:e2e` regression remains red on a reproduced pre-existing Registry Member-edit suggestion locator failure outside Slice 2.
+The full Playwright suite passed 16/16 tests, including the Project creation transaction and Registry Member Edit Escape path.
+
+`pnpm verify` passed with 44 unit tests and both production builds.
+
+The earlier transient Project transaction expiration and Registry Escape assertion did not reproduce in the final full regression.
 
 ## Next Action
 
 Implement Phase 3 Slice 3 only: `/projects/:projectId`, Project Overview, Project Lead and Department display, Project status controls, Lead-only status mutation permissions, and direct-route/not-found behavior.
+
+Phase 3 Slice 3 is unblocked by the completed regression gate.
 
 Do not begin Stages, Outcomes, Project Membership, Outcome Membership, Tasks, Submissions, Scheduling, Chat, Realtime, or Phase 4 structures.
 

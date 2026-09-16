@@ -218,6 +218,37 @@ Do not implement `/projects/:projectId` overview or status controls until Slice 
 - `pnpm verify`: passed with project doctor, lint, typecheck, 44 unit tests, and both production builds.
 - `pnpm prisma migrate status`: six migrations found and database schema up to date.
 
+### Regression Verification - 2026-09-16
+
+- `pnpm prisma:generate` and `pnpm prisma:validate`: passed.
+- A normal-environment Prisma `member.count()` query returned `4` through the recovered transaction pooler.
+- The exact abandoned Slice 2 member and Department fixtures were verified to have no Project or ProjectDepartment references and were deleted in FK-safe order.
+- The focused Projects command passed with 16/16 tests.
+- An initial Registry-command run reproduced a transient Project interactive-transaction expiration at 5.253 seconds and an Escape assertion failure in the Member Edit dialog.
+- A controlled measurement of the existing transaction completed in 2139.6ms, with concurrent Lead and Department lookups at 582.8ms each and nested Project creation at 1158.2ms.
+- The complete `pnpm test:e2e` suite then passed with 16/16 tests, including Project creation and the Registry Member Edit Escape path.
+- `pnpm verify` passed with project doctor, lint, typecheck, 44 unit tests, and both production builds.
+
+### P3-D03 - Keep recovered database configuration and test limits unchanged
+
+**What gave us a hard time:** A temporary loss of pooler reachability was followed by one interactive Project transaction expiration and one Registry dialog Escape assertion failure.
+
+**Root cause or constraint:** The later successful minimal Prisma query, operation timing measurement, full browser suite, and verification suite showed that neither production code nor connection configuration could be identified as the root cause from the transient failures.
+
+**Options considered:** Change the transaction timeout, change pooler modes, increase Playwright timeouts, alter Registry dialog behavior, or preserve the current configuration while gathering repeatable evidence.
+
+**Final decision:** Preserve the existing transaction timeout, Playwright timeouts, `DATABASE_URL` transaction-pooler mode, `DIRECT_URL` session-pooler mode, and MemberDialog Escape behavior.
+
+**Why it was chosen:** The complete regression suite passed without those changes, while the measured transaction operations completed well below the existing five-second limit.
+
+**Observed result:** The full Playwright suite passed 16/16 and `pnpm verify` passed after connectivity recovered.
+
+**What was learned:** A one-off pooler or interactive-transaction failure requires operation-level measurement and a clean regression run before changing application limits or connection settings.
+
+**Next approach:** If the transaction expiration recurs, capture individual transaction-operation timings and connection-path evidence before considering any configuration change.
+
+**Related files:** `server/projects/projects.service.ts`, `src/features/registry/RegistryPage.tsx`, `tests/e2e/projects.spec.ts`, and `tests/e2e/registry-members.spec.ts`.
+
 ### Next Slice
 
 Implement Slice 3 only: `/projects/:projectId`, Project Overview, Lead and Department display, Project status controls, Lead-only status mutation permissions, and direct route/not-found behavior.
