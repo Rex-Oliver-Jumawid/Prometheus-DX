@@ -441,6 +441,7 @@ function MemberDialog({
                 {...register('fullName')}
                 aria-invalid={Boolean(errors.fullName)}
                 autoFocus
+                autoComplete="name"
               />
               {errors.fullName?.message && (
                 <small>{errors.fullName.message}</small>
