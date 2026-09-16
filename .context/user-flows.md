@@ -126,30 +126,50 @@ status = INVITED
 Invitation and account setup email is sent
         |
         v
-User opens Prometheus
+User opens Prometheus account setup
         |
-        +----------------------+
-        |                      |
-        v                      v
-Continue with Google    Email/password setup
-        |                      |
-        +----------+-----------+
-                   |
-                   v
-              Supabase Auth
-                   |
-                   v
+        v
+Inspect invited email domain
+        |
+        +--------------------------+
+        |                          |
+        v                          v
+     @gmail.com              Any other domain
+        |                          |
+        v                          v
+Continue with Google       Email/password setup
+        |                          |
+        +------------+-------------+
+                     |
+                     v
+                Supabase Auth
+                     |
+                     v
 Prometheus checks authenticated identity
 against authorized member record
-                   |
-            +------+------+
-            |             |
-           Match        No match
-            |             |
-            v             v
-     Account linked     Access denied
-     status = ACTIVE
+                     |
+              +------+------+
+              |             |
+             Match        No match
+              |             |
+              v             v
+       Account linked     Access denied
+       status = ACTIVE
 ```
+
+For invitation account setup, an invited address whose domain is exactly `gmail.com` shall use the Google setup path.
+
+The Gmail setup screen shall offer Google authentication and shall not offer password creation.
+
+An invited address with any other domain shall use the email/password setup path.
+
+The non-Gmail setup screen shall offer password creation and shall not offer Google authentication.
+
+Under this initial policy, Google Workspace addresses on custom domains follow the non-Gmail password setup path.
+
+The domain rule controls the account-setup experience only and is not a workspace authorization boundary.
+
+After authentication, Prometheus must still use the authenticated provider identity and normalized email to resolve the Administrator-authorized Member record.
 
 The Administrator-created member record determines whether the person is authorized to access Prometheus.
 
@@ -530,7 +550,7 @@ A user may join multiple outcomes within the same project or across different pr
 
 Joining an outcome creates permanent Outcome Membership.
 
-An Outcome Member cannot leave the outcome.
+An Outcome Member cannot leave an outcome.
 
 The Project Lead cannot remove an Outcome Member.
 
@@ -657,7 +677,6 @@ Continue work              ACCEPTED
 Outcome Members may continue submitting additional work while other submissions are still for review, as long as the outcome has not been accepted and submission is not blocked by a dependency.
 
 The Project Lead may determine that the combined reviewed submissions satisfy the outcome and accept the outcome.
-
 Once the outcome is accepted, new submissions stop until the outcome is reopened.
 
 An Administrator who is not the Project Lead does not receive review or acceptance authority.
@@ -875,3 +894,5 @@ The effective permission is the combination of the user's organization role, Pro
 30. Reopening preserves existing Outcome Membership, submission history, and acceptance history.
 31. After reopening, users may join and Outcome Members may submit again.
 32. Important authorization and lifecycle rules must be enforced by the backend and not only through frontend visibility.
+33. Invitation account setup for an invited `@gmail.com` address uses Google authentication and does not offer password creation.
+34. Invitation account setup for any other invited domain uses email/password setup and does not offer Google authentication.
