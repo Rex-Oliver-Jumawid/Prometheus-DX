@@ -5,6 +5,7 @@ import { z } from 'zod';
 const SeedMemberSchema = z.object({
   email: z.string().email(),
   fullName: z.string().min(1),
+  departmentId: z.string().uuid(),
   workspaceRole: z.enum(['ADMINISTRATOR', 'MEMBER']).default('MEMBER'),
   status: z.enum(['INVITED', 'ACTIVE', 'DEACTIVATED']).default('INVITED'),
   authUserId: z.string().uuid().nullable().optional(),
@@ -32,6 +33,7 @@ async function seed(): Promise<void> {
       const data = {
         email,
         fullName: member.fullName,
+        departmentId: member.departmentId,
         workspaceRole: member.workspaceRole,
         status: member.status,
         authUserId: member.authUserId ?? null,

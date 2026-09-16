@@ -282,8 +282,8 @@ export class RegistryService {
     authUserId: string | null;
     email: string;
     fullName: string;
-    departmentId: string | null;
-    department: { id: string; name: string; shortLabel: string } | null;
+    departmentId: string;
+    department: { id: string; name: string; shortLabel: string };
     position: string | null;
     workspaceRole: 'ADMINISTRATOR' | 'MEMBER';
     status: 'INVITED' | 'ACTIVE' | 'DEACTIVATED';

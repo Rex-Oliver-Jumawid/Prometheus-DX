@@ -59,14 +59,12 @@ export const RegistryMemberSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
   fullName: z.string().min(1),
-  departmentId: z.string().uuid().nullable(),
-  department: z
-    .object({
-      id: z.string().uuid(),
-      name: z.string(),
-      shortLabel: z.string().min(1).max(12),
-    })
-    .nullable(),
+  departmentId: z.string().uuid(),
+  department: z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    shortLabel: z.string().min(1).max(12),
+  }),
   position: z.string().nullable(),
   workspaceRole: WorkspaceRoleSchema,
   status: MemberStatusSchema,

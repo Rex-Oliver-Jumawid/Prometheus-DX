@@ -37,8 +37,8 @@ model Member {
   authUserId       String?       @unique @map("auth_user_id") @db.Uuid
   email            String
   fullName         String        @map("full_name")
-  departmentId     String?       @map("department_id") @db.Uuid
-  department       Department?   @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  departmentId     String        @map("department_id") @db.Uuid
+  department       Department    @relation(fields: [departmentId], references: [id], onDelete: Restrict)
   workspaceRole    WorkspaceRole @default(MEMBER) @map("workspace_role")
   status           MemberStatus  @default(INVITED)
   position         String?

@@ -88,11 +88,24 @@ test('administrator adds and edits a member with duplicate-email protection', as
   createdDepartmentIds.add(reassignedDepartment.id);
 
   const email = `registry-${suffix}@example.com`;
+  const existingSuggestionEmail = `existing-${suffix}@example.com`;
+  const existingSuggestionName = `Existing Registry Member ${suffix}`;
   const updatedFullName =
     'Registry Member Updated With An Exceptionally Long Display Name';
   const updatedPosition =
     'Senior Product Specialist For Cross-Functional Organization Programs';
   createdMemberEmails.add(email);
+  createdMemberEmails.add(existingSuggestionEmail);
+  await prisma.member.create({
+    data: {
+      email: existingSuggestionEmail,
+      fullName: existingSuggestionName,
+      departmentId: department.id,
+      position: 'Existing Member Fixture',
+      workspaceRole: 'MEMBER',
+      status: 'INVITED',
+    },
+  });
   const browserErrors: string[] = [];
   page.on('console', (message) => {
     if (message.type() === 'error') browserErrors.push(message.text());
@@ -104,7 +117,54 @@ test('administrator adds and edits a member with duplicate-email protection', as
   const addMemberButton = page.getByRole('button', { name: /Add member/ });
   await addMemberButton.click();
   await expect(page.getByRole('dialog', { name: 'Add member' })).toBeVisible();
-  await expect(page.getByLabel('Full name')).toBeFocused();
+  const fullNameInput = page.getByLabel('Full name');
+  await expect(fullNameInput).toBeFocused();
+  const existingMembersList = page.getByRole('listbox', {
+    name: 'Existing members',
+  });
+  await expect(existingMembersList).toBeVisible();
+  await expect(
+    existingMembersList.getByRole('option').filter({
+      hasText: existingSuggestionName,
+    }),
+  ).toContainText('Already in Registry');
+
+  await fullNameInput.fill(existingSuggestionName);
+  await expect(existingMembersList.getByRole('option')).toHaveCount(1);
+  await expect(existingMembersList).toContainText(existingSuggestionEmail);
+  await fullNameInput.fill(existingSuggestionEmail);
+  await expect(existingMembersList.getByRole('option')).toHaveCount(1);
+  await expect(existingMembersList).toContainText(existingSuggestionName);
+
+  await fullNameInput.fill('');
+  const initiallyActiveSuggestion = await existingMembersList
+    .locator('[role="option"][aria-selected="true"]')
+    .textContent();
+  await fullNameInput.press('ArrowDown');
+  const nextActiveSuggestion = await existingMembersList
+    .locator('[role="option"][aria-selected="true"]')
+    .textContent();
+  expect(nextActiveSuggestion).not.toBe(initiallyActiveSuggestion);
+  await fullNameInput.press('ArrowUp');
+  await expect(
+    existingMembersList.locator('[role="option"][aria-selected="true"]'),
+  ).toContainText(initiallyActiveSuggestion ?? '');
+  await fullNameInput.press('Escape');
+  await expect(existingMembersList).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: 'Add member' })).toBeVisible();
+
+  await fullNameInput.fill(existingSuggestionEmail);
+  await fullNameInput.press('Enter');
+  await expect(page.getByRole('dialog', { name: 'Edit member' })).toBeVisible();
+  await expect(page.getByLabel('Full name')).toHaveValue(
+    existingSuggestionName,
+  );
+  await expect(
+    prisma.member.count({ where: { email: existingSuggestionEmail } }),
+  ).resolves.toBe(1);
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+
+  await addMemberButton.click();
   const desktopOverlay = await page.evaluate(() => {
     const backdrop = document.querySelector('.registry-dialog-backdrop');
     const dialog = document.querySelector('.registry-member-dialog');
@@ -166,19 +226,32 @@ test('administrator adds and edits a member with duplicate-email protection', as
 
   await addMemberButton.click();
 
+  await page.getByLabel('Full name').fill('No Existing Registry Match');
+  await expect(
+    page.getByText(
+      'No existing member found. Continue entering the new member.',
+    ),
+  ).toBeVisible();
   await page.getByLabel('Email address').fill('not-an-email');
   await page.getByRole('button', { name: 'Add member', exact: true }).click();
   await expect(page.getByText('Enter a valid email address.')).toBeVisible();
 
   await page.getByLabel('Full name').fill('Registry Test Member');
   await page.getByLabel('Email address').fill(email);
-  await page
-    .getByRole('dialog', { name: 'Add member' })
-    .locator('select[name="departmentId"]')
-    .selectOption(department.id);
+  const departmentSearch = page.getByLabel('Department');
+  await departmentSearch.fill('Not a persisted department');
   await page.getByLabel('Position').fill('Product Specialist');
   await page.getByLabel('Workspace role').selectOption('MEMBER');
   await expect(page.getByLabel('Member status')).toBeDisabled();
+  await page.getByRole('button', { name: 'Add member', exact: true }).click();
+  await expect(page.getByText('Choose a department.')).toBeVisible();
+  await departmentSearch.fill(department.name.slice(0, 8));
+  await expect(
+    page.locator('#registry-department-options option').filter({
+      hasText: department.shortLabel,
+    }),
+  ).toHaveCount(1);
+  await departmentSearch.fill(department.name);
   await page.getByRole('button', { name: 'Add member', exact: true }).click();
 
   await expect(
@@ -205,10 +278,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await page.getByRole('button', { name: /Add member/ }).click();
   await page.getByLabel('Full name').fill('Duplicate Member');
   await page.getByLabel('Email address').fill(email.toUpperCase());
-  await page
-    .getByRole('dialog', { name: 'Add member' })
-    .locator('select[name="departmentId"]')
-    .selectOption(department.id);
+  await page.getByLabel('Department').fill(department.name);
   await page.getByLabel('Position').fill('Duplicate');
   await page.getByRole('button', { name: 'Add member', exact: true }).click();
   await expect(
@@ -220,10 +290,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await page.getByRole('button', { name: 'Edit Registry Test Member' }).click();
   await page.getByLabel('Full name').fill(updatedFullName);
   await page.getByLabel('Position').fill(updatedPosition);
-  await page
-    .getByRole('dialog', { name: 'Edit member' })
-    .locator('select[name="departmentId"]')
-    .selectOption(reassignedDepartment.id);
+  await page.getByLabel('Department').fill(reassignedDepartment.name);
   await page.getByLabel('Workspace role').selectOption('ADMINISTRATOR');
   await page.getByLabel('Member status').selectOption('DEACTIVATED');
   await page.getByRole('button', { name: 'Save changes' }).click();

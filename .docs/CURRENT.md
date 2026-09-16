@@ -41,23 +41,30 @@ Phase 0 - Foundation is also complete.
 - The invitation slice implements retryable Brevo delivery, durable delivery evidence, Supabase account setup, and backend-authoritative linkage to the existing Member row.
 - Invitation account setup now routes by the invited email domain: exact `@gmail.com` invitations show Google authentication only, while all other domains show password creation only.
 - The canonical account-setup workflow and tech-stack documentation were updated to match that routing decision.
-- Playwright coverage now checks both Gmail and non-Gmail account-setup surfaces, but the latest routing changes have not yet been run locally after the repository update.
+- Playwright coverage checks both Gmail and non-Gmail account-setup surfaces, and both credential-independent checks pass in the latest run.
 - The live first-sign-in acceptance path proves an invited Member becomes linked and active without creating a duplicate Member.
 - The Brevo API v3 key was rotated after exposure, and an active verified `Prometheus-DX` sender remains configured locally.
 - The retained `Brevo Acceptance Test` Member was resent through Registry, `invitation_sent_at` persisted, the UI changed to `Resend invitation`, and the invitation arrived in Gmail.
 - Local Prisma runtime access through the Supabase transaction pooler on port `6543` is verified.
-- `pnpm prisma migrate status` succeeds through the Supabase session pooler on port `5432` and reports all four migrations up to date.
+- The live database has all five Prisma migrations recorded, including the required Member Department migration.
+- The latest direct `pnpm prisma migrate status` attempt is blocked because this machine cannot currently reach the Supabase session pooler on port `5432`.
 - One Wi-Fi network blocked outbound PostgreSQL traffic to Supabase on ports `5432` and `6543` even though normal HTTPS access still worked.
 - A mobile hotspot allowed both PostgreSQL paths, so if Prisma times out on that Wi-Fi, test the pooler ports with `nc` or switch networks before changing database configuration.
-- Registry now highlights unassigned legacy Members and opens a deliberate Department-assignment workflow.
+- Every live Member now has a persisted Department relationship.
+- `Member.departmentId` is required in Prisma and `members.department_id` is `NOT NULL` in PostgreSQL.
+- The additive `20260916020000_require_member_department` migration is recorded in Prisma migration history with its repository checksum.
 - The application shell has been reconciled against `.model/finalmodel.html` and Figma Registry node `11:1887`, including removal of invented collapse and duplicate top-right controls.
 - Shared navigation and content surfaces now use the intended translucent glass treatment at desktop, compact, and mobile widths.
 - Registry dialogs now render through a body-level portal so their fixed backdrop covers the viewport instead of being clipped by the workspace glass stacking context.
 - Add/Edit Member and Add/Edit Department share the compact liquid-glass treatment and were visually checked at desktop and narrow viewports.
-- The configured Supabase database has all four current migrations applied.
+- The configured Supabase database has all five current migrations applied.
 - The previous repository verification baseline passed with 27/27 unit tests and the expanded live Playwright suite passed 13/13 before the latest account-setup routing change.
 - The first-linkage concurrency race is resolved and five simultaneous live `/api/me` requests were verified successfully.
-- Existing Phase 1 members intentionally retain a nullable `department_id` until the member-assignment slice provides a deliberate backfill path.
+- The Registry Member E2E coverage now uses the searchable Department control and covers Full Name suggestions, existing-Member edit transition, keyboard behavior, invalid free text, and the existing dialog/mobile behavior.
+- Auth-shell E2E coverage now asserts that restored sessions show neutral Prometheus loading, never flash the login form, and enter Registry without the removed Administrator-check interstitial.
+- `pnpm verify` passes with 27/27 unit tests and both production builds.
+- The latest Playwright closure rerun is blocked by this machine's inability to reach the configured Supabase pooler ports: 7/15 tests passed, 3 live database-dependent tests failed at that boundary, and 5 serial tests did not run.
+- The Supabase management channel remains healthy and independently verified the live invariant, PostgreSQL nullability, and Prisma migration-history record.
 - Project workflows are split between concise always-on rules in `AGENTS.md` and reusable procedures under `.agents/skills/`.
 - `.context/ui-reference.md` now defines `.model/finalmodel.html` as the prototype source of truth for the main application experience.
 
@@ -119,23 +126,21 @@ The account-setup workflow now follows the explicit product decision that Gmail 
 
 ## Next Action
 
-Pull the latest account-setup routing changes locally and restart the development server.
+Restore direct PostgreSQL connectivity to the configured Supabase pooler and rerun `pnpm exec prisma migrate status`, both focused Playwright files, and `pnpm test:e2e`.
 
-Run the focused account-setup browser checks, then reopen the received `Brevo Acceptance Test` setup link.
+Do not alter live Member or Department data to work around the network boundary.
 
-Because that invitation uses `@gmail.com`, verify that only `Continue with Google` is offered and that password creation is absent.
+F2-16 is PASS based on the observed real Registry invitation, Gmail delivery, Google-only setup, normalized-email linkage, activation, no duplicate Member, persisted `auth_user_id`, and successful subsequent access.
 
-Complete Google authentication with the invited Gmail address.
+The Department invariant is complete and independently verified through the Supabase management channel.
 
-Verify normalized-email linkage to the existing Member row, no duplicate Member, active linked state, and subsequent resolution through `auth_user_id`.
+F2-21 remains the only product-dependent acceptance item because a persisted Project Lead relationship does not exist until Phase 3.
 
-Assign `DX User 1` to the Administrator-selected real Department through Registry.
+The Phase 2 test specification literally requires a non-admin Project Lead account, so Phase 2 remains in progress until that dependency and the currently blocked browser regression are resolved.
 
-Then confirm zero NULL Department relationships, apply the `members.department_id NOT NULL` migration, and run the complete Phase 2 acceptance gate.
+Do not implement Project Core as part of this closure task.
 
-Do not mark Phase 2 complete while the account-setup linkage check and the Department invariant remain incomplete.
-
-Detailed Google, Password, or combined provider labels remain deferred until a trustworthy backend source is available.
+When Phase 3 begins in a separate task, start with the Project persistence and authorization slice that keeps `created_by_member_id` separate from `lead_member_id`, permits every active Member to view and create Projects, and grants no automatic Project Lead authority to Administrators or creators.
 
 ## Phase 2 Working Rules
 

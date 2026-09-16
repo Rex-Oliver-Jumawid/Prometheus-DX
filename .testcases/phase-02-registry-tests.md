@@ -136,10 +136,16 @@ Administrator signs in
 
 ## Phase 2 Exit Checklist
 
-- [ ] Departments persist.
-- [ ] Members persist.
-- [ ] Duplicate and invalid membership data are rejected.
-- [ ] Activation and deactivation affect workspace access.
-- [ ] Authentication linkage is visible and correct.
-- [ ] Administrator authorization is enforced by frontend and backend.
+- [x] Departments persist.
+- [x] Members persist.
+- [x] Duplicate and invalid membership data are rejected.
+- [x] Activation and deactivation affect workspace access.
+- [x] Authentication linkage is visible and correct.
+- [x] Administrator authorization is enforced by frontend and backend.
 - [ ] Project Lead status does not grant Registry access.
+
+The final Project Lead item requires literal F2-21 execution with a persisted non-admin Project Lead.
+
+That relationship does not exist until Phase 3 and must not be fabricated as an organization role merely to satisfy this gate.
+
+Current Member navigation, direct-route, and direct-API denial provide role-separation evidence but do not replace the literal F2-21 fixture.

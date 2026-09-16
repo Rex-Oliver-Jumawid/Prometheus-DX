@@ -185,6 +185,91 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
   await expect(page).toHaveURL(/\/login$/);
 });
 
+test('restored Administrator session stays on neutral loading before Registry', async ({
+  page,
+}) => {
+  const email = process.env.E2E_MEMBER_EMAIL;
+  const password = process.env.E2E_MEMBER_PASSWORD;
+  test.skip(
+    !hasSupabaseBrowserConfig || !email || !password,
+    'Requires Supabase browser auth config and E2E member credentials.',
+  );
+
+  const member = await prisma.member.findFirst({
+    where: { email: { equals: email!, mode: 'insensitive' } },
+  });
+  if (!member) throw new Error('E2E member record was not found.');
+  test.skip(
+    member.workspaceRole !== 'ADMINISTRATOR',
+    'Restored Registry acceptance requires an Administrator.',
+  );
+
+  await signIn(page);
+  await expect(
+    page.getByRole('navigation', { name: 'Primary navigation' }),
+  ).toBeVisible();
+
+  await page.addInitScript(() => {
+    const observed = {
+      loginForm: false,
+      administratorInterstitial: false,
+    };
+    Object.assign(window, { __prometheusAuthFrames: observed });
+    new MutationObserver(() => {
+      observed.loginForm ||= Boolean(document.querySelector('.login-form'));
+      observed.administratorInterstitial ||=
+        document.body?.textContent?.includes('Checking administrator access') ??
+        false;
+    }).observe(document, { childList: true, subtree: true });
+  });
+
+  let markMemberRequestStarted: () => void = () => undefined;
+  let releaseMemberRequest: () => void = () => undefined;
+  const memberRequestStarted = new Promise<void>((resolve) => {
+    markMemberRequestStarted = resolve;
+  });
+  const memberRequestReleased = new Promise<void>((resolve) => {
+    releaseMemberRequest = resolve;
+  });
+  await page.route('**/api/me', async (route) => {
+    markMemberRequestStarted();
+    await memberRequestReleased;
+    await route.continue();
+  });
+
+  const navigation = page.goto('/registry', { waitUntil: 'domcontentloaded' });
+  await memberRequestStarted;
+  await expect(page.getByText('Opening Prometheus…')).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Sign in', exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByText('Checking administrator access...')).toHaveCount(
+    0,
+  );
+  releaseMemberRequest();
+  await navigation;
+  await page.unroute('**/api/me');
+
+  await expect(
+    page.getByRole('heading', { name: 'Registry', exact: true }),
+  ).toBeVisible();
+  const observedFrames = await page.evaluate(
+    () =>
+      (
+        window as typeof window & {
+          __prometheusAuthFrames?: {
+            loginForm: boolean;
+            administratorInterstitial: boolean;
+          };
+        }
+      ).__prometheusAuthFrames,
+  );
+  expect(observedFrames).toEqual({
+    loginForm: false,
+    administratorInterstitial: false,
+  });
+});
+
 test('normal Member cannot see or open Registry', async ({ page }) => {
   const email = process.env.E2E_MEMBER_EMAIL;
   const password = process.env.E2E_MEMBER_PASSWORD;

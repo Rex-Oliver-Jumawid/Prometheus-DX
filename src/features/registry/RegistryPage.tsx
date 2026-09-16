@@ -298,8 +298,7 @@ function MemberDialog({
   onSelectExistingMember: (member: RegistryMember) => void;
 }) {
   const member = state.mode === 'edit' ? state.member : undefined;
-  const defaultDepartmentId =
-    member?.departmentId ?? departments[0]?.id ?? '';
+  const defaultDepartmentId = member?.departmentId ?? departments[0]?.id ?? '';
   const defaultDepartmentName =
     departments.find((department) => department.id === defaultDepartmentId)
       ?.name ?? '';
@@ -361,8 +360,7 @@ function MemberDialog({
   }, []);
 
   useEffect(() => {
-    const nextDepartmentId =
-      member?.departmentId ?? departments[0]?.id ?? '';
+    const nextDepartmentId = member?.departmentId ?? departments[0]?.id ?? '';
     const nextDepartmentName =
       departments.find((department) => department.id === nextDepartmentId)
         ?.name ?? '';
@@ -511,10 +509,14 @@ function MemberDialog({
                 }}
                 onBlur={(event) => {
                   void fullNameRegistration.onBlur(event);
-                  window.setTimeout(() => setFullNameSuggestionsOpen(false), 100);
+                  window.setTimeout(
+                    () => setFullNameSuggestionsOpen(false),
+                    100,
+                  );
                 }}
                 onKeyDown={(event) => {
-                  if (state.mode !== 'create' || !fullNameSuggestionsOpen) return;
+                  if (state.mode !== 'create' || !fullNameSuggestionsOpen)
+                    return;
                   if (event.key === 'ArrowDown') {
                     event.preventDefault();
                     setActiveMemberSuggestion((current) =>
@@ -525,7 +527,9 @@ function MemberDialog({
                     );
                   } else if (event.key === 'ArrowUp') {
                     event.preventDefault();
-                    setActiveMemberSuggestion((current) => Math.max(current - 1, 0));
+                    setActiveMemberSuggestion((current) =>
+                      Math.max(current - 1, 0),
+                    );
                   } else if (
                     event.key === 'Enter' &&
                     existingMemberSuggestions[activeMemberSuggestion]
@@ -570,7 +574,8 @@ function MemberDialog({
                     ))
                   ) : (
                     <p className="registry-member-name-empty">
-                      No existing member found. Continue entering the new member.
+                      No existing member found. Continue entering the new
+                      member.
                     </p>
                   )}
                 </div>
@@ -600,9 +605,13 @@ function MemberDialog({
                   setDepartmentSearch(nextSearch);
                   const selectedDepartment = departments.find(
                     (department) =>
-                      department.name.localeCompare(nextSearch.trim(), undefined, {
-                        sensitivity: 'base',
-                      }) === 0,
+                      department.name.localeCompare(
+                        nextSearch.trim(),
+                        undefined,
+                        {
+                          sensitivity: 'base',
+                        },
+                      ) === 0,
                   );
                   setValue('departmentId', selectedDepartment?.id ?? '', {
                     shouldDirty: true,
@@ -819,9 +828,6 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
   const administratorCount =
     members.data?.filter((member) => member.workspaceRole === 'ADMINISTRATOR')
       .length ?? 0;
-  const unassignedMembers =
-    members.data?.filter((member) => !member.departmentId) ?? [];
-
   const openCreate = () => {
     saveDepartment.reset();
     setDialogState({ mode: 'create' });
@@ -1054,30 +1060,6 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
 
           {members.isSuccess && members.data.length > 0 && (
             <>
-              {unassignedMembers.length > 0 && (
-                <div className="registry-assignment-alert" role="status">
-                  <div>
-                    <strong>
-                      {unassignedMembers.length}{' '}
-                      {unassignedMembers.length === 1
-                        ? 'member needs'
-                        : 'members need'}{' '}
-                      a department
-                    </strong>
-                    <p>
-                      Assign each legacy Member deliberately before the
-                      Department relationship can become required.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="registry-secondary-button"
-                    onClick={() => openEditMember(unassignedMembers[0])}
-                  >
-                    Assign department
-                  </button>
-                </div>
-              )}
               {resendInvitation.isError && (
                 <div className="registry-form-error" role="alert">
                   {messageFromError(resendInvitation.error)}
@@ -1110,17 +1092,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
                             </div>
                           </div>
                         </td>
-                        <td>
-                          {member.department?.name ?? (
-                            <button
-                              type="button"
-                              className="registry-inline-action warning"
-                              onClick={() => openEditMember(member)}
-                            >
-                              Assign department
-                            </button>
-                          )}
-                        </td>
+                        <td>{member.department.name}</td>
                         <td>{member.position ?? 'Not set'}</td>
                         <td>
                           <span className="registry-badge role">

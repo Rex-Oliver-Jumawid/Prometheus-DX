@@ -134,6 +134,18 @@ The field does not control activation and is not treated as proof of account set
 
 The migration was applied to the configured Supabase database without modifying the existing Member row.
 
+Migration: `prisma/migrations/20260916020000_require_member_department/migration.sql`
+
+The migration makes `members.department_id` `NOT NULL` after a live pre-migration query verified two total Members, zero NULL Department relationships, and zero orphaned Department references.
+
+The Prisma schema, Registry response contract, seed input, and test fixtures now model the Member Department relationship as required.
+
+The migration was applied to the configured Supabase database through its management channel because direct PostgreSQL pooler sockets were unavailable from this machine.
+
+The exact repository migration checksum was recorded in `_prisma_migrations` using the equivalent of Prisma's supported resolve-as-applied bookkeeping after the DDL and invariant were independently verified.
+
+Post-migration queries confirmed `information_schema.columns.is_nullable = NO`, zero NULL `department_id` values, and an active finished Prisma migration-history row.
+
 ## API Changes
 
 All Registry endpoints remain protected by `SupabaseAuthGuard`, `RolesGuard`, and the class-level `ADMINISTRATOR` workspace-role requirement.
@@ -180,9 +192,7 @@ The Members panel now lists real persistent membership data and exposes add and 
 
 New members begin in `INVITED` state and must use a persisted Department ID.
 
-Existing Phase 1 members remain visible as unassigned until an Administrator edits their record.
-
-Unassigned legacy Members now produce a prominent Registry warning and a direct `Assign department` action that opens the existing edit workflow.
+Every Member now has a required persisted Department relationship, so the transitional unassigned warning and assignment action have been removed.
 
 Authentication status is derived on the backend from the stable Supabase `auth_user_id` linkage and is displayed only as `Linked` or `Setup pending`.
 
@@ -275,6 +285,24 @@ Live Brevo follow-up verification on 2026-09-16:
 - Actual inbox or spam-folder receipt was not observed in this follow-up run.
 - The setup link, Supabase account setup, normalized-email linkage, duplicate-member check, activation, and subsequent `auth_user_id` resolution were not rerun because no invitation could be resent through Registry.
 
+Phase 2 closure verification on 2026-09-16 supersedes the earlier blocked follow-up state:
+
+- The real Registry invitation send and resend flow completed successfully.
+- Brevo accepted delivery and `invitation_sent_at` persisted.
+- The invitation arrived in Gmail and the setup link opened.
+- The Gmail invitation offered Google-only setup and Google authentication completed.
+- The confirmed normalized email linked the existing Member row, persisted `auth_user_id`, moved the Member to `ACTIVE`, and did not create a duplicate Member.
+- Refresh and subsequent access resolved through the linked identity successfully.
+- `DX User 1` was assigned to the real Research & Development Department.
+- Live database checks confirmed two Members, zero NULL `department_id` values, and zero orphaned Department references.
+- `members.department_id` is now `NOT NULL`, and the fifth Prisma migration is recorded with the repository checksum.
+- `pnpm prisma:validate`, `pnpm prisma:generate`, `pnpm typecheck`, `pnpm lint`, and all 27 unit tests passed.
+- `pnpm verify` passed, including project doctor, lint, typecheck, 27 unit tests, web build, and API build.
+- The focused Registry Playwright run could not start its live flow because the test process could not reach the transaction pooler on port `6543`.
+- The focused auth-shell Playwright run passed 6 tests before its first authenticated live case remained on `/login` because the API could not reach PostgreSQL; 5 later serial tests did not run.
+- The complete Playwright run passed 7 tests, failed 3 database-dependent tests at the same pooler boundary, and did not run 5 later serial tests.
+- Direct `pnpm exec prisma migrate status` remains blocked by the unreachable session pooler on port `5432`, while the Supabase management channel confirms the five active Prisma migration records and final schema invariant.
+
 ### Current Phase 2 acceptance matrix
 
 | ID | Result | Evidence or blocker |
@@ -294,7 +322,7 @@ Live Brevo follow-up verification on 2026-09-16:
 | F2-13 | PASS | Deactivation during an authenticated session denies workspace access after refresh. |
 | F2-14 | PASS | Reactivation restores workspace access after refresh. |
 | F2-15 | PASS | Unlinked invited Member displays `Setup pending` and backend-derived delivery state. |
-| F2-16 | BLOCKED | Brevo API v3 credential acceptance now passes with HTTP 200, but the real Registry resend and persistence checks are blocked by unavailable PostgreSQL connectivity from this environment. Actual inbox receipt and the full setup-link flow were not observed. The earlier real Supabase first-linkage path remains verified without duplication. |
+| F2-16 | PASS | Real Registry send/resend was accepted by Brevo, `invitation_sent_at` persisted, Gmail received the message, Google-only setup completed, the existing normalized-email Member became `ACTIVE` and linked through `auth_user_id`, no duplicate Member was created, and refresh/subsequent access succeeded. |
 | F2-17 | PASS | Long Member metadata remains usable at the 390 by 844 mobile viewport with no document overflow. |
 | F2-18 | PASS | Registry navigation is absent for `MEMBER`. |
 | F2-19 | PASS | Direct `/registry` navigation is denied for `MEMBER`. |
@@ -362,7 +390,7 @@ Apply and exercise the migration in the configured development environment, then
 
 ### P2-D02 - Stage the Member to Department relationship as nullable
 
-**Status:** Revisit later
+**Status:** Resolved
 
 **Area:** Database
 
@@ -389,7 +417,7 @@ Add a nullable foreign key now and make the member-assignment slice responsible 
 
 #### Decision
 
-`members.department_id` is nullable during the staged Phase 2 rollout.
+`members.department_id` was nullable during the staged Phase 2 rollout and is now required after deliberate live assignment.
 
 #### Why we chose it
 
@@ -397,7 +425,7 @@ It preserves valid Phase 1 accounts without silently assigning incorrect organiz
 
 #### Result
 
-Department persistence can ship independently while existing authentication and authorization records remain usable.
+The staged nullable relationship preserved existing accounts until both live Members had real Department assignments, after which the additive NOT NULL migration completed without a fabricated backfill.
 
 #### What we learned
 
@@ -405,12 +433,13 @@ Schema correctness sometimes needs a staged migration when a new invariant is in
 
 #### Next approach
 
-Require department selection for newly managed members, provide an explicit path to assign existing members, then evaluate a follow-up `NOT NULL` migration before Phase 2 exit.
+Preserve required Department selection in every future Member creation, seed, API contract, and test fixture.
 
 #### Related changes
 
 - `prisma/schema.prisma`
 - `prisma/migrations/20260916000000_registry_departments/migration.sql`
+- `prisma/migrations/20260916020000_require_member_department/migration.sql`
 
 ### P2-D03 - Do not invent department-name uniqueness
 
@@ -846,25 +875,11 @@ With API v3 acceptance now verified, restore a routable PostgreSQL connection, r
 
 ## Known Limitations
 
-The configured `BREVO_API_KEY` is now accepted by Brevo's API v3 account endpoint.
+The latest execution environment cannot reach the configured Supabase PostgreSQL pooler on ports `5432` or `6543`.
 
-That credential must be revoked and replaced before the next live retry because it was inadvertently exposed in agent tool output during this follow-up session.
-
-The local invitation configuration now includes an active verified Brevo sender.
-
-F2-16 remains blocked because this execution environment cannot currently reach the configured Supabase PostgreSQL pooler and has no IPv6 route to the direct database endpoint.
-
-No Registry resend or `invitation_sent_at` update was observed in the follow-up run.
-
-No actual inbox or spam-folder receipt was observed, so email receipt must not be reported as passed.
-
-The account-setup link and live post-delivery authentication linkage were not rerun in the follow-up.
-
-The `Brevo Acceptance Test` Member is intentionally retained in `INVITED` and `Not sent` state for the next delivery retry.
+This blocks a direct Prisma CLI migration-status observation and the database-dependent Playwright rerun, although the Supabase management channel confirms the live schema, data invariant, and five active Prisma migration-history records.
 
 Detailed authentication-provider combinations are unresolved because the current backend only has the stable Supabase user linkage.
-
-The single existing Phase 1 Member still has `department_id = NULL` because no real Department exists and an arbitrary Department must not be invented.
 
 F2-21 cannot be exercised with a persisted non-admin Project Lead until Phase 3 introduces the Project Lead relationship.
 
@@ -873,8 +888,6 @@ The Phase 2 authorization boundary is nevertheless covered by the canonical two-
 The live Registry E2E tests require configured Supabase browser credentials and an Administrator member account, so credential-free CI skips those acceptance paths.
 
 ## Technical Debt
-
-The nullable `members.department_id` relationship remains transitional debt until the Administrator supplies and persists the Member's real Department.
 
 The current live E2E setup still depends on one mutable shared account and should move to dedicated role-specific fixtures.
 
@@ -890,17 +903,18 @@ The Department entity is a useful first persistence boundary because later membe
 
 ## Recommendations / Next Approach
 
-- Rotate the exposed Brevo API key and configure its replacement without printing or committing it.
-- Restore routable Supabase PostgreSQL connectivity, then resend the retained acceptance invitation through Registry without creating another Member.
-- Record Brevo's send response as provider acceptance, confirm `invitation_sent_at` through the Registry API and database as application persistence, and inspect the recipient inbox and spam folder separately for actual receipt.
-- Open the received setup link, complete Supabase authentication, and verify normalized-email linkage, a single Member row, active status, and subsequent lookup by `auth_user_id`.
-- Use the new Administrator assignment action to place the existing Member in a real Department, then apply the follow-up `department_id NOT NULL` migration.
+- Restore routable Supabase PostgreSQL connectivity and rerun `pnpm exec prisma migrate status`, the two focused Playwright files, and the complete browser suite.
+- Do not change live Member or Department assignments merely to work around the network boundary.
 - Add authoritative authentication-provider detail only if the backend can obtain it from Supabase.
 - Keep F2-21 blocked rather than creating Phase 3 Project persistence solely for a Phase 2 fixture.
-- After the two external decisions are resolved, rerun `pnpm verify`, `pnpm test:e2e`, migration status, and the remaining acceptance checks before marking the phase complete.
+- The first separate Phase 3 task should add the Project persistence and authorization slice with distinct `created_by_member_id` and `lead_member_id` relationships.
+- That slice must preserve Project Lead as project-specific, prevent Administrator or creator status from automatically granting Lead authority, and allow every active authorized Member to view and create Projects.
+- After direct database connectivity returns and literal F2-21 can execute against that relationship, rerun the complete Phase 2 gate before marking the phase complete.
 
 ## Phase Exit Result
 
 **Not complete.**
 
-Phase 2 may be marked complete only after implementation, acceptance, regression, and this document are finalized.
+The Department invariant and F2-16 are complete.
+
+Phase 2 remains in progress because the phase test specification literally requires F2-21 against a persisted non-admin Project Lead, which cannot exist before the Phase 3 Project relationship, and because the latest database-dependent Playwright regression could not run through the unreachable pooler.
