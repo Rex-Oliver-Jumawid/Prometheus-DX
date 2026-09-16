@@ -3,6 +3,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -15,10 +16,20 @@ import type {
   UpdateMemberRequest,
 } from '../../shared/contracts/registry';
 import { PrismaService } from '../database/prisma.service';
+import {
+  INVITATION_DELIVERY,
+  type InvitationDelivery,
+} from './invitation.service';
 
 @Injectable()
 export class RegistryService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(RegistryService.name);
+
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(INVITATION_DELIVERY)
+    private readonly invitationDelivery: InvitationDelivery,
+  ) {}
 
   async listDepartments(): Promise<RegistryDepartment[]> {
     const departments = await this.prisma.department.findMany({
@@ -94,12 +105,21 @@ export class RegistryService {
         include: { department: true },
       });
 
-      return this.toMember({
+      const created = this.toMember({
         ...member,
         department: member.department,
         departmentId: member.departmentId,
         position: member.position,
       });
+
+      try {
+        return await this.deliverInvitation(member.id);
+      } catch {
+        this.logger.warn(
+          `Invitation delivery is pending for newly created member ${member.id}.`,
+        );
+        return created;
+      }
     } catch (error) {
       this.rethrowMemberWriteError(error);
     }
@@ -111,7 +131,7 @@ export class RegistryService {
   ): Promise<RegistryMember> {
     const existing = await this.prisma.member.findUnique({
       where: { id: memberId },
-      select: { id: true, authUserId: true, status: true },
+      select: { id: true, authUserId: true, status: true, email: true },
     });
     if (!existing) throw new NotFoundException('Member not found.');
     if (
@@ -137,6 +157,10 @@ export class RegistryService {
           position: input.position,
           workspaceRole: input.workspaceRole,
           status: input.status,
+          invitationSentAt:
+            existing.email.toLowerCase() === input.email.toLowerCase()
+              ? undefined
+              : null,
           deactivatedAt: input.status === 'DEACTIVATED' ? new Date() : null,
         },
         include: { department: true },
@@ -151,6 +175,46 @@ export class RegistryService {
     } catch (error) {
       this.rethrowMemberWriteError(error);
     }
+  }
+
+  async sendMemberInvitation(memberId: string): Promise<RegistryMember> {
+    const member = await this.prisma.member.findUnique({
+      where: { id: memberId },
+      select: { id: true, authUserId: true, status: true },
+    });
+    if (!member) throw new NotFoundException('Member not found.');
+    if (member.authUserId) {
+      throw new ConflictException(
+        'This member already completed account setup.',
+      );
+    }
+    if (member.status === 'DEACTIVATED') {
+      throw new BadRequestException(
+        'Reactivate this member before sending an invitation.',
+      );
+    }
+
+    return this.deliverInvitation(memberId);
+  }
+
+  private async deliverInvitation(memberId: string): Promise<RegistryMember> {
+    const member = await this.prisma.member.findUnique({
+      where: { id: memberId },
+      include: { department: true },
+    });
+    if (!member) throw new NotFoundException('Member not found.');
+
+    await this.invitationDelivery.sendAccountSetupInvitation({
+      email: member.email,
+      fullName: member.fullName,
+    });
+
+    const updated = await this.prisma.member.update({
+      where: { id: member.id },
+      data: { invitationSentAt: new Date() },
+      include: { department: true },
+    });
+    return this.toMember(updated);
   }
 
   private async assertEmailAvailable(
@@ -223,6 +287,7 @@ export class RegistryService {
     position: string | null;
     workspaceRole: 'ADMINISTRATOR' | 'MEMBER';
     status: 'INVITED' | 'ACTIVE' | 'DEACTIVATED';
+    invitationSentAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
   }): RegistryMember {
@@ -236,6 +301,8 @@ export class RegistryService {
       workspaceRole: member.workspaceRole,
       status: member.status,
       authenticationStatus: member.authUserId ? 'LINKED' : 'SETUP_PENDING',
+      invitationDeliveryStatus: member.invitationSentAt ? 'SENT' : 'NOT_SENT',
+      invitationSentAt: member.invitationSentAt?.toISOString() ?? null,
       createdAt: member.createdAt.toISOString(),
       updatedAt: member.updatedAt.toISOString(),
     };

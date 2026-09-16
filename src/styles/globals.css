@@ -297,6 +297,24 @@ button:disabled {
   font-weight: 800;
   text-decoration: underline;
 }
+.auth-success {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(28, 154, 93, 0.2);
+  border-radius: 10px;
+  background: rgba(28, 154, 93, 0.07);
+  color: #187348;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.auth-field input[readonly] {
+  background: #f7f1ed;
+  color: #665b55;
+}
+.auth-helper a {
+  color: #a93f1c;
+  font-weight: 750;
+}
 .primary-button,
 .oauth-button,
 .secondary-button {

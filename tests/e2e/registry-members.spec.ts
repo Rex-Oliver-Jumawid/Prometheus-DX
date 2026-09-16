@@ -78,9 +78,26 @@ test('administrator adds and edits a member with duplicate-email protection', as
     },
   });
   createdDepartmentIds.add(department.id);
+  const reassignedDepartment = await prisma.department.create({
+    data: {
+      name: `Reassigned E2E ${suffix}`,
+      shortLabel: `R${suffix.slice(-5)}`,
+      description: 'Registry reassignment acceptance fixture.',
+    },
+  });
+  createdDepartmentIds.add(reassignedDepartment.id);
 
   const email = `registry-${suffix}@example.com`;
+  const updatedFullName =
+    'Registry Member Updated With An Exceptionally Long Display Name';
+  const updatedPosition =
+    'Senior Product Specialist For Cross-Functional Organization Programs';
   createdMemberEmails.add(email);
+  const browserErrors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') browserErrors.push(message.text());
+  });
+  page.on('pageerror', (error) => browserErrors.push(error.message));
 
   await signIn(page);
   await page.goto('/registry');
@@ -121,6 +138,14 @@ test('administrator adds and edits a member with duplicate-email protection', as
     page.getByRole('button', { name: 'Edit Registry Test Member' }),
   ).toBeVisible();
   await expect(page.getByText('Setup pending').first()).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: /Send invitation|Resend invitation/ }),
+  ).toBeVisible();
+  await expect(
+    page.locator('.registry-department-card').filter({
+      hasText: department.name,
+    }),
+  ).toContainText('1 member');
 
   await page.reload();
   await expect(
@@ -139,11 +164,16 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await expect(
     page.getByText('That email already belongs to a Prometheus member.'),
   ).toBeVisible();
+  browserErrors.length = 0;
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
 
   await page.getByRole('button', { name: 'Edit Registry Test Member' }).click();
-  await page.getByLabel('Full name').fill('Registry Member Updated');
-  await page.getByLabel('Position').fill('Senior Product Specialist');
+  await page.getByLabel('Full name').fill(updatedFullName);
+  await page.getByLabel('Position').fill(updatedPosition);
+  await page
+    .getByRole('dialog', { name: 'Edit member' })
+    .locator('select[name="departmentId"]')
+    .selectOption(reassignedDepartment.id);
   await page.getByLabel('Workspace role').selectOption('ADMINISTRATOR');
   await page.getByLabel('Member status').selectOption('DEACTIVATED');
   await page.getByRole('button', { name: 'Save changes' }).click();
@@ -153,20 +183,44 @@ test('administrator adds and edits a member with duplicate-email protection', as
 
   await page.reload();
   await expect(
-    page.getByRole('button', { name: 'Edit Registry Member Updated' }),
+    page.getByRole('button', { name: `Edit ${updatedFullName}` }),
   ).toBeVisible();
-  await expect(page.getByText('Senior Product Specialist')).toBeVisible();
+  await expect(page.getByText(updatedPosition)).toBeVisible();
   await expect(page.getByText('Administrator').last()).toBeVisible();
+  await expect(
+    page.locator('.registry-department-card').filter({
+      hasText: department.name,
+    }),
+  ).toContainText('0 members');
+  await expect(
+    page.locator('.registry-department-card').filter({
+      hasText: reassignedDepartment.name,
+    }),
+  ).toContainText('1 member');
 
   const persisted = await prisma.member.findFirst({
     where: { email },
   });
   expect(persisted).toMatchObject({
-    fullName: 'Registry Member Updated',
-    departmentId: department.id,
-    position: 'Senior Product Specialist',
+    fullName: updatedFullName,
+    departmentId: reassignedDepartment.id,
+    position: updatedPosition,
     workspaceRole: 'ADMINISTRATOR',
     status: 'DEACTIVATED',
     authUserId: null,
   });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await expect(
+    page.getByRole('heading', { name: 'Registry', exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth,
+    ),
+  ).toBe(true);
+  expect(browserErrors).toEqual([]);
 });

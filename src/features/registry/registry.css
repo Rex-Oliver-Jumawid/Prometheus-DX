@@ -389,6 +389,49 @@
   line-height: 1.35;
 }
 
+.registry-inline-action {
+  display: block;
+  margin-top: 5px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #a93f1c;
+  font-size: 6px;
+  font-weight: 750;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.registry-inline-action.warning {
+  margin-top: 0;
+  color: #8d682d;
+}
+
+.registry-assignment-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 13px 0 0;
+  padding: 13px 15px;
+  border: 1px solid rgba(174, 124, 45, 0.2);
+  border-radius: 12px;
+  background: rgba(255, 246, 225, 0.72);
+}
+
+.registry-assignment-alert strong {
+  color: #6f5123;
+  font-size: 10px;
+}
+
+.registry-assignment-alert p {
+  margin: 4px 0 0;
+  color: #8d744d;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
 .registry-member-loading {
   display: grid;
   gap: 8px;
@@ -767,6 +810,11 @@
 }
 
 @media (max-width: 680px) {
+  .registry-assignment-alert {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .registry-page {
     width: 100%;
     min-width: 0;

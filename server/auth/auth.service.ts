@@ -5,7 +5,7 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { Member } from '@prisma/client';
+import { Prisma, type Member } from '@prisma/client';
 import { createClient, type User } from '@supabase/supabase-js';
 import { PrismaService } from '../database/prisma.service';
 import { serverEnvironment } from '../config/env';
@@ -69,6 +69,18 @@ export class AuthService {
         where: { authUserId: user.id },
       });
 
+      if (
+        member?.status === 'INVITED' &&
+        normalizedEmail &&
+        user.email_confirmed_at &&
+        member.email.toLowerCase() === normalizedEmail
+      ) {
+        member = await this.prisma.member.update({
+          where: { id: member.id },
+          data: { status: 'ACTIVE', deactivatedAt: null },
+        });
+      }
+
       if (!member && normalizedEmail && user.email_confirmed_at) {
         const emailMember = await this.prisma.member.findFirst({
           where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
@@ -95,6 +107,10 @@ export class AuthService {
             member = await this.prisma.member.findUnique({
               where: { id: emailMember.id },
             });
+          } else {
+            member = await this.prisma.member.findUnique({
+              where: { authUserId: user.id },
+            });
           }
         }
       }
@@ -109,6 +125,15 @@ export class AuthService {
     } catch (error) {
       if (error instanceof ForbiddenException) {
         throw error;
+      }
+
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ForbiddenException(
+          'This account does not have access to Prometheus.',
+        );
       }
 
       throw new ServiceUnavailableException(

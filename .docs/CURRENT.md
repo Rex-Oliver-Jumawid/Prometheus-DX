@@ -38,10 +38,14 @@ Phase 0 - Foundation is also complete.
 - Phase 2 Registry is in progress.
 - The Department slice implements persisted list, create, and edit behavior, including the prototype short label, behind Administrator-only Registry APIs.
 - The member slice implements persistent listing, Department-ID assignment, invited-member creation, editing, organization role and status changes, duplicate-email protection, and backend-derived authentication linkage status.
+- The invitation slice implements retryable Brevo delivery, durable delivery evidence, Supabase password or Google account setup, and backend-authoritative linkage to the existing Member row.
+- The live first-sign-in acceptance path proves an invited Member becomes linked and active without creating a duplicate Member.
+- Registry now highlights unassigned legacy Members and opens a deliberate Department-assignment workflow.
 - The application shell has been reconciled against `.model/finalmodel.html` and Figma Registry node `11:1887`, including removal of invented collapse and duplicate top-right controls.
 - Shared navigation and content surfaces now use the intended translucent glass treatment at desktop, compact, and mobile widths.
-- The configured Supabase database has all three migrations applied.
-- `pnpm verify` passes and the live Playwright suite passes 10/10.
+- The configured Supabase database has all four current migrations applied.
+- `pnpm verify` passes with 27/27 unit tests, and the expanded live Playwright suite passes 13/13.
+- The first-linkage concurrency race is resolved and five simultaneous live `/api/me` requests were verified successfully.
 - Existing Phase 1 members intentionally retain a nullable `department_id` until the member-assignment slice provides a deliberate backfill path.
 - Project workflows are split between concise always-on rules in `AGENTS.md` and reusable procedures under `.agents/skills/`.
 - `.context/ui-reference.md` now defines `.model/finalmodel.html` as the prototype source of truth for the main application experience.
@@ -102,11 +106,13 @@ The shell mismatch is also resolved by removing UI absent from the prototype and
 
 ## Next Action
 
-Continue with the next coherent Phase 2 slice for invitation delivery and account-setup completion.
+Configure a real Brevo sender and exercise one delivered invitation through account setup.
 
-Keep Supabase authentication separate from Prometheus membership and do not mark invited members active until an authoritative auth linkage exists.
+Assign `DX User 1` to the Administrator-selected real Department through Registry.
 
-Provide a deliberate workflow for assigning the existing unassigned Phase 1 member, then evaluate tightening `members.department_id` to `NOT NULL`.
+Then confirm zero NULL Department relationships, apply the `members.department_id NOT NULL` migration, and run the complete Phase 2 acceptance gate.
+
+Do not mark Phase 2 complete while live Brevo receipt and the Department invariant remain blocked.
 
 Detailed Google, Password, or combined provider labels remain deferred until a trustworthy backend source is available.
 

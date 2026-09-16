@@ -99,4 +99,11 @@ export class RegistryController {
 
     return this.registryService.updateMember(memberId, parsed.data);
   }
+
+  @Post('members/:memberId/invitation')
+  resendMemberInvitation(
+    @Param('memberId', new ParseUUIDPipe({ version: '4' })) memberId: string,
+  ) {
+    return this.registryService.sendMemberInvitation(memberId);
+  }
 }

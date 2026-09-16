@@ -50,6 +50,11 @@ export const RegistryAuthenticationStatusSchema = z.enum([
   'LINKED',
 ]);
 
+export const RegistryInvitationDeliveryStatusSchema = z.enum([
+  'NOT_SENT',
+  'SENT',
+]);
+
 export const RegistryMemberSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
@@ -66,6 +71,8 @@ export const RegistryMemberSchema = z.object({
   workspaceRole: WorkspaceRoleSchema,
   status: MemberStatusSchema,
   authenticationStatus: RegistryAuthenticationStatusSchema,
+  invitationDeliveryStatus: RegistryInvitationDeliveryStatusSchema,
+  invitationSentAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });

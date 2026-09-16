@@ -117,6 +117,7 @@ position
 workspace_role
 status
 profile_image_path
+invitation_sent_at
 deactivated_at
 created_at
 updated_at
@@ -149,6 +150,16 @@ Member.department_id
 ```
 
 The primary Department is used for organization and reporting and does not restrict which Projects or Outcomes the Member may access.
+
+## `invitation_sent_at`
+
+Nullable UTC timestamp recording the latest invitation or account-setup email that the configured transactional email service accepted for delivery.
+
+This timestamp is delivery evidence only.
+
+It does not activate the Member and does not prove that authentication setup is complete.
+
+Only a successfully authenticated, confirmed Supabase identity linked authoritatively by the backend may move an eligible invited Member to `ACTIVE`.
 
 ## `deactivated_at`
 

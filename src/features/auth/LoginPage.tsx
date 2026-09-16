@@ -17,7 +17,7 @@ const LoginSchema = z.object({
 });
 type LoginValues = z.infer<typeof LoginSchema>;
 
-function GoogleIcon() {
+export function GoogleIcon() {
   return (
     <svg className="google-icon" viewBox="0 0 18 18" aria-hidden="true">
       <path

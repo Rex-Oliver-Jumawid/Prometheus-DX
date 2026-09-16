@@ -21,6 +21,7 @@ async function signIn(page: Page) {
   await page.getByLabel('Company email').fill(email);
   await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page).not.toHaveURL(/\/login$/, { timeout: 15_000 });
 }
 
 test('signed-out direct protected navigation returns to login', async ({
@@ -40,6 +41,23 @@ test('login validates required credentials without submitting twice', async ({
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByText('Enter your company email.')).toBeVisible();
   await expect(page.getByText('Enter your password.')).toBeVisible();
+});
+
+test('invited member account setup preserves the invited email and validates passwords', async ({
+  page,
+}) => {
+  await page.goto('/account-setup?email=Invited%40Example.com');
+  await expect(
+    page.getByRole('heading', { name: 'Set up account', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel('Invited email')).toHaveValue(
+    'invited@example.com',
+  );
+  await expect(page.getByLabel('Invited email')).toHaveAttribute('readonly');
+  await page.getByLabel('Create password').fill('password-one');
+  await page.getByLabel('Confirm password').fill('password-two');
+  await page.getByRole('button', { name: 'Create password account' }).click();
+  await expect(page.getByText('Passwords must match.')).toBeVisible();
 });
 
 test('unknown account is rejected without leaking account details', async ({
@@ -189,6 +207,155 @@ test('normal Member cannot see or open Registry', async ({ page }) => {
         exact: true,
       }),
     ).toBeVisible();
+
+    await prisma.member.update({
+      where: { id: member.id },
+      data: { workspaceRole: 'ADMINISTRATOR' },
+    });
+    await page.reload();
+    await expect(
+      page.getByRole('heading', { name: 'Registry', exact: true }),
+    ).toBeVisible();
+  } finally {
+    await prisma.member.update({
+      where: { id: member.id },
+      data: { workspaceRole: member.workspaceRole },
+    });
+  }
+});
+
+test('confirmed first sign-in links the existing invited Member without duplication', async ({
+  page,
+}) => {
+  const email = process.env.E2E_MEMBER_EMAIL;
+  const password = process.env.E2E_MEMBER_PASSWORD;
+  test.skip(
+    !hasSupabaseBrowserConfig || !email || !password,
+    'Requires Supabase browser auth config and E2E member credentials.',
+  );
+
+  const member = await prisma.member.findFirst({
+    where: { email: { equals: email!, mode: 'insensitive' } },
+  });
+  if (!member?.authUserId) {
+    throw new Error('E2E member must begin linked to a Supabase identity.');
+  }
+
+  try {
+    await prisma.member.update({
+      where: { id: member.id },
+      data: {
+        authUserId: null,
+        status: 'INVITED',
+        workspaceRole: 'MEMBER',
+        deactivatedAt: null,
+      },
+    });
+
+    await page.goto(`/account-setup?email=${encodeURIComponent(email!)}`);
+    await page.getByRole('link', { name: 'Sign in' }).click();
+    await page.getByLabel('Company email').fill(email!);
+    await page.getByLabel('Password', { exact: true }).fill(password!);
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await expect(page).not.toHaveURL(/\/login$/, { timeout: 15_000 });
+    await expect(
+      page.getByRole('navigation', { name: 'Primary navigation' }),
+    ).toBeVisible();
+
+    const linked = await prisma.member.findUnique({
+      where: { id: member.id },
+    });
+    expect(linked).toMatchObject({
+      id: member.id,
+      authUserId: member.authUserId,
+      status: 'ACTIVE',
+      workspaceRole: 'MEMBER',
+    });
+    expect(
+      await prisma.member.count({
+        where: { email: { equals: email!, mode: 'insensitive' } },
+      }),
+    ).toBe(1);
+
+    await page.reload();
+    await expect(
+      page.getByRole('navigation', { name: 'Primary navigation' }),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Registry' })).toHaveCount(0);
+    await page.goto('/registry');
+    await expect(
+      page.getByRole('heading', {
+        name: 'Registry is for administrators',
+        exact: true,
+      }),
+    ).toBeVisible();
+  } finally {
+    await prisma.member.update({
+      where: { id: member.id },
+      data: {
+        authUserId: member.authUserId,
+        status: member.status,
+        workspaceRole: member.workspaceRole,
+        deactivatedAt: member.deactivatedAt,
+      },
+    });
+  }
+});
+
+test('administrator role downgrade takes effect after refresh and at the API', async ({
+  page,
+}) => {
+  const email = process.env.E2E_MEMBER_EMAIL;
+  const password = process.env.E2E_MEMBER_PASSWORD;
+  test.skip(
+    !hasSupabaseBrowserConfig || !email || !password,
+    'Requires Supabase browser auth config and E2E member credentials.',
+  );
+
+  const member = await prisma.member.findFirst({
+    where: { email: { equals: email!, mode: 'insensitive' } },
+  });
+  if (!member) throw new Error('E2E member record was not found.');
+  test.skip(
+    member.workspaceRole !== 'ADMINISTRATOR',
+    'Role downgrade acceptance starts with an Administrator.',
+  );
+
+  try {
+    await signIn(page);
+    await page.goto('/registry');
+    await expect(
+      page.getByRole('heading', { name: 'Registry', exact: true }),
+    ).toBeVisible();
+
+    await prisma.member.update({
+      where: { id: member.id },
+      data: { workspaceRole: 'MEMBER' },
+    });
+    await page.reload();
+    await expect(
+      page.getByRole('heading', {
+        name: 'Registry is for administrators',
+        exact: true,
+      }),
+    ).toBeVisible();
+
+    const status = await page.evaluate(async () => {
+      const storageKey = Object.keys(localStorage).find(
+        (key) => key.startsWith('sb-') && key.endsWith('-auth-token'),
+      );
+      const session = storageKey
+        ? (JSON.parse(localStorage.getItem(storageKey) ?? '{}') as {
+            access_token?: string;
+          })
+        : {};
+      return fetch('/api/registry/members', {
+        headers: session.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : {},
+      }).then((response) => response.status);
+    });
+    expect(status).toBe(403);
   } finally {
     await prisma.member.update({
       where: { id: member.id },
@@ -213,18 +380,29 @@ test('deactivated Prometheus member is denied after authentication', async ({
   if (!member) throw new Error('E2E member record was not found.');
 
   try {
+    await signIn(page);
+    await expect(page).not.toHaveURL(/\/login$/);
     await prisma.member.update({
       where: { id: member.id },
       data: { status: 'DEACTIVATED', deactivatedAt: new Date() },
     });
-
-    await signIn(page);
+    await page.reload();
     await expect(page).toHaveURL(/\/access-denied$/);
     await expect(
       page.getByRole('heading', {
         name: 'This account can’t enter Prometheus',
         exact: true,
       }),
+    ).toBeVisible();
+
+    await prisma.member.update({
+      where: { id: member.id },
+      data: { status: 'ACTIVE', deactivatedAt: null },
+    });
+    await page.reload();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(
+      page.getByRole('navigation', { name: 'Primary navigation' }),
     ).toBeVisible();
   } finally {
     await prisma.member.update({

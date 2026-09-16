@@ -104,6 +104,8 @@ The slice includes department listing, persisted creation, persisted editing, me
 
 The second vertical slice adds member listing, Department-ID assignment, invited-member creation, member editing, organization role changes, member status changes, and backend-derived authentication linkage status.
 
+The third vertical slice adds Brevo invitation delivery, retryable delivery status, password or Google account setup through Supabase, and backend-authoritative first-sign-in linkage to the existing Member row.
+
 ## Database Changes
 
 Migration: `prisma/migrations/20260916000000_registry_departments/migration.sql`
@@ -124,6 +126,14 @@ A pre-migration query confirmed that the configured database contained no confli
 
 The migration has been applied to the configured Supabase database and `prisma migrate status` reports the schema as up to date.
 
+Migration: `prisma/migrations/20260916010000_member_invitation_delivery/migration.sql`
+
+The migration adds nullable `members.invitation_sent_at` so Registry can distinguish a successful provider-accepted invitation from an invitation that still needs delivery.
+
+The field does not control activation and is not treated as proof of account setup.
+
+The migration was applied to the configured Supabase database without modifying the existing Member row.
+
 ## API Changes
 
 All Registry endpoints remain protected by `SupabaseAuthGuard`, `RolesGuard`, and the class-level `ADMINISTRATOR` workspace-role requirement.
@@ -136,10 +146,19 @@ The current slices add:
 - `GET /api/registry/members`
 - `POST /api/registry/members`
 - `PATCH /api/registry/members/:memberId`
+- `POST /api/registry/members/:memberId/invitation`
 
 Create and edit requests use the shared Zod department schema and reject blank department names before persistence.
 
 Member writes validate the Department ID, normalize email input, enforce case-insensitive email uniqueness at both service and database boundaries, and prevent an unlinked invited member from being marked active.
+
+Member creation attempts invitation delivery after the authorized Member row is persisted.
+
+If the external provider is unavailable, the single Member row remains `INVITED`, delivery remains visibly pending, and an Administrator may retry without creating another Member.
+
+The resend endpoint rejects linked and deactivated Members.
+
+The authentication service links only a confirmed Supabase identity whose normalized email matches an eligible unlinked Member, updates that same row to `ACTIVE`, and continues resolving repeated requests by stable `auth_user_id`.
 
 The frontend API helper now supports JSON request bodies and explicit HTTP methods while preserving the existing response-schema validation and API error handling.
 
@@ -163,9 +182,15 @@ New members begin in `INVITED` state and must use a persisted Department ID.
 
 Existing Phase 1 members remain visible as unassigned until an Administrator edits their record.
 
+Unassigned legacy Members now produce a prominent Registry warning and a direct `Assign department` action that opens the existing edit workflow.
+
 Authentication status is derived on the backend from the stable Supabase `auth_user_id` linkage and is displayed only as `Linked` or `Setup pending`.
 
 Provider combinations such as Google, Password, or Google plus Password are not fabricated because the current backend does not have a trustworthy provider-detail source.
+
+Setup-pending Members show only backend-derived invitation delivery state and expose a send or resend action.
+
+`/account-setup` preserves the invited email and supports Supabase password signup or Google authentication without creating a Prometheus Member in the browser.
 
 The application shell was reconciled against the full Registry Figma frame and `.model/finalmodel.html`.
 
@@ -177,7 +202,9 @@ At narrow widths the desktop rail becomes an overlay drawer opened by the existi
 
 ## Environment / Configuration Changes
 
-No new environment variables are required for the department slice.
+Invitation delivery uses server-only `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`, and `APP_URL` configuration.
+
+These values are never exposed through `VITE_*` variables or API responses.
 
 The existing `E2E_MEMBER_EMAIL` and `E2E_MEMBER_PASSWORD` credentials are reused by the live Registry browser acceptance test when configured.
 
@@ -218,6 +245,47 @@ Verification completed on 2026-09-16:
 - Authenticated rendered inspection passed at 1244 by 642, 900 by 700, and 390 by 844 viewports with no document-level horizontal overflow.
 - The mobile navigation overlay and internal member-table scrolling were inspected after transition completion.
 - Department and member dialogs were verified for initial focus, Escape dismissal, backdrop dismissal, and focus restoration to the invoking control.
+
+Additional verification completed during the invitation slice on 2026-09-16:
+
+- Prisma generation and validation passed with the invitation field.
+- Type checking and lint passed after the invitation and account-setup changes.
+- Unit tests passed 27/27, including first linkage, concurrent first-link recovery, confirmed-email requirements, conflicting linkage denial, deactivated-member denial, delivery failure, retry, and sensitive-provider-error handling.
+- The additive invitation migration applied successfully to the configured Supabase database.
+- The pre-change Playwright regression passed 10/10 after the migration and invitation implementation.
+- The focused live first-linkage browser path passed and proved that the same invited Member row became linked and active with no duplicate email row.
+- The focused live deactivation and reactivation browser path passed.
+- The expanded full Playwright run passed 13/13, including account-setup validation, first linkage without duplication, role upgrade and downgrade after refresh, direct API denial, deactivation and reactivation, Department reassignment, long member metadata, mobile overflow, and unexplained-console-error checks.
+- Final `pnpm exec prisma migrate status` reported four migrations and an up-to-date database.
+
+### Current Phase 2 acceptance matrix
+
+| ID | Result | Evidence or blocker |
+| --- | --- | --- |
+| F2-01 | PASS | Department creation persists after refresh. |
+| F2-02 | PASS | Blank-name validation prevents submission. |
+| F2-03 | N/A | Canonical requirements do not forbid duplicate Department names. |
+| F2-04 | PASS | Department edits persist after refresh. |
+| F2-05 | PASS | Department member counts update after Member reassignment. |
+| F2-06 | PASS | Valid Member creation persists in `INVITED` state. |
+| F2-07 | PASS | Malformed email is rejected before submission. |
+| F2-08 | PASS | Case-insensitive duplicate Member email returns `409`. |
+| F2-09 | PASS | Department reassignment persists and updates both Department counts. |
+| F2-10 | PASS | `MEMBER` organization role persists. |
+| F2-11 | PASS | Upgrade to `ADMINISTRATOR` takes effect after refresh. |
+| F2-12 | PASS | Long name and position edits persist. |
+| F2-13 | PASS | Deactivation during an authenticated session denies workspace access after refresh. |
+| F2-14 | PASS | Reactivation restores workspace access after refresh. |
+| F2-15 | PASS | Unlinked invited Member displays `Setup pending` and backend-derived delivery state. |
+| F2-16 | BLOCKED | Real Supabase first linkage passes without duplication, but literal Brevo delivery and receipt cannot run until sender configuration exists. |
+| F2-17 | PASS | Long Member metadata remains usable at the 390 by 844 mobile viewport with no document overflow. |
+| F2-18 | PASS | Registry navigation is absent for `MEMBER`. |
+| F2-19 | PASS | Direct `/registry` navigation is denied for `MEMBER`. |
+| F2-20 | PASS | Direct Registry API request returns `403` for `MEMBER`. |
+| F2-21 | BLOCKED | A persisted Project Lead relationship does not exist before Phase 3; canonical role separation and Member denial are verified without implementing Phase 3. |
+| F2-22 | PASS | Administrator accesses Registry through route and API. |
+| F2-23 | PASS | Administrator downgrade removes Registry route and API access after refresh. |
+| F2-24 | PASS | Deactivation during a session denies access after refresh. |
 
 # Decision & Challenge Log
 
@@ -590,19 +658,136 @@ Add provider-detail labels only after a backend integration can query them autho
 - `shared/contracts/registry.ts`
 - `tests/e2e/registry-members.spec.ts`
 
+### P2-D08 - Persist delivery evidence without coupling it to activation
+
+**Status:** Accepted
+
+**Area:** Backend, Database, Security, Frontend
+
+**Impact:** High
+
+#### What gave us a hard time
+
+Invitation delivery is an external side effect that can fail after the authorized Member row is created, while account activation must remain a separate backend-authoritative authentication decision.
+
+#### Root cause / constraint
+
+Email delivery and PostgreSQL cannot share one transaction, and treating an invitation record or provider request as activation would collapse authentication into membership authorization.
+
+#### Options considered
+
+1. Roll back Member creation whenever email delivery fails.
+2. Mark the Member active when the invitation is created or accepted by Brevo.
+3. Persist the invited Member, record only successful delivery time, expose retry, and activate only after confirmed Supabase authentication is linked.
+
+#### Proposed solution
+
+Use nullable `invitation_sent_at` as delivery evidence, keep `status = INVITED` after delivery, and make resend safe for the same Member record.
+
+#### Decision
+
+Registry preserves the single authorized Member row across delivery failures, displays `Sent` or `Not sent` independently from `Linked` or `Setup pending`, and delegates activation solely to the authenticated backend linkage flow.
+
+#### Why we chose it
+
+This design is recoverable when Brevo is unavailable, does not create duplicate memberships, and keeps all security boundaries explicit.
+
+#### Result
+
+The UI can retry delivery, `/account-setup` supports Supabase password or Google setup, and a live first-sign-in test proved the existing invited Member becomes linked and active without duplication.
+
+#### What we learned
+
+External-delivery state and access lifecycle state must remain separate even when they are presented in one administrator workflow.
+
+#### Next approach
+
+Use the same explicit side-effect status pattern for later external integrations instead of inferring business state from request attempts.
+
+#### Related changes
+
+- `prisma/migrations/20260916010000_member_invitation_delivery/migration.sql`
+- `server/registry/invitation.service.ts`
+- `server/registry/registry.service.ts`
+- `server/auth/auth.service.ts`
+- `src/features/auth/AccountSetupPage.tsx`
+- `tests/e2e/auth-shell.spec.ts`
+
+### P2-D09 - Recover the losing request in concurrent first linkage
+
+**Status:** Resolved
+
+**Area:** Backend, Security, Testing
+
+**Impact:** High
+
+#### What gave us a hard time
+
+The focused first-linkage browser test passed, while the same path intermittently reached Access Denied during the full serial suite.
+
+#### Root cause / constraint
+
+Two near-simultaneous `/api/me` requests could both read an unlinked invited Member.
+
+The first request won the guarded update and linked the row.
+
+The second request received an update count of zero and denied access without checking whether the correct Supabase identity had just been linked by the winning request.
+
+#### Options considered
+
+1. Serialize browser requests or weaken the test.
+2. Add a longer frontend retry delay.
+3. Preserve the atomic update and make the losing backend request re-resolve by authoritative `auth_user_id`.
+
+#### Proposed solution
+
+After a zero-count guarded update, query the Member by the verified Supabase user ID and continue only if that authoritative linkage now exists and is active.
+
+#### Decision
+
+The authentication service now recovers from the expected concurrent winner without accepting any different identity or bypassing Member status checks.
+
+#### Why we chose it
+
+Concurrency belongs at the backend data boundary, and frontend timing must not determine whether a correctly linked user is admitted.
+
+#### Result
+
+Five concurrent live `/api/me` requests all returned 200, the Member linked once, and the complete Playwright suite passed 13/13 from fresh servers.
+
+#### What we learned
+
+An atomic compare-and-update needs an explicit idempotent read-after-loss path when multiple legitimate requests may initiate the same linkage.
+
+#### Next approach
+
+Design future first-write identity transitions to be idempotent under concurrent authenticated requests from the start.
+
+#### Related changes
+
+- `server/auth/auth.service.ts`
+- `server/auth/auth.service.test.ts`
+- `tests/e2e/auth-shell.spec.ts`
+
 ## Known Limitations
 
-Invitation email delivery and account-setup completion are not implemented yet.
+Live Brevo delivery is not yet accepted because the configured environment does not contain Brevo sender credentials or `APP_URL`.
+
+F2-16 is therefore verified through real Supabase first linkage but remains blocked for literal receipt of the Brevo invitation email.
 
 Detailed authentication-provider combinations are unresolved because the current backend only has the stable Supabase user linkage.
 
-Existing Phase 1 Member rows may have `department_id = NULL` until the next Registry slice assigns them deliberately.
+The single existing Phase 1 Member still has `department_id = NULL` because no real Department exists and an arbitrary Department must not be invented.
+
+F2-21 cannot be exercised with a persisted non-admin Project Lead until Phase 3 introduces the Project Lead relationship.
+
+The Phase 2 authorization boundary is nevertheless covered by the canonical two-value organization role schema and live Member route/API denial, because Project Lead is not an organization role and cannot satisfy `RolesGuard`.
 
 The live Registry E2E tests require configured Supabase browser credentials and an Administrator member account, so credential-free CI skips those acceptance paths.
 
 ## Technical Debt
 
-The nullable `members.department_id` relationship is intentional transitional debt and should be revisited before Phase 2 exit.
+The nullable `members.department_id` relationship remains transitional debt until the Administrator supplies and persists the Member's real Department.
 
 The current live E2E setup still depends on one mutable shared account and should move to dedicated role-specific fixtures.
 
@@ -618,11 +803,11 @@ The Department entity is a useful first persistence boundary because later membe
 
 ## Recommendations / Next Approach
 
-- Implement real invitation delivery and account-setup completion without weakening the separation between Supabase authentication and Prometheus membership.
-- Provide an Administrator workflow to assign the existing unassigned Phase 1 member, then evaluate the follow-up `department_id NOT NULL` migration.
+- Configure Brevo and exercise one real invitation delivery through account setup.
+- Use the new Administrator assignment action to place the existing Member in a real Department, then apply the follow-up `department_id NOT NULL` migration.
 - Add authoritative authentication-provider detail only if the backend can obtain it from Supabase.
-- Complete the remaining Phase 2 activation, deactivation, and project-impact acceptance cases as their dependent project records become available.
-- Introduce dedicated role-specific E2E fixtures before the complete Phase 2 acceptance run.
+- Keep F2-21 blocked rather than creating Phase 3 Project persistence solely for a Phase 2 fixture.
+- After the two external decisions are resolved, rerun `pnpm verify`, `pnpm test:e2e`, migration status, and the remaining acceptance checks before marking the phase complete.
 
 ## Phase Exit Result
 

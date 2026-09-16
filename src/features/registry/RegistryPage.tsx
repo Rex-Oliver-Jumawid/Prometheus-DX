@@ -634,6 +634,24 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
     },
   });
 
+  const resendInvitation = useMutation({
+    mutationFn: (memberId: string) =>
+      apiFetch(
+        `/registry/members/${memberId}/invitation`,
+        RegistryMemberSchema,
+        { accessToken, method: 'POST' },
+      ),
+    onSuccess: (savedMember) => {
+      queryClient.setQueryData<RegistryMember[]>(
+        membersQueryKey,
+        (current = []) =>
+          current.map((member) =>
+            member.id === savedMember.id ? savedMember : member,
+          ),
+      );
+    },
+  });
+
   const departmentCount = departments.data?.length ?? 0;
   const totalAssignedMembers = useMemo(
     () =>
@@ -646,6 +664,8 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
   const administratorCount =
     members.data?.filter((member) => member.workspaceRole === 'ADMINISTRATOR')
       .length ?? 0;
+  const unassignedMembers =
+    members.data?.filter((member) => !member.departmentId) ?? [];
 
   const openCreate = () => {
     saveDepartment.reset();
@@ -878,82 +898,147 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
           )}
 
           {members.isSuccess && members.data.length > 0 && (
-            <div className="registry-table-wrap">
-              <table className="registry-members-table">
-                <thead>
-                  <tr>
-                    <th>Member</th>
-                    <th>Department</th>
-                    <th>Position</th>
-                    <th>Role</th>
-                    <th>Access</th>
-                    <th>Authentication</th>
-                    <th>
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {members.data.map((member) => (
-                    <tr key={member.id}>
-                      <td>
-                        <div className="registry-member-identity">
-                          <span>{memberInitials(member.fullName)}</span>
-                          <div>
-                            <strong>{member.fullName}</strong>
-                            <small>{member.email}</small>
-                          </div>
-                        </div>
-                      </td>
-                      <td>{member.department?.name ?? 'Unassigned'}</td>
-                      <td>{member.position ?? 'Not set'}</td>
-                      <td>
-                        <span className="registry-badge role">
-                          {member.workspaceRole === 'ADMINISTRATOR'
-                            ? 'Administrator'
-                            : 'Member'}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className={`registry-badge status ${member.status.toLowerCase()}`}
-                        >
-                          {member.status === 'DEACTIVATED'
-                            ? 'Deactivated'
-                            : member.status === 'INVITED'
-                              ? 'Invited'
-                              : 'Active'}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className={`registry-auth-status ${member.authenticationStatus.toLowerCase()}`}
-                        >
-                          {member.authenticationStatus === 'LINKED'
-                            ? 'Linked'
-                            : 'Setup pending'}
-                        </span>
-                        <small className="registry-auth-caption">
-                          {member.authenticationStatus === 'LINKED'
-                            ? 'Authentication identity connected'
-                            : 'Waiting for first account setup'}
-                        </small>
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className="registry-edit-button"
-                          onClick={() => openEditMember(member)}
-                          aria-label={`Edit ${member.fullName}`}
-                        >
-                          Edit
-                        </button>
-                      </td>
+            <>
+              {unassignedMembers.length > 0 && (
+                <div className="registry-assignment-alert" role="status">
+                  <div>
+                    <strong>
+                      {unassignedMembers.length}{' '}
+                      {unassignedMembers.length === 1
+                        ? 'member needs'
+                        : 'members need'}{' '}
+                      a department
+                    </strong>
+                    <p>
+                      Assign each legacy Member deliberately before the
+                      Department relationship can become required.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="registry-secondary-button"
+                    onClick={() => openEditMember(unassignedMembers[0])}
+                  >
+                    Assign department
+                  </button>
+                </div>
+              )}
+              {resendInvitation.isError && (
+                <div className="registry-form-error" role="alert">
+                  {messageFromError(resendInvitation.error)}
+                </div>
+              )}
+              <div className="registry-table-wrap">
+                <table className="registry-members-table">
+                  <thead>
+                    <tr>
+                      <th>Member</th>
+                      <th>Department</th>
+                      <th>Position</th>
+                      <th>Role</th>
+                      <th>Access</th>
+                      <th>Authentication</th>
+                      <th>
+                        <span className="sr-only">Actions</span>
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {members.data.map((member) => (
+                      <tr key={member.id}>
+                        <td>
+                          <div className="registry-member-identity">
+                            <span>{memberInitials(member.fullName)}</span>
+                            <div>
+                              <strong>{member.fullName}</strong>
+                              <small>{member.email}</small>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          {member.department?.name ?? (
+                            <button
+                              type="button"
+                              className="registry-inline-action warning"
+                              onClick={() => openEditMember(member)}
+                            >
+                              Assign department
+                            </button>
+                          )}
+                        </td>
+                        <td>{member.position ?? 'Not set'}</td>
+                        <td>
+                          <span className="registry-badge role">
+                            {member.workspaceRole === 'ADMINISTRATOR'
+                              ? 'Administrator'
+                              : 'Member'}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className={`registry-badge status ${member.status.toLowerCase()}`}
+                          >
+                            {member.status === 'DEACTIVATED'
+                              ? 'Deactivated'
+                              : member.status === 'INVITED'
+                                ? 'Invited'
+                                : 'Active'}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className={`registry-auth-status ${member.authenticationStatus.toLowerCase()}`}
+                          >
+                            {member.authenticationStatus === 'LINKED'
+                              ? 'Linked'
+                              : 'Setup pending'}
+                          </span>
+                          <small className="registry-auth-caption">
+                            {member.authenticationStatus === 'LINKED'
+                              ? 'Authentication identity connected'
+                              : member.invitationDeliveryStatus === 'SENT'
+                                ? 'Invitation delivered; waiting for account setup'
+                                : 'Invitation not delivered'}
+                          </small>
+                          {member.authenticationStatus === 'SETUP_PENDING' &&
+                            member.status !== 'DEACTIVATED' && (
+                              <button
+                                type="button"
+                                className="registry-inline-action"
+                                disabled={
+                                  resendInvitation.isPending &&
+                                  resendInvitation.variables === member.id
+                                }
+                                onClick={() => {
+                                  resendInvitation.reset();
+                                  resendInvitation.mutate(member.id);
+                                }}
+                              >
+                                {resendInvitation.isPending &&
+                                resendInvitation.variables === member.id
+                                  ? 'Sending...'
+                                  : member.invitationDeliveryStatus === 'SENT'
+                                    ? 'Resend invitation'
+                                    : 'Send invitation'}
+                              </button>
+                            )}
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="registry-edit-button"
+                            onClick={() => openEditMember(member)}
+                            aria-label={`Edit ${member.fullName}`}
+                          >
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </section>
       </div>
