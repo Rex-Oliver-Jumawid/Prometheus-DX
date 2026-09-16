@@ -38,7 +38,10 @@ Phase 0 - Foundation is also complete.
 - Phase 2 Registry is in progress.
 - The Department slice implements persisted list, create, and edit behavior, including the prototype short label, behind Administrator-only Registry APIs.
 - The member slice implements persistent listing, Department-ID assignment, invited-member creation, editing, organization role and status changes, duplicate-email protection, and backend-derived authentication linkage status.
-- The invitation slice implements retryable Brevo delivery, durable delivery evidence, Supabase password or Google account setup, and backend-authoritative linkage to the existing Member row.
+- The invitation slice implements retryable Brevo delivery, durable delivery evidence, Supabase account setup, and backend-authoritative linkage to the existing Member row.
+- Invitation account setup now routes by the invited email domain: exact `@gmail.com` invitations show Google authentication only, while all other domains show password creation only.
+- The canonical account-setup workflow and tech-stack documentation were updated to match that routing decision.
+- Playwright coverage now checks both Gmail and non-Gmail account-setup surfaces, but the latest routing changes have not yet been run locally after the repository update.
 - The live first-sign-in acceptance path proves an invited Member becomes linked and active without creating a duplicate Member.
 - The Brevo API v3 key was rotated after exposure, and an active verified `Prometheus-DX` sender remains configured locally.
 - The retained `Brevo Acceptance Test` Member was resent through Registry, `invitation_sent_at` persisted, the UI changed to `Resend invitation`, and the invitation arrived in Gmail.
@@ -52,7 +55,7 @@ Phase 0 - Foundation is also complete.
 - Registry dialogs now render through a body-level portal so their fixed backdrop covers the viewport instead of being clipped by the workspace glass stacking context.
 - Add/Edit Member and Add/Edit Department share the compact liquid-glass treatment and were visually checked at desktop and narrow viewports.
 - The configured Supabase database has all four current migrations applied.
-- `pnpm verify` passes with 27/27 unit tests, and the expanded live Playwright suite passes 13/13.
+- The previous repository verification baseline passed with 27/27 unit tests and the expanded live Playwright suite passed 13/13 before the latest account-setup routing change.
 - The first-linkage concurrency race is resolved and five simultaneous live `/api/me` requests were verified successfully.
 - Existing Phase 1 members intentionally retain a nullable `department_id` until the member-assignment slice provides a deliberate backfill path.
 - Project workflows are split between concise always-on rules in `AGENTS.md` and reusable procedures under `.agents/skills/`.
@@ -112,9 +115,17 @@ The Department `Short label` mismatch is resolved across the canonical data mode
 
 The shell mismatch is also resolved by removing UI absent from the prototype and Figma and aligning the navigation hierarchy and shared glass surfaces.
 
+The account-setup workflow now follows the explicit product decision that Gmail invitations use Google setup while non-Gmail invitations use password setup.
+
 ## Next Action
 
-Open the received `Brevo Acceptance Test` account-setup link and complete Supabase authentication with the invited email.
+Pull the latest account-setup routing changes locally and restart the development server.
+
+Run the focused account-setup browser checks, then reopen the received `Brevo Acceptance Test` setup link.
+
+Because that invitation uses `@gmail.com`, verify that only `Continue with Google` is offered and that password creation is absent.
+
+Complete Google authentication with the invited Gmail address.
 
 Verify normalized-email linkage to the existing Member row, no duplicate Member, active linked state, and subsequent resolution through `auth_user_id`.
 
