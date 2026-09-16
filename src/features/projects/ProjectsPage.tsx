@@ -7,7 +7,7 @@ import { apiFetch } from '../../lib/api';
 import { CreateProjectDialog } from './CreateProjectDialog';
 import './projects.css';
 
-const projectsKey = ['projects'] as const;
+const projectsKey = ['projects', 'list'] as const;
 function errorMessage(error: unknown) { return error instanceof Error ? error.message : 'Something went wrong. Please try again.'; }
 function statusLabel(status: string) { return status.split('_').map((word) => word[0] + word.slice(1).toLowerCase()).join(' '); }
 

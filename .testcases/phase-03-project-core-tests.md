@@ -164,11 +164,35 @@ Member A signs in
 
 ## Phase 3 Exit Checklist
 
-- [ ] Deferred F2-21 Registry regression passes with a persisted non-admin Project Lead.
-- [ ] All projects are visible to authorized users.
-- [ ] Regular members can create projects.
-- [ ] Creator and Lead are stored separately.
-- [ ] Creator does not gain authority automatically.
-- [ ] Administrator does not gain Project Lead authority automatically.
-- [ ] Status permissions are correct.
-- [ ] Direct project routes and refresh work.
+- [x] Deferred F2-21 Registry regression passes with a persisted non-admin Project Lead.
+- [x] All projects are visible to authorized users.
+- [x] Regular members can create projects.
+- [x] Creator and Lead are stored separately.
+- [x] Creator does not gain authority automatically.
+- [x] Administrator does not gain Project Lead authority automatically.
+- [x] Status permissions are correct.
+- [x] Direct project routes and refresh work.
+
+## Slice 3 Browser Verification - 2026-09-16
+
+F3-16 through F3-26 are `PASS` through `tests/e2e/projects.spec.ts` under the Playwright-owned API lifecycle.
+
+F3-16 verifies an unrelated active Member can load a persisted Project.
+
+F3-17 and F3-24 verify the same unrelated Member receives `403` from the status API.
+
+F3-18 and F3-19 verify an Administrator and creator without the Project Lead relationship receive no status control or API authority.
+
+F3-20 verifies direct `/projects/:projectId` navigation loads the correct Project.
+
+F3-21 verifies nonexistent and malformed IDs show the controlled not-found state.
+
+F3-22, F3-23, and F3-25 verify Lead changes to `IN_PROGRESS` and `DONE`, persistence after refresh, and a non-null `doneAt` with the expected status history.
+
+F3-26 verifies `ARCHIVED` is not available for manual selection.
+
+The focused Projects suite passed 5/5.
+
+F2-21 passed separately in `tests/e2e/auth-shell.spec.ts` with absent Registry navigation, denied direct route, and `403` Registry API response for a persisted non-admin Project Lead.
+
+The full Playwright regression passed 20/20.

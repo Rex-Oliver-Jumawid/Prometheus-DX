@@ -9,7 +9,7 @@ import { useAuth } from '../auth/auth-context';
 import { ApiRequestError, apiFetch } from '../../lib/api';
 import './projects.css';
 
-const projectsKey = ['projects'] as const;
+const projectsKey = ['projects', 'list'] as const;
 const statusOptions: ProjectStatus[] = ['PLANNING', 'IN_PROGRESS', 'DONE'];
 
 function statusLabel(status: ProjectStatus) {
@@ -38,7 +38,7 @@ export function ProjectOverviewPage() {
   const { member, session } = useAuth();
   const queryClient = useQueryClient();
   const accessToken = session?.access_token;
-  const detailKey = ['projects', projectId] as const;
+  const detailKey = ['projects', 'detail', projectId] as const;
   const project = useQuery({
     queryKey: detailKey,
     queryFn: ({ signal }) =>

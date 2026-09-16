@@ -10,6 +10,8 @@ Canonical requirements belong in `.context/`.
 
 Phase 3 - Project Core
 
+Status: Complete.
+
 ## Previous Phase
 
 Phase 2 - Registry
@@ -148,13 +150,25 @@ The full Playwright suite passed 16/16 tests, including the Project creation tra
 
 The earlier transient Project transaction expiration and Registry Escape assertion did not reproduce in the final full regression.
 
+## Completed Phase 3 Slice 3
+
+The Project Overview, direct Project routes, Lead-only status control, controlled not-found behavior, `doneAt`, and Project status history are verified.
+
+The direct-detail loading hang previously reported could not be reproduced under a Playwright-owned API lifecycle.
+
+The focused Projects suite passed 5/5, F2-21 passed, and the full Playwright suite passed 20/20.
+
+`pnpm prisma migrate status` reported all six migrations applied and the schema up to date.
+
+`pnpm verify` passed with 54 unit tests and both production builds.
+
+The Projects E2E fixture prefix is `phase3-slice3-` and list/detail React Query keys are separate so status mutation invalidates only the list query.
+
 ## Next Action
 
-Implement Phase 3 Slice 3 only: `/projects/:projectId`, Project Overview, Project Lead and Department display, Project status controls, Lead-only status mutation permissions, and direct-route/not-found behavior.
+Phase 4 is unblocked but has not been started.
 
-Phase 3 Slice 3 is unblocked by the completed regression gate.
-
-Do not begin Stages, Outcomes, Project Membership, Outcome Membership, Tasks, Submissions, Scheduling, Chat, Realtime, or Phase 4 structures.
+Before beginning it, use the Phase Delivery and Database Change skills, read the Phase 4 canonical sources, and create the Phase 4 journal entry.
 
 ## Handoff Maintenance Rule
 

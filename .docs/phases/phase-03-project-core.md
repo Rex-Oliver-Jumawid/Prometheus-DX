@@ -2,9 +2,9 @@
 
 ## Status
 
-**In progress - Slice 1 complete**
+**Complete - 2026-09-16**
 
-Phase 3 Slice 1 - Project persistence and authorization - is complete.
+All three planned Phase 3 slices are complete and verified.
 
 Phase 2 - Registry is complete.
 
@@ -254,3 +254,56 @@ Do not implement `/projects/:projectId` overview or status controls until Slice 
 Implement Slice 3 only: `/projects/:projectId`, Project Overview, Lead and Department display, Project status controls, Lead-only status mutation permissions, and direct route/not-found behavior.
 
 Do not begin Phase 4 relationships or workflow structures.
+
+## Slice 3 Delivery - 2026-09-16
+
+### Implemented
+
+- Added the `/projects/:projectId` Project Overview backed by the existing protected Project-detail API.
+- Added Project Lead, creator, associated Department, status, timeline, and `doneAt` presentation.
+- Added Lead-only Project status changes with server authorization and persisted status history.
+- Added controlled nonexistent and invalid Project-route states.
+- Preserved the existing active-member guard, direct query implementation, Registry behavior, connection configuration, and timeouts.
+- Renamed the focused E2E fixture run identifier from `phase3-slice2-` to `phase3-slice3-`.
+- Separated React Query list and detail keys as `['projects', 'list']` and `['projects', 'detail', projectId]` so a successful status mutation invalidates only the list.
+
+### P3-D04 - Treat the direct-detail loading report as transient unless it reproduces under Playwright ownership
+
+**What gave us a hard time:** A prior direct `/projects/:projectId` browser loading report was observed while an independently started development API already occupied port 3001.
+
+**Root cause or constraint:** The isolated diagnostic against that manually running API returned 200 and rendered the Project, but it did not prove the normal Playwright-owned API lifecycle.
+
+**Options considered:** Change database or timeout configuration, add an HTTP timeout, attribute the failure to Prisma, or reproduce under Playwright's isolated API process first.
+
+**Final decision:** Stop the confirmed repository development API, leave `playwright.config.ts` with API `reuseExistingServer: false`, and run the focused suite under Playwright ownership before changing production code.
+
+**Why it was chosen:** The request path must establish an actual stalled boundary before a connection, authentication, Prisma, or response-handling cause can be claimed.
+
+**Observed result:** The focused Projects suite passed 5/5 under a Playwright-owned API, including direct Project loads, status persistence, authorization denial, refresh, and controlled not-found behavior.
+
+**What was learned:** A port conflict can invalidate the intended E2E lifecycle, but it is not evidence that the Project detail request or database path is defective.
+
+**Next approach:** If the symptom recurs under a Playwright-owned API, add temporary boundary timing around guard, Auth, Member lookup, controller, Project query, and response handling, then remove it after identifying the last completed boundary.
+
+**Related files:** `playwright.config.ts`, `tests/e2e/projects.spec.ts`, `server/auth/`, and `server/projects/`.
+
+### Verification
+
+- The initially occupied port 3001 was confirmed as a repository `pnpm dev:api` watch process and was stopped before focused E2E.
+- `pnpm exec playwright test tests/e2e/projects.spec.ts`: passed 5/5 under Playwright-owned API lifecycle.
+- The direct-detail hang did not reproduce and no root cause or production fix was claimed.
+- The focused test assertion for Project Lead display was scoped to the Project ownership card because the intentional fixture uses the same Member as both creator and Lead.
+- `pnpm exec playwright test tests/e2e/auth-shell.spec.ts -g "non-admin Project Lead cannot see or open Registry"`: passed 1/1.
+- `pnpm test:e2e`: passed 20/20.
+- `pnpm prisma migrate status`: six migrations found and database schema up to date.
+- `pnpm verify`: passed with project doctor, lint warning only, typecheck, 54 unit tests, and both production builds.
+
+### Phase 3 Exit
+
+Phase 3 is formally complete.
+
+F3-16 through F3-26 are browser-verified by `tests/e2e/projects.spec.ts` against real authenticated routes, persistence, and status API authorization.
+
+F2-21 is verified separately with a persisted non-admin Project Lead fixture.
+
+Phase 4 is unblocked but has not been started.

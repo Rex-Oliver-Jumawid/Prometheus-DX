@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 const hasCredentials = Boolean(
   process.env.E2E_MEMBER_EMAIL && process.env.E2E_MEMBER_PASSWORD,
 );
-const runId = `phase3-slice2-${Date.now()}`;
+const runId = `phase3-slice3-${Date.now()}`;
 let fixtureDepartmentIds: string[] = [];
 let fixtureLeadId: string | undefined;
 let createdProjectId: string | undefined;
@@ -155,7 +155,12 @@ test('an unrelated active Member can open a Project but cannot change its status
   await signIn(page);
   await page.goto(`/projects/${unrelatedProjectId}`);
   await expect(page.getByRole('heading', { name: `Browser Project ${runId} Unrelated`, exact: true })).toBeVisible();
-  await expect(page.getByText('Phase Three Alternate Lead')).toBeVisible();
+  const ownershipCard = page
+    .locator('.project-overview-card')
+    .filter({ has: page.getByRole('heading', { name: 'Project ownership' }) });
+  await expect(
+    ownershipCard.locator('dt + dd').first(),
+  ).toContainText('Phase Three Alternate Lead');
   await expect(page.getByLabel('Project status')).toHaveCount(0);
   expect(await apiStatusUpdate(page, unrelatedProjectId!, 'IN_PROGRESS')).toBe(403);
 });
