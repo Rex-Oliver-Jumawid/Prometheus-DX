@@ -56,6 +56,10 @@ export const CreateProjectRequestSchema = z.object({
     ),
 });
 
+export const UpdateProjectStatusRequestSchema = z.object({
+  status: z.enum(['PLANNING', 'IN_PROGRESS', 'DONE']),
+});
+
 export type ProjectStatus = z.infer<typeof ProjectStatusSchema>;
 export type ProjectDepartmentSummary = z.infer<
   typeof ProjectDepartmentSummarySchema
@@ -68,3 +72,6 @@ export type ProjectCreateOptionsResponse = z.infer<
   typeof ProjectCreateOptionsResponseSchema
 >;
 export type CreateProjectRequest = z.infer<typeof CreateProjectRequestSchema>;
+export type UpdateProjectStatusRequest = z.infer<
+  typeof UpdateProjectStatusRequestSchema
+>;

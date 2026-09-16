@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CreateProjectRequestSchema,
   ProjectCreateOptionsResponseSchema,
+  UpdateProjectStatusRequestSchema,
 } from './project';
 
 describe('CreateProjectRequestSchema', () => {
@@ -24,6 +25,13 @@ describe('CreateProjectRequestSchema', () => {
         departmentIds: [input.departmentIds[0], input.departmentIds[0]],
       }).success,
     ).toBe(false);
+  });
+});
+
+describe('UpdateProjectStatusRequestSchema', () => {
+  it('only permits user-selectable Project statuses', () => {
+    expect(UpdateProjectStatusRequestSchema.safeParse({ status: 'DONE' }).success).toBe(true);
+    expect(UpdateProjectStatusRequestSchema.safeParse({ status: 'ARCHIVED' }).success).toBe(false);
   });
 });
 

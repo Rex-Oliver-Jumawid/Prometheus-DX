@@ -1,4 +1,8 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { MemberStatus, WorkspaceRole, type Member } from '@prisma/client';
 import { describe, expect, it, vi } from 'vitest';
 import type { PrismaService } from '../database/prisma.service';
@@ -33,6 +37,7 @@ function projectRecord(overrides: Record<string, unknown> = {}) {
     name: 'Phase 3 Project',
     description: 'A persisted Project.',
     status: 'PLANNING' as const,
+    leadMemberId: lead.id,
     doneAt: null,
     archivedAt: null,
     createdAt: new Date('2026-09-16T00:00:00.000Z'),
@@ -51,6 +56,7 @@ function createDatabase(
     foundLead?: { id: string; status: MemberStatus } | null;
     foundDepartments?: { id: string }[];
     createdProject?: ReturnType<typeof projectRecord>;
+    updatedProject?: ReturnType<typeof projectRecord>;
     createOptionLeads?: { id: string; fullName: string; email: string }[];
     createOptionDepartments?: {
       id: string;
@@ -87,6 +93,9 @@ function createDatabase(
       create: vi
         .fn()
         .mockResolvedValue(options.createdProject ?? projectRecord()),
+      update: vi
+        .fn()
+        .mockResolvedValue(options.updatedProject ?? projectRecord()),
     },
   };
   const transaction = vi.fn(async (argument: unknown) => {
@@ -250,6 +259,147 @@ describe('ProjectsService', () => {
 
     await expect(
       service.getProject('55555555-5555-4555-8555-555555555555'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('returns Project detail to an unrelated active Member', async () => {
+    const unrelatedMember = {
+      ...creator,
+      id: '66666666-6666-4666-8666-666666666666',
+    } as Member;
+    const database = createDatabase({ foundProject: projectRecord() });
+    const service = new ProjectsService(database);
+
+    await expect(
+      service.getProject('55555555-5555-4555-8555-555555555555'),
+    ).resolves.toMatchObject({ lead, creator });
+    expect(unrelatedMember.id).not.toBe(lead.id);
+  });
+
+  it('lets the assigned Project Lead change PLANNING to IN_PROGRESS with history', async () => {
+    const database = createDatabase({
+      foundProject: projectRecord(),
+      updatedProject: projectRecord({ status: 'IN_PROGRESS' }),
+    });
+    const service = new ProjectsService(database);
+
+    await expect(
+      service.updateProjectStatus(lead as Member, '55555555-5555-4555-8555-555555555555', {
+        status: 'IN_PROGRESS',
+      }),
+    ).resolves.toMatchObject({ status: 'IN_PROGRESS' });
+    expect(database.project.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'IN_PROGRESS',
+          statusHistory: {
+            create: expect.objectContaining({
+              fromStatus: 'PLANNING',
+              toStatus: 'IN_PROGRESS',
+              changedByMemberId: lead.id,
+              changeSource: 'USER',
+            }),
+          },
+        }),
+      }),
+    );
+  });
+
+  it('sets doneAt and preserves USER history when the Lead changes status to DONE', async () => {
+    const database = createDatabase({
+      foundProject: projectRecord({ status: 'IN_PROGRESS' }),
+      updatedProject: projectRecord({
+        status: 'DONE',
+        doneAt: new Date('2026-09-16T12:00:00.000Z'),
+      }),
+    });
+    const service = new ProjectsService(database);
+
+    await service.updateProjectStatus(
+      lead as Member,
+      '55555555-5555-4555-8555-555555555555',
+      { status: 'DONE' },
+    );
+
+    expect(database.project.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'DONE',
+          doneAt: expect.any(Date),
+          statusHistory: {
+            create: expect.objectContaining({
+              fromStatus: 'IN_PROGRESS',
+              toStatus: 'DONE',
+              changeSource: 'USER',
+            }),
+          },
+        }),
+      }),
+    );
+  });
+
+  it('clears doneAt when the Lead moves a Project out of DONE', async () => {
+    const database = createDatabase({
+      foundProject: projectRecord({
+        status: 'DONE',
+        doneAt: new Date('2026-09-16T00:00:00.000Z'),
+      }),
+      updatedProject: projectRecord({ status: 'IN_PROGRESS', doneAt: null }),
+    });
+    const service = new ProjectsService(database);
+
+    await service.updateProjectStatus(
+      lead as Member,
+      '55555555-5555-4555-8555-555555555555',
+      { status: 'IN_PROGRESS' },
+    );
+
+    expect(database.project.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ doneAt: null }) }),
+    );
+  });
+
+  it('does not create duplicate history for a duplicate status request', async () => {
+    const existing = projectRecord({ status: 'IN_PROGRESS' });
+    const database = createDatabase({ foundProject: existing });
+    const service = new ProjectsService(database);
+
+    await expect(
+      service.updateProjectStatus(lead as Member, existing.id, {
+        status: 'IN_PROGRESS',
+      }),
+    ).resolves.toMatchObject({ status: 'IN_PROGRESS' });
+    expect(database.project.update).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['an unrelated Member', { ...creator, id: '66666666-6666-4666-8666-666666666666' }],
+    ['an Administrator who is not Lead', { ...creator, workspaceRole: WorkspaceRole.ADMINISTRATOR }],
+    ['the creator who is not Lead', creator],
+  ])('denies status changes to %s', async (_label, actor) => {
+    const database = createDatabase({ foundProject: projectRecord() });
+    const service = new ProjectsService(database);
+
+    await expect(
+      service.updateProjectStatus(
+        actor as Member,
+        '55555555-5555-4555-8555-555555555555',
+        { status: 'DONE' },
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(database.project.update).not.toHaveBeenCalled();
+  });
+
+  it('returns not found before authorizing a nonexistent Project status change', async () => {
+    const database = createDatabase({ foundProject: null });
+    const service = new ProjectsService(database);
+
+    await expect(
+      service.updateProjectStatus(
+        lead as Member,
+        '55555555-5555-4555-8555-555555555555',
+        { status: 'DONE' },
+      ),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 });

@@ -5,6 +5,7 @@ import { AuthGate } from '../features/auth/AuthGate';
 import { LoginPage } from '../features/auth/LoginPage';
 import { FoundationPage } from '../features/foundation/FoundationPage';
 import { ProjectsPage } from '../features/projects/ProjectsPage';
+import { ProjectOverviewPage } from '../features/projects/ProjectOverviewPage';
 import { NotFoundPage } from '../features/foundation/NotFoundPage';
 import { AppShell } from '../features/shell/AppShell';
 import { PlaceholderPage } from '../features/shell/PlaceholderPage';
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
         children: [
           { path: '/', element: <PlaceholderPage title="Home" /> },
           { path: '/projects', element: <ProjectsPage /> },
+          { path: '/projects/:projectId', element: <ProjectOverviewPage /> },
           { path: '/visiwork', element: <PlaceholderPage title="VisiWork" /> },
           { path: '/schedule', element: <PlaceholderPage title="Schedule" /> },
           { path: '/team', element: <PlaceholderPage title="Team" /> },

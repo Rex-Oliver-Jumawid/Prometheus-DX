@@ -5,6 +5,7 @@ import {
   Get,
   Inject,
   Param,
+  Patch,
   ParseUUIDPipe,
   Post,
   UseGuards,
@@ -14,7 +15,9 @@ import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import type { Member } from '@prisma/client';
 import {
   CreateProjectRequestSchema,
+  UpdateProjectStatusRequestSchema,
   type CreateProjectRequest,
+  type UpdateProjectStatusRequest,
 } from '../../shared/contracts/project';
 import { ProjectsService } from './projects.service';
 
@@ -55,5 +58,25 @@ export class ProjectsController {
     @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
   ) {
     return this.projectsService.getProject(projectId);
+  }
+
+  @Patch(':projectId/status')
+  updateProjectStatus(
+    @CurrentMember() currentMember: Member,
+    @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = UpdateProjectStatusRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        parsed.error.issues[0]?.message ?? 'Invalid project status.',
+      );
+    }
+
+    return this.projectsService.updateProjectStatus(
+      currentMember,
+      projectId,
+      parsed.data satisfies UpdateProjectStatusRequest,
+    );
   }
 }

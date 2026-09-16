@@ -1,14 +1,21 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { MemberStatus, Prisma, type Member } from '@prisma/client';
+import {
+  MemberStatus,
+  Prisma,
+  type Member,
+  type ProjectStatus,
+} from '@prisma/client';
 import type {
   CreateProjectRequest,
   ProjectCreateOptionsResponse,
   Project,
+  UpdateProjectStatusRequest,
 } from '../../shared/contracts/project';
 import { PrismaService } from '../database/prisma.service';
 
@@ -103,6 +110,53 @@ export class ProjectsService {
           statusHistory: {
             create: {
               toStatus: 'PLANNING',
+              changedByMemberId: currentMember.id,
+              changeSource: 'USER',
+            },
+          },
+        },
+        include: projectInclude,
+      });
+    });
+
+    return this.toProject(project);
+  }
+
+  async updateProjectStatus(
+    currentMember: Member,
+    projectId: string,
+    input: UpdateProjectStatusRequest,
+  ): Promise<Project> {
+    const project = await this.prisma.$transaction(async (transaction) => {
+      const existing = await transaction.project.findUnique({
+        where: { id: projectId },
+        include: projectInclude,
+      });
+
+      if (!existing) throw new NotFoundException('Project not found.');
+      if (existing.leadMemberId !== currentMember.id) {
+        throw new ForbiddenException(
+          'Only the assigned Project Lead may change project status.',
+        );
+      }
+
+      const nextStatus = input.status as ProjectStatus;
+      if (existing.status === nextStatus) return existing;
+
+      return transaction.project.update({
+        where: { id: projectId },
+        data: {
+          status: nextStatus,
+          doneAt:
+            nextStatus === 'DONE'
+              ? new Date()
+              : existing.status === 'DONE'
+                ? null
+                : existing.doneAt,
+          statusHistory: {
+            create: {
+              fromStatus: existing.status,
+              toStatus: nextStatus,
               changedByMemberId: currentMember.id,
               changeSource: 'USER',
             },
