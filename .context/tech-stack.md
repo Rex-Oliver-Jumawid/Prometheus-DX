@@ -401,11 +401,17 @@ Google sign-in will use a Google OAuth Client configured through Supabase Auth.
 
 A Google account does not automatically grant Prometheus access.
 
+For invitation account setup, only an invited address whose domain is exactly `gmail.com` is routed to the Google setup path.
+
+Invited addresses on all other domains are routed to email/password setup instead.
+
+Under this initial setup policy, Google Workspace addresses on custom domains therefore use email/password account setup.
+
+The domain check controls which setup interface is offered and must not be treated as proof of identity or workspace authorization.
+
+After Google authentication, Prometheus must use the verified email returned by Google and the stable Supabase identity when resolving the authorized Member record.
+
 The authenticated Google email must match an authorized Prometheus member record.
-
-The system should use the verified email returned by Google rather than checking whether an address ends in `@gmail.com`.
-
-This also allows Google Workspace accounts to authenticate through Google.
 
 ### 7.3 Prometheus Membership
 
@@ -521,30 +527,40 @@ status = INVITED
 Brevo sends invitation email
         |
         v
-User opens Prometheus
+User opens Prometheus account setup
         |
-        +---------------------+
-        |                     |
-        v                     v
-Continue with Google     Email/password setup
-        |                     |
-        +----------+----------+
-                   |
-                   v
-             Supabase Auth
-                   |
-                   v
+        v
+Inspect invited email domain
+        |
+        +--------------------------+
+        |                          |
+        v                          v
+     @gmail.com              Any other domain
+        |                          |
+        v                          v
+Continue with Google       Email/password setup
+        |                          |
+        +------------+-------------+
+                     |
+                     v
+               Supabase Auth
+                     |
+                     v
 NestJS checks authenticated identity
 against authorized membership
-                   |
-            +------+------+
-            |             |
-           Yes            No
-            |             |
-            v             v
-      Link account     Deny access
-      status ACTIVE
+                     |
+              +------+------+
+              |             |
+             Yes            No
+              |             |
+              v             v
+        Link account     Deny access
+        status ACTIVE
 ```
+
+The account-setup page must not show both authentication methods for the same invitation.
+
+The invited email determines the setup path, while Supabase authentication and NestJS membership checks remain the authority for identity and workspace access.
 
 Brevo credentials must never be exposed to frontend code.
 
@@ -587,7 +603,7 @@ PostgreSQL should store file metadata, ownership/context references, and storage
 
 ### Vitest
 
-Vitest will be used for unit tests and utility/business-rule logic.
+Vitest will be used for unit and utility/business-rule logic.
 
 ### React Testing Library
 
