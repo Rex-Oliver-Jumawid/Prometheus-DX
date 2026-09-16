@@ -373,7 +373,7 @@ function MemberDialog({
       status: member?.status ?? 'INVITED',
     });
     setDepartmentSearch(nextDepartmentName);
-    setFullNameSuggestionsOpen(false);
+    setFullNameSuggestionsOpen(state.mode === 'create');
     setActiveMemberSuggestion(0);
     const focusFrame = window.requestAnimationFrame(() => setFocus('fullName'));
     return () => window.cancelAnimationFrame(focusFrame);
@@ -386,6 +386,12 @@ function MemberDialog({
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !isSaving) {
+        if (fullNameSuggestionsOpen) {
+          event.preventDefault();
+          setFullNameSuggestionsOpen(false);
+          return;
+        }
+
         onClose();
         return;
       }
@@ -408,7 +414,7 @@ function MemberDialog({
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isSaving, onClose]);
+  }, [fullNameSuggestionsOpen, isSaving, onClose]);
 
   const submit = handleSubmit(async (values) => {
     clearErrors();
