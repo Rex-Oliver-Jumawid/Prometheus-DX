@@ -30,6 +30,12 @@ export class BrevoInvitationService implements InvitationDelivery {
   async sendAccountSetupInvitation(
     invitation: AccountSetupInvitation,
   ): Promise<void> {
+    if (serverEnvironment.invitationDeliveryMode === 'disabled') {
+      throw new ServiceUnavailableException(
+        INVITATION_DELIVERY_FAILURE_MESSAGE,
+      );
+    }
+
     const { appUrl, brevoApiKey, brevoSenderEmail, brevoSenderName } =
       serverEnvironment;
     if (!appUrl || !brevoApiKey || !brevoSenderEmail || !brevoSenderName) {

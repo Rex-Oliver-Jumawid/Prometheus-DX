@@ -265,7 +265,13 @@ test('administrator adds and edits a member with duplicate-email protection', as
     }),
   ).toHaveCount(1);
   await departmentSearch.fill(department.name);
+  const createMemberResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/registry/members') &&
+      response.request().method() === 'POST',
+  );
   await page.getByRole('button', { name: 'Add member', exact: true }).click();
+  expect((await createMemberResponse).status()).toBe(201);
 
   await expect(
     page.getByRole('button', { name: 'Edit Registry Test Member' }),

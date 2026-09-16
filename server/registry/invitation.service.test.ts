@@ -7,6 +7,7 @@ vi.mock('../config/env', () => ({
     brevoApiKey: 'server-only-test-key',
     brevoSenderEmail: 'noreply@example.com',
     brevoSenderName: 'Prometheus',
+    invitationDeliveryMode: 'brevo',
   },
 }));
 
@@ -14,9 +15,11 @@ import {
   BrevoInvitationService,
   DisabledInvitationService,
 } from './invitation.service';
+import { serverEnvironment } from '../config/env';
 
 describe('BrevoInvitationService', () => {
   afterEach(() => {
+    serverEnvironment.invitationDeliveryMode = 'brevo';
     vi.useRealTimers();
     vi.unstubAllGlobals();
   });
@@ -138,5 +141,24 @@ describe('BrevoInvitationService', () => {
         'The invitation could not be delivered. Try again.',
       ),
     );
+  });
+
+  it('does not reach Brevo when disabled mode resolves the Brevo provider', async () => {
+    serverEnvironment.invitationDeliveryMode = 'disabled';
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const service = new BrevoInvitationService();
+
+    await expect(
+      service.sendAccountSetupInvitation({
+        email: 'invited@example.com',
+        fullName: 'Invited Member',
+      }),
+    ).rejects.toEqual(
+      new ServiceUnavailableException(
+        'The invitation could not be delivered. Try again.',
+      ),
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
