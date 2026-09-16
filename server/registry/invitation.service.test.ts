@@ -10,10 +10,14 @@ vi.mock('../config/env', () => ({
   },
 }));
 
-import { BrevoInvitationService } from './invitation.service';
+import {
+  BrevoInvitationService,
+  DisabledInvitationService,
+} from './invitation.service';
 
 describe('BrevoInvitationService', () => {
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
@@ -57,6 +61,72 @@ describe('BrevoInvitationService', () => {
         .mockResolvedValue(new Response('provider detail', { status: 401 })),
     );
     const service = new BrevoInvitationService();
+
+    await expect(
+      service.sendAccountSetupInvitation({
+        email: 'invited@example.com',
+        fullName: 'Invited Member',
+      }),
+    ).rejects.toEqual(
+      new ServiceUnavailableException(
+        'The invitation could not be delivered. Try again.',
+      ),
+    );
+  });
+
+  it('reports network rejection without exposing provider detail', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new Error('socket reset')),
+    );
+    const service = new BrevoInvitationService();
+
+    await expect(
+      service.sendAccountSetupInvitation({
+        email: 'invited@example.com',
+        fullName: 'Invited Member',
+      }),
+    ).rejects.toEqual(
+      new ServiceUnavailableException(
+        'The invitation could not be delivered. Try again.',
+      ),
+    );
+  });
+
+  it('aborts a stalled provider request and returns only the safe failure', async () => {
+    vi.useFakeTimers();
+    let requestSignal: AbortSignal | undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((_url: string, request: RequestInit) => {
+        requestSignal = request.signal ?? undefined;
+        return new Promise<Response>((_resolve, reject) => {
+          requestSignal?.addEventListener('abort', () => {
+            reject(new Error('Brevo connection timeout detail'));
+          });
+        });
+      }),
+    );
+    const service = new BrevoInvitationService();
+    const delivery = service.sendAccountSetupInvitation({
+      email: 'invited@example.com',
+      fullName: 'Invited Member',
+    });
+    const expectedFailure = expect(delivery).rejects.toEqual(
+      new ServiceUnavailableException(
+        'The invitation could not be delivered. Try again.',
+      ),
+    );
+
+    await vi.advanceTimersByTimeAsync(5_000);
+
+    await expectedFailure;
+    expect(requestSignal?.aborted).toBe(true);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('fails immediately when delivery is disabled', async () => {
+    const service = new DisabledInvitationService();
 
     await expect(
       service.sendAccountSetupInvitation({

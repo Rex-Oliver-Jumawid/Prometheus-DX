@@ -1,4 +1,8 @@
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import type { PrismaService } from '../database/prisma.service';
 import type { InvitationDelivery } from './invitation.service';
@@ -64,6 +68,43 @@ describe('RegistryService invitation behavior', () => {
       status: 'INVITED',
       authenticationStatus: 'SETUP_PENDING',
       invitationDeliveryStatus: 'NOT_SENT',
+    });
+    expect(database.member.create).toHaveBeenCalledOnce();
+    expect(database.member.update).not.toHaveBeenCalled();
+  });
+
+  it('keeps the persisted Member pending when delivery times out', async () => {
+    const send = vi
+      .fn()
+      .mockRejectedValue(
+        new ServiceUnavailableException(
+          'The invitation could not be delivered. Try again.',
+        ),
+      );
+    const database = {
+      department: { findUnique: vi.fn().mockResolvedValue(department) },
+      member: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(member),
+        findUnique: vi.fn().mockResolvedValue(member),
+        update: vi.fn(),
+      },
+    } as unknown as PrismaService;
+    const service = new RegistryService(database, delivery(send));
+
+    await expect(
+      service.createMember({
+        email: member.email,
+        fullName: member.fullName,
+        departmentId: member.departmentId,
+        position: member.position,
+        workspaceRole: member.workspaceRole,
+        status: member.status,
+      }),
+    ).resolves.toMatchObject({
+      id: member.id,
+      invitationDeliveryStatus: 'NOT_SENT',
+      invitationSentAt: null,
     });
     expect(database.member.create).toHaveBeenCalledOnce();
     expect(database.member.update).not.toHaveBeenCalled();

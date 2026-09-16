@@ -3,17 +3,27 @@ import { RegistryController } from './registry.controller';
 import { RegistryService } from './registry.service';
 import {
   BrevoInvitationService,
+  DisabledInvitationService,
   INVITATION_DELIVERY,
 } from './invitation.service';
+import { serverEnvironment } from '../config/env';
 
 @Module({
   controllers: [RegistryController],
   providers: [
     RegistryService,
     BrevoInvitationService,
+    DisabledInvitationService,
     {
       provide: INVITATION_DELIVERY,
-      useExisting: BrevoInvitationService,
+      useFactory: (
+        brevoInvitationService: BrevoInvitationService,
+        disabledInvitationService: DisabledInvitationService,
+      ) =>
+        serverEnvironment.invitationDeliveryMode === 'disabled'
+          ? disabledInvitationService
+          : brevoInvitationService,
+      inject: [BrevoInvitationService, DisabledInvitationService],
     },
   ],
 })

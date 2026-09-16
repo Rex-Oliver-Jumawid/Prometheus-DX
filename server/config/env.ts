@@ -15,6 +15,7 @@ const ServerEnvironmentSchema = z.object({
   BREVO_API_KEY: z.string().min(1).optional(),
   BREVO_SENDER_EMAIL: z.string().email().optional(),
   BREVO_SENDER_NAME: z.string().min(1).optional(),
+  INVITATION_DELIVERY_MODE: z.enum(['brevo', 'disabled']).default('brevo'),
 });
 
 const parsed = ServerEnvironmentSchema.parse(process.env);
@@ -31,4 +32,5 @@ export const serverEnvironment = {
   brevoApiKey: parsed.BREVO_API_KEY,
   brevoSenderEmail: parsed.BREVO_SENDER_EMAIL,
   brevoSenderName: parsed.BREVO_SENDER_NAME,
+  invitationDeliveryMode: parsed.INVITATION_DELIVERY_MODE,
 };

@@ -12,6 +12,10 @@ export interface InvitationDelivery {
 
 export const INVITATION_DELIVERY = Symbol('INVITATION_DELIVERY');
 
+const BREVO_REQUEST_TIMEOUT_MS = 5_000;
+const INVITATION_DELIVERY_FAILURE_MESSAGE =
+  'The invitation could not be delivered. Try again.';
+
 function escapeHtml(value: string): string {
   return value
     .replaceAll('&', '&amp;')
@@ -39,6 +43,12 @@ export class BrevoInvitationService implements InvitationDelivery {
     const safeName = escapeHtml(invitation.fullName);
     const safeSetupUrl = escapeHtml(setupUrl.toString());
 
+    const controller = new AbortController();
+    const timeout = setTimeout(
+      () => controller.abort(),
+      BREVO_REQUEST_TIMEOUT_MS,
+    );
+
     let response: Response;
     try {
       response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -62,17 +72,30 @@ export class BrevoInvitationService implements InvitationDelivery {
             </div>
           `,
         }),
+        signal: controller.signal,
       });
     } catch {
       throw new ServiceUnavailableException(
-        'The invitation could not be delivered. Try again.',
+        INVITATION_DELIVERY_FAILURE_MESSAGE,
       );
+    } finally {
+      clearTimeout(timeout);
     }
 
     if (!response.ok) {
       throw new ServiceUnavailableException(
-        'The invitation could not be delivered. Try again.',
+        INVITATION_DELIVERY_FAILURE_MESSAGE,
       );
     }
+  }
+}
+
+@Injectable()
+export class DisabledInvitationService implements InvitationDelivery {
+  async sendAccountSetupInvitation(
+    invitation: AccountSetupInvitation,
+  ): Promise<void> {
+    void invitation;
+    throw new ServiceUnavailableException(INVITATION_DELIVERY_FAILURE_MESSAGE);
   }
 }

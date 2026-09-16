@@ -26,7 +26,11 @@ export default defineConfig({
     {
       command: 'pnpm dev:api',
       url: 'http://127.0.0.1:3001/api/health',
-      reuseExistingServer: !process.env.CI,
+      env: {
+        ...process.env,
+        INVITATION_DELIVERY_MODE: 'disabled',
+      },
+      reuseExistingServer: false,
       timeout: 120_000,
     },
     {
