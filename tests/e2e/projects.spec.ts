@@ -76,7 +76,7 @@ test('an active Member creates a Project with another active Lead and multiple D
   for (const departmentId of fixtureDepartmentIds) await page.locator(`input[value="${departmentId}"]`).check();
   const requestPromise = page.waitForRequest((request) => request.url().endsWith('/api/projects') && request.method() === 'POST');
   const responsePromise = page.waitForResponse((response) => response.url().endsWith('/api/projects') && response.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Create Project', exact: true }).dblclick();
+  await page.getByRole('button', { name: 'Create Project', exact: true }).click();
   const request = await requestPromise;
   expect((await responsePromise).status()).toBe(201);
   expect(request.postDataJSON()).toMatchObject({
