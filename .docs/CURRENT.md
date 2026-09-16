@@ -10,21 +10,17 @@ Canonical requirements belong in `.context/`.
 
 Phase 4 - Project Workflow Structure
 
-Status: In progress.
+Status: Complete.
 
-Active internal slice: Slice 4 - Project Member access management.
+Formal implementation record:
+
+`.docs/phases/phase-04-project-workflow.md`
 
 ## Previous Phase
 
-Phase 2 - Registry
+Phase 3 - Project Core
 
-Status: Complete
-
-Formal closure record:
-
-`.docs/phases/phase-02-registry-closure.md`
-
-The older `In progress` and `Not complete` text retained in `.docs/phases/phase-02-registry.md` is historical and is superseded by the closure addendum.
+Status: Complete.
 
 ## Verified Baseline
 
@@ -34,143 +30,52 @@ Phase 1 - Authentication and Application Shell: Complete.
 
 Phase 2 - Registry: Complete.
 
-Final Phase 2 verification:
+Phase 3 - Project Core: Complete.
 
-- Focused Registry Member Playwright test: 1/1 passed.
-- Full Playwright suite: 15/15 passed, including the persisted non-admin Project Lead Registry regression.
-- `pnpm verify`: passed with 42 unit tests and both production builds.
-- `pnpm prisma migrate status`: all six migrations applied and database schema is up to date.
-- Registry is Administrator-only at both frontend route/navigation and backend API boundaries.
-- Member Department relationships are required and `members.department_id` is `NOT NULL`.
-- Real invitation acceptance was verified through Brevo, Gmail, Google-only Gmail setup, normalized-email linkage, activation, persisted `auth_user_id`, no duplicate Member, and successful subsequent access.
-- Routine E2E runs use disabled invitation delivery and the Playwright-owned API subprocess excludes every `BREVO_*` environment variable.
+Phase 4 - Project Workflow Structure: Complete.
 
-## Completed Phase 3 Slice 1
+Final Phase 4 verification on 2026-09-16:
 
-Project persistence and authorization are implemented without changing the Projects placeholder UI.
+- Full Playwright suite: 35/35 passed.
+- The full suite includes F2-21, the Phase 4 Stage and Outcome workflow, Outcome joining and permanent membership, derived Project Membership, Project Member access management, the canonical Phase 4 main E2E flow, Phase 3 Project regressions, and Registry regressions.
+- `pnpm prisma migrate status`: seven migrations found and the database schema is up to date.
+- `pnpm verify`: passed.
+- Unit tests: 84/84 passed across 13 test files.
+- Typecheck: passed.
+- Production web and API builds: passed.
+- Lint: zero errors with one pre-existing `RegistryPage.tsx` React Hook dependency warning.
 
-The `Project`, `ProjectDepartment`, and `ProjectStatusHistory` foundations now persist separate creator and Lead relationships, Department associations, and canonical status values.
+## Phase 4 Delivered Scope
 
-`GET /api/projects`, `POST /api/projects`, and `GET /api/projects/:projectId` require an active authorized Member.
+Phase 4 now provides persisted ordered Stages and Outcomes, responsible Departments, Acceptance Criteria, same-Project prerequisites, direct Outcome access, permanent Outcome Membership, derived Project Membership, Participating classification, a Project Members interface, and persisted `CAN_VIEW` / `CAN_EDIT` access management.
 
-Every active authorized Member can list and create Projects, while the server derives the creator from the authenticated Member and validates the selected Lead and Departments.
+Only the persisted Project Lead may create or manage Stages and Outcomes or change Project Member access.
 
-F2-21 passed with a persisted active `MEMBER` Project Lead who was denied Registry navigation, direct route access, and Registry API access.
+Project Leads and Project Members with `CAN_EDIT` may change Project status.
 
-## Phase 3 Goal
+`CAN_EDIT` does not grant Stage, Outcome, Project Member access-management, Registry, or Project Lead authority.
 
-Create project discovery, creation, ownership relationships, and the project overview.
+Administrator role and Project creator history remain separate from project-specific authority.
 
-Required Phase 3 interfaces include:
+Outcome Membership remains permanent and is the source of Project participation.
 
-- `/projects`
-- All Projects
-- My Projects
-- Leading
-- Participating
-- Create Project modal or drawer
-- `/projects/:projectId`
-- Project Overview
-- Project status control
-- Project Lead display
-- Department associations
+## Next Action
 
-## Phase 3 Core Rules
+Phase 5 - Outcome Work, Submission, Review, and Dependencies is unblocked but has not been started.
 
-- All active authorized Prometheus users may view all Projects.
-- Any active authorized user may create a Project.
-- Project creator and Project Lead are different concepts.
-- Project Lead is project-specific and is not a workspace or organization role.
-- Creating a Project grants no special authority by itself.
-- Administrator status grants no Project Lead authority by itself.
-- `created_by_member_id` and `lead_member_id` must remain separate relationships.
-- Only active authorized Members may be selected as Project Lead.
-
-## Recommended First Vertical Slice
-
-Start with Project persistence and backend authorization before implementing the full Projects UI.
-
-The first slice should establish:
-
-1. Prisma `Project` persistence with separate creator and Lead relationships.
-2. Project-to-Department associations required by the canonical model.
-3. Project status persistence and any required status-history model already defined by the canonical data model.
-4. Authenticated Project list, create, and detail APIs.
-5. Validation that the selected Lead is an active authorized Member.
-6. Visibility that allows every active authorized Member to view Projects.
-7. Creation permission for every active authorized Member.
-8. No automatic Lead authority for the creator or for Administrators.
-9. Focused backend and persistence tests before the production Projects UI replaces the placeholder.
-10. Immediate execution of deferred F2-21 once the first real non-admin Project Lead fixture exists.
-
-Do not begin Stage, Outcome, Outcome Membership, or Project Membership work in this slice.
-
-Those belong to Phase 4.
-
-## Required Session Startup
-
-Before changing Phase 3 implementation:
+Before beginning Phase 5:
 
 1. Read `AGENTS.md`.
 2. Read this file.
 3. Read `.agents/skills/prometheus-phase-delivery/SKILL.md`.
-4. Read `.agents/skills/prometheus-database-change/SKILL.md` before Prisma or migration changes.
-5. Read `.context/phases.md`, especially Phase 3.
-6. Read `.context/data-model.md` Project-related sections.
-7. Read `.context/user-flows.md` Project creation and access sections.
-8. Read `.context/tech-stack.md` where relevant.
-9. Read `.testcases/phase-03-project-core-tests.md`.
-10. Inspect the current Prisma schema, project placeholder route, authentication model, Member model, and API authorization patterns.
-11. Inspect `.model/finalmodel.html` before substantial Project UI work.
-12. Use Figma as the visual source of truth when implementing the user-facing Projects experience.
+4. Read `.agents/skills/prometheus-database-change/SKILL.md` before any Prisma or migration work.
+5. Read `.context/phases.md`, especially Phase 5.
+6. Read the Phase 5 portions of `.context/data-model.md`, `.context/user-flows.md`, and the SRS.
+7. Read `.testcases/phase-05-work-review-tests.md`.
+8. Create the Phase 5 implementation journal before substantial coding.
+9. Preserve the completed Phase 0 through Phase 4 regression baseline.
 
-## Completed Phase 3 Slice 2
-
-The `/projects` placeholder is now a real Project list and Create Project flow.
-
-`GET /api/projects/create-options` is available to every active authorized Member and returns only active selectable Leads plus persisted Department display data.
-
-The Projects UI uses real list, creation-options, and create APIs with loading, empty, error, and refresh states.
-
-The Create Project dialog validates required details, selects a real active Member as Lead, supports multiple persisted Departments, and blocks duplicate submits.
-
-All Projects is functional.
-
-Leading is derived from the persisted Lead relationship.
-
-My Projects is explicitly limited to the currently persisted creator-or-Lead relationships and does not infer authority from creation.
-
-Participating is intentionally unavailable until Phase 4 can derive it from Outcome Membership.
-
-No migration was added.
-
-Prisma generation and validation, focused Projects browser acceptance, the full `pnpm test:e2e` suite, and `pnpm verify` all passed after database connectivity recovered.
-
-The full Playwright suite passed 16/16 tests, including the Project creation transaction and Registry Member Edit Escape path.
-
-`pnpm verify` passed with 44 unit tests and both production builds.
-
-The earlier transient Project transaction expiration and Registry Escape assertion did not reproduce in the final full regression.
-
-## Completed Phase 3 Slice 3
-
-The Project Overview, direct Project routes, Lead-only status control, controlled not-found behavior, `doneAt`, and Project status history are verified.
-
-The direct-detail loading hang previously reported could not be reproduced under a Playwright-owned API lifecycle.
-
-The focused Projects suite passed 5/5, F2-21 passed, and the full Playwright suite passed 20/20.
-
-`pnpm prisma migrate status` reported all six migrations applied and the schema up to date.
-
-`pnpm verify` passed with 54 unit tests and both production builds.
-
-The Projects E2E fixture prefix is `phase3-slice3-` and list/detail React Query keys are separate so status mutation invalidates only the list query.
-
-## Next Action
-
-Complete the Project Members UI, Lead-only `CAN_VIEW` and `CAN_EDIT` management, Project status authorization expansion, and direct API authority non-leakage checks.
-
-Then run the full Phase 4 acceptance gate and previous-phase regression before formal closure.
+Do not treat Phase 5 review, submission, acceptance, or reopening behavior as already implemented merely because Phase 4 persists Outcome structure and membership.
 
 ## Handoff Maintenance Rule
 
