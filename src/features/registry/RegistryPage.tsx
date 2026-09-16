@@ -19,6 +19,7 @@ import {
 } from '../../../shared/contracts/registry';
 import { apiFetch } from '../../lib/api';
 import './registry.css';
+import './member-name-combobox.css';
 
 const departmentsQueryKey = ['registry', 'departments'] as const;
 const membersQueryKey = ['registry', 'members'] as const;
@@ -280,17 +281,21 @@ function DepartmentDialog({
 function MemberDialog({
   state,
   departments,
+  members,
   isSaving,
   saveError,
   onClose,
   onSave,
+  onSelectExistingMember,
 }: {
   state: MemberDialogState;
   departments: RegistryDepartment[];
+  members: RegistryMember[];
   isSaving: boolean;
   saveError: unknown;
   onClose: () => void;
   onSave: (input: UpdateMemberRequest) => Promise<void>;
+  onSelectExistingMember: (member: RegistryMember) => void;
 }) {
   const member = state.mode === 'edit' ? state.member : undefined;
   const defaultDepartmentId =
@@ -301,6 +306,8 @@ function MemberDialog({
   const [departmentSearch, setDepartmentSearch] = useState(
     defaultDepartmentName,
   );
+  const [fullNameSuggestionsOpen, setFullNameSuggestionsOpen] = useState(false);
+  const [activeMemberSuggestion, setActiveMemberSuggestion] = useState(0);
   const dialogRef = useRef<HTMLElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(
     document.activeElement instanceof HTMLElement
@@ -316,6 +323,7 @@ function MemberDialog({
     setError,
     setFocus,
     setValue,
+    watch,
   } = useForm<MemberFormValues>({
     defaultValues: {
       fullName: member?.fullName ?? '',
@@ -326,6 +334,21 @@ function MemberDialog({
       status: member?.status ?? 'INVITED',
     },
   });
+  const fullName = watch('fullName') ?? '';
+  const existingMemberSuggestions = useMemo(() => {
+    if (state.mode !== 'create') return [];
+    const query = fullName.trim().toLocaleLowerCase();
+    return members
+      .filter((candidate) => {
+        if (!query) return true;
+        return (
+          candidate.fullName.toLocaleLowerCase().includes(query) ||
+          candidate.email.toLocaleLowerCase().includes(query)
+        );
+      })
+      .slice(0, 6);
+  }, [fullName, members, state.mode]);
+  const fullNameRegistration = register('fullName');
 
   useEffect(() => {
     const restoreFocusTo = restoreFocusRef.current;
@@ -352,9 +375,15 @@ function MemberDialog({
       status: member?.status ?? 'INVITED',
     });
     setDepartmentSearch(nextDepartmentName);
+    setFullNameSuggestionsOpen(false);
+    setActiveMemberSuggestion(0);
     const focusFrame = window.requestAnimationFrame(() => setFocus('fullName'));
     return () => window.cancelAnimationFrame(focusFrame);
   }, [departments, member, reset, setFocus]);
+
+  useEffect(() => {
+    setActiveMemberSuggestion(0);
+  }, [fullName]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -414,6 +443,11 @@ function MemberDialog({
     }
   });
 
+  const selectExistingMember = (selectedMember: RegistryMember) => {
+    setFullNameSuggestionsOpen(false);
+    onSelectExistingMember(selectedMember);
+  };
+
   return createPortal(
     <div
       className="registry-dialog-backdrop"
@@ -450,18 +484,101 @@ function MemberDialog({
 
         <form className="registry-form" onSubmit={submit} noValidate>
           <div className="registry-member-form-grid">
-            <label className="registry-field">
-              <span>Full name</span>
+            <div className="registry-field registry-member-name-field">
+              <label htmlFor="registry-member-full-name">Full name</label>
               <input
-                {...register('fullName')}
+                {...fullNameRegistration}
+                id="registry-member-full-name"
                 aria-invalid={Boolean(errors.fullName)}
+                aria-autocomplete={state.mode === 'create' ? 'list' : undefined}
+                aria-controls={
+                  state.mode === 'create'
+                    ? 'registry-member-name-suggestions'
+                    : undefined
+                }
+                aria-expanded={
+                  state.mode === 'create' ? fullNameSuggestionsOpen : undefined
+                }
+                role={state.mode === 'create' ? 'combobox' : undefined}
                 autoFocus
-                autoComplete="name"
+                autoComplete="off"
+                onFocus={() => {
+                  if (state.mode === 'create') setFullNameSuggestionsOpen(true);
+                }}
+                onChange={(event) => {
+                  void fullNameRegistration.onChange(event);
+                  if (state.mode === 'create') setFullNameSuggestionsOpen(true);
+                }}
+                onBlur={(event) => {
+                  void fullNameRegistration.onBlur(event);
+                  window.setTimeout(() => setFullNameSuggestionsOpen(false), 100);
+                }}
+                onKeyDown={(event) => {
+                  if (state.mode !== 'create' || !fullNameSuggestionsOpen) return;
+                  if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    setActiveMemberSuggestion((current) =>
+                      Math.min(
+                        current + 1,
+                        Math.max(existingMemberSuggestions.length - 1, 0),
+                      ),
+                    );
+                  } else if (event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    setActiveMemberSuggestion((current) => Math.max(current - 1, 0));
+                  } else if (
+                    event.key === 'Enter' &&
+                    existingMemberSuggestions[activeMemberSuggestion]
+                  ) {
+                    event.preventDefault();
+                    selectExistingMember(
+                      existingMemberSuggestions[activeMemberSuggestion],
+                    );
+                  } else if (event.key === 'Escape') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setFullNameSuggestionsOpen(false);
+                  }
+                }}
               />
+              {state.mode === 'create' && fullNameSuggestionsOpen && (
+                <div
+                  id="registry-member-name-suggestions"
+                  className="registry-member-name-suggestions"
+                  role="listbox"
+                  aria-label="Existing members"
+                >
+                  {existingMemberSuggestions.length > 0 ? (
+                    existingMemberSuggestions.map((candidate, index) => (
+                      <button
+                        key={candidate.id}
+                        type="button"
+                        className="registry-member-name-option"
+                        role="option"
+                        aria-selected={index === activeMemberSuggestion}
+                        data-active={index === activeMemberSuggestion}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onMouseEnter={() => setActiveMemberSuggestion(index)}
+                        onClick={() => selectExistingMember(candidate)}
+                      >
+                        <span className="registry-member-name-option-copy">
+                          <strong>{candidate.fullName}</strong>
+                          <small>{candidate.email}</small>
+                        </span>
+                        <em>Already in Registry</em>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="registry-member-name-empty">
+                      No existing member found. Continue entering the new member.
+                    </p>
+                  )}
+                </div>
+              )}
               {errors.fullName?.message && (
                 <small>{errors.fullName.message}</small>
               )}
-            </label>
+            </div>
             <label className="registry-field">
               <span>Email address</span>
               <input
@@ -1094,10 +1211,12 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
         <MemberDialog
           state={memberDialogState}
           departments={departments.data ?? []}
+          members={members.data ?? []}
           isSaving={saveMember.isPending}
           saveError={saveMember.error}
           onClose={closeMemberDialog}
           onSave={saveRegistryMember}
+          onSelectExistingMember={openEditMember}
         />
       )}
     </section>
