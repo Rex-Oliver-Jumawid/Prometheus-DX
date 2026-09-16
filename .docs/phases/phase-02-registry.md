@@ -261,6 +261,20 @@ Additional verification completed during the invitation slice on 2026-09-16:
 - The expanded full Playwright run passed 13/13, including account-setup validation, first linkage without duplication, role upgrade and downgrade after refresh, direct API denial, deactivation and reactivation, Department reassignment, long member metadata, mobile overflow, and unexplained-console-error checks.
 - Final `pnpm exec prisma migrate status` reported four migrations and an up-to-date database.
 
+Live Brevo follow-up verification on 2026-09-16:
+
+- The configured `BREVO_API_KEY` was validated against Brevo's read-only v3 account endpoint.
+- Brevo returned HTTP 200, so API v3 credential acceptance is verified independently from invitation delivery.
+- The credential must be rotated before the next live retry because its value was inadvertently exposed in agent tool output during this follow-up session.
+- Brevo's sender endpoint returned an active verified `Prometheus-DX` sender.
+- The previously missing local `BREVO_SENDER_EMAIL` setting was populated from that verified sender so all four server-side invitation settings are now present.
+- The focused invitation and authentication regression passed 27/27 unit tests.
+- The retained Member was not resent from Registry because this execution environment could not establish a PostgreSQL connection to either configured Supabase pooler port, and the direct database endpoint is IPv6-only while the environment has no IPv6 route.
+- The Supabase Auth HTTPS health endpoint returned HTTP 200, which confirms the project is running but does not provide the PostgreSQL path required by the NestJS Registry API.
+- Application persistence was therefore not observed in this follow-up run.
+- Actual inbox or spam-folder receipt was not observed in this follow-up run.
+- The setup link, Supabase account setup, normalized-email linkage, duplicate-member check, activation, and subsequent `auth_user_id` resolution were not rerun because no invitation could be resent through Registry.
+
 ### Current Phase 2 acceptance matrix
 
 | ID | Result | Evidence or blocker |
@@ -280,7 +294,7 @@ Additional verification completed during the invitation slice on 2026-09-16:
 | F2-13 | PASS | Deactivation during an authenticated session denies workspace access after refresh. |
 | F2-14 | PASS | Reactivation restores workspace access after refresh. |
 | F2-15 | PASS | Unlinked invited Member displays `Setup pending` and backend-derived delivery state. |
-| F2-16 | BLOCKED | Real Supabase first linkage passes without duplication. A live Registry attempt created the acceptance fixture safely, but Brevo rejected delivery because the configured credential is an SMTP key rather than the required API v3 key. |
+| F2-16 | BLOCKED | Brevo API v3 credential acceptance now passes with HTTP 200, but the real Registry resend and persistence checks are blocked by unavailable PostgreSQL connectivity from this environment. Actual inbox receipt and the full setup-link flow were not observed. The earlier real Supabase first-linkage path remains verified without duplication. |
 | F2-17 | PASS | Long Member metadata remains usable at the 390 by 844 mobile viewport with no document overflow. |
 | F2-18 | PASS | Registry navigation is absent for `MEMBER`. |
 | F2-19 | PASS | Direct `/registry` navigation is denied for `MEMBER`. |
@@ -822,7 +836,7 @@ The presence of a Brevo credential is insufficient configuration evidence becaus
 
 #### Next approach
 
-Validate live Brevo configuration with the read-only account endpoint before the next delivery acceptance run.
+With API v3 acceptance now verified, restore a routable PostgreSQL connection, resend the retained Member through Registry, and keep provider acceptance, database persistence, and mailbox receipt as separate evidence gates.
 
 #### Related changes
 
@@ -832,9 +846,19 @@ Validate live Brevo configuration with the read-only account endpoint before the
 
 ## Known Limitations
 
-Live Brevo delivery is not yet accepted because the configured `BREVO_API_KEY` is an SMTP credential rather than the API v3 credential required by the current integration.
+The configured `BREVO_API_KEY` is now accepted by Brevo's API v3 account endpoint.
 
-F2-16 is therefore verified through real Supabase first linkage but remains blocked for literal receipt of the Brevo invitation email.
+That credential must be revoked and replaced before the next live retry because it was inadvertently exposed in agent tool output during this follow-up session.
+
+The local invitation configuration now includes an active verified Brevo sender.
+
+F2-16 remains blocked because this execution environment cannot currently reach the configured Supabase PostgreSQL pooler and has no IPv6 route to the direct database endpoint.
+
+No Registry resend or `invitation_sent_at` update was observed in the follow-up run.
+
+No actual inbox or spam-folder receipt was observed, so email receipt must not be reported as passed.
+
+The account-setup link and live post-delivery authentication linkage were not rerun in the follow-up.
 
 The `Brevo Acceptance Test` Member is intentionally retained in `INVITED` and `Not sent` state for the next delivery retry.
 
@@ -866,7 +890,10 @@ The Department entity is a useful first persistence boundary because later membe
 
 ## Recommendations / Next Approach
 
-- Replace the Brevo SMTP key with an API v3 key, resend the retained acceptance invitation, and complete account setup from the recipient mailbox.
+- Rotate the exposed Brevo API key and configure its replacement without printing or committing it.
+- Restore routable Supabase PostgreSQL connectivity, then resend the retained acceptance invitation through Registry without creating another Member.
+- Record Brevo's send response as provider acceptance, confirm `invitation_sent_at` through the Registry API and database as application persistence, and inspect the recipient inbox and spam folder separately for actual receipt.
+- Open the received setup link, complete Supabase authentication, and verify normalized-email linkage, a single Member row, active status, and subsequent lookup by `auth_user_id`.
 - Use the new Administrator assignment action to place the existing Member in a real Department, then apply the follow-up `department_id NOT NULL` migration.
 - Add authoritative authentication-provider detail only if the backend can obtain it from Supabase.
 - Keep F2-21 blocked rather than creating Phase 3 Project persistence solely for a Phase 2 fixture.

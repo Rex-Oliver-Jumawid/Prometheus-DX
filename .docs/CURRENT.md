@@ -40,6 +40,11 @@ Phase 0 - Foundation is also complete.
 - The member slice implements persistent listing, Department-ID assignment, invited-member creation, editing, organization role and status changes, duplicate-email protection, and backend-derived authentication linkage status.
 - The invitation slice implements retryable Brevo delivery, durable delivery evidence, Supabase password or Google account setup, and backend-authoritative linkage to the existing Member row.
 - The live first-sign-in acceptance path proves an invited Member becomes linked and active without creating a duplicate Member.
+- The newly configured Brevo API v3 key is accepted by Brevo's read-only account endpoint with HTTP 200.
+- The accepted key must be rotated before reuse because its value was inadvertently exposed in agent tool output during the follow-up session.
+- An active verified Brevo sender is now fully configured in the local server environment.
+- The follow-up Registry resend remains unexecuted because this environment cannot reach the configured Supabase PostgreSQL pooler and has no IPv6 route to the direct database endpoint.
+- Application persistence and actual inbox or spam-folder receipt were not observed in the follow-up run.
 - Registry now highlights unassigned legacy Members and opens a deliberate Department-assignment workflow.
 - The application shell has been reconciled against `.model/finalmodel.html` and Figma Registry node `11:1887`, including removal of invented collapse and duplicate top-right controls.
 - Shared navigation and content surfaces now use the intended translucent glass treatment at desktop, compact, and mobile widths.
@@ -108,9 +113,15 @@ The shell mismatch is also resolved by removing UI absent from the prototype and
 
 ## Next Action
 
-Replace the configured Brevo SMTP key with a Brevo API v3 key, which normally begins with `xkeysib-`.
+Revoke the exposed Brevo API key and configure a replacement locally without printing or committing it.
 
-Then use the existing `Brevo Acceptance Test` Registry member to send the invitation again and complete account setup from the configured recipient mailbox.
+Restore a routable PostgreSQL connection to the configured Supabase project.
+
+Then use the existing `Brevo Acceptance Test` Registry Member to resend the invitation through the Registry UI without creating another Member.
+
+Verify and record three distinct results: Brevo API acceptance, the persisted `invitation_sent_at` and delivery state, and actual recipient inbox or spam-folder receipt.
+
+Open the received account-setup link, complete Supabase authentication, and verify normalized-email linkage, no duplicate Member, active linked state, and subsequent resolution through `auth_user_id`.
 
 Assign `DX User 1` to the Administrator-selected real Department through Registry.
 
