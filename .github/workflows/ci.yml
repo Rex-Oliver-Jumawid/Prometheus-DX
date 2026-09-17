@@ -46,8 +46,11 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Unit tests
+      - name: Unit and service tests
         run: pnpm test
+
+      - name: Component tests
+        run: pnpm test:ui
 
       - name: Production build
         run: pnpm build
@@ -55,5 +58,5 @@ jobs:
       - name: Install Playwright browser
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Browser smoke test
+      - name: Chromium browser smoke test
         run: pnpm test:e2e
