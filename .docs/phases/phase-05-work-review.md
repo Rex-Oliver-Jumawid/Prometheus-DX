@@ -29,6 +29,8 @@ Slices 3 and 4 passed an eleven-test delivery suite including Lead-only decision
 The expanded twelve-test delivery run additionally verifies individual review while other submissions remain pending.
 The initial distinct-account core suite passed 18/18 checks, including real Supabase sign-in, Registry authorization, the full revision path, direct acceptance, dependency unlock/relock, and preserved overrides.
 Additional race, stale-history, read-state, and visual checks are being verified before final regression.
+The repository testing infrastructure now has a dedicated React component-test layer, Chromium development E2E, retained Playwright failure traces/screenshots, and release-level Firefox/WebKit verification commands.
+Future Phase 5 test changes should migrate non-browser permission, validation, API-only, stale-write, and concurrency assertions below Playwright where practical while preserving the critical end-to-end acceptance journeys.
 
 ## Architecture and Data-Flow Changes
 
@@ -88,7 +90,9 @@ Baseline checks run during orientation:
 
 The full Phase 5 acceptance gate remains in progress.
 Slice 1 focused browser verification: 6/6 passed.
-The latest `pnpm verify` passed with 106/106 tests across 16 files, typecheck, lint, and both production builds.
+The latest previously recorded `pnpm verify` passed with 106/106 Node tests across 16 files, typecheck, lint, and both production builds.
+The repository now also runs React component tests through `pnpm test:ui`, includes them in `pnpm verify`, keeps normal Playwright E2E on Chromium, and exposes `pnpm verify:release` for Firefox/WebKit release verification.
+The first component-level coverage verifies `ProjectDialog` Escape dismissal, backdrop dismissal, pending-state protection, and focus restoration without requiring a full browser/backend journey.
 Phase 4's recorded 35/35 E2E result is prior evidence, not a newly executed result.
 
 ### Acceptance coverage index
@@ -118,6 +122,10 @@ The following mappings identify executable checks; final PASS status is continge
 | F5-40 | Delivery/Core 15 non-Lead override denial and Lead edge override |
 
 Additional checks cover deletion audit events, stale private drafts, saved review preparation, stale combined reviews, explicit revision resolution, accepted-dependent preservation, acceptance/join races, background form refresh, loading/error/retry states, invalid direct routes, Back/Forward, mobile/desktop screenshots, and derived Project/Stage progress.
+
+Under the layered workflow, this acceptance index describes what must be proven rather than requiring every item to remain in Playwright.
+As individual tests are changed, permission matrices, validation, direct API status assertions, stale-write behavior, and concurrency should move to lower layers when the browser itself is not material to the evidence.
+Critical browser journeys, refresh persistence, routing, responsive behavior, and real integration paths remain Playwright responsibilities.
 
 ## Decision & Challenge Log
 
@@ -249,10 +257,78 @@ The first distinct-user core run encountered an API 500 during workflow navigati
 Final full regression must remain clean, and any recurring backend error must be captured and diagnosed.
 Use isolated real Supabase Auth identities and Registry authorization for the core path rather than treating one Administrator session as different users.
 
+### P5-D05 - Separate fast behavioral tests from browser acceptance
+
+**Status:** Implemented
+**Area:** Testing and Infrastructure
+**Impact:** High
+
+#### What gave us a hard time
+
+Phase 5 Playwright suites accumulated permission matrices, validation checks, direct API assertions, persistence checks, concurrency checks, responsive behavior, real Supabase sign-in, and complete user journeys in the same browser layer.
+Some suites therefore required serial execution and increased timeout headroom against the hosted acceptance database.
+
+#### Root cause / constraint
+
+Playwright was being used as both the acceptance layer and a general-purpose testing layer.
+This made browser runs slower and increased coupling between tests even when the behavior under test did not require a browser.
+
+#### Options considered
+
+1. Continue expanding Playwright and increase timeouts as Phase 5 grows.
+2. Replace Playwright with another browser framework.
+3. Keep Vitest and Playwright, add React Testing Library/jsdom, and assign each behavior to the lowest reliable test layer.
+
+#### Decision
+
+Selected option 3.
+Vitest remains the Node unit/service layer.
+Vitest with React Testing Library and jsdom owns component interaction.
+Service or API integration tests should own backend authorization, persistence, stale-write, and concurrency behavior where practical.
+Playwright Chromium owns critical end-to-end browser journeys.
+Firefox and WebKit are release-level verification rather than normal inner-loop browsers.
+
+#### Result
+
+Added `pnpm test:ui`, Chromium-specific `pnpm test:e2e`, cross-browser `pnpm test:e2e:cross-browser`, `pnpm verify:e2e`, and `pnpm verify:release`.
+`pnpm verify` now includes component tests.
+Playwright retains failure traces and screenshots.
+The first component test covers `ProjectDialog` dismissal and focus behavior without booting the real application stack.
+Repository guidance now instructs future work to migrate non-browser assertions downward incrementally rather than rewriting the entire existing Phase 5 suite at once.
+
+#### What we learned
+
+The browser should prove the behaviors that actually depend on browser integration.
+Putting every rule in E2E tests obscures failures, slows feedback, and encourages serial state coupling.
+
+#### Next approach
+
+When an existing Playwright test is touched, first ask whether the browser is material to the assertion.
+Move pure permission, validation, API status, stale-write, and concurrency assertions to lower layers where practical.
+Keep one clear browser journey for the user-visible consequence when that consequence matters.
+Prefer independent Playwright fixtures over sequential test dependencies.
+
+#### Related changes
+
+- `package.json`
+- `vitest.ui.config.ts`
+- `src/test/setup.ts`
+- `src/features/projects/ProjectDialog.test.tsx`
+- `playwright.config.ts`
+- `.github/workflows/ci.yml`
+- `.github/workflows/release-verification.yml`
+- `AGENTS.md`
+- `CONTRIBUTING.md`
+- `.testcases/README.md`
+- `.docs/phases/README.md`
+- `.agents/skills/prometheus-phase-delivery/SKILL.md`
+
 ## Known Limitations
 
 Phase 5 is incomplete.
 The dependency reopening policy and lifecycle are implemented; final acceptance verification is pending.
+The existing browser acceptance suites have not all been migrated to the new layer ownership yet.
+That migration should be incremental and should not remove critical real user journeys.
 
 ## Technical Debt
 
@@ -260,17 +336,22 @@ Phase 4 records an existing Registry hook warning and a production bundle-size a
 Both remain non-blocking warnings; Vite also reports its existing CJS API deprecation.
 The inherited Member/Department timestamp-default schema mismatch is recorded above rather than changing completed-phase persistence as part of this work.
 Shared history and activity currently load the full Outcome record; future pagination should preserve chronological versions and combined-review snapshot checks.
+Some existing Phase 5 browser suites still carry API-only and permission assertions that should move to lower test layers as those tests are next maintained.
 
 ## Lessons from the Phase
 
 The prototype distinguishes planning from execution while locked.
 Canonical rules override prototype permission shortcuts and its revision-clearing behavior.
 New submissions must not automatically clear NEEDS_REVISION.
+Testing should use the lowest reliable layer and reserve browser E2E for workflows whose correctness depends on real integration.
 
 ## Recommendations / Next Approach
 
 Verify each complete slice before starting the next.
 Preserve the Phase 4 baseline and run the complete core browser workflow before closure.
+Use focused Vitest or component tests before broad browser regression.
+Use `pnpm verify:e2e` for the Phase 5 browser completion gate and `pnpm verify:release` only when release-level cross-browser confidence is required.
+Migrate browser-only permission, validation, stale-write, and concurrency assertions downward when those tests are touched.
 
 ## Phase Exit Result
 
