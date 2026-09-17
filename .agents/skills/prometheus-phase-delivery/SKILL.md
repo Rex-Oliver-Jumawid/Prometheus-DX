@@ -1,6 +1,6 @@
 ---
 name: prometheus-phase-delivery
-description: Use when starting, implementing, verifying, documenting, or completing any Prometheus implementation phase. Covers phase scoping, source-of-truth review, vertical-slice delivery, acceptance, regression, engineering decision journals, and cross-session handoff.
+description: Use when starting, implementing, verifying, documenting, or completing any Prometheus implementation phase. Covers phase scoping, source-of-truth review, vertical-slice delivery, layered testing, acceptance, regression, engineering decision journals, and cross-session handoff.
 ---
 
 # Prometheus Phase Delivery
@@ -89,24 +89,58 @@ Verify a slice before expanding the feature.
 
 Do not create a large collection of disconnected components and endpoints before one real workflow works end to end.
 
-## 5. Verify incrementally
+## 5. Verify incrementally with the correct test layer
 
 After each meaningful change, run the smallest relevant verification first.
 
-Examples:
+Choose the lowest layer that proves the behavior reliably.
+
+Use this mapping:
+
+```text
+Pure business rule, validation, permission calculation, service behavior
+-> Vitest in the Node environment
+
+React dialog, form, keyboard behavior, conditional rendering, local UI state
+-> Vitest + React Testing Library + jsdom
+
+API authorization, persistence, stale-write protection, concurrency
+-> service or API integration test without a browser where practical
+
+Critical real user journey across browser, authentication, API, and persistence
+-> Playwright + Chromium
+
+Cross-browser release confidence
+-> Playwright + Firefox + WebKit
+
+Visual fidelity, usability, and intentionally human acceptance checks
+-> matching .testcases/ phase file
+```
+
+Do not put a permission matrix, schema validation case, or direct API status check in Playwright merely because Playwright can execute it.
+
+Keep Playwright for behavior where the real browser or complete integration path is material to the evidence.
+
+Component tests should own React interaction details that do not require a real backend.
+
+Playwright tests should be independent whenever practical and provision the state they require.
+
+Use a serial suite only when the acceptance journey deliberately depends on sequential shared state.
+
+Examples of focused verification:
 
 ```text
 Backend rule
--> focused unit test
+-> focused Vitest test
+
+React interaction
+-> focused component test
 
 API path
--> request/response verification
+-> focused service or API integration test
 
-UI interaction
--> browser verification
-
-Completed vertical slice
--> focused Playwright path
+Completed browser-visible slice
+-> focused Chromium Playwright path
 ```
 
 Expand verification according to the change surface.
@@ -115,7 +149,21 @@ Authentication, authorization, persistence, routing, and shared infrastructure r
 
 Never claim a test passed unless it was actually run.
 
-## 6. Run the phase acceptance gate
+## 6. Use the repository verification gates deliberately
+
+Use `pnpm verify` as the normal non-browser repository gate.
+
+It covers project configuration, linting, TypeScript checks, Node Vitest tests, React component tests, and the production build.
+
+Use `pnpm verify:e2e` when a phase or change requires Chromium browser regression in addition to the non-browser gate.
+
+Use `pnpm verify:release` for release-level cross-browser confidence with Firefox and WebKit.
+
+Do not make Firefox and WebKit part of the normal inner development loop unless the change is specifically browser compatibility work.
+
+When debugging Playwright failures, use retained traces and failure screenshots before increasing timeouts or retries.
+
+## 7. Run the phase acceptance gate
 
 Before phase completion, use the matching `.testcases/phase-XX-*.md` file.
 
@@ -135,9 +183,13 @@ Verify all relevant categories:
 - Previous-phase regression.
 - Main end-to-end workflow.
 
+The acceptance file defines what must be proven, not which automation tool must prove every line.
+
+Map each requirement to the smallest appropriate automated or manual layer.
+
 Use Playwright for critical browser workflows where practical, but do not treat automation as a substitute for checks that are intentionally manual or visual.
 
-## 7. Protect previous phases
+## 8. Protect previous phases
 
 Every completed phase creates a regression obligation.
 
@@ -157,7 +209,7 @@ Sign in
 
 As later Prometheus Core phases become real, extend regression to the complete project workflow defined in `.context/phases.md`.
 
-## 8. Maintain the cross-session handoff
+## 9. Maintain the cross-session handoff
 
 Keep `.docs/CURRENT.md` concise and current.
 
@@ -176,33 +228,34 @@ Permanent implementation history belongs in the matching `.docs/phases/phase-XX-
 
 Canonical requirements belong in `.context/`.
 
-## 9. Phase completion gate
+## 10. Phase completion gate
 
 A phase is complete only when all of the following are true:
 
 1. Planned phase scope is implemented.
-2. Relevant acceptance checks pass.
-3. Required permission and API enforcement is verified.
-4. Previous completed phases pass appropriate regression.
-5. Known unverified behavior is explicitly identified.
-6. The matching `.docs/phases/phase-XX-*.md` reflects the implementation that actually exists.
-7. Major decisions and difficult problems are recorded.
-8. Lessons learned and the next approach are recorded.
-9. Known limitations and technical debt are recorded.
-10. The phase exit result is explicit.
-11. `.docs/CURRENT.md` points to the correct next phase or next concrete action.
+2. Relevant acceptance checks pass at the appropriate test or manual layer.
+3. Required permission and API enforcement is verified below the browser layer where practical.
+4. Critical real user journeys pass Chromium browser verification when applicable.
+5. Previous completed phases pass appropriate regression.
+6. Known unverified behavior is explicitly identified.
+7. The matching `.docs/phases/phase-XX-*.md` reflects the implementation that actually exists.
+8. Major decisions and difficult problems are recorded.
+9. Lessons learned and the next approach are recorded.
+10. Known limitations and technical debt are recorded.
+11. The phase exit result is explicit.
+12. `.docs/CURRENT.md` points to the correct next phase or next concrete action.
 
 Do not begin the next phase merely because most of the current phase appears to work.
 
 The acceptance gate and phase journal define completion together.
 
-## 10. Report completion accurately
+## 11. Report completion accurately
 
 When reporting phase work, state:
 
 - What changed.
 - What important behavior was preserved.
-- What verification was performed.
+- What verification was performed and at which test layer.
 - What remains unverified.
 - Known limitations or risks.
 - Whether the phase completion gate is actually satisfied.
