@@ -29,7 +29,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed.ts",
-    "prisma:studio": "tsx prisma/seed.ts && prisma studio",
+    "prisma:studio": "prisma studio",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm test:ui && pnpm build",
     "verify": "pnpm project:doctor && pnpm check",
     "verify:e2e": "pnpm verify && pnpm test:e2e",
