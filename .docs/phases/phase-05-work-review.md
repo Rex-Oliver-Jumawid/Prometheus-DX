@@ -94,6 +94,11 @@ The latest previously recorded `pnpm verify` passed with 106/106 Node tests acro
 The repository now also runs React component tests through `pnpm test:ui`, includes them in `pnpm verify`, keeps normal Playwright E2E on Chromium, and exposes `pnpm verify:release` for Firefox/WebKit release verification.
 The first component-level coverage verifies `ProjectDialog` Escape dismissal, backdrop dismissal, pending-state protection, and focus restoration without requiring a full browser/backend journey.
 Phase 4's recorded 35/35 E2E result is prior evidence, not a newly executed result.
+The P5-D07 latency pass ran `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:ui`, and `pnpm build` successfully.
+That verification passed 113/113 Node tests and 11/11 React component tests.
+The focused Project Chromium suite passed 5/5, including persisted status and exact history assertions.
+The focused CAN_EDIT Chromium journey passed.
+The focused CAN_VIEW test retained the known Project Members request timeout before reaching its status assertion.
 
 ### Acceptance coverage index
 
@@ -378,6 +383,76 @@ The remaining full-suite Project Members acceptance failure is pre-existing test
 No long-lived authorization cache, arbitrary retry, timeout increase, UI redesign, or speculative infrastructure was introduced.
 
 Related files include `AuthService`, `AuthProvider`, `ProjectsService`, `ProjectWorkflowService`, Registry overview services and contracts, Project query configuration, and the Project overview status tests.
+
+### P5-D07 - Reduce status round trips and isolate the remaining database-distance floor
+
+**Status:** Implemented
+**Area:** Performance, backend, persistence, and infrastructure
+**Impact:** High
+
+#### What gave us a hard time
+
+Warm protected requests remained close to one second after the first latency pass, and authoritative Project status completion remained close to 1.60 seconds.
+The Projects list also loaded every Project Member and every Outcome status even though the list only needs current-member participation and aggregate progress.
+
+#### Root cause / constraint
+
+Five-sample measurements against the configured hosted Supabase database reproduced medians of 1013.4 milliseconds for `GET /api/projects`, 993.9 milliseconds for Project detail, 1004.6 milliseconds for workflow, 996.5 milliseconds for Registry, and 1593.0 milliseconds for authorized status PATCH.
+Warm JWT verification measured 0.8 milliseconds and response serialization measured at or below 0.1 milliseconds.
+Active Member resolution measured 512.5 milliseconds and individual Prisma read services measured roughly 484 to 598 milliseconds.
+The configured Supavisor transaction-pool URL is in AWS `ap-south-1` and one Prisma read emitted four query events.
+A read-only session-pool comparison reduced warm Member resolution to 94.6 milliseconds and individual read services to roughly 109 to 112 milliseconds with one query event.
+Repository evidence does not identify the deployed Vercel function region or its concurrency and connection-pool requirements.
+
+#### Options considered
+
+1. Cache active authorization across sequential requests.
+2. Combine unrelated endpoints or add a broad workspace bootstrap response.
+3. Replace list loading with a narrower read model and collapse the authorized status update plus history insertion into one atomic statement.
+4. Switch production from transaction pooling to session pooling.
+
+#### Proposed solution
+
+Keep next-request Member enforcement and existing API ownership.
+Use a purpose-built Projects list projection.
+Execute status authorization, row locking, status and timestamp updates, and append-only history insertion in one parameterized PostgreSQL statement through Prisma.
+Treat connection mode and deployment placement as a separately reviewed infrastructure decision.
+
+#### Decision
+
+Selected option 3.
+The list now selects only the current Member's Project Membership and uses per-Stage counts plus open Outcome identifiers to derive the existing metrics contract.
+Status mutation now performs the authorized transition and history insertion atomically in one statement, with a fallback existence lookup only for denied or missing Projects.
+No schema, migration, RLS, Auth, Storage, timeout, retry, or long-lived authorization-cache change was made.
+Session pooling was measured but not adopted because Supabase recommends transaction pooling for serverless workloads and the deployment connection budget has not been verified.
+
+#### Result
+
+The isolated Projects list service median decreased from 598.3 to 503.3 milliseconds, while the same end-to-end `GET /api/projects` median changed from 1013.4 to 1007.7 milliseconds and is not treated as a meaningful user-perceived improvement.
+The same authorized status PATCH path decreased from 1593.0 to 1197.0 milliseconds, a 396.0 millisecond or 24.9 percent reduction.
+Project Lead persistence and exact status-history assertions passed in Chromium.
+The CAN_EDIT browser flow passed, and unrelated active Members remained denied.
+The focused CAN_VIEW browser test retained the pre-existing timeout while waiting for an unmounted Project Members request before reaching its status assertion.
+
+#### What we learned
+
+The transaction-pool and geographic round-trip floor dominates ordinary protected reads more than response size or transformation work on the current dataset.
+Reducing selected rows is still useful for scale, but it cannot remove the sequential active-Member database leg.
+Multi-record mutations can gain meaningful latency by reducing application-level database round trips while keeping authorization and history atomic.
+
+#### Next approach
+
+Before changing database connection mode, verify the deployed Vercel function region, whether the API uses serverless or a persistent runtime, peak concurrent function instances, Prisma connection limits, and the Supabase session-pool capacity.
+Prefer co-locating the API runtime with the `ap-south-1` database if deployment evidence confirms geographic separation.
+Do not replace transaction pooling with session pooling until connection-exhaustion risk is measured under production-like concurrency.
+
+#### Related changes
+
+- `server/projects/projects.service.ts`
+- `server/projects/projects.service.test.ts`
+- `scripts/measure-latency.ts`
+- `tests/e2e/projects.spec.ts`
+- `tests/e2e/project-member-access.spec.ts`
 
 ## Known Limitations
 

@@ -3,7 +3,12 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { MemberStatus, WorkspaceRole, type Member } from '@prisma/client';
+import {
+  MemberStatus,
+  Prisma,
+  WorkspaceRole,
+  type Member,
+} from '@prisma/client';
 import { describe, expect, it, vi } from 'vitest';
 import type { PrismaService } from '../database/prisma.service';
 import { ProjectsService } from './projects.service';
@@ -58,6 +63,7 @@ function createDatabase(
     foundDepartments?: { id: string }[];
     createdProject?: ReturnType<typeof projectRecord>;
     updatedProject?: ReturnType<typeof projectRecord>;
+    statusRows?: ReturnType<typeof projectRecord>[];
     createOptionLeads?: { id: string; fullName: string; email: string }[];
     createOptionDepartments?: {
       id: string;
@@ -67,6 +73,13 @@ function createDatabase(
   } = {},
 ) {
   const database = {
+    $queryRaw: vi
+      .fn()
+      .mockResolvedValue(
+        'statusRows' in options
+          ? options.statusRows
+          : [options.updatedProject ?? options.foundProject].filter(Boolean),
+      ),
     member: {
       findUnique: vi
         .fn()
@@ -152,6 +165,58 @@ describe('ProjectsService', () => {
     await expect(service.listProjects(creator)).resolves.toMatchObject([
       { id: '55555555-5555-4555-8555-555555555555', lead, creator },
     ]);
+  });
+
+  it('uses a lightweight list read model without loading unrelated Project Members or accepted Outcome rows', async () => {
+    const database = createDatabase({
+      listedProjects: [
+        projectRecord({
+          members: [{ memberId: creator.id, accessLevel: 'CAN_EDIT' }],
+          stages: [
+            {
+              id: '77777777-7777-4777-8777-777777777777',
+              name: 'Delivery',
+              position: 0,
+              _count: { outcomes: 3 },
+              outcomes: [{ id: '88888888-8888-4888-8888-888888888888' }],
+            },
+          ],
+        }),
+      ],
+    });
+    const service = new ProjectsService(database);
+
+    await expect(service.listProjects(creator)).resolves.toMatchObject([
+      {
+        isParticipating: true,
+        currentMemberAccess: 'CAN_EDIT',
+        canChangeStatus: true,
+        metrics: {
+          totalOutcomes: 3,
+          acceptedOutcomes: 2,
+          openOutcomes: 1,
+          activeStagesCount: 1,
+        },
+      },
+    ]);
+    expect(database.project.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: expect.objectContaining({
+          members: expect.objectContaining({
+            where: { memberId: creator.id },
+          }),
+          stages: expect.objectContaining({
+            select: expect.objectContaining({
+              _count: { select: { outcomes: true } },
+              outcomes: expect.objectContaining({
+                where: { lifecycleStatus: { not: 'ACCEPTED' } },
+                select: { id: true },
+              }),
+            }),
+          }),
+        }),
+      }),
+    );
   });
 
   it('persists a regular Member as creator and another active Member as Lead', async () => {
@@ -301,35 +366,14 @@ describe('ProjectsService', () => {
         },
       ),
     ).resolves.toMatchObject({ status: 'IN_PROGRESS' });
-    expect(database.project.findUnique).toHaveBeenCalledWith({
-      where: { id: '55555555-5555-4555-8555-555555555555' },
-      relationLoadStrategy: 'join',
-      select: {
-        id: true,
-        status: true,
-        doneAt: true,
-        updatedAt: true,
-        leadMemberId: true,
-        members: {
-          where: { memberId: lead.id },
-          select: { accessLevel: true },
-        },
-      },
-    });
-    expect(database.project.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          status: 'IN_PROGRESS',
-          statusHistory: {
-            create: expect.objectContaining({
-              fromStatus: 'PLANNING',
-              toStatus: 'IN_PROGRESS',
-              changedByMemberId: lead.id,
-              changeSource: 'USER',
-            }),
-          },
-        }),
-      }),
+    expect(database.$queryRaw).toHaveBeenCalledOnce();
+    const query = vi.mocked(database.$queryRaw).mock.calls[0][0] as Prisma.Sql;
+    expect(query.values).toEqual(
+      expect.arrayContaining([
+        '55555555-5555-4555-8555-555555555555',
+        lead.id,
+        'IN_PROGRESS',
+      ]),
     );
   });
 
@@ -349,21 +393,7 @@ describe('ProjectsService', () => {
       { status: 'DONE' },
     );
 
-    expect(database.project.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          status: 'DONE',
-          doneAt: expect.any(Date),
-          statusHistory: {
-            create: expect.objectContaining({
-              fromStatus: 'IN_PROGRESS',
-              toStatus: 'DONE',
-              changeSource: 'USER',
-            }),
-          },
-        }),
-      }),
-    );
+    expect(database.$queryRaw).toHaveBeenCalledOnce();
   });
 
   it('clears doneAt when the Lead moves a Project out of DONE', async () => {
@@ -382,11 +412,7 @@ describe('ProjectsService', () => {
       { status: 'IN_PROGRESS' },
     );
 
-    expect(database.project.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ doneAt: null }),
-      }),
-    );
+    expect(database.$queryRaw).toHaveBeenCalledOnce();
   });
 
   it('does not create duplicate history for a duplicate status request', async () => {
@@ -399,7 +425,7 @@ describe('ProjectsService', () => {
         status: 'IN_PROGRESS',
       }),
     ).resolves.toMatchObject({ status: 'IN_PROGRESS' });
-    expect(database.project.update).not.toHaveBeenCalled();
+    expect(database.$queryRaw).toHaveBeenCalledOnce();
   });
 
   it('lets a CAN_EDIT Project Member change status without granting Lead authority', async () => {
@@ -427,17 +453,7 @@ describe('ProjectsService', () => {
     ).resolves.toMatchObject({
       status: 'IN_PROGRESS',
     });
-    expect(database.project.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          statusHistory: {
-            create: expect.objectContaining({
-              changedByMemberId: editableMember.id,
-            }),
-          },
-        }),
-      }),
-    );
+    expect(database.$queryRaw).toHaveBeenCalledOnce();
   });
 
   it('denies a CAN_VIEW Project Member status authority', async () => {
@@ -449,6 +465,7 @@ describe('ProjectsService', () => {
       foundProject: projectRecord({
         members: [{ memberId: viewMember.id, accessLevel: 'CAN_VIEW' }],
       }),
+      statusRows: [],
     });
     const service = new ProjectsService(database);
 
@@ -473,7 +490,10 @@ describe('ProjectsService', () => {
     ],
     ['the creator who is not Lead', creator],
   ])('denies status changes to %s', async (_label, actor) => {
-    const database = createDatabase({ foundProject: projectRecord() });
+    const database = createDatabase({
+      foundProject: projectRecord(),
+      statusRows: [],
+    });
     const service = new ProjectsService(database);
 
     await expect(

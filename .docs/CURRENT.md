@@ -83,13 +83,18 @@ Phase 5 work, submission, review, acceptance, reopening, and dependency slices a
 
 The distinct-account core browser suite passes 28/28 tests after the performance changes.
 
-The current `pnpm verify` passes 112 Node tests, 11 component tests, typecheck, lint, and both builds.
+The current non-browser verification passes 113 Node tests, 11 component tests, typecheck, lint, and both builds.
 
 The Project browser suite passes 5/5 tests, including optimistic status persistence after authoritative responses.
 
 The Registry member browser acceptance passes in isolation.
 
 Hosted performance measurement and implementation are recorded as P5-D06 in the Phase 5 journal.
+
+The follow-up latency pass is recorded as P5-D07.
+It adds a lightweight Projects list read model and reduces authoritative Project status PATCH from 1593 milliseconds median to 1197 milliseconds median without changing authorization or history semantics.
+The remaining warm-read floor is dominated by active Member resolution and Supavisor transaction-pool round trips.
+The database is in AWS `ap-south-1`; the deployed API region and safe session-pool connection budget still require manual verification before any infrastructure change.
 
 The first complete `pnpm verify:e2e` run reached 80/91 passing tests and retained five failures.
 
