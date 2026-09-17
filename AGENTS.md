@@ -203,6 +203,40 @@ File access, Registry operations, project actions, and workflow transitions must
 
 After a meaningful change, run the smallest relevant verification first and expand according to the change surface.
 
+Use the lowest test layer that proves the behavior reliably.
+
+The default ownership is:
+
+```text
+Pure logic, validation, permission calculations, service behavior
+-> Vitest in the Node environment
+
+React dialogs, forms, keyboard behavior, conditional rendering, local UI state
+-> Vitest + React Testing Library + jsdom
+
+API authorization, persistence, stale writes, concurrency
+-> service or API integration tests without a browser where practical
+
+Critical real user journeys across browser, authentication, API, and persistence
+-> Playwright + Chromium
+
+Cross-browser release confidence
+-> Playwright + Firefox + WebKit
+
+Visual fidelity, usability, and intentionally human phase checks
+-> matching .testcases/ acceptance file
+```
+
+Do not default permission matrices, schema validation, service rules, or direct API status checks to Playwright when a lower layer proves them correctly.
+
+Keep Playwright for behavior where the real browser, routing, authentication integration, frontend-to-backend interaction, refresh persistence, responsive behavior, or complete user journey is material to the evidence.
+
+Component tests should own React interaction details that do not require a live backend.
+
+Playwright tests should be independent whenever practical and provision the state they require.
+
+Use a serial Playwright suite only when the real acceptance journey intentionally depends on sequential shared state.
+
 Repository-level verification commands include:
 
 ```text
@@ -210,11 +244,24 @@ pnpm project:doctor
 pnpm lint
 pnpm typecheck
 pnpm test
+pnpm test:ui
 pnpm build
 pnpm test:e2e
+pnpm test:e2e:cross-browser
+pnpm verify
+pnpm verify:e2e
+pnpm verify:release
 ```
 
-Use `pnpm verify` for the repository's non-browser verification suite.
+Use `pnpm verify` for the normal non-browser repository gate.
+
+Use `pnpm verify:e2e` when Chromium browser regression is required for a phase or change.
+
+Use `pnpm verify:release` for release-level Firefox and WebKit confidence rather than the normal development loop.
+
+Use focused unit, component, service, API, or Chromium tests before these broad gates whenever a smaller check can provide faster feedback.
+
+When a Playwright failure occurs, inspect retained traces and failure screenshots before increasing timeouts or retries.
 
 Do not claim tests passed unless they were actually run.
 
@@ -308,4 +355,4 @@ React presents that state.
 
 Figma is a supporting visual helper.
 
-Tests verify the behavior users depend on.
+Tests verify the behavior users depend on at the lowest reliable layer, with end-to-end coverage reserved for the workflows that genuinely require it.
