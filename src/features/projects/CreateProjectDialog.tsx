@@ -31,12 +31,13 @@ export function CreateProjectDialog({
     document.activeElement instanceof HTMLElement ? document.activeElement : null,
   );
   const options = useQuery({
-    queryKey: ['projects', 'create-options'],
+    queryKey: ['projects', 'create-options', accessToken],
     queryFn: ({ signal }) =>
       apiFetch('/projects/create-options', ProjectCreateOptionsResponseSchema, {
         accessToken,
         signal,
       }),
+    enabled: Boolean(accessToken),
     retry: false,
   });
   const {
@@ -108,59 +109,149 @@ export function CreateProjectDialog({
   const unavailable = options.isSuccess && (!options.data.leads.length || !options.data.departments.length);
 
   return createPortal(
-    <div className="projects-dialog-backdrop" role="presentation" onClick={(event) => {
-      if (event.target === event.currentTarget && !isSaving) onClose();
-    }}>
-      <section ref={dialogRef} className="projects-dialog" role="dialog" aria-modal="true" aria-labelledby="create-project-title">
-        <header className="projects-dialog-header">
+    <div
+      className="projects-dialog-backdrop"
+      role="presentation"
+      onClick={(event) => {
+        if (event.target === event.currentTarget && !isSaving) onClose();
+      }}
+    >
+      <section
+        ref={dialogRef}
+        className="projects-dialog vw-add-project-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-project-title"
+      >
+        <header className="vw-add-project-header">
           <div>
-            <p className="projects-kicker">PROJECTS</p>
-            <h2 id="create-project-title">Add Project</h2>
-            <p>Start with the project details, its accountable Lead, and the departments involved.</p>
+            <div className="vw-add-project-kicker">PROJECTS</div>
+            <h2 id="create-project-title" className="vw-add-project-title">
+              Add Project
+            </h2>
           </div>
-          <button type="button" className="projects-icon-button" aria-label="Close Create Project dialog" onClick={onClose} disabled={isSaving}>×</button>
+          <button
+            type="button"
+            className="vw-add-project-close"
+            aria-label="Close Add Project dialog"
+            onClick={onClose}
+            disabled={isSaving}
+          >
+            ✕
+          </button>
         </header>
-        <form className="projects-form" onSubmit={submit} noValidate>
-          <div className="projects-dialog-body">
-            <label className="projects-field">
-              <span>Project name</span>
-              <input {...register('name')} aria-invalid={Boolean(errors.name)} autoComplete="off" placeholder="e.g. Customer Portal" />
-              {errors.name?.message && <small>{errors.name.message}</small>}
-            </label>
-            <label className="projects-field">
-              <span>Description</span>
-              <textarea {...register('description')} aria-invalid={Boolean(errors.description)} placeholder="What is this project trying to achieve?" />
-              {errors.description?.message && <small>{errors.description.message}</small>}
-            </label>
-            {options.isPending && <div className="projects-options-state" aria-live="polite">Loading available Project Leads and departments...</div>}
-            {options.isError && <div className="projects-options-state projects-error" role="alert"><strong>Creation options could not be loaded.</strong><span>{errorMessage(options.error)}</span><button type="button" onClick={() => void options.refetch()}>Retry</button></div>}
-            {unavailable && <div className="projects-options-state projects-error" role="alert"><strong>Project creation is not ready yet.</strong><span>{!options.data.leads.length ? 'No active Members are available to lead a Project.' : 'No persisted Departments are available.'}</span></div>}
-            {options.isSuccess && !unavailable && <>
-              <label className="projects-field">
-                <span>Project Lead</span>
-                <select {...register('leadMemberId')} aria-invalid={Boolean(errors.leadMemberId)} defaultValue="">
-                  <option value="" disabled>Choose an active Member</option>
-                  {options.data.leads.map((lead) => <option value={lead.id} key={lead.id}>{lead.fullName} - {lead.email}</option>)}
+        <form className="vw-add-project-form" onSubmit={submit} noValidate>
+          <div className="vw-add-project-body">
+            <div className="vw-add-project-field">
+              <label htmlFor="project-name-input">Project name</label>
+              <input
+                id="project-name-input"
+                {...register('name')}
+                aria-invalid={Boolean(errors.name)}
+                autoComplete="off"
+                placeholder="e.g. Customer Portal"
+              />
+              {errors.name?.message && <small className="projects-field-error">{errors.name.message}</small>}
+            </div>
+
+            <div className="vw-add-project-field">
+              <label htmlFor="project-description-input">Description</label>
+              <textarea
+                id="project-description-input"
+                {...register('description')}
+                aria-invalid={Boolean(errors.description)}
+                placeholder="What is this project trying to achieve?"
+              />
+              {errors.description?.message && <small className="projects-field-error">{errors.description.message}</small>}
+            </div>
+
+            <div className="vw-add-project-field-grid">
+              <div className="vw-add-project-field">
+                <label htmlFor="project-status-select">Status</label>
+                <select id="project-status-select" defaultValue="PLANNING" aria-label="Project status">
+                  <option value="PLANNING">Planning</option>
+                  <option value="IN_PROGRESS" disabled>In Progress</option>
+                  <option value="DONE" disabled>Done</option>
                 </select>
-                {errors.leadMemberId?.message && <small>{errors.leadMemberId.message}</small>}
-              </label>
-              <fieldset className="projects-department-field" aria-describedby="project-departments-help">
-                <legend>Departments involved</legend>
-                <p id="project-departments-help">Choose one or more existing departments.</p>
-                <div className="projects-department-options">
-                  {options.data.departments.map((department) => <label key={department.id}><input type="checkbox" value={department.id} {...register('departmentIds')} /><span>{department.name}<small>{department.shortLabel}</small></span></label>)}
+              </div>
+
+              <div className="vw-add-project-field">
+                <label htmlFor="project-lead-select">Project lead</label>
+                {options.isPending ? (
+                  <select id="project-lead-select" aria-label="Project Lead" disabled>
+                    <option>Loading Project Leads...</option>
+                  </select>
+                ) : (
+                  <select
+                    id="project-lead-select"
+                    aria-label="Project Lead"
+                    {...register('leadMemberId')}
+                    aria-invalid={Boolean(errors.leadMemberId)}
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Choose an active Member</option>
+                    {options.data?.leads.map((lead) => (
+                      <option value={lead.id} key={lead.id}>
+                        {lead.fullName}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {errors.leadMemberId?.message && <small className="projects-field-error">{errors.leadMemberId.message}</small>}
+              </div>
+            </div>
+
+            {options.isError && (
+              <div className="projects-options-state projects-error" role="alert">
+                <strong>Creation options could not be loaded.</strong>
+                <span>{errorMessage(options.error)}</span>
+                <button type="button" onClick={() => void options.refetch()}>Retry</button>
+              </div>
+            )}
+
+            {unavailable && (
+              <div className="projects-options-state projects-error" role="alert">
+                <strong>Project creation is not ready yet.</strong>
+                <span>
+                  {!options.data?.leads.length
+                    ? 'No active Members are available to lead a Project.'
+                    : 'No persisted Departments are available.'}
+                </span>
+              </div>
+            )}
+
+            <div className="vw-add-project-field">
+              <label>Departments involved</label>
+              {options.isPending ? (
+                <div className="vw-add-project-loading-text">Loading departments...</div>
+              ) : (
+                <div className="vw-new-project-depts" role="group" aria-label="Departments involved">
+                  {options.data?.departments.map((department) => (
+                    <label key={department.id} className="vw-dept-checkbox-card">
+                      <input type="checkbox" value={department.id} {...register('departmentIds')} />
+                      <span>{department.name}</span>
+                    </label>
+                  ))}
                 </div>
-                {errors.departmentIds?.message && <small className="projects-field-error">{errors.departmentIds.message}</small>}
-              </fieldset>
-            </>}
+              )}
+              {errors.departmentIds?.message && <small className="projects-field-error">{errors.departmentIds.message}</small>}
+            </div>
+
+            <div className="vw-add-project-preview">
+              The project workspace will start blank. Add stages and outcomes later from inside the project workspace.
+            </div>
           </div>
+
           {Boolean(saveError) && <div className="projects-save-error" role="alert">{errorMessage(saveError)}</div>}
-          <footer className="projects-dialog-actions">
-            <button type="button" className="projects-secondary-button" onClick={onClose} disabled={isSaving}>Cancel</button>
-            <button type="submit" className="projects-primary-button" disabled={isSaving || !options.isSuccess || unavailable}>{isSaving ? 'Creating...' : 'Create Project'}</button>
+          <footer className="vw-add-project-foot">
+            <button type="button" className="vw-add-project-btn-cancel" onClick={onClose} disabled={isSaving}>Cancel</button>
+            <button type="submit" className="vw-add-project-btn-create" disabled={isSaving || !options.isSuccess || unavailable}>
+              {isSaving ? 'Creating...' : 'Create Project'}
+            </button>
           </footer>
         </form>
       </section>
-    </div>, document.body,
+    </div>,
+    document.body,
   );
 }

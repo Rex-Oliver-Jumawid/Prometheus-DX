@@ -1642,6 +1642,263 @@
   border: 0;
 }
 
+/* ==========================================================================
+   Add Project Modal (Figma node 67:2 & finalmodel.html #vwAddProjectModal)
+   ========================================================================== */
+
+.vw-add-project-dialog {
+  width: min(620px, calc(100vw - 32px));
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e4e7ec;
+  box-shadow: 0 30px 90px rgba(17, 24, 39, 0.18);
+  display: flex;
+  flex-direction: column;
+}
+
+.vw-add-project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 13px 14px;
+  border-bottom: 1px solid #eae3dc;
+}
+
+.vw-add-project-kicker {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9px;
+  font-weight: 800;
+  color: #cb4d22;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 3px;
+}
+
+.vw-add-project-title {
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 750;
+  color: #1d1917;
+  margin: 0;
+}
+
+.vw-add-project-close {
+  background: none;
+  border: 0;
+  padding: 4px 6px;
+  font-size: 13px;
+  color: #756b64;
+  cursor: pointer;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.vw-add-project-close:hover:not(:disabled) {
+  background: #f4efeb;
+  color: #1d1917;
+}
+
+.vw-add-project-close:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.vw-add-project-form {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.vw-add-project-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.vw-add-project-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vw-add-project-field label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 8px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #7a6458;
+}
+
+.vw-add-project-field input,
+.vw-add-project-field textarea,
+.vw-add-project-field select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d9d1cb;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #332f2c;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-size: 10.5px;
+  padding: 7px 9px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.vw-add-project-field input::placeholder,
+.vw-add-project-field textarea::placeholder {
+  color: #a89f97;
+}
+
+.vw-add-project-field input:focus,
+.vw-add-project-field textarea:focus,
+.vw-add-project-field select:focus {
+  border-color: #cb4d22;
+  box-shadow: 0 0 0 2px rgba(203, 77, 34, 0.15);
+}
+
+.vw-add-project-field textarea {
+  min-height: 60px;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.vw-add-project-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.vw-add-project-loading-text {
+  font-size: 10.5px;
+  color: #7a6458;
+  padding: 4px 0;
+}
+
+.vw-new-project-depts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.vw-dept-checkbox-card {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 35px;
+  padding: 7px 9px;
+  border: 1px solid #e4dcd6;
+  border-radius: 8px;
+  background: #faf7f4;
+  color: #625750;
+  font-size: 9.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.vw-dept-checkbox-card:hover {
+  background: #f4efeb;
+  border-color: #d9d1cb;
+  color: #1d1917;
+}
+
+.vw-dept-checkbox-card:has(input:checked) {
+  background: #fff5f0;
+  border-color: #cb4d22;
+  color: #1d1917;
+  font-weight: 600;
+}
+
+.vw-dept-checkbox-card input[type="checkbox"] {
+  accent-color: #cb4d22;
+  margin: 0;
+  width: 13px;
+  height: 13px;
+  cursor: pointer;
+}
+
+.vw-add-project-preview {
+  background: #e8dad0;
+  border-left: 2px solid #7a6458;
+  border-radius: 0 6px 6px 0;
+  padding: 8px 10px;
+  color: #6f594d;
+  font-size: 9px;
+  line-height: 1.5;
+  font-style: normal;
+}
+
+.vw-add-project-foot {
+  padding: 11px 14px;
+  border-top: 1px solid #eae3dc;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 7px;
+  background: #ffffff;
+  border-radius: 0 0 8px 8px;
+}
+
+.vw-add-project-btn-cancel {
+  background: #fffdfa;
+  border: 1px solid #d7cec7;
+  border-radius: 11px;
+  color: #4d4541;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vw-add-project-btn-cancel:hover:not(:disabled) {
+  background: #f4efeb;
+  border-color: #c5bcb5;
+  color: #1d1917;
+}
+
+.vw-add-project-btn-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vw-add-project-btn-create {
+  background: #cb4d22;
+  border: 1px solid #cb4d22;
+  border-radius: 11px;
+  color: #ffffff;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 750;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(203, 77, 34, 0.25);
+}
+
+.vw-add-project-btn-create:hover:not(:disabled) {
+  background: #b44018;
+  border-color: #b44018;
+}
+
+.vw-add-project-btn-create:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 @media (max-width: 720px) {
   .workflow-section-heading {
     align-items: stretch;
@@ -1672,4 +1929,9 @@
   .project-member-row {
     grid-template-columns: 1fr;
   }
+  .vw-add-project-field-grid,
+  .vw-new-project-depts {
+    grid-template-columns: 1fr;
+  }
 }
+
