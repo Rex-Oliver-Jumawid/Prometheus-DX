@@ -21,12 +21,21 @@ Keep changes phase-focused, easy to review, and aligned with the Prometheus sour
 
 ## Branches and commits
 
-- Branch from `main` with a short-lived `feat/`, `fix/`, `chore/`, or `refactor/` branch.
+- Branch from `main` with a short-lived `feat/`, `fix/`, `chore/`, `test/`, or `refactor/` branch.
 - Keep each pull request focused on one phase, feature, fix, or infrastructure change.
 - Use conventional commit prefixes such as `feat:`, `fix:`, `chore:`, `test:`, `docs:`, and `refactor:`.
 - Prefer squash merging after focused review and passing CI.
 
 ## Verification
+
+Prometheus uses layered verification so inexpensive deterministic checks run before browser acceptance tests.
+
+Use Vitest for shared contracts, pure frontend logic, backend business rules, authorization helpers, validation, and service behavior that does not require a real browser.
+
+Use Playwright when the behavior depends on real browser interaction, routing, authentication integration, frontend-to-API behavior, persistence across refresh, responsive layout, or a complete user workflow.
+
+Do not move a rule into Playwright merely because Playwright can exercise it.
+Keep the lowest reliable test for the rule and retain browser coverage for the user-visible path that depends on it.
 
 Run the non-browser verification suite before opening a pull request:
 
@@ -34,7 +43,43 @@ Run the non-browser verification suite before opening a pull request:
 pnpm verify
 ```
 
-`pnpm verify` includes the repository configuration doctor, linting, TypeScript checks, unit tests, and the production build.
+`pnpm verify` includes the repository configuration doctor, linting, TypeScript checks, Vitest, and the production build.
+
+For a change that also needs Chromium acceptance coverage, run:
+
+```bash
+pnpm verify:e2e
+```
+
+During normal development, Chromium is the default Playwright browser:
+
+```bash
+pnpm test:e2e
+```
+
+Use the Playwright UI runner when investigating or developing a browser test:
+
+```bash
+pnpm test:e2e:ui
+```
+
+Before a release or another explicit cross-browser acceptance point, run Chromium, Firefox, and WebKit:
+
+```bash
+pnpm verify:release
+```
+
+Firefox and WebKit can also be run without repeating the non-browser suite:
+
+```bash
+pnpm test:e2e:cross-browser
+```
+
+Playwright retains a trace and screenshot when a test fails.
+CI uploads the `test-results/` directory for failed Chromium runs so the failure can be diagnosed from the actual browser state instead of only the timeout message.
+
+The manual `Cross-browser E2E` GitHub Actions workflow runs Firefox and WebKit independently.
+Credential-gated acceptance tests still require the configured E2E and Supabase secrets.
 
 Formatting remains a separate explicit check until the current stylesheet and UI source are normalized:
 
@@ -42,10 +87,23 @@ Formatting remains a separate explicit check until the current stylesheet and UI
 pnpm format:check
 ```
 
-Run Playwright for routing, authentication, critical workflow, or UI behavior changes:
+After a meaningful implementation change, verify incrementally:
 
-```bash
-pnpm test:e2e
+```text
+pure rule or contract
+-> focused Vitest test
+
+backend or authorization behavior
+-> focused service or API-level test
+
+browser interaction
+-> focused Chromium Playwright test
+
+completed workflow
+-> affected Chromium suite
+
+release or explicit compatibility gate
+-> Firefox and WebKit
 ```
 
 For bug fixes, follow `.agents/skills/prometheus-debugging/SKILL.md`.

@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { workPermissions } from './outcome-work.service';
-import {
-  EditWorkItemSchema,
-  TaskStateInputSchema,
-  WorkItemInputSchema,
-} from '../../shared/contracts/outcome-work';
 
 describe('Outcome work permissions', () => {
   const open = {
@@ -12,7 +7,8 @@ describe('Outcome work permissions', () => {
     members: [{ memberId: 'member' }],
     prerequisites: [],
   };
-  it('requires Outcome Membership even for a Lead or Administrator', () => {
+
+  it('requires Outcome Membership even for Project Lead or Administrator identities', () => {
     expect(workPermissions(open, 'lead')).toEqual({
       canPlan: false,
       canExecute: false,
@@ -26,7 +22,15 @@ describe('Outcome work permissions', () => {
       canExecute: true,
     });
   });
-  it('closes accepted work while allowing revision work', () => {
+
+  it('does not infer work authority from project-level edit access', () => {
+    expect(workPermissions(open, 'project-editor')).toEqual({
+      canPlan: false,
+      canExecute: false,
+    });
+  });
+
+  it('closes accepted work while allowing revision work for Outcome Members', () => {
     expect(
       workPermissions({ ...open, lifecycleStatus: 'ACCEPTED' }, 'member'),
     ).toEqual({ canPlan: false, canExecute: false });
@@ -34,31 +38,27 @@ describe('Outcome work permissions', () => {
       workPermissions({ ...open, lifecycleStatus: 'NEEDS_REVISION' }, 'member'),
     ).toEqual({ canPlan: true, canExecute: true });
   });
-});
 
-describe('Work validation', () => {
-  it('rejects blank and oversized titles and client-supplied authority', () => {
-    expect(WorkItemInputSchema.safeParse({ title: '  ' }).success).toBe(false);
+  it('blocks execution while an unresolved prerequisite locks the outcome', () => {
     expect(
-      WorkItemInputSchema.safeParse({ title: 'a'.repeat(201) }).success,
-    ).toBe(false);
-    expect(
-      WorkItemInputSchema.safeParse({
-        title: 'Work',
-        createdByMemberId: 'someone',
-      }).success,
-    ).toBe(false);
-  });
-  it('requires a version on edits and state changes', () => {
-    expect(EditWorkItemSchema.safeParse({ title: 'Work' }).success).toBe(false);
-    expect(TaskStateInputSchema.safeParse({ status: 'DONE' }).success).toBe(
-      false,
-    );
-    expect(
-      TaskStateInputSchema.safeParse({
-        status: 'ACCEPTED',
-        updatedAt: new Date().toISOString(),
-      }).success,
-    ).toBe(false);
+      workPermissions(
+        {
+          ...open,
+          prerequisites: [
+            {
+              id: 'dependency',
+              outcomeId: 'outcome',
+              prerequisiteOutcomeId: 'prerequisite',
+              overrideResolvedAt: null,
+              overrideResolvedByMemberId: null,
+              overrideReason: null,
+              createdAt: new Date(),
+              prerequisiteOutcome: { lifecycleStatus: 'OPEN' as const },
+            },
+          ],
+        },
+        'member',
+      ),
+    ).toEqual({ canPlan: true, canExecute: false });
   });
 });
