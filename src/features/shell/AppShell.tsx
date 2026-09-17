@@ -16,7 +16,10 @@ export function AppShell() {
   const setMobileOpen = useShellStore((state) => state.setMobileNavigationOpen);
   const setProfileOpen = useShellStore((state) => state.setProfileOpen);
   if (!member) return null;
-  const breadcrumbs = breadcrumbsForPath(location.pathname);
+  const isProjectSection = location.pathname.startsWith('/projects/');
+  const breadcrumbs = isProjectSection
+    ? []
+    : breadcrumbsForPath(location.pathname);
 
   return (
     <div className={`workspace-shell${mobileOpen ? ' mobile-nav-open' : ''}`}>

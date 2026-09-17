@@ -22,7 +22,6 @@ import {
   type Stage,
 } from '../../../shared/contracts/project-workflow';
 import { apiFetch } from '../../lib/api';
-import { ProjectMembersPanel } from './ProjectMembersPanel';
 import { OutcomeWorkArea } from './OutcomeWorkArea';
 import { OutcomeDeliveryPanel } from './OutcomeDeliveryPanel';
 
@@ -40,6 +39,52 @@ function lifecycleLabel(status: Outcome['lifecycleStatus']) {
     .split('_')
     .map((word) => word[0] + word.slice(1).toLowerCase())
     .join(' ');
+}
+
+function deptClass(shortLabel: string) {
+  const norm = shortLabel.toLowerCase();
+  if (norm.includes('sem') || norm.includes('s&m') || norm.includes('sm')) return 'sm';
+  if (norm.includes('rd') || norm.includes('r&d')) return 'rd';
+  if (norm.includes('creative') || norm.includes('design')) return 'creative';
+  return 'general';
+}
+
+function getOutcomeBadge(outcome: Outcome) {
+  if (outcome.lifecycleStatus === 'ACCEPTED') {
+    return { className: 'accepted', label: 'ACCEPTED' };
+  }
+  if (outcome.isLocked) {
+    return { className: 'locked', label: 'LOCKED' };
+  }
+  if (outcome.lifecycleStatus === 'OPEN' && outcome.hasForReview) {
+    return { className: 'review', label: 'FOR REVIEW' };
+  }
+  if (outcome.lifecycleStatus === 'OPEN') {
+    return { className: 'progress', label: 'IN PROGRESS' };
+  }
+  return { className: 'revision', label: 'FOR REVISION' };
+}
+
+function getOutcomeAction(outcome: Outcome, isLead?: boolean) {
+  if (isLead) {
+    if (outcome.lifecycleStatus === 'ACCEPTED') {
+      return 'View Accepted Output';
+    }
+    if (outcome.hasForReview) {
+      return 'Verify Output';
+    }
+    if (outcome.lifecycleStatus === 'OPEN') {
+      return 'Open workspace';
+    }
+    return 'View Revision Request';
+  }
+  if (outcome.lifecycleStatus === 'ACCEPTED') {
+    return 'View Accepted Output';
+  }
+  if (outcome.isLocked) {
+    return 'View workspace';
+  }
+  return 'Open workspace';
 }
 
 function AcceptanceProgress({
@@ -182,72 +227,66 @@ function StageDialog({
     >
       <section
         ref={dialogRef}
-        className="projects-dialog workflow-stage-dialog"
+        className="vw-add-project-dialog workflow-stage-dialog"
         role="dialog"
         aria-modal="true"
         aria-labelledby="workflow-stage-dialog-title"
       >
-        <header className="projects-dialog-header">
+        <header className="vw-add-project-header">
           <div>
-            <p className="projects-kicker">PROJECT EDITING</p>
-            <h2 id="workflow-stage-dialog-title">
+            <div className="vw-add-project-kicker">PROJECT STAGE</div>
+            <h2
+              id="workflow-stage-dialog-title"
+              className="vw-add-project-title"
+            >
               {stage ? 'Edit project stage' : 'Add project stage'}
             </h2>
-            <p>
-              Stages organize the Project workflow into a deterministic
-              sequence.
+            <p className="vw-modal-subtitle">
+              Stages organize the Project workflow into a deterministic sequence.
             </p>
           </div>
           <button
             type="button"
-            className="projects-icon-button"
+            className="vw-add-project-close"
             aria-label="Close Stage dialog"
             onClick={onClose}
             disabled={isSaving}
           >
-            ×
+            ✕
           </button>
         </header>
-        <form onSubmit={submit} noValidate>
-          <div className="projects-dialog-body">
-            <label className="projects-field">
-              <span>Stage name</span>
+        <form className="vw-add-project-form" onSubmit={submit} noValidate>
+          <div className="vw-add-project-body">
+            <div className="vw-add-project-field">
+              <label htmlFor="workflow-stage-name">Stage name</label>
               <input
                 id="workflow-stage-name"
                 {...register('name')}
-                placeholder="e.g. Discovery and Planning"
+                placeholder="e.g. Discovery & Planning"
                 aria-invalid={Boolean(errors.name)}
+                autoComplete="off"
               />
-              {errors.name?.message && <small>{errors.name.message}</small>}
-            </label>
-            <label className="projects-field">
-              <span>
-                Description <small>Optional</small>
-              </span>
-              <textarea
-                {...register('description')}
-                placeholder="What is the purpose of this stage?"
-                aria-invalid={Boolean(errors.description)}
-              />
-              {errors.description?.message && (
-                <small>{errors.description.message}</small>
+              {errors.name?.message && (
+                <small className="projects-field-error">
+                  {errors.name.message}
+                </small>
               )}
-            </label>
-            <p className="workflow-form-preview">
+            </div>
+            <div className="vw-add-project-preview">
               {stage
                 ? 'The Stage keeps its current position and Outcomes.'
                 : 'The Stage will be added after the existing workflow stages.'}
-            </p>
+            </div>
           </div>
           {Boolean(saveError) && (
             <div className="projects-save-error" role="alert">
               {errorMessage(saveError)}
             </div>
           )}
-          <footer className="projects-dialog-actions">
+          <footer className="vw-add-project-foot">
             <button
               type="button"
-              className="projects-secondary-button"
+              className="vw-add-project-btn-cancel"
               onClick={onClose}
               disabled={isSaving}
             >
@@ -255,7 +294,7 @@ function StageDialog({
             </button>
             <button
               type="submit"
-              className="projects-primary-button"
+              className="vw-add-project-btn-create"
               disabled={isSaving}
             >
               {isSaving ? 'Saving...' : stage ? 'Save stage' : 'Create stage'}
@@ -359,52 +398,61 @@ function OutcomeDialog({
     >
       <section
         ref={dialogRef}
-        className="projects-dialog workflow-outcome-dialog"
+        className="vw-add-project-dialog workflow-outcome-dialog"
         role="dialog"
         aria-modal="true"
         aria-labelledby="workflow-outcome-dialog-title"
       >
-        <header className="projects-dialog-header">
+        <header className="vw-add-project-header">
           <div>
-            <p className="projects-kicker">PROJECT EDITING</p>
-            <h2 id="workflow-outcome-dialog-title">
+            <div className="vw-add-project-kicker">PROJECT OUTCOME</div>
+            <h2
+              id="workflow-outcome-dialog-title"
+              className="vw-add-project-title"
+            >
               {outcome ? 'Edit project outcome' : 'Add project outcome'}
             </h2>
-            <p>
-              {stage.name} - define the expected result and how it will be
+            <p className="vw-modal-subtitle">
+              {stage.name} · define the expected result and how it will be
               evaluated.
             </p>
           </div>
           <button
             type="button"
-            className="projects-icon-button"
+            className="vw-add-project-close"
             aria-label="Close Outcome dialog"
             onClick={onClose}
             disabled={isSaving}
           >
-            ×
+            ✕
           </button>
         </header>
-        <form onSubmit={submit} noValidate>
-          <div className="projects-dialog-body">
-            <label className="projects-field">
-              <span>Stage</span>
-              <input value={stage.name} disabled />
-            </label>
-            <fieldset className="projects-department-field">
-              <legend>Responsible Departments</legend>
-              <p>Select one or more persisted Departments.</p>
-              <div className="projects-department-options">
+        <form className="vw-add-project-form" onSubmit={submit} noValidate>
+          <div className="vw-add-project-body">
+            <div className="vw-add-project-field">
+              <label htmlFor="workflow-outcome-stage">Stage</label>
+              <input id="workflow-outcome-stage" value={stage.name} disabled />
+            </div>
+
+            <div className="vw-add-project-field">
+              <label>Responsible Departments</label>
+              <p className="vw-meta-sub">
+                Select one or more persisted Departments.
+              </p>
+              <div
+                className="vw-new-project-depts"
+                role="group"
+                aria-label="Departments involved"
+              >
                 {departments.map((department) => (
-                  <label key={department.id}>
+                  <label key={department.id} className="vw-dept-checkbox-card">
                     <input
                       type="checkbox"
                       value={department.id}
                       {...register('departmentIds')}
                     />
                     <span>
-                      {department.name}
-                      <small>{department.shortLabel}</small>
+                      {department.name} <small>{department.shortLabel}</small>
                     </span>
                   </label>
                 ))}
@@ -414,56 +462,69 @@ function OutcomeDialog({
                   {errors.departmentIds.message}
                 </small>
               )}
-            </fieldset>
-            <label className="projects-field">
-              <span>Outcome</span>
+            </div>
+
+            <div className="vw-add-project-field">
+              <label htmlFor="workflow-outcome-title">Outcome title</label>
               <input
                 id="workflow-outcome-title"
                 {...register('title')}
                 aria-label="Outcome title"
-                placeholder="Expected result"
+                placeholder="e.g. Validated client requirements"
                 aria-invalid={Boolean(errors.title)}
+                autoComplete="off"
               />
-              {errors.title?.message && <small>{errors.title.message}</small>}
-            </label>
-            <label className="projects-field">
-              <span>
+              {errors.title?.message && (
+                <small className="projects-field-error">
+                  {errors.title.message}
+                </small>
+              )}
+            </div>
+
+            <div className="vw-add-project-field">
+              <label htmlFor="workflow-outcome-description">
                 Outcome description <small>Optional</small>
-              </span>
+              </label>
               <textarea
+                id="workflow-outcome-description"
+                aria-label="Outcome description Optional"
                 {...register('description')}
                 placeholder="Briefly describe what this Outcome should achieve."
                 aria-invalid={Boolean(errors.description)}
               />
               {errors.description?.message && (
-                <small>{errors.description.message}</small>
+                <small className="projects-field-error">
+                  {errors.description.message}
+                </small>
               )}
-            </label>
-            <fieldset className="workflow-criteria-builder">
-              <div className="workflow-criteria-header">
+            </div>
+
+            <div className="vw-add-project-field">
+              <div className="vw-criteria-head">
                 <div>
-                  <legend>Acceptance criteria</legend>
-                  <p>
+                  <label>Acceptance criteria</label>
+                  <p className="vw-meta-sub">
                     Define what must be true before this Outcome is accepted.
                   </p>
                 </div>
                 <button
                   type="button"
-                  className="projects-secondary-button"
+                  className="vw-add-criterion-btn"
                   onClick={() => criteria.append({ value: '' })}
                 >
                   + Add criterion
                 </button>
               </div>
-              <div className="workflow-criteria-list">
+              <div className="vw-criteria-list">
                 {criteria.fields.map((field, index) => (
-                  <div className="workflow-criterion-row" key={field.id}>
-                    <span>{index + 1}</span>
-                    <label>
+                  <div className="vw-criterion-row" key={field.id}>
+                    <span className="vw-criterion-index">{index + 1}</span>
+                    <label className="vw-criterion-input-wrap">
                       <span className="sr-only">
                         Acceptance criterion {index + 1}
                       </span>
                       <input
+                        aria-label={`Acceptance criterion ${index + 1}`}
                         {...register(`acceptanceCriteria.${index}.value`, {
                           onChange: () => clearErrors('acceptanceCriteria'),
                         })}
@@ -472,11 +533,12 @@ function OutcomeDialog({
                     </label>
                     <button
                       type="button"
+                      className="vw-criterion-remove"
                       aria-label={`Remove acceptance criterion ${index + 1}`}
                       onClick={() => criteria.remove(index)}
                       disabled={criteria.fields.length === 1}
                     >
-                      ×
+                      ✕
                     </button>
                   </div>
                 ))}
@@ -486,16 +548,19 @@ function OutcomeDialog({
                   {errors.acceptanceCriteria.message}
                 </small>
               )}
-            </fieldset>
-            <fieldset className="workflow-prerequisite-field">
-              <legend>
+            </div>
+
+            <div className="vw-add-project-field">
+              <label>
                 Prerequisite Outcomes <small>Optional</small>
-              </legend>
-              <p>Only Outcomes in this Project may be selected.</p>
+              </label>
+              <p className="vw-meta-sub">
+                Only Outcomes in this Project may be selected.
+              </p>
               {availablePrerequisites.length ? (
-                <div className="workflow-prerequisite-options">
+                <div className="vw-prerequisites-grid">
                   {availablePrerequisites.map((item) => (
-                    <label key={item.id}>
+                    <label key={item.id} className="vw-dept-checkbox-card">
                       <input
                         type="checkbox"
                         value={item.id}
@@ -506,7 +571,7 @@ function OutcomeDialog({
                   ))}
                 </div>
               ) : (
-                <p className="workflow-empty-note">
+                <p className="vw-empty-note">
                   No other Outcomes exist yet.
                 </p>
               )}
@@ -515,17 +580,17 @@ function OutcomeDialog({
                   {errors.prerequisiteOutcomeIds.message}
                 </small>
               )}
-            </fieldset>
+            </div>
           </div>
           {Boolean(saveError) && (
             <div className="projects-save-error" role="alert">
               {errorMessage(saveError)}
             </div>
           )}
-          <footer className="projects-dialog-actions">
+          <footer className="vw-add-project-foot">
             <button
               type="button"
-              className="projects-secondary-button"
+              className="vw-add-project-btn-cancel"
               onClick={onClose}
               disabled={isSaving}
             >
@@ -533,7 +598,7 @@ function OutcomeDialog({
             </button>
             <button
               type="submit"
-              className="projects-primary-button"
+              className="vw-add-project-btn-create"
               disabled={isSaving}
             >
               {isSaving
@@ -561,12 +626,15 @@ export function ProjectWorkflow({
   projectId,
   outcomeId,
   accessToken,
+  isLead,
 }: {
   projectId: string;
   outcomeId?: string;
   accessToken?: string;
+  isLead?: boolean;
 }) {
   const [editor, setEditor] = useState<EditorState>(null);
+  const [scope, setScope] = useState<'whole' | 'mine'>('whole');
   const queryClient = useQueryClient();
   const workflow = useQuery({
     queryKey: workflowKey(projectId),
@@ -729,13 +797,13 @@ export function ProjectWorkflow({
 
   if (workflow.isPending) {
     return (
-      <section
-        className="project-workflow-section"
-        aria-label="Loading Project workflow"
-      >
-        <div className="projects-skeleton" />
-        <p>Loading Stages and Outcomes...</p>
-      </section>
+      <div className="pw-board-skeleton-wrap" aria-label="Loading Stages and Outcomes">
+        <div className="pw-board-skeleton">
+          <div className="pw-stage-column-skeleton" />
+          <div className="pw-stage-column-skeleton" />
+          <div className="pw-stage-column-skeleton" />
+        </div>
+      </div>
     );
   }
   if (workflow.isError || !workflow.data) {
@@ -929,149 +997,300 @@ export function ProjectWorkflow({
     editor?.type === 'create-outcome' || editor?.type === 'edit-outcome'
       ? editor
       : null;
+  const scopedOutcomes =
+    scope === 'mine'
+      ? allOutcomes.filter((item) => item.isJoined)
+      : allOutcomes;
+  const visibleStages =
+    scope === 'mine'
+      ? workflow.data.stages.filter((stage) =>
+          stage.outcomes.some((outcome) => outcome.isJoined),
+        )
+      : workflow.data.stages;
+
   return (
     <section
-      className="project-workflow-section"
+      className="project-workflow-section pw-content-tab-section"
       aria-labelledby="project-workflow-title"
     >
-      <div className="workflow-section-heading">
+      <div className="toolbar content-board-toolbar">
         <div>
-          <p className="projects-kicker">PROJECT WORKSPACE</p>
-          <h2 id="project-workflow-title">Stages and Outcomes</h2>
-          <p>
-            Follow the Project from expected result to expected result. Outcome
-            participation remains opt-in.
-          </p>
+          <h2 className="toolbar-title" id="project-workflow-title">
+            <span className="sr-only">Stages and Outcomes </span>Project stages
+          </h2>
+          <div className="toolbar-sub" id="pwContentBoardSubtitle">
+            {scope === 'mine'
+              ? `My Work - ${scopedOutcomes.length} outcome${scopedOutcomes.length === 1 ? '' : 's'} joined by you.`
+              : 'Whole Work - complete project visibility across every stage, department, and assigned member.'}
+          </div>
         </div>
-        {workflow.data.canManageStructure && (
-          <button
-            type="button"
-            className="projects-primary-button"
-            onClick={() => setEditor({ type: 'create-stage' })}
-          >
-            + Add Stage
-          </button>
-        )}
+        <div className="content-board-actions scope-actions-right">
+          <div className="board-scope-toggle" aria-label="Project content scope">
+            <button
+              type="button"
+              className={`board-scope-btn ${scope === 'whole' ? 'active' : ''}`}
+              onClick={() => setScope('whole')}
+            >
+              Whole Work
+            </button>
+            <button
+              type="button"
+              className={`board-scope-btn ${scope === 'mine' ? 'active' : ''}`}
+              onClick={() => setScope('mine')}
+            >
+              My Work
+            </button>
+          </div>
+          {workflow.data.canManageStructure && (
+            <div className="actions" id="pwContentActions">
+              <button
+                type="button"
+                className="btn pw-outcome-button"
+                disabled={workflow.data.stages.length === 0}
+                onClick={() => {
+                  if (workflow.data.stages.length > 0) {
+                    setEditor({ type: 'create-outcome', stage: workflow.data.stages[0] });
+                  }
+                }}
+              >
+                + Outcome
+              </button>
+              <button
+                type="button"
+                className="btn primary pw-stage-button"
+                onClick={() => setEditor({ type: 'create-stage' })}
+              >
+                + Stage
+              </button>
+            </div>
+          )}
+        </div>
       </div>
+
+      <div className="sr-only">
+        <AcceptanceProgress
+          outcomes={allOutcomes}
+          label="Project acceptance progress"
+        />
+      </div>
+
       {workflow.data.stages.length === 0 ? (
-        <div className="projects-state-card workflow-empty-state">
-          <strong>No Stages yet</strong>
-          <p>
-            {workflow.data.canManageStructure
-              ? 'Add the first Stage to begin structuring this Project.'
-              : 'The Project Lead has not added workflow structure yet.'}
-          </p>
+        <div className="board-wrap">
+          <div className="board">
+            <section className="pw-empty-stage-state">
+              <div className="pw-empty-stage-icon">＋</div>
+              <strong>No Stages yet</strong>
+              <p>
+                {workflow.data.canManageStructure
+                  ? 'This project is blank. Create the first stage, then add outcomes inside it.'
+                  : 'The Project Lead has not added workflow structure yet.'}
+              </p>
+              {workflow.data.canManageStructure && (
+                <button
+                  type="button"
+                  className="btn primary pw-stage-button"
+                  aria-label="+ Add Stage"
+                  onClick={() => setEditor({ type: 'create-stage' })}
+                >
+                  + Add Stage
+                </button>
+              )}
+            </section>
+          </div>
+        </div>
+      ) : scope === 'mine' && visibleStages.length === 0 ? (
+        <div className="board-wrap">
+          <div className="board">
+            <div className="projects-state-card workflow-empty-state">
+              <strong>No joined Outcomes</strong>
+              <p>
+                No project outcomes are currently joined by you. Switch to{' '}
+                <strong>Whole Work</strong> to inspect the complete project.
+              </p>
+            </div>
+          </div>
         </div>
       ) : (
-        <>
-          <AcceptanceProgress
-            outcomes={allOutcomes}
-            label="Project acceptance progress"
-          />
-          <div className="workflow-stage-rail">
-            {workflow.data.stages.map((stage) => (
-              <article className="workflow-stage" key={stage.id}>
-                <header>
-                  <div>
-                    <span>
-                      Stage {String(stage.position + 1).padStart(2, '0')}
-                    </span>
-                    <h3>{stage.name}</h3>
-                    {stage.description && <p>{stage.description}</p>}
-                    <AcceptanceProgress
-                      outcomes={stage.outcomes}
-                      label={`${stage.name} acceptance progress`}
+        <div className="board-wrap">
+          <div className="board" id="pwBoard">
+            {visibleStages.map((stage) => {
+              const stageOutcomes =
+                scope === 'mine'
+                  ? stage.outcomes.filter((outcome) => outcome.isJoined)
+                  : stage.outcomes;
+              const acceptedCount = stage.outcomes.filter(
+                (outcome) => outcome.lifecycleStatus === 'ACCEPTED',
+              ).length;
+              return (
+                <section className="stage workflow-stage" key={stage.id}>
+                  <div className="stage-head">
+                    <div className="stage-num">
+                      STAGE {String(stage.position + 1)}
+                    </div>
+                    <div className="stage-title-row">
+                      <h3 className="stage-title">{stage.name}</h3>
+                      <span className="count">
+                        {stageOutcomes.length} outcome
+                        {stageOutcomes.length === 1 ? '' : 's'}
+                      </span>
+                      {workflow.data.canManageStructure && (
+                        <button
+                          type="button"
+                          className="pw-stage-edit"
+                          title="Rename stage"
+                          aria-label={`Edit Stage ${stage.name}`}
+                          onClick={() =>
+                            setEditor({ type: 'edit-stage', stage })
+                          }
+                        >
+                          ✎
+                        </button>
+                      )}
+                    </div>
+                    {stage.description && (
+                      <p className="stage-desc">{stage.description}</p>
+                    )}
+                    <progress
+                      aria-label={`${stage.name} acceptance progress`}
+                      value={acceptedCount}
+                      max={stage.outcomes.length}
+                      className="sr-only"
                     />
                   </div>
-                  {workflow.data.canManageStructure && (
-                    <button
-                      type="button"
-                      className="workflow-icon-button"
-                      aria-label={`Edit Stage ${stage.name}`}
-                      onClick={() => setEditor({ type: 'edit-stage', stage })}
-                    >
-                      Edit
-                    </button>
-                  )}
-                </header>
-                <div className="workflow-outcome-list">
-                  {stage.outcomes.map((outcome) => (
-                    <article className="workflow-outcome-card" key={outcome.id}>
-                      <div className="workflow-outcome-meta">
-                        <span
-                          className={`workflow-state ${outcome.lifecycleStatus.toLowerCase()}`}
+
+                  <div className="stage-cards">
+                    {stageOutcomes.map((outcome) => {
+                      const stateBadge = getOutcomeBadge(outcome);
+                      const actionText = getOutcomeAction(outcome, isLead);
+                      return (
+                        <article
+                          className={`outcome-card ${
+                            outcome.lifecycleStatus === 'OPEN' &&
+                            outcome.hasForReview
+                              ? 'pw-review'
+                              : ''
+                          }`}
+                          key={outcome.id}
                         >
-                          {outcome.isLocked
-                            ? 'Locked'
-                            : outcome.lifecycleStatus === 'OPEN' &&
-                                outcome.hasForReview
-                              ? 'For Review'
-                              : lifecycleLabel(outcome.lifecycleStatus)}
-                        </span>
-                        {workflow.data.canManageStructure && (
-                          <button
-                            type="button"
-                            aria-label={`Edit Outcome ${outcome.title}`}
-                            onClick={() =>
-                              setEditor({
-                                type: 'edit-outcome',
-                                stage,
-                                outcome,
-                              })
-                            }
-                          >
-                            Edit
-                          </button>
-                        )}
-                      </div>
-                      <h4>{outcome.title}</h4>
-                      <p>{outcome.description || 'No description provided.'}</p>
-                      <div className="workflow-outcome-departments">
-                        {outcome.departments.map((department) => (
-                          <span key={department.id}>
-                            {department.shortLabel}
-                          </span>
-                        ))}
-                      </div>
-                      {outcome.prerequisites.length > 0 && (
-                        <p className="workflow-prerequisite-note">
-                          Prerequisites:{' '}
-                          {outcome.prerequisites
-                            .map(
-                              ({ title, resolved }) =>
-                                `${title} (${resolved ? 'Resolved' : 'Waiting'})`,
-                            )
-                            .join(', ')}
-                        </p>
-                      )}
-                      <Link
-                        to={`/projects/${projectId}/outcomes/${outcome.id}`}
+                          <div className="card-top">
+                            <h4 className="outcome-title">{outcome.title}</h4>
+                            <div className="pw-outcome-card-actions">
+                              <span
+                                className={`state ${stateBadge.className}`}
+                              >
+                                {stateBadge.label}
+                              </span>
+                              {workflow.data.canManageStructure && (
+                                <button
+                                  type="button"
+                                  className="pw-outcome-edit-btn"
+                                  aria-label={`Edit Outcome ${outcome.title}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditor({
+                                      type: 'edit-outcome',
+                                      stage,
+                                      outcome,
+                                    });
+                                  }}
+                                >
+                                  ✎
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          <p className="outcome-desc">
+                            {outcome.description ||
+                              'No description provided.'}
+                          </p>
+
+                          <div className="tags">
+                            {outcome.departments.map((department) => (
+                              <span
+                                key={department.id}
+                                className={`dept ${deptClass(
+                                  department.shortLabel,
+                                )}`}
+                              >
+                                {department.shortLabel}
+                              </span>
+                            ))}
+                            {outcome.members && outcome.members.length > 0 ? (
+                              outcome.members.map((member) => (
+                                <span key={member.id} className="member">
+                                  {member.fullName}
+                                </span>
+                              ))
+                            ) : outcome.isJoined ? (
+                              <span className="member">Joined</span>
+                            ) : null}
+                          </div>
+
+                          {outcome.prerequisites.length > 0 && (
+                            <p className="workflow-prerequisite-note">
+                              Prerequisites:{' '}
+                              {outcome.prerequisites
+                                .map(
+                                  ({ title, resolved }) =>
+                                    `${title} (${
+                                      resolved ? 'Resolved' : 'Waiting'
+                                    })`,
+                                )
+                                .join(', ')}
+                            </p>
+                          )}
+
+                          <div className="card-foot">
+                            <span className="tiny">
+                              {outcome.lifecycleStatus === 'ACCEPTED'
+                                ? '100%'
+                                : outcome.hasForReview
+                                  ? '80%'
+                                  : outcome.lifecycleStatus === 'NEEDS_REVISION'
+                                    ? '50%'
+                                    : outcome.isJoined
+                                      ? '30%'
+                                      : '0%'}{' '}
+                              work progress
+                            </span>
+                            <Link
+                              to={`/projects/${projectId}/outcomes/${outcome.id}`}
+                              className="pw-card-action"
+                            >
+                              {actionText} →
+                            </Link>
+                          </div>
+                        </article>
+                      );
+                    })}
+
+                    {stageOutcomes.length === 0 && (
+                      <p className="workflow-stage-empty">
+                        No Outcomes in this Stage.
+                      </p>
+                    )}
+
+                    {workflow.data.canManageStructure && (
+                      <button
+                        type="button"
+                        className="add-outcome"
+                        aria-label="+ Add Outcome"
+                        onClick={() =>
+                          setEditor({ type: 'create-outcome', stage })
+                        }
                       >
-                        Outcome Details <span aria-hidden="true">→</span>
-                      </Link>
-                    </article>
-                  ))}
-                  {stage.outcomes.length === 0 && (
-                    <p className="workflow-stage-empty">
-                      No Outcomes in this Stage.
-                    </p>
-                  )}
-                </div>
-                {workflow.data.canManageStructure && (
-                  <button
-                    type="button"
-                    className="workflow-add-outcome"
-                    onClick={() => setEditor({ type: 'create-outcome', stage })}
-                  >
-                    + Add Outcome
-                  </button>
-                )}
-              </article>
-            ))}
+                        + Add Outcome
+                      </button>
+                    )}
+                  </div>
+                </section>
+              );
+            })}
           </div>
-        </>
+        </div>
       )}
-      <ProjectMembersPanel projectId={projectId} accessToken={accessToken} />
+
       {(editor?.type === 'create-stage' || editor?.type === 'edit-stage') && (
         <StageDialog
           stage={editor.type === 'edit-stage' ? editor.stage : undefined}

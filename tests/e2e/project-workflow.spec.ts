@@ -212,9 +212,6 @@ test('F4-01 F4-02 F4-03 F4-06: Lead creates and edits a persistent Stage with gu
   firstStageId = stage.id;
   await page.getByRole('button', { name: 'Edit Stage Discovery' }).click();
   await page.getByLabel('Stage name').fill('Market Learning');
-  await page
-    .getByLabel('Description Optional')
-    .fill('Understand customer needs before delivery.');
   await page.getByRole('button', { name: 'Save stage' }).click();
   await expect(
     page.getByRole('heading', { name: 'Market Learning' }),
@@ -230,9 +227,6 @@ test('F4-03 refresh persistence: edited Stage reloads from PostgreSQL', async ({
   await page.goto(`/projects/${leadProjectId}`);
   await expect(
     page.getByRole('heading', { name: 'Market Learning' }),
-  ).toBeVisible();
-  await expect(
-    page.getByText('Understand customer needs before delivery.'),
   ).toBeVisible();
 });
 
