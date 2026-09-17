@@ -5,11 +5,10 @@ import { AuthGate } from '../features/auth/AuthGate';
 import { LoginPage } from '../features/auth/LoginPage';
 import { FoundationPage } from '../features/foundation/FoundationPage';
 import { ProjectsPage } from '../features/projects/ProjectsPage';
-import { ProjectOverviewPage } from '../features/projects/ProjectOverviewPage';
 import { NotFoundPage } from '../features/foundation/NotFoundPage';
 import { AppShell } from '../features/shell/AppShell';
 import { PlaceholderPage } from '../features/shell/PlaceholderPage';
-import { RegistryGate } from '../features/shell/RegistryGate';
+import { loadProjectOverviewRoute, loadRegistryRoute } from './route-modules';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -27,10 +26,10 @@ export const router = createBrowserRouter([
         children: [
           { path: '/', element: <PlaceholderPage title="Home" /> },
           { path: '/projects', element: <ProjectsPage /> },
-          { path: '/projects/:projectId', element: <ProjectOverviewPage /> },
+          { path: '/projects/:projectId', lazy: loadProjectOverviewRoute },
           {
             path: '/projects/:projectId/outcomes/:outcomeId',
-            element: <ProjectOverviewPage />,
+            lazy: loadProjectOverviewRoute,
           },
           { path: '/visiwork', element: <PlaceholderPage title="VisiWork" /> },
           { path: '/schedule', element: <PlaceholderPage title="Schedule" /> },
@@ -39,7 +38,7 @@ export const router = createBrowserRouter([
             path: '/notifications',
             element: <PlaceholderPage title="Notifications" />,
           },
-          { path: '/registry', element: <RegistryGate /> },
+          { path: '/registry', lazy: loadRegistryRoute },
         ],
       },
     ],

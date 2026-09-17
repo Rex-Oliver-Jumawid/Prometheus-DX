@@ -72,6 +72,10 @@ export function ProjectOverviewPage() {
   const project = useQuery({
     ...projectDetailQuery(projectId ?? 'missing-project', accessToken),
     enabled: Boolean(projectId && accessToken),
+    placeholderData: () =>
+      queryClient
+        .getQueryData<Project[]>(projectKeys.list)
+        ?.find((item) => item.id === projectId),
   });
   useQuery({
     ...projectWorkflowQuery(projectId ?? 'missing-project', accessToken),
@@ -185,7 +189,7 @@ export function ProjectOverviewPage() {
     );
   }
 
-  if (project.isError || !project.data) {
+  if ((project.isError && !project.data) || !project.data) {
     return (
       <section
         className="projects-state-card project-overview-state"
@@ -228,6 +232,12 @@ export function ProjectOverviewPage() {
       </div>
 
       <section className="pw-project-header">
+        {project.isError && (
+          <div className="project-status-error" role="alert">
+            Latest Project details could not be loaded. Showing the most recent
+            available Project data.
+          </div>
+        )}
         <div className="pw-project-kicker">PROJECT WORKSPACE</div>
         <h1 id="pwProjectTitle">{value.name}</h1>
         <p id="pwProjectDescription">

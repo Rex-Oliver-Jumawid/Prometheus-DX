@@ -11,6 +11,7 @@ import {
 import { useAuth } from '../auth/auth-context';
 import { apiFetch } from '../../lib/api';
 import { CreateProjectDialog } from './CreateProjectDialog';
+import { loadProjectOverviewRoute } from '../../routes/route-modules';
 import {
   projectDetailQuery,
   projectKeys,
@@ -236,6 +237,7 @@ export function ProjectsPage() {
 
   const prefetchWorkspace = (projectId: string) => {
     void Promise.all([
+      loadProjectOverviewRoute(),
       queryClient.prefetchQuery(projectDetailQuery(projectId, accessToken)),
       queryClient.prefetchQuery(projectWorkflowQuery(projectId, accessToken)),
     ]);

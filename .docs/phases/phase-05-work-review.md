@@ -99,6 +99,8 @@ That verification passed 113/113 Node tests and 11/11 React component tests.
 The focused Project Chromium suite passed 5/5, including persisted status and exact history assertions.
 The focused CAN_EDIT Chromium journey passed.
 The focused CAN_VIEW test retained the known Project Members request timeout before reaching its status assertion.
+The P5-D08 perceived-latency pass added a repeatable Chromium timing probe for cold, warm, prefetched, and unprefetched navigation milestones.
+Focused component verification passed 12/12 tests, including optimistic Project Member access rollback.
 
 ### Acceptance coverage index
 
@@ -453,6 +455,74 @@ Do not replace transaction pooling with session pooling until connection-exhaust
 - `scripts/measure-latency.ts`
 - `tests/e2e/projects.spec.ts`
 - `tests/e2e/project-member-access.spec.ts`
+
+### P5-D08 - Preserve useful cached content and preload heavy authenticated routes
+
+**Status:** Implemented
+**Area:** Frontend performance, query consistency, and testing
+**Impact:** High
+
+#### What gave us a hard time
+
+Backend reads remained dominated by the already measured database and network path.
+The remaining opportunity was to make navigation useful before those authoritative reads completed without showing one Project as another or treating cached authorization as authoritative.
+
+#### Root cause / constraint
+
+Project detail required its dedicated query before rendering even though the Projects list already held the exact matching Project read model.
+Project Members, Outcome work, and Outcome delivery forced refetches on every mount despite also defining domain stale times.
+The Project workspace and Registry were included in one 812.56 kilobyte minified initial JavaScript bundle.
+Project Member access remained visually unchanged until its authorized PATCH returned.
+
+#### Options considered
+
+1. Increase all stale times globally.
+2. Add a combined workspace backend endpoint.
+3. Reuse exact cached records, retain domain-specific stale times, preload code and data from existing high-intent signals, and make only deterministic access changes optimistic.
+
+#### Decision
+
+Selected option 3.
+Project detail now uses only the list record with the same Project ID as placeholder data while its dedicated authoritative query runs.
+Cached content remains visible if that refresh fails and the existing error pattern reports the failure.
+Forced every-mount refetches were removed from Project Members, Outcome work, and Outcome delivery, leaving their 30-second or 10-second stale policies and precise mutation cache updates in control.
+Project workspace and Registry routes are lazy chunks, and the existing hover and focus prefetch paths now preload both route code and query data.
+Project Member access updates its exact Project Members cache optimistically, rolls back on error, reconciles with the server response, and continues to rely on backend authorization.
+
+#### Result
+
+The baseline Chromium probe measured cold Projects useful content at 1957.7 milliseconds, prefetched Project A at 187.0 milliseconds, warm Projects return at 138.4 milliseconds, prefetched Project B at 160.1 milliseconds, and Registry warm revisit at 100.9 milliseconds.
+After the change, an intentionally unprefetched Project click from a cached Projects list displayed the exact Project header in 21.7 milliseconds while authoritative detail completed at 977.0 milliseconds.
+The same after-change run measured prefetched Project navigation at 148.3 to 192.6 milliseconds and warm Projects return at 72.2 milliseconds.
+The final focused timing run measured Project status local feedback at 19.3 milliseconds while still awaiting and restoring through the authoritative PATCH path.
+Cold Projects measured 2632.9 milliseconds in that run, so no cold backend improvement is claimed.
+The production build now emits 60.86 kilobyte Project workspace and 22.04 kilobyte Registry route chunks.
+Initial minified JavaScript decreased from 812.56 to 731.79 kilobytes, with gzip size decreasing from 230.72 to 213.15 kilobytes.
+
+#### What we learned
+
+Exact cache reuse can remove a visible wait even when authoritative latency is unchanged.
+Stale-time policy is ineffective when a query separately forces every mount to refetch.
+Code preloading and data prefetching should share the same limited high-intent interaction instead of creating independent speculation systems.
+
+#### Next approach
+
+Keep measuring useful-content and authoritative-completion milestones separately.
+Do not broaden placeholder reuse across Project IDs.
+Further initial-bundle work should be evidence-driven because the remaining main chunk includes the application shell, authentication, Projects landing page, and shared runtime dependencies.
+
+#### Related changes
+
+- `src/routes/router.tsx`
+- `src/routes/route-modules.ts`
+- `src/features/projects/ProjectOverviewPage.tsx`
+- `src/features/projects/ProjectsPage.tsx`
+- `src/features/shell/AppShell.tsx`
+- `src/features/projects/ProjectMembersPanel.tsx`
+- `src/features/projects/OutcomeWorkArea.tsx`
+- `src/features/projects/OutcomeDeliveryPanel.tsx`
+- `src/features/projects/ProjectMembersPanel.test.tsx`
+- `tests/e2e/perceived-latency.spec.ts`
 
 ## Known Limitations
 

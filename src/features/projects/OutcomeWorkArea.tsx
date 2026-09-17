@@ -341,7 +341,6 @@ export function OutcomeWorkArea({
     queryFn: () => apiFetch(path, OutcomeWorkSchema, { accessToken }),
     retry: false,
     staleTime: 10_000,
-    refetchOnMount: 'always',
   });
   const mutation = useMutation({
     mutationFn: (input: Change) =>

@@ -33,7 +33,6 @@ export function ProjectMembersPanel({
       }),
     retry: false,
     staleTime: 30_000,
-    refetchOnMount: 'always',
   });
   const updateAccess = useMutation({
     mutationFn: ({
@@ -52,6 +51,27 @@ export function ProjectMembersPanel({
           body: UpdateProjectMemberAccessRequestSchema.parse({ accessLevel }),
         },
       ),
+    onMutate: async ({ memberId, accessLevel }) => {
+      const queryKey = membersKey(projectId);
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData(queryKey);
+      queryClient.setQueryData(queryKey, (current: typeof members.data) =>
+        current
+          ? {
+              ...current,
+              members: current.members.map((item) =>
+                item.member.id === memberId ? { ...item, accessLevel } : item,
+              ),
+            }
+          : current,
+      );
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(membersKey(projectId), context.previous);
+      }
+    },
     onSuccess: (updated: ProjectMember) => {
       queryClient.setQueryData(
         membersKey(projectId),
@@ -141,7 +161,7 @@ export function ProjectMembersPanel({
                       value={item.accessLevel}
                       disabled={isUpdating}
                       onChange={(event) =>
-                        void updateAccess.mutateAsync({
+                        updateAccess.mutate({
                           memberId: item.member.id,
                           accessLevel: event.target.value as ProjectAccessLevel,
                         })

@@ -165,7 +165,6 @@ export function OutcomeDeliveryPanel({
     queryFn: () => apiFetch(path, OutcomeDeliverySchema, { accessToken }),
     retry: false,
     staleTime: 10_000,
-    refetchOnMount: 'always',
   });
   const mutation = useMutation({
     mutationFn: ({ action, body }: { action: string; body: unknown }) =>
