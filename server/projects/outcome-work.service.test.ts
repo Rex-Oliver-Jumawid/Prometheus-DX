@@ -46,8 +46,14 @@ describe('Outcome work permissions', () => {
           ...open,
           prerequisites: [
             {
+              id: 'dependency',
+              outcomeId: 'outcome',
+              prerequisiteOutcomeId: 'prerequisite',
+              overrideResolvedAt: null,
+              overrideResolvedByMemberId: null,
+              overrideReason: null,
+              createdAt: new Date(),
               prerequisiteOutcome: { lifecycleStatus: 'OPEN' as const },
-              overrideByLead: false,
             },
           ],
         },
