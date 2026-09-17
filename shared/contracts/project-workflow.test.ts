@@ -33,15 +33,18 @@ describe('project workflow contracts', () => {
       departmentIds: [departmentId],
       acceptanceCriteria: ['Interview evidence exists.'],
       prerequisiteOutcomeIds: [prerequisiteId],
+      memberIds: [],
     });
   });
 
-  it('rejects duplicate Department and prerequisite references', () => {
+  it('rejects duplicate Department, member, and prerequisite references', () => {
+    const memberId = '33333333-3333-4333-8333-333333333333';
     const base = {
       title: 'Validated opportunity',
       departmentIds: [departmentId],
       acceptanceCriteria: ['Interview evidence exists.'],
       prerequisiteOutcomeIds: [prerequisiteId],
+      memberIds: [memberId],
     };
     expect(
       UpdateOutcomeRequestSchema.safeParse({
@@ -53,6 +56,12 @@ describe('project workflow contracts', () => {
       UpdateOutcomeRequestSchema.safeParse({
         ...base,
         prerequisiteOutcomeIds: [prerequisiteId, prerequisiteId],
+      }).success,
+    ).toBe(false);
+    expect(
+      UpdateOutcomeRequestSchema.safeParse({
+        ...base,
+        memberIds: [memberId, memberId],
       }).success,
     ).toBe(false);
   });

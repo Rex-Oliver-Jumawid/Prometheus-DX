@@ -88,10 +88,14 @@ const StageFieldsSchema = z.object({
 export const CreateStageRequestSchema = StageFieldsSchema;
 export const UpdateStageRequestSchema = StageFieldsSchema;
 
-const uniqueUuidArray = (message: string, minimum = 0) =>
+const uniqueUuidArray = (
+  message: string,
+  minimum = 0,
+  minMessage = 'Choose at least one responsible department.',
+) =>
   z
     .array(z.string().uuid(message))
-    .min(minimum, 'Choose at least one responsible department.')
+    .min(minimum, minMessage)
     .refine((values) => new Set(values).size === values.length, {
       message: 'Choose each item only once.',
     });
@@ -109,6 +113,7 @@ const OutcomeFieldsSchema = z.object({
   prerequisiteOutcomeIds: uniqueUuidArray(
     'Choose an existing prerequisite outcome.',
   ).default([]),
+  memberIds: uniqueUuidArray('Choose an existing member.').default([]),
 });
 
 export const CreateOutcomeRequestSchema = OutcomeFieldsSchema;

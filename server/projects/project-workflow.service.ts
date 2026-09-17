@@ -229,7 +229,7 @@ export class ProjectWorkflowService {
         select: { position: true },
         orderBy: { position: 'desc' },
       });
-      return transaction.outcome.create({
+      const created = await transaction.outcome.create({
         data: {
           stageId,
           title: input.title,
@@ -252,9 +252,22 @@ export class ProjectWorkflowService {
               (prerequisiteOutcomeId) => ({ prerequisiteOutcomeId }),
             ),
           },
+          members: {
+            create: (input.memberIds || []).map((memberId) => ({
+              memberId,
+            })),
+          },
         },
         include: outcomeInclude,
       });
+      for (const memberId of input.memberIds || []) {
+        await transaction.projectMember.upsert({
+          where: { projectId_memberId: { projectId, memberId } },
+          update: {},
+          create: { projectId, memberId, accessLevel: 'CAN_VIEW' },
+        });
+      }
+      return created;
     });
     return this.toOutcome(outcome, currentMember.id);
   }
@@ -307,6 +320,20 @@ export class ProjectWorkflowService {
       await transaction.outcomeDepartment.deleteMany({
         where: { outcomeId },
       });
+      if (input.memberIds) {
+        for (const memberId of input.memberIds) {
+          await transaction.outcomeMember.upsert({
+            where: { outcomeId_memberId: { outcomeId, memberId } },
+            update: {},
+            create: { outcomeId, memberId },
+          });
+          await transaction.projectMember.upsert({
+            where: { projectId_memberId: { projectId, memberId } },
+            update: {},
+            create: { projectId, memberId, accessLevel: 'CAN_VIEW' },
+          });
+        }
+      }
       return transaction.outcome.update({
         where: { id: outcomeId },
         data: {
@@ -471,6 +498,18 @@ export class ProjectWorkflowService {
       throw new BadRequestException(
         'Prerequisite Outcomes must belong to the same Project.',
       );
+    }
+    if (input.memberIds?.length) {
+      const members = await transaction.member.findMany({
+        where: { id: { in: input.memberIds } },
+        select: { id: true, status: true },
+      });
+      if (
+        members.length !== input.memberIds.length ||
+        members.some((m) => m.status !== 'ACTIVE')
+      ) {
+        throw new BadRequestException('Choose only existing active members.');
+      }
     }
     if (outcomeId) {
       const edges = await transaction.outcomeDependency.findMany({

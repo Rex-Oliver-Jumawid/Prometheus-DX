@@ -267,6 +267,7 @@ const outcomeInput = {
   departmentIds: [departmentId],
   acceptanceCriteria: ['Interview evidence exists.'],
   prerequisiteOutcomeIds: [prerequisiteId],
+  memberIds: [],
 };
 
 describe('ProjectWorkflowService', () => {
