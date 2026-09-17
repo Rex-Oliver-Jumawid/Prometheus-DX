@@ -348,7 +348,7 @@ export class ProjectWorkflowService {
     projectId: string,
     outcomeId: string,
   ): Promise<Outcome> {
-    const outcome = await this.prisma.$transaction(async (transaction) => {
+    await this.prisma.$transaction(async (transaction) => {
       await transaction.$queryRaw`SELECT id FROM projects WHERE id = ${projectId}::uuid FOR UPDATE`;
       const existing = await transaction.outcome.findUnique({
         where: { id: outcomeId },
@@ -383,10 +383,10 @@ export class ProjectWorkflowService {
           accessLevel: 'CAN_VIEW',
         },
       });
-      return transaction.outcome.findUniqueOrThrow({
-        where: { id: outcomeId },
-        include: outcomeInclude,
-      });
+    });
+    const outcome = await this.prisma.outcome.findUniqueOrThrow({
+      where: { id: outcomeId },
+      include: outcomeInclude,
     });
     return this.toOutcome(outcome, currentMember.id);
   }

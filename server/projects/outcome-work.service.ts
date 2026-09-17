@@ -67,12 +67,16 @@ export class OutcomeWorkService {
     outcomeId: string,
   ): Promise<OutcomeWork> {
     const outcome = await this.findOutcome(this.prisma, projectId, outcomeId);
+    return this.toWork(outcome, member.id);
+  }
+
+  private toWork(outcome: WorkRecord, memberId: string): OutcomeWork {
     const tasks = outcome.features.flatMap((feature) => feature.tasks);
     const completedTasks = tasks.filter(
       (task) => task.status === 'DONE',
     ).length;
     return {
-      ...workPermissions(outcome, member.id),
+      ...workPermissions(outcome, memberId),
       completedTasks,
       totalTasks: tasks.length,
       progress:
@@ -113,7 +117,7 @@ export class OutcomeWorkService {
       outcome: WorkRecord,
     ) => Promise<{ id: string; title: string } | void>,
   ) {
-    await this.prisma.$transaction(async (db) => {
+    return this.prisma.$transaction(async (db) => {
       // Serialize position allocation and lifecycle checks across this Project.
       await db.$queryRaw`SELECT id FROM projects WHERE id = ${projectId}::uuid FOR UPDATE`;
       const outcome = await this.findOutcome(db, projectId, outcomeId);
@@ -139,8 +143,8 @@ export class OutcomeWorkService {
             metadata: { title: result.title },
           },
         });
+      return this.toWork(outcome, member.id);
     });
-    return this.getWork(member, projectId, outcomeId);
   }
 
   private requireFeature(outcome: WorkRecord, featureId: string) {
@@ -177,8 +181,8 @@ export class OutcomeWorkService {
       outcomeId,
       false,
       'FEATURE_CREATED',
-      (db, outcome) =>
-        db.feature.create({
+      async (db, outcome) => {
+        const feature = await db.feature.create({
           data: {
             outcomeId,
             title: input.title,
@@ -186,7 +190,10 @@ export class OutcomeWorkService {
             position: (outcome.features.at(-1)?.position ?? -1) + 1,
             createdByMemberId: member.id,
           },
-        }),
+        });
+        outcome.features.push({ ...feature, tasks: [] });
+        return feature;
+      },
     );
   }
 
@@ -203,15 +210,18 @@ export class OutcomeWorkService {
       outcomeId,
       false,
       'FEATURE_UPDATED',
-      (db, outcome) => {
+      async (db, outcome) => {
+        const feature = this.requireFeature(outcome, featureId);
         this.requireVersion(
-          this.requireFeature(outcome, featureId).updatedAt,
+          feature.updatedAt,
           input.updatedAt,
         );
-        return db.feature.update({
+        const updated = await db.feature.update({
           where: { id: featureId },
           data: { title: input.title, description: input.description || null },
         });
+        Object.assign(feature, updated);
+        return updated;
       },
     );
   }
@@ -228,9 +238,14 @@ export class OutcomeWorkService {
       outcomeId,
       false,
       'FEATURE_DELETED',
-      (db, outcome) => {
+      async (db, outcome) => {
+        const index = outcome.features.findIndex(
+          (feature) => feature.id === featureId,
+        );
         this.requireFeature(outcome, featureId);
-        return db.feature.delete({ where: { id: featureId } });
+        const deleted = await db.feature.delete({ where: { id: featureId } });
+        outcome.features.splice(index, 1);
+        return deleted;
       },
     );
   }
@@ -248,9 +263,9 @@ export class OutcomeWorkService {
       outcomeId,
       false,
       'TASK_CREATED',
-      (db, outcome) => {
+      async (db, outcome) => {
         const feature = this.requireFeature(outcome, featureId);
-        return db.task.create({
+        const task = await db.task.create({
           data: {
             featureId,
             title: input.title,
@@ -259,6 +274,8 @@ export class OutcomeWorkService {
             createdByMemberId: member.id,
           },
         });
+        feature.tasks.push(task);
+        return task;
       },
     );
   }
@@ -276,15 +293,18 @@ export class OutcomeWorkService {
       outcomeId,
       false,
       'TASK_UPDATED',
-      (db, outcome) => {
+      async (db, outcome) => {
+        const task = this.requireTask(outcome, taskId);
         this.requireVersion(
-          this.requireTask(outcome, taskId).updatedAt,
+          task.updatedAt,
           input.updatedAt,
         );
-        return db.task.update({
+        const updated = await db.task.update({
           where: { id: taskId },
           data: { title: input.title, description: input.description || null },
         });
+        Object.assign(task, updated);
+        return updated;
       },
     );
   }
@@ -302,11 +322,11 @@ export class OutcomeWorkService {
       outcomeId,
       true,
       input.status === 'DONE' ? 'TASK_COMPLETED' : 'TASK_REOPENED',
-      (db, outcome) => {
+      async (db, outcome) => {
         const task = this.requireTask(outcome, taskId);
         this.requireVersion(task.updatedAt, input.updatedAt);
-        if (task.status === input.status) return Promise.resolve();
-        return db.task.update({
+        if (task.status === input.status) return;
+        const updated = await db.task.update({
           where: { id: taskId },
           data: {
             status: input.status,
@@ -314,6 +334,8 @@ export class OutcomeWorkService {
             completedByMemberId: input.status === 'DONE' ? member.id : null,
           },
         });
+        Object.assign(task, updated);
+        return updated;
       },
     );
   }
@@ -330,9 +352,17 @@ export class OutcomeWorkService {
       outcomeId,
       false,
       'TASK_DELETED',
-      (db, outcome) => {
+      async (db, outcome) => {
+        const feature = outcome.features.find((item) =>
+          item.tasks.some((task) => task.id === taskId),
+        );
         this.requireTask(outcome, taskId);
-        return db.task.delete({ where: { id: taskId } });
+        const deleted = await db.task.delete({ where: { id: taskId } });
+        feature?.tasks.splice(
+          feature.tasks.findIndex((item) => item.id === taskId),
+          1,
+        );
+        return deleted;
       },
     );
   }

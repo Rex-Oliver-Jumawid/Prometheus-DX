@@ -68,7 +68,9 @@ async function request(
   );
 }
 
-test.describe.configure({ mode: 'serial' });
+// This suite uses the hosted acceptance database and real Supabase sign-in.
+// Its multi-request user journeys need headroom for a cold pooled connection.
+test.describe.configure({ mode: 'serial', timeout: 60_000 });
 test.beforeAll(async () => {
   test.skip(!hasCredentials, 'Requires E2E member credentials.');
   const member = await prisma.member.findFirstOrThrow({
@@ -136,7 +138,7 @@ test.afterAll(async () => {
   await prisma.$disconnect();
 });
 
-test('F5-02: viewer, CAN_EDIT, and non-member Lead cannot create Feature work', async ({
+test('F5-02: viewer cannot create Feature work', async ({
   page,
 }) => {
   await signIn(page);
@@ -151,17 +153,31 @@ test('F5-02: viewer, CAN_EDIT, and non-member Lead cannot create Feature work', 
     (await request(page, '/work/features', 'POST', { title: 'Forbidden' }))
       .status,
   ).toBe(403);
+});
+
+test('F5-02: CAN_EDIT without Outcome Membership cannot create Feature work', async ({
+  page,
+}) => {
   await prisma.projectMember.create({
     data: { projectId, memberId, accessLevel: 'CAN_EDIT' },
   });
+  await signIn(page);
+  await openWork(page);
   expect(
     (await request(page, '/work/features', 'POST', { title: 'Forbidden' }))
       .status,
   ).toBe(403);
+});
+
+test('F5-02: non-member Project Lead cannot create Feature work', async ({
+  page,
+}) => {
   await prisma.project.update({
     where: { id: projectId },
     data: { leadMemberId: memberId },
   });
+  await signIn(page);
+  await openWork(page);
   expect(
     (await request(page, '/work/features', 'POST', { title: 'Forbidden' }))
       .status,
@@ -172,14 +188,26 @@ test('F5-02: viewer, CAN_EDIT, and non-member Lead cannot create Feature work', 
   });
 });
 
-test('F5-01 F5-03 F5-08: joined member creates persisted Feature and Task', async ({
+test('F5-01 F5-08: joined member creates a persisted Feature', async ({
   page,
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  await prisma.$transaction([
+    prisma.outcomeMember.upsert({
+      where: { outcomeId_memberId: { outcomeId, memberId } },
+      update: {},
+      create: { outcomeId, memberId },
+    }),
+    prisma.projectMember.upsert({
+      where: { projectId_memberId: { projectId, memberId } },
+      update: {},
+      create: { projectId, memberId, accessLevel: 'CAN_VIEW' },
+    }),
+  ]);
   await signIn(page);
   await openWork(page);
-  await page.getByRole('button', { name: '+ Join Outcome' }).click();
+  await expect(page.getByText('✓ Joined Outcome')).toBeVisible();
   await page.getByRole('button', { name: '+ Add Feature' }).click();
   await page.getByRole('button', { name: 'Add feature', exact: true }).click();
   await expect(page.getByText('Enter a title.')).toBeVisible();
@@ -189,40 +217,95 @@ test('F5-01 F5-03 F5-08: joined member creates persisted Feature and Task', asyn
   await page
     .getByLabel('Feature description', { exact: false })
     .fill('Implement the agreed authentication work.');
+  const created = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/work/features') &&
+      response.request().method() === 'POST',
+  );
   await page.getByRole('button', { name: 'Add feature', exact: true }).click();
+  expect((await created).status()).toBe(201);
   await expect(
     page.getByRole('heading', { name: 'Authentication', exact: true }),
   ).toBeVisible();
-  await page.getByLabel('Task title', { exact: true }).fill('Implement login');
+  expect(errors).toEqual([]);
+});
+
+test('F5-03 F5-08: joined member creates a persisted Task', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await signIn(page);
+  await openWork(page);
   await page.getByRole('button', { name: 'Add task', exact: true }).click();
+  await expect(page.getByText('Enter a title.')).toBeVisible();
+  await page.getByLabel('Task title', { exact: true }).fill('Implement login');
+  const created = page.waitForResponse(
+    (response) =>
+      response.url().includes('/work/features/') &&
+      response.url().endsWith('/tasks') &&
+      response.request().method() === 'POST',
+  );
+  await page.getByRole('button', { name: 'Add task', exact: true }).click();
+  expect((await created).status()).toBe(201);
   await expect(
     page.getByRole('checkbox', { name: 'Complete Implement login' }),
   ).toBeVisible();
   expect(errors).toEqual([]);
 });
 
-test('F5-05 F5-06: complete and reopen Task with refresh persistence', async ({
+test('F5-05: completing a Task persists and updates progress', async ({ page }) => {
+  await signIn(page);
+  await openWork(page);
+  const completed = page.waitForResponse(
+    (response) =>
+      response.url().includes('/work/tasks/') &&
+      response.url().endsWith('/state') &&
+      response.request().method() === 'PATCH',
+  );
+  await page
+    .getByRole('checkbox', { name: 'Complete Implement login' })
+    .check();
+  expect((await completed).status()).toBe(200);
+  await expect(page.getByText('100% work progress')).toBeVisible();
+  await expect
+    .poll(async () =>
+      prisma.task.findFirstOrThrow({
+        where: { feature: { outcomeId }, title: 'Implement login' },
+        select: { status: true },
+      }),
+    )
+    .toEqual({ status: 'DONE' });
+});
+
+test('F5-06: reopening a completed Task persists and recalculates progress', async ({
   page,
 }) => {
   await signIn(page);
   await openWork(page);
-  await page
-    .getByRole('checkbox', { name: 'Complete Implement login' })
-    .check();
-  await expect(page.getByText('100% work progress')).toBeVisible();
-  await openWork(page, true);
   await expect(
     page.getByRole('checkbox', { name: 'Complete Implement login' }),
   ).toBeChecked();
+  const reopened = page.waitForResponse(
+    (response) =>
+      response.url().includes('/work/tasks/') &&
+      response.url().endsWith('/state') &&
+      response.request().method() === 'PATCH',
+  );
   await page
     .getByRole('checkbox', { name: 'Complete Implement login' })
     .uncheck();
+  expect((await reopened).status()).toBe(200);
   await expect(page.getByText('0% work progress')).toBeVisible();
+  await expect
+    .poll(async () =>
+      prisma.task.findFirstOrThrow({
+        where: { feature: { outcomeId }, title: 'Implement login' },
+        select: { status: true },
+      }),
+    )
+    .toEqual({ status: 'TODO' });
 });
 
-test('F5-04: edit Task, expand/collapse, and responsive workspace', async ({
-  page,
-}) => {
+test('F5-04: edit Task persists', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await signIn(page);
@@ -242,6 +325,19 @@ test('F5-04: edit Task, expand/collapse, and responsive workspace', async ({
   await expect(
     page.getByRole('checkbox', { name: 'Complete Implement secure login' }),
   ).toBeVisible();
+  expect(
+    (await request(page, '/work/features', 'POST', { title: ' ' })).status,
+  ).toBe(400);
+  expect(errors).toEqual([]);
+});
+
+test('Work area expands and remains responsive on mobile and desktop', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await signIn(page);
+  await openWork(page);
   await page.getByRole('button', { name: 'Collapse Authentication' }).click();
   await expect(
     page.getByRole('checkbox', { name: 'Complete Implement secure login' }),
@@ -276,9 +372,6 @@ test('F5-04: edit Task, expand/collapse, and responsive workspace', async ({
     fullPage: true,
   });
   expect(errors).toEqual([]);
-  expect(
-    (await request(page, '/work/features', 'POST', { title: ' ' })).status,
-  ).toBe(400);
 });
 
 test('F5-07: concurrent work is retained and stale updates are rejected', async ({
@@ -452,6 +545,7 @@ test('Work area loading, error, and retry use the same protected direct route', 
     release = resolve;
   });
   const endpoint = `**/api/projects/${projectId}/outcomes/${outcomeId}/work`;
+  const intercepted = page.waitForRequest(endpoint);
   await page.route(
     endpoint,
     async (route) => {
@@ -462,9 +556,9 @@ test('Work area loading, error, and retry use the same protected direct route', 
         body: JSON.stringify({ message: 'Temporarily unavailable' }),
       });
     },
-    { times: 1 },
   );
   await page.goto(`/projects/${projectId}/outcomes/${outcomeId}`);
+  await intercepted;
   await expect(
     page.getByRole('region', { name: 'Loading Outcome work' }),
   ).toBeVisible();
@@ -472,6 +566,7 @@ test('Work area loading, error, and retry use the same protected direct route', 
   await expect(
     page.getByText('Outcome work could not be loaded.'),
   ).toBeVisible();
+  await page.unroute(endpoint);
   await page.getByRole('button', { name: 'Retry work area' }).click();
   await expect(
     page.getByRole('heading', { name: 'Features & Tasks' }),
@@ -490,7 +585,13 @@ test('Invalid and missing direct Outcome routes cannot expose another record', a
       })
     ).status,
   ).toBe(400);
+  const workflowLoaded = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/projects/${projectId}/workflow`) &&
+      response.request().method() === 'GET',
+  );
   await page.goto(`/projects/${projectId}/outcomes/${crypto.randomUUID()}`);
+  expect((await workflowLoaded).status()).toBe(200);
   await expect(
     page.getByText('Outcome not found', { exact: true }),
   ).toBeVisible();

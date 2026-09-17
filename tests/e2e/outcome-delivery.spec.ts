@@ -64,7 +64,9 @@ async function request(
     },
   );
 }
-test.describe.configure({ mode: 'serial' });
+// This suite uses the hosted acceptance database and real Supabase sign-in.
+// Its multi-request user journeys need headroom for a cold pooled connection.
+test.describe.configure({ mode: 'serial', timeout: 60_000 });
 test.beforeAll(async () => {
   test.skip(!hasCredentials, 'Requires E2E member credentials.');
   const member = await prisma.member.findFirstOrThrow({
