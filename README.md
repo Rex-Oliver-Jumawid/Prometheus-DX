@@ -6,13 +6,18 @@ Prometheus is an internal web application for project delivery, open internal pr
 
 ## Current status
 
-Phase 01 authentication and the reusable application shell are implemented on top of the Phase 00 foundation.
+Phases 00 through 04 are complete.
 
-Phase 02 Registry is in progress.
+Phase 05 - Outcome Work, Submission, Review, and Dependencies - is in progress.
 
-The repository contains real Supabase email/password and Google sign-in, NestJS workspace authorization, protected routes, the role-aware Prometheus shell, and the first persisted Registry department-management slice.
+The current Phase 05 implementation includes persisted Features and Tasks, output drafts and shared submissions, Project Lead review and revision flows, Outcome acceptance and reopening, dependency handling, and perceived-latency improvements for project navigation and access updates.
 
-Later Registry member-management work and the project, schedule, notification, reporting, and collaboration phases remain incomplete.
+Phase 05 is not yet closed.
+Final race, stale-history, read-state, visual, and complete regression/acceptance checks remain outstanding.
+
+Phases 06 through 09 have not started.
+
+See `.docs/phases/README.md` for the current high-level status index and `.docs/phases/phase-05-work-review.md` for the active implementation record.
 
 ## Repository structure
 
@@ -77,7 +82,7 @@ If a prototype feature requires a field or relationship missing from the current
 The phase journals are historical implementation records rather than a replacement for canonical requirements.
 If a lesson changes a product or architecture rule, update the canonical source of truth as well as the journal.
 
-## Phase 00 setup
+## Local development setup
 
 Requirements:
 
@@ -179,7 +184,9 @@ pnpm format:check
 pnpm format
 ```
 
-Use `.testcases/phase-01-auth-shell-tests.md` as the Phase 01 manual acceptance gate.
+Use the matching `.testcases/phase-XX-*.md` file as the acceptance gate for the phase being delivered.
+
+The active Phase 05 acceptance file is `.testcases/phase-05-work-review-tests.md`.
 
 ## Environment security
 

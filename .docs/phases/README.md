@@ -147,6 +147,10 @@ List important files, migrations, tests, commits, or routes.
 
 ## Status Index
 
+This table is the canonical high-level implementation status for the repository.
+
+The root `README.md` should summarize this status, while each phase journal records the detailed evidence, decisions, limitations, and acceptance state.
+
 | Phase | Name | Status | Document |
 | --- | --- | --- | --- |
 | 0 | Foundation | Complete | `phase-00-foundation.md` |
@@ -154,7 +158,7 @@ List important files, migrations, tests, commits, or routes.
 | 2 | Registry | Complete | `phase-02-registry-closure.md` |
 | 3 | Project Core | Complete | `phase-03-project-core.md` |
 | 4 | Project Workflow Structure | Complete | `phase-04-project-workflow.md` |
-| 5 | Outcome Work, Submission, Review, and Dependencies | In progress | `phase-05-work-review.md` |
+| 5 | Outcome Work, Submission, Review, and Dependencies | In progress - slices 1-4 delivered; final acceptance and regression pending | `phase-05-work-review.md` |
 | 6 | Schedule, Work Sessions, and Team | Not started | To be created |
 | 7 | Notifications and Home | Not started | To be created |
 | 8 | VisiWork and Reporting | Not started | To be created |

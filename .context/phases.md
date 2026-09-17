@@ -10,6 +10,14 @@ Each phase should leave the system in a usable and testable state.
 
 Do not move to the next phase until the required manual acceptance tests for the current phase pass.
 
+## Implementation Status
+
+This document defines phase scope, ordering, dependencies, and exit criteria.
+
+Live implementation status is tracked in `.docs/phases/README.md`, with detailed evidence in the matching phase journal under `.docs/phases/`.
+
+Do not infer that a phase is complete merely because some or all of its planned code exists.
+
 ## Canonical Project Context
 
 Use these repository files as the source of truth while implementing:
@@ -17,8 +25,8 @@ Use these repository files as the source of truth while implementing:
 - `.context/Software Requirements Specification - Prometheus Centralized Workflow Management System.md`
 - `.context/user-flows.md`
 - `.context/tech-stack.md`
-- `.model /finalmodel.html` as an interaction and workflow reference only
-- `.model /login-page.html` as the login interaction reference
+- `.model/finalmodel.html` as an interaction and workflow reference only
+- `.model/login-page.html` as the login interaction reference
 
 The SRS is the primary source of truth for functional requirements.
 
