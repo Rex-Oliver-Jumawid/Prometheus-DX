@@ -59,14 +59,43 @@ Administrator role and Project creator history remain separate from project-spec
 
 Outcome Membership remains permanent and is the source of Project participation.
 
+## Current Testing Workflow
+
+The repository now uses layered verification rather than defaulting all behavior checks to Playwright.
+
+Use Vitest for pure logic, validation, permissions, and service behavior.
+
+Use Vitest with React Testing Library and jsdom for React component interaction.
+
+Use service or API integration tests for authorization, persistence, stale-write protection, and concurrency where a browser is not required.
+
+Use Playwright with Chromium for critical real user journeys that depend on browser, authentication, API, and persistence integration.
+
+Use Firefox and WebKit only for release-level cross-browser verification unless browser compatibility is the feature under test.
+
+Use `.testcases/` for the phase acceptance requirements and preserve manual visual or UX checks where human judgment is intentional.
+
+The normal broad gates are `pnpm verify`, `pnpm verify:e2e`, and `pnpm verify:release`.
+
 ## Next Action
 
 Phase 5 work, submission, review, acceptance, reopening, and dependency slices are implemented.
+
 The initial distinct-account core browser suite passes 18/18 tests.
-The latest `pnpm verify` passes 106/106 tests, typecheck, lint, and both builds.
+
+The previously recorded `pnpm verify` passes 106/106 tests, typecheck, lint, and both builds.
+
 Prisma generation/validation pass and all 13 migrations are applied.
-Expanded edge-case browser coverage, final full regression, screenshot review, and formal acceptance closure remain outstanding.
-The prerequisite-reopening rule is now documented in `.context/data-model.md`: unfinished dependents relock, explicit overrides remain effective, and accepted dependents retain acceptance.
+
+The testing infrastructure now includes the React component-test layer, Chromium development E2E, retained Playwright failure evidence, and release-level Firefox/WebKit commands.
+
+Expanded edge-case verification, final full regression, screenshot review, and formal acceptance closure remain outstanding.
+
+As Phase 5 tests are touched, move permission matrices, validation, direct API status assertions, stale-write checks, and concurrency checks below Playwright where practical.
+
+Keep Playwright focused on critical complete browser journeys rather than rewriting all existing acceptance coverage at once.
+
+The prerequisite-reopening rule is documented in `.context/data-model.md`: unfinished dependents relock, explicit overrides remain effective, and accepted dependents retain acceptance.
 
 Before continuing Phase 5:
 
@@ -79,6 +108,7 @@ Before continuing Phase 5:
 7. Read `.testcases/phase-05-work-review-tests.md`.
 8. Read the live Phase 5 implementation journal.
 9. Preserve the completed Phase 0 through Phase 4 regression baseline.
+10. Follow the layered testing ownership defined in `AGENTS.md` and `CONTRIBUTING.md`.
 
 Do not treat Phase 5 as complete until all slices and the full regression/acceptance gate pass.
 
