@@ -21,6 +21,21 @@ export const ProjectMemberSummarySchema = z.object({
   email: z.string().email(),
 });
 
+export const ProjectStageSummarySchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1),
+  openOutcomesCount: z.number().int().nonnegative(),
+});
+
+export const ProjectMetricsSchema = z.object({
+  totalOutcomes: z.number().int().nonnegative(),
+  openOutcomes: z.number().int().nonnegative(),
+  acceptedOutcomes: z.number().int().nonnegative(),
+  activeStagesCount: z.number().int().nonnegative(),
+  activeStages: z.array(ProjectStageSummarySchema),
+  progressPercentage: z.number().int().min(0).max(100),
+});
+
 export const ProjectSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1),
@@ -36,6 +51,7 @@ export const ProjectSchema = z.object({
   archivedAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+  metrics: ProjectMetricsSchema.optional(),
 });
 
 export const ProjectListResponseSchema = z.array(ProjectSchema);
@@ -81,3 +97,5 @@ export type CreateProjectRequest = z.infer<typeof CreateProjectRequestSchema>;
 export type UpdateProjectStatusRequest = z.infer<
   typeof UpdateProjectStatusRequestSchema
 >;
+export type ProjectStageSummary = z.infer<typeof ProjectStageSummarySchema>;
+export type ProjectMetrics = z.infer<typeof ProjectMetricsSchema>;

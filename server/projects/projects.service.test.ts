@@ -91,6 +91,11 @@ function createDatabase(
         .mockResolvedValue(
           'foundProject' in options ? options.foundProject : null,
         ),
+      findUniqueOrThrow: vi
+        .fn()
+        .mockImplementation(() =>
+          Promise.resolve(options.createdProject ?? projectRecord()),
+        ),
       create: vi
         .fn()
         .mockResolvedValue(options.createdProject ?? projectRecord()),
@@ -479,5 +484,48 @@ describe('ProjectsService', () => {
         { status: 'DONE' },
       ),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('correctly calculates derived metrics from stages and outcomes', async () => {
+    const projectWithStages = projectRecord({
+      stages: [
+        {
+          id: 'stage-1',
+          name: 'Discovery',
+          position: 1,
+          outcomes: [
+            { id: 'o-1', lifecycleStatus: 'ACCEPTED' },
+            { id: 'o-2', lifecycleStatus: 'OPEN' },
+          ],
+        },
+        {
+          id: 'stage-2',
+          name: 'Implementation',
+          position: 2,
+          outcomes: [
+            { id: 'o-3', lifecycleStatus: 'NEEDS_REVISION' },
+          ],
+        },
+      ],
+    });
+    const database = createDatabase({ foundProject: projectWithStages });
+    const service = new ProjectsService(database);
+
+    const result = await service.getProject(
+      lead as Member,
+      '55555555-5555-4555-8555-555555555555',
+    );
+
+    expect(result.metrics).toEqual({
+      totalOutcomes: 3,
+      acceptedOutcomes: 1,
+      openOutcomes: 2,
+      activeStagesCount: 2,
+      activeStages: [
+        { id: 'stage-1', name: 'Discovery', openOutcomesCount: 1 },
+        { id: 'stage-2', name: 'Implementation', openOutcomesCount: 1 },
+      ],
+      progressPercentage: 33,
+    });
   });
 });

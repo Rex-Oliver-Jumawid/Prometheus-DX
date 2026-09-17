@@ -15,6 +15,10 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? 'github' : 'list',
+  timeout: 60_000,
+  expect: {
+    timeout: 10_000,
+  },
   use: {
     baseURL: 'http://127.0.0.1:5173',
     trace: 'retain-on-failure',
@@ -42,7 +46,7 @@ export default defineConfig({
         ...apiEnvironmentWithoutBrevo,
         INVITATION_DELIVERY_MODE: 'disabled',
       },
-      reuseExistingServer: false,
+      reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },
     {

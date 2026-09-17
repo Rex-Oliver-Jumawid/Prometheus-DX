@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
@@ -6,6 +6,8 @@ import {
   ProjectListResponseSchema,
   ProjectSchema,
   type CreateProjectRequest,
+  type Project,
+  type ProjectStatus,
 } from '../../../shared/contracts/project';
 import { useAuth } from '../auth/auth-context';
 import { apiFetch } from '../../lib/api';
@@ -13,11 +15,13 @@ import { CreateProjectDialog } from './CreateProjectDialog';
 import './projects.css';
 
 const projectsKey = ['projects', 'list'] as const;
+
 function errorMessage(error: unknown) {
   return error instanceof Error
     ? error.message
     : 'Something went wrong. Please try again.';
 }
+
 function statusLabel(status: string) {
   return status
     .split('_')
@@ -25,21 +29,157 @@ function statusLabel(status: string) {
     .join(' ');
 }
 
+interface StatusGroupConfig {
+  key: ProjectStatus;
+  label: string;
+  emptyText: string;
+}
+
+const STATUS_GROUPS: StatusGroupConfig[] = [
+  {
+    key: 'PLANNING',
+    label: 'Planning',
+    emptyText: 'No planning projects yet.',
+  },
+  {
+    key: 'IN_PROGRESS',
+    label: 'In Progress',
+    emptyText: 'No in progress projects yet.',
+  },
+  {
+    key: 'DONE',
+    label: 'Done',
+    emptyText: 'No done projects yet.',
+  },
+];
+
+interface ProjectCardProps {
+  project: Project;
+  currentMemberId?: string;
+  scope: 'all' | 'mine';
+}
+
+function ProjectCard({ project, currentMemberId, scope }: ProjectCardProps) {
+  const metrics = project.metrics;
+  const progress =
+    metrics?.progressPercentage ?? (project.status === 'DONE' ? 100 : 0);
+  const openOutcomes = metrics?.openOutcomes ?? 0;
+  const totalOutcomes = metrics?.totalOutcomes ?? 0;
+  const activeStagesCount = metrics?.activeStagesCount ?? 0;
+  const activeStages = metrics?.activeStages ?? [];
+
+  const stageSummary =
+    activeStages.length > 0
+      ? activeStages
+          .slice(0, 2)
+          .map((stage) => `${stage.name} (${stage.openOutcomesCount})`)
+          .join(' · ')
+      : 'No open stage work';
+
+  const isLead = project.lead.id === currentMemberId;
+  const showRelationBadge =
+    scope === 'mine' || isLead || project.isParticipating;
+  const relationText = isLead ? 'Lead' : project.isParticipating ? 'Member' : null;
+
+  return (
+    <article
+      className="vw-overview-project"
+      style={{ '--project-progress': `${progress}%` } as React.CSSProperties}
+    >
+      <div className="vw-overview-project-head">
+        <div>
+          <div className="vw-overview-project-kicker">COMPANY PROJECT</div>
+          <h3 className="vw-overview-project-title">{project.name}</h3>
+        </div>
+        <div className="vw-overview-project-head-actions">
+          {showRelationBadge && relationText && (
+            <span className="vw-project-relation-badge">{relationText}</span>
+          )}
+          <span
+            className={`vw-overview-project-status status-${project.status.toLowerCase()}`}
+          >
+            {statusLabel(project.status).toUpperCase()}
+          </span>
+        </div>
+      </div>
+
+      <p className="vw-overview-project-desc">{project.description}</p>
+
+      <div className="vw-overview-progress-block">
+        <div className="vw-overview-progress-head">
+          <span>OVERALL PROJECT PROGRESS</span>
+          <strong>{progress}%</strong>
+        </div>
+        <div className="vw-progress-track">
+          <span style={{ width: `${progress}%` }} />
+        </div>
+        <div className="vw-overview-meta-grid">
+          <div className="vw-overview-meta">
+            <div className="vw-overview-meta-label">OPEN OUTCOMES</div>
+            <div className="vw-overview-meta-value">
+              {openOutcomes} / {totalOutcomes} outcomes
+            </div>
+          </div>
+          <div className="vw-overview-meta">
+            <div className="vw-overview-meta-label">ACTIVE STAGES</div>
+            <div className="vw-overview-meta-value">
+              {activeStagesCount} stage{activeStagesCount === 1 ? '' : 's'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="vw-overview-depts">
+        {project.departments.map((dept) => (
+          <span key={dept.id} className="vw-overview-dept" title={dept.name}>
+            {dept.name}
+          </span>
+        ))}
+      </div>
+
+      <div className="vw-overview-workers">
+        <span className="vw-overview-no-workers">
+          No one currently working on this project
+        </span>
+      </div>
+
+      <div className="vw-overview-stage-line">
+        <strong>Current:</strong> {stageSummary}
+      </div>
+
+      <div className="vw-overview-project-foot">
+        <span>
+          {project.departments.length} department
+          {project.departments.length === 1 ? '' : 's'} involved
+        </span>
+        <Link to={`/projects/${project.id}`} className="vw-overview-open">
+          Open Workspace →
+        </Link>
+      </div>
+    </article>
+  );
+}
+
 export function ProjectsPage() {
   const { member, session } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [scope, setScope] = useState<
-    'all' | 'mine' | 'leading' | 'participating'
-  >('all');
+  const [scope, setScope] = useState<'all' | 'mine'>('all');
+  const [search, setSearch] = useState('');
+  const [collapsedGroups, setCollapsedGroups] = useState<
+    Record<string, boolean>
+  >({});
   const creatingRef = useRef(false);
   const queryClient = useQueryClient();
   const accessToken = session?.access_token;
+
   const projects = useQuery({
-    queryKey: projectsKey,
+    queryKey: [...projectsKey, accessToken] as const,
     queryFn: ({ signal }) =>
       apiFetch('/projects', ProjectListResponseSchema, { accessToken, signal }),
+    enabled: Boolean(accessToken),
     retry: false,
   });
+
   const createProject = useMutation({
     mutationFn: (request: CreateProjectRequest) =>
       apiFetch('/projects', ProjectSchema, {
@@ -55,77 +195,125 @@ export function ProjectsPage() {
       creatingRef.current = false;
     },
   });
-  const visibleProjects =
-    projects.data?.filter((project) => {
-      if (scope === 'all') return true;
-      if (scope === 'leading') return project.lead.id === member?.id;
-      if (scope === 'mine')
-        return project.lead.id === member?.id || project.isParticipating;
-      return project.isParticipating && project.lead.id !== member?.id;
-    }) ?? [];
+
   const openCreate = () => {
     createProject.reset();
     setDialogOpen(true);
   };
+
   const closeDialog = () => {
     if (!createProject.isPending) {
       createProject.reset();
       setDialogOpen(false);
     }
   };
+
   const save = async (request: CreateProjectRequest) => {
     if (creatingRef.current) return;
     creatingRef.current = true;
     await createProject.mutateAsync(CreateProjectRequestSchema.parse(request));
   };
+
+  const toggleGroup = (groupKey: string) => {
+    setCollapsedGroups((prev) => ({
+      ...prev,
+      [groupKey]: !prev[groupKey],
+    }));
+  };
+
+  const filteredProjects = useMemo(() => {
+    const data = projects.data ?? [];
+    const scoped = data.filter((project) => {
+      if (scope === 'all') return true;
+      return project.lead.id === member?.id || project.isParticipating;
+    });
+
+    const trimmed = search.trim().toLowerCase();
+    if (!trimmed) return scoped;
+
+    return scoped.filter((project) => {
+      const haystack = [
+        project.name,
+        project.description,
+        project.lead.fullName,
+        statusLabel(project.status),
+        ...project.departments.map((d) => d.name),
+        ...project.departments.map((d) => d.shortLabel),
+      ]
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(trimmed);
+    });
+  }, [projects.data, scope, member?.id, search]);
+
   return (
-    <section className="projects-page" aria-labelledby="projects-title">
-      <header className="projects-page-header">
-        <div>
-          <p className="projects-kicker">PROJECT WORKSPACE</p>
-          <h1 id="projects-title">Projects</h1>
-          <p>
-            Discover company projects and start new work with the right Lead and
-            departments.
-          </p>
+    <section className="vw-projects-landing" aria-labelledby="projects-heading">
+      <h1 id="projects-heading" className="projects-heading-sr">
+        Projects
+      </h1>
+
+      <div className="vw-projects-toolbar">
+        <div className="vw-project-search-wrap">
+          <span className="vw-project-search-icon" aria-hidden="true">
+            ⌕
+          </span>
+          <input
+            id="projects-search-input"
+            type="search"
+            placeholder="Search projects..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search projects"
+            autoComplete="off"
+          />
         </div>
-        <button
-          type="button"
-          className="projects-primary-button"
-          onClick={openCreate}
-        >
-          + Add Project
-        </button>
-      </header>
-      <div
-        className="projects-toolbar"
-        role="tablist"
-        aria-label="Project filters"
-      >
-        {(
-          [
-            ['all', 'All Projects'],
-            ['mine', 'My Projects'],
-            ['leading', 'Leading'],
-            ['participating', 'Participating'],
-          ] as const
-        ).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            role="tab"
-            aria-selected={scope === value}
-            className={scope === value ? 'active' : ''}
-            onClick={() => setScope(value)}
+
+        <div className="vw-projects-toolbar-actions">
+          <div
+            className="vw-project-scope-toggle"
+            role="tablist"
+            aria-label="Project scope"
           >
-            {label}
+            <button
+              type="button"
+              role="tab"
+              aria-selected={scope === 'all'}
+              className={`vw-project-scope-button ${scope === 'all' ? 'active' : ''}`}
+              onClick={() => setScope('all')}
+            >
+              All Projects
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={scope === 'mine'}
+              className={`vw-project-scope-button ${scope === 'mine' ? 'active' : ''}`}
+              onClick={() => setScope('mine')}
+            >
+              My Projects
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className="vw-add-project-button"
+            onClick={openCreate}
+          >
+            + Add Project
           </button>
-        ))}
+        </div>
       </div>
+
       {projects.isPending ? (
-        <div className="projects-grid" aria-label="Loading projects">
+        <div className="vw-projects-loading" aria-label="Loading projects">
           {[0, 1, 2].map((item) => (
-            <div className="projects-skeleton" key={item} />
+            <div className="vw-projects-skeleton-group" key={item}>
+              <div className="vw-skeleton-header" />
+              <div className="vw-skeleton-row">
+                <div className="vw-skeleton-card" />
+                <div className="vw-skeleton-card" />
+              </div>
+            </div>
           ))}
         </div>
       ) : projects.isError ? (
@@ -140,75 +328,89 @@ export function ProjectsPage() {
             Retry
           </button>
         </div>
-      ) : visibleProjects.length === 0 ? (
-        <div className="projects-state-card">
-          <strong>
-            {scope === 'all' ? 'No projects yet' : 'No matching projects'}
-          </strong>
-          <p>
-            {scope === 'all'
-              ? 'Create the first Project for your workspace.'
-              : scope === 'mine'
-                ? 'My Projects includes Projects you lead or participate in through Outcome Membership.'
-                : scope === 'participating'
-                  ? 'Join an Outcome to participate in a Project. Projects you lead remain grouped under Leading.'
-                  : 'You are not the Project Lead of a Project yet.'}
-          </p>
-          {scope === 'all' && (
-            <button
-              type="button"
-              className="projects-secondary-button"
-              onClick={openCreate}
-            >
-              Add Project
-            </button>
-          )}
-        </div>
       ) : (
-        <div className="projects-grid">
-          {visibleProjects.map((project) => (
-            <article className="project-card" key={project.id}>
-              <header>
-                <span
-                  className={`project-status ${project.status.toLowerCase()}`}
-                >
-                  {statusLabel(project.status)}
-                </span>
-                <time dateTime={project.updatedAt}>
-                  Updated{' '}
-                  {new Intl.DateTimeFormat(undefined, {
-                    dateStyle: 'medium',
-                  }).format(new Date(project.updatedAt))}
-                </time>
-              </header>
-              <h2>{project.name}</h2>
-              <p>{project.description}</p>
-              <dl>
-                <div>
-                  <dt>Project Lead</dt>
-                  <dd>{project.lead.fullName}</dd>
-                </div>
-                <div>
-                  <dt>Departments</dt>
-                  <dd className="project-departments">
-                    {project.departments.map((department) => (
-                      <span key={department.id} title={department.name}>
-                        {department.shortLabel}
-                      </span>
-                    ))}
-                  </dd>
-                </div>
-              </dl>
-              <Link
-                className="project-open-link"
-                to={`/projects/${project.id}`}
+        <div className="vw-projects-board">
+          {STATUS_GROUPS.map((group) => {
+            const groupProjects = filteredProjects.filter(
+              (p) => p.status === group.key,
+            );
+            const isCollapsed = Boolean(collapsedGroups[group.key]);
+
+            return (
+              <section
+                key={group.key}
+                className="vw-project-group"
+                aria-labelledby={`group-title-${group.key}`}
               >
-                Open Project<span aria-hidden="true">→</span>
-              </Link>
-            </article>
-          ))}
+                <div className="vw-project-group-head">
+                  <button
+                    type="button"
+                    className="vw-project-group-toggle"
+                    onClick={() => toggleGroup(group.key)}
+                    aria-expanded={!isCollapsed}
+                    aria-controls={`group-body-${group.key}`}
+                  >
+                    <span
+                      className={`vw-group-chevron ${isCollapsed ? 'collapsed' : ''}`}
+                      aria-hidden="true"
+                    >
+                      ▶
+                    </span>
+                    <span
+                      className={`vw-group-status-icon status-${group.key.toLowerCase()}`}
+                      aria-hidden="true"
+                    >
+                      {group.key === 'DONE' && (
+                        <span className="vw-group-check">✓</span>
+                      )}
+                    </span>
+                    <span
+                      id={`group-title-${group.key}`}
+                      className="vw-project-group-name"
+                    >
+                      {group.label}
+                    </span>
+                    <span className="vw-project-group-count">
+                      {groupProjects.length}
+                    </span>
+                  </button>
+                </div>
+
+                {!isCollapsed && (
+                  <div
+                    id={`group-body-${group.key}`}
+                    className="vw-project-group-body"
+                  >
+                    {groupProjects.length > 0 ? (
+                      <div
+                        className="vw-project-row"
+                        role="region"
+                        aria-label={`${group.label} projects`}
+                      >
+                        {groupProjects.map((project) => (
+                          <ProjectCard
+                            key={project.id}
+                            project={project}
+                            currentMemberId={member?.id}
+                            scope={scope}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="vw-project-group-empty">
+                        {search.trim()
+                          ? 'No matching projects in this section.'
+                          : group.emptyText}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
+
       {dialogOpen && (
         <CreateProjectDialog
           accessToken={accessToken}

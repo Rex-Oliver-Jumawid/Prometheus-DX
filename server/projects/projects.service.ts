@@ -28,6 +28,20 @@ const projectInclude = {
     },
   },
   members: { select: { memberId: true, accessLevel: true } },
+  stages: {
+    select: {
+      id: true,
+      name: true,
+      position: true,
+      outcomes: {
+        select: {
+          id: true,
+          lifecycleStatus: true,
+        },
+      },
+    },
+    orderBy: { position: 'asc' },
+  },
 } satisfies Prisma.ProjectInclude;
 
 type ProjectRecord = Prisma.ProjectGetPayload<{
@@ -97,7 +111,7 @@ export class ProjectsService {
         throw new BadRequestException('Choose only existing departments.');
       }
 
-      return transaction.project.create({
+      const created = await transaction.project.create({
         data: {
           name: input.name,
           description: input.description,
@@ -116,6 +130,10 @@ export class ProjectsService {
             },
           },
         },
+      });
+
+      return transaction.project.findUniqueOrThrow({
+        where: { id: created.id },
         include: projectInclude,
       });
     });
@@ -180,6 +198,37 @@ export class ProjectsService {
     const currentProjectMember = project.members.find(
       ({ memberId }) => memberId === currentMemberId,
     );
+    const stages = project.stages ?? [];
+    const totalOutcomes = stages.reduce(
+      (sum, stage) => sum + stage.outcomes.length,
+      0,
+    );
+    const acceptedOutcomes = stages.reduce(
+      (sum, stage) =>
+        sum +
+        stage.outcomes.filter(
+          (outcome) => outcome.lifecycleStatus === 'ACCEPTED',
+        ).length,
+      0,
+    );
+    const openOutcomes = totalOutcomes - acceptedOutcomes;
+    const activeStages = stages
+      .map((stage) => ({
+        id: stage.id,
+        name: stage.name,
+        openOutcomesCount: stage.outcomes.filter(
+          (outcome) => outcome.lifecycleStatus !== 'ACCEPTED',
+        ).length,
+      }))
+      .filter((stage) => stage.openOutcomesCount > 0);
+
+    const progressPercentage =
+      project.status === 'DONE'
+        ? 100
+        : totalOutcomes === 0
+          ? 0
+          : Math.round((acceptedOutcomes / totalOutcomes) * 100);
+
     return {
       id: project.id,
       name: project.name,
@@ -199,6 +248,14 @@ export class ProjectsService {
       archivedAt: project.archivedAt?.toISOString() ?? null,
       createdAt: project.createdAt.toISOString(),
       updatedAt: project.updatedAt.toISOString(),
+      metrics: {
+        totalOutcomes,
+        openOutcomes,
+        acceptedOutcomes,
+        activeStagesCount: activeStages.length,
+        activeStages,
+        progressPercentage,
+      },
     };
   }
 }

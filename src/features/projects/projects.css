@@ -1,17 +1,654 @@
-.projects-page {
+/* Figma Projects Page (Node 5:5901) */
+.vw-projects-landing {
   min-width: 0;
+  width: 100%;
 }
-.projects-page-header,
+
+.projects-heading-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  opacity: 0.01;
+  pointer-events: none;
+  border: 0;
+}
+
+/* Toolbar */
+.vw-projects-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.vw-project-search-wrap {
+  position: relative;
+  width: min(420px, 55%);
+}
+
+.vw-project-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #98a2b3;
+  font-family: Menlo, monospace;
+  font-size: 14px;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.vw-project-search-wrap input {
+  width: 100%;
+  height: 36px;
+  padding: 0 14px 0 34px;
+  border: 1px solid #d9d1cb;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #3f3834;
+  font-family: Inter, sans-serif;
+  font-size: 11px;
+  outline: 0;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.02);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.vw-project-search-wrap input::placeholder {
+  color: #757575;
+  font-size: 11px;
+}
+
+.vw-project-search-wrap input:focus {
+  border-color: #cb4d22;
+  box-shadow: 0 0 0 3px rgba(203, 77, 34, 0.1);
+}
+
+.vw-projects-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.vw-project-scope-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  border: 1px solid #ddd6d1;
+  border-radius: 999px;
+  background: #f4f1ef;
+  box-shadow: inset 0 1px 2px rgba(46, 37, 32, 0.04);
+}
+
+.vw-project-scope-button {
+  border: 0;
+  background: transparent;
+  padding: 7px 18px;
+  border-radius: 999px;
+  color: #857a73;
+  font-family: Inter, sans-serif;
+  font-size: 10.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+
+.vw-project-scope-button.active {
+  background: #ffffff;
+  color: #2f2a27;
+  font-weight: 750;
+  box-shadow: 0 1px 4px rgba(46, 37, 32, 0.1);
+}
+
+.vw-add-project-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid #cb4d22;
+  border-radius: 11px;
+  background: #cb4d22;
+  color: #ffffff;
+  font-family: Inter, sans-serif;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(58, 41, 33, 0.04);
+  white-space: nowrap;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.vw-add-project-button:hover {
+  background: #b7431c;
+  transform: translateY(-0.5px);
+}
+
+/* Status Groups */
+.vw-projects-board {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vw-project-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.vw-project-group-head {
+  width: 100%;
+}
+
+.vw-project-group-toggle {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: #f3f3f3;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.vw-project-group-toggle:hover {
+  background: #ebebeb;
+}
+
+.vw-group-chevron {
+  display: inline-block;
+  font-size: 9px;
+  color: #312d2a;
+  margin-right: 10px;
+  line-height: 1;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: rotate(90deg);
+}
+
+.vw-group-chevron.collapsed {
+  transform: rotate(0deg);
+}
+
+.vw-group-status-icon {
+  width: 15px;
+  height: 15px;
+  border-radius: 7.5px;
+  margin-right: 9px;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.vw-group-status-icon.status-planning {
+  border: 2px solid #b8b8b8;
+  background: transparent;
+}
+
+.vw-group-status-icon.status-in_progress {
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    #e8aa00 0%,
+    #e8aa00 52%,
+    #d9d9d9 52%,
+    #d9d9d9 100%
+  );
+  position: relative;
+}
+
+.vw-group-status-icon.status-in_progress::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: #f3f3f3;
+}
+
+.vw-project-group-toggle:hover .vw-group-status-icon.status-in_progress::after {
+  background: #ebebeb;
+}
+
+.vw-group-status-icon.status-done {
+  background: #3a94a0;
+  border: 1px solid #3a94a0;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.vw-group-check {
+  display: block;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.vw-project-group-name {
+  color: #403b38;
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  margin-right: 6px;
+}
+
+.vw-project-group-count {
+  color: #69635f;
+  font-family: Inter, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.vw-project-group-body {
+  padding: 8px 0 10px 28px;
+}
+
+/* Horizontal Card Row */
+.vw-project-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 2px 2px 8px 0;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: #d8cec7 transparent;
+}
+
+.vw-project-row::-webkit-scrollbar {
+  height: 6px;
+}
+
+.vw-project-row::-webkit-scrollbar-thumb {
+  background: #d8cec7;
+  border-radius: 999px;
+}
+
+.vw-project-group-empty {
+  min-height: 86px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed #ddd2ca;
+  border-radius: 11px;
+  background: #faf7f4;
+  color: #9b8f88;
+  font-family: Inter, sans-serif;
+  font-size: 10px;
+  text-align: center;
+  padding: 14px;
+}
+
+/* Project Card */
+.vw-overview-project {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  flex: 0 0 340px;
+  width: 340px;
+  min-height: 252px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e3dad3;
+  border-radius: 17px;
+  background: #fffdfa;
+  padding: 14px;
+  scroll-snap-align: start;
+  transition: border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.vw-overview-project::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--project-progress, 0%);
+  background: linear-gradient(90deg, rgba(203, 77, 34, 0.05) 0%, rgba(203, 77, 34, 0.02) 100%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.vw-overview-project:hover {
+  border-color: #d2c2b7;
+  box-shadow: 0 9px 24px rgba(58, 41, 33, 0.045);
+  transform: translateY(-1px);
+}
+
+.vw-overview-project-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.vw-overview-project-kicker {
+  color: #a0958e;
+  font-family: Menlo, SFMono-Regular, monospace;
+  font-size: 7.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.vw-overview-project-title {
+  margin: 4px 0 0;
+  color: #24201d;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.vw-overview-project-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.vw-project-relation-badge {
+  padding: 4px 7px;
+  border: 1px solid #fbd9cc;
+  border-radius: 999px;
+  background: #fff4ef;
+  color: #cb4d22;
+  font-family: Menlo, SFMono-Regular, monospace;
+  font-size: 7px;
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.vw-overview-project-status {
+  padding: 4px 7px;
+  border: 1px solid #e5ddd7;
+  border-radius: 999px;
+  background: #faf7f4;
+  color: #766a63;
+  font-family: Menlo, SFMono-Regular, monospace;
+  font-size: 7px;
+  font-weight: 750;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.vw-overview-project-desc {
+  margin: 7px 0 0;
+  color: #8d817a;
+  font-family: Inter, sans-serif;
+  font-size: 9.5px;
+  line-height: 1.5;
+  min-height: 28px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vw-overview-progress-block {
+  margin-top: 10px;
+  padding: 9px;
+  border: 1px solid #ebe3dd;
+  border-radius: 11px;
+  background: rgba(250, 247, 244, 0.75);
+}
+
+.vw-overview-progress-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.vw-overview-progress-head span {
+  color: #8f837c;
+  font-family: Menlo, SFMono-Regular, monospace;
+  font-size: 7.2px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.vw-overview-progress-head strong {
+  color: #a24829;
+  font-family: Menlo, SFMono-Regular, monospace;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.vw-progress-track {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: #ece5df;
+  overflow: hidden;
+  margin: 6px 0 8px;
+}
+
+.vw-progress-track span {
+  display: block;
+  height: 100%;
+  background: #cb4d22;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.vw-overview-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.vw-overview-meta {
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid #ece5df;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+.vw-overview-meta-label {
+  color: #a0958e;
+  font-family: Menlo, SFMono-Regular, monospace;
+  font-size: 6.8px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.vw-overview-meta-value {
+  margin-top: 3px;
+  color: #514741;
+  font-family: Inter, sans-serif;
+  font-size: 8.8px;
+  font-weight: 750;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vw-overview-depts {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.vw-overview-dept {
+  padding: 3px 6px;
+  border: 1px solid #e6ddd7;
+  border-radius: 999px;
+  background: #faf7f4;
+  color: #6e625b;
+  font-family: Menlo, SFMono-Regular, monospace;
+  font-size: 7px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.vw-overview-workers {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.vw-overview-worker {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: #eef5f0;
+  color: #4b7458;
+  font-family: Menlo, SFMono-Regular, monospace;
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.vw-overview-worker i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #61a37a;
+}
+
+.vw-overview-no-workers {
+  color: #a0968f;
+  font-family: Menlo, SFMono-Regular, monospace;
+  font-size: 7.5px;
+  line-height: 1.4;
+}
+
+.vw-overview-stage-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 9px;
+  color: #8f837c;
+  font-family: Inter, sans-serif;
+  font-size: 7.8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vw-overview-stage-line strong {
+  color: #625750;
+  font-weight: 800;
+}
+
+.vw-overview-project-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+.vw-overview-project-foot span {
+  color: #9c918a;
+  font-family: Inter, sans-serif;
+  font-size: 7.5px;
+}
+
+.vw-overview-open {
+  border: 0;
+  background: transparent;
+  padding: 2px 0;
+  color: #cb4d22;
+  font-family: Inter, sans-serif;
+  font-size: 9px;
+  font-weight: 750;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: color 0.15s ease;
+}
+
+.vw-overview-open:hover {
+  color: #a23d1a;
+  text-decoration: underline;
+}
+
+/* Skeletons */
+.vw-projects-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.vw-projects-skeleton-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vw-skeleton-header {
+  height: 44px;
+  border-radius: 10px;
+  background: #f0ece9;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.vw-skeleton-row {
+  display: flex;
+  gap: 10px;
+  padding-left: 28px;
+}
+
+.vw-skeleton-card {
+  flex: 0 0 340px;
+  height: 252px;
+  border-radius: 17px;
+  background: #f7f4f0;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@media (max-width: 768px) {
+  .vw-projects-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .vw-project-search-wrap {
+    width: 100%;
+  }
+  .vw-projects-toolbar-actions {
+    margin-left: 0;
+    justify-content: space-between;
+  }
+  .vw-project-group-body {
+    padding-left: 0;
+  }
+  .vw-overview-project {
+    flex: 0 0 300px;
+    width: 300px;
+  }
+}
+
+/* Shared dialogs and buttons */
 .projects-dialog-header,
 .projects-dialog-actions {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
-}
-.projects-page-header {
-  padding: 4px 0 20px;
-  border-bottom: 1px solid #e4e7ec;
 }
 .projects-kicker {
   margin: 0;
@@ -22,17 +659,11 @@
     monospace;
   letter-spacing: 0.1em;
 }
-.projects-page h1,
 .projects-dialog h2 {
   margin: 7px 0 6px;
   color: #101828;
   letter-spacing: -0.035em;
 }
-.projects-page h1 {
-  font-size: 30px;
-  line-height: 1;
-}
-.projects-page-header p:last-child,
 .projects-dialog-header p:last-child {
   margin: 0;
   color: #667085;
@@ -66,153 +697,6 @@
   color: #344054;
   background: #fff;
   border: 1px solid #d0d5dd;
-}
-.projects-toolbar {
-  display: flex;
-  gap: 5px;
-  margin: 18px 0;
-  overflow: auto;
-  padding-bottom: 2px;
-}
-.projects-toolbar button {
-  flex: 0 0 auto;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: transparent;
-  padding: 8px 11px;
-  color: #667085;
-  cursor: pointer;
-  font-weight: 700;
-}
-.projects-toolbar button.active {
-  background: #fff4ef;
-  border-color: #fad3c6;
-  color: #c63f16;
-}
-.projects-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-}
-.project-card,
-.projects-state-card {
-  min-width: 0;
-  border: 1px solid #e4e7ec;
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 4px 16px rgba(16, 24, 40, 0.03);
-}
-.project-card {
-  padding: 17px;
-  display: flex;
-  flex-direction: column;
-  min-height: 210px;
-}
-.project-card header {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: center;
-}
-.project-card time {
-  color: #98a2b3;
-  font-size: 11px;
-  white-space: nowrap;
-}
-.project-status {
-  border: 1px solid #d0d5dd;
-  border-radius: 999px;
-  padding: 4px 7px;
-  color: #475467;
-  background: #f9fafb;
-  font:
-    750 10px/1 ui-monospace,
-    SFMono-Regular,
-    monospace;
-}
-.project-status.in_progress {
-  color: #a15c00;
-  background: #fffaeb;
-  border-color: #fedf89;
-}
-.project-status.done {
-  color: #067647;
-  background: #ecfdf3;
-  border-color: #abefc6;
-}
-.project-status.archived {
-  color: #667085;
-  background: #f2f4f7;
-}
-.project-card h2 {
-  overflow-wrap: anywhere;
-  margin: 15px 0 7px;
-  color: #101828;
-  font-size: 17px;
-  line-height: 1.25;
-}
-.project-card > p {
-  margin: 0;
-  color: #667085;
-  font-size: 13px;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-.project-card dl {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 14px;
-  margin: auto 0 0;
-  padding-top: 15px;
-  border-top: 1px solid #eaecf0;
-}
-.project-card dt {
-  color: #98a2b3;
-  font:
-    750 10px/1 ui-monospace,
-    SFMono-Regular,
-    monospace;
-  text-transform: uppercase;
-}
-.project-card dd {
-  margin: 6px 0 0;
-  color: #344054;
-  font-size: 12px;
-  overflow-wrap: anywhere;
-}
-.project-open-link,
-.projects-secondary-link,
-.project-back-link {
-  color: #c63f16;
-  font-weight: 750;
-  text-decoration: none;
-}
-.project-open-link {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 15px;
-  padding-top: 12px;
-  border-top: 1px solid #eaecf0;
-  font-size: 13px;
-}
-.project-open-link:hover,
-.projects-secondary-link:hover,
-.project-back-link:hover {
-  text-decoration: underline;
-}
-.project-departments {
-  display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-.project-departments span {
-  border-radius: 999px;
-  padding: 3px 6px;
-  background: #f2f4f7;
-  color: #475467;
-  font-size: 10px;
 }
 .projects-state-card {
   padding: 28px;
