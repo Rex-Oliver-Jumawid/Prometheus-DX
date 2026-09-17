@@ -323,6 +323,62 @@ Prefer independent Playwright fixtures over sequential test dependencies.
 - `.docs/phases/README.md`
 - `.agents/skills/prometheus-phase-delivery/SKILL.md`
 
+### P5-D06 - Optimize hosted navigation without weakening authorization
+
+**Status:** Implemented
+**Area:** Performance, authentication, and query consistency
+**Impact:** High
+
+#### Measurement
+
+The initial hosted measurements showed Projects useful content at 3.90 seconds, Project detail at 3.43 seconds, Registry at 2.41 seconds, and a Project status change at 4.33 seconds perceived and 4.12 seconds for the PATCH request.
+
+The initial server breakdown showed roughly 0.13 to 0.16 seconds for remote Supabase `getUser`, 0.46 to 0.56 seconds for Member lookup, about 1.37 seconds for broad status authorization reads, and about 1.80 seconds for the full status update graph response.
+
+Response serialization was measured below 0.1 milliseconds and was not a material bottleneck.
+
+#### Decisions
+
+Supabase `auth.getClaims` is used for verified JWT signature and expiry checks with explicit issuer, audience, and UUID subject validation.
+
+The current ES256 signing-key configuration supports local verification through the cached JWKS path documented by Supabase.
+
+Prometheus Member resolution now deduplicates only concurrent in-flight lookups.
+
+Successful membership is never retained across sequential requests, so role and deactivation changes remain effective on the next protected request.
+
+Project, workflow, and Registry reads use domain-specific TanStack Query stale times, targeted cache updates, parallel workflow reads, Registry overview aggregation, and limited hover or focus prefetching.
+
+Stable read query functions do not consume React Strict Mode abort signals when an aborted duplicate would otherwise create unnecessary hosted work.
+
+The status mutation uses a narrow authorization projection, an atomic status plus history transaction, and a small response contract.
+
+The status control updates Project detail and list caches optimistically, rolls back failed requests, and serializes rapid status mutations per Project.
+
+Prisma relation joins are enabled for the measured Project and workflow read graphs after generation and schema validation.
+
+#### Result
+
+Across three hosted Chromium runs, median useful content was 1.33 seconds for Projects, 1.34 seconds for Project detail, and 1.42 seconds for Registry.
+
+Cached Project returns measured 18 milliseconds and cached revisits measured 45 milliseconds.
+
+Project status rendered its optimistic value in 24 milliseconds median and settled authoritatively in 1.60 seconds median.
+
+The corresponding median API durations were about 0.98 seconds for Projects, 0.99 seconds for Project detail, 1.08 seconds for workflow, 1.04 seconds for the aggregated Registry overview, and 1.58 seconds for status PATCH.
+
+The original paths were reproduced after the changes, including refresh persistence, role downgrade, deactivation denial, failed optimistic rollback, and the hosted submission loading retry path.
+
+#### Lessons and remaining bottlenecks
+
+Hosted network distance and repeated server-side authentication and Member lookup remain the dominant warm-request cost.
+
+The remaining full-suite Project Members acceptance failure is pre-existing test drift because the current main workspace does not mount the existing `ProjectMembersPanel` component.
+
+No long-lived authorization cache, arbitrary retry, timeout increase, UI redesign, or speculative infrastructure was introduced.
+
+Related files include `AuthService`, `AuthProvider`, `ProjectsService`, `ProjectWorkflowService`, Registry overview services and contracts, Project query configuration, and the Project overview status tests.
+
 ## Known Limitations
 
 Phase 5 is incomplete.

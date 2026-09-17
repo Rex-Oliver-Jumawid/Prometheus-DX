@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
   CreateProjectRequestSchema,
-  ProjectListResponseSchema,
   ProjectSchema,
   type CreateProjectRequest,
   type Project,
@@ -12,9 +11,13 @@ import {
 import { useAuth } from '../auth/auth-context';
 import { apiFetch } from '../../lib/api';
 import { CreateProjectDialog } from './CreateProjectDialog';
+import {
+  projectDetailQuery,
+  projectKeys,
+  projectsListQuery,
+  projectWorkflowQuery,
+} from './project-queries';
 import './projects.css';
-
-const projectsKey = ['projects', 'list'] as const;
 
 function errorMessage(error: unknown) {
   return error instanceof Error
@@ -72,9 +75,15 @@ interface ProjectCardProps {
   project: Project;
   currentMemberId?: string;
   scope: 'all' | 'mine' | 'archives';
+  onPrefetch: (projectId: string) => void;
 }
 
-function ProjectCard({ project, currentMemberId, scope }: ProjectCardProps) {
+function ProjectCard({
+  project,
+  currentMemberId,
+  scope,
+  onPrefetch,
+}: ProjectCardProps) {
   const metrics = project.metrics;
   const progress =
     metrics?.progressPercentage ?? (project.status === 'DONE' ? 100 : 0);
@@ -94,7 +103,11 @@ function ProjectCard({ project, currentMemberId, scope }: ProjectCardProps) {
   const isLead = project.lead.id === currentMemberId;
   const showRelationBadge =
     scope === 'mine' || isLead || project.isParticipating;
-  const relationText = isLead ? 'Lead' : project.isParticipating ? 'Member' : null;
+  const relationText = isLead
+    ? 'Lead'
+    : project.isParticipating
+      ? 'Member'
+      : null;
 
   return (
     <article
@@ -167,7 +180,12 @@ function ProjectCard({ project, currentMemberId, scope }: ProjectCardProps) {
           {project.departments.length} department
           {project.departments.length === 1 ? '' : 's'} involved
         </span>
-        <Link to={`/projects/${project.id}`} className="vw-overview-open">
+        <Link
+          to={`/projects/${project.id}`}
+          className="vw-overview-open"
+          onMouseEnter={() => onPrefetch(project.id)}
+          onFocus={() => onPrefetch(project.id)}
+        >
           Open Workspace →
         </Link>
       </div>
@@ -188,11 +206,8 @@ export function ProjectsPage() {
   const accessToken = session?.access_token;
 
   const projects = useQuery({
-    queryKey: [...projectsKey, accessToken] as const,
-    queryFn: ({ signal }) =>
-      apiFetch('/projects', ProjectListResponseSchema, { accessToken, signal }),
+    ...projectsListQuery(accessToken),
     enabled: Boolean(accessToken),
-    retry: false,
   });
 
   const createProject = useMutation({
@@ -202,9 +217,12 @@ export function ProjectsPage() {
         method: 'POST',
         body: request,
       }),
-    onSuccess: async () => {
+    onSuccess: (created) => {
+      queryClient.setQueryData<Project[]>(projectKeys.list, (current = []) => [
+        created,
+        ...current.filter((project) => project.id !== created.id),
+      ]);
       setDialogOpen(false);
-      await queryClient.invalidateQueries({ queryKey: projectsKey });
     },
     onSettled: () => {
       creatingRef.current = false;
@@ -214,6 +232,13 @@ export function ProjectsPage() {
   const openCreate = () => {
     createProject.reset();
     setDialogOpen(true);
+  };
+
+  const prefetchWorkspace = (projectId: string) => {
+    void Promise.all([
+      queryClient.prefetchQuery(projectDetailQuery(projectId, accessToken)),
+      queryClient.prefetchQuery(projectWorkflowQuery(projectId, accessToken)),
+    ]);
   };
 
   const closeDialog = () => {
@@ -240,7 +265,8 @@ export function ProjectsPage() {
     const data = projects.data ?? [];
     const scoped = data.filter((project) => {
       if (scope === 'archives') return project.status === 'DONE';
-      if (scope === 'mine') return project.lead.id === member?.id || project.isParticipating;
+      if (scope === 'mine')
+        return project.lead.id === member?.id || project.isParticipating;
       return true;
     });
 
@@ -359,7 +385,9 @@ export function ProjectsPage() {
           <header className="vw-archive-head">
             <div>
               <strong>Archived projects</strong>
-              <span>Completed work is kept here as a readable project record.</span>
+              <span>
+                Completed work is kept here as a readable project record.
+              </span>
             </div>
             <div className="vw-archive-count">
               {filteredProjects.length} completed
@@ -370,14 +398,18 @@ export function ProjectsPage() {
               {filteredProjects.map((project) => (
                 <article key={project.id} className="vw-archive-project-row">
                   <div>
-                    <div className="vw-archive-project-title">{project.name}</div>
+                    <div className="vw-archive-project-title">
+                      {project.name}
+                    </div>
                     <div className="vw-archive-project-desc">
                       {project.description || 'Completed project.'}
                     </div>
                   </div>
                   <div className="vw-archive-meta">
                     <div className="vw-archive-meta-label">Project Lead</div>
-                    <div className="vw-archive-meta-value">{project.lead.fullName}</div>
+                    <div className="vw-archive-meta-value">
+                      {project.lead.fullName}
+                    </div>
                   </div>
                   <div className="vw-archive-meta">
                     <div className="vw-archive-meta-label">Completed</div>
@@ -393,6 +425,8 @@ export function ProjectsPage() {
                   <Link
                     to={`/projects/${project.id}`}
                     className="vw-archive-open"
+                    onMouseEnter={() => prefetchWorkspace(project.id)}
+                    onFocus={() => prefetchWorkspace(project.id)}
                   >
                     View project →
                   </Link>
@@ -472,6 +506,7 @@ export function ProjectsPage() {
                             project={project}
                             currentMemberId={member?.id}
                             scope={scope}
+                            onPrefetch={prefetchWorkspace}
                           />
                         ))}
                       </div>

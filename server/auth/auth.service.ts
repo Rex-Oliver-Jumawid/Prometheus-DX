@@ -6,14 +6,24 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma, type Member } from '@prisma/client';
-import { createClient, type User } from '@supabase/supabase-js';
+import {
+  createClient,
+  type JwtPayload,
+  type User,
+} from '@supabase/supabase-js';
+import { z } from 'zod';
 import { PrismaService } from '../database/prisma.service';
 import { serverEnvironment } from '../config/env';
 
 export const SUPABASE_AUTH_CLIENT = Symbol('SUPABASE_AUTH_CLIENT');
+const AuthSubjectSchema = z.string().uuid();
 
 export interface SupabaseAuthClient {
   auth: {
+    getClaims(accessToken: string): Promise<{
+      data: { claims: JwtPayload } | null;
+      error: { message: string } | null;
+    }>;
     getUser(accessToken: string): Promise<{
       data: { user: User | null };
       error: { message: string } | null;
@@ -41,6 +51,8 @@ export function createSupabaseAuthClient(): SupabaseAuthClient | null {
 
 @Injectable()
 export class AuthService {
+  private readonly activeMemberLookups = new Map<string, Promise<Member>>();
+
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(SUPABASE_AUTH_CLIENT)
@@ -54,25 +66,80 @@ export class AuthService {
       );
     }
 
-    const { data, error } = await this.supabase.auth.getUser(accessToken);
-    if (error || !data.user) {
+    let verification: Awaited<
+      ReturnType<SupabaseAuthClient['auth']['getClaims']>
+    >;
+    try {
+      verification = await this.supabase.auth.getClaims(accessToken);
+    } catch {
+      throw new ServiceUnavailableException(
+        'Authentication verification is temporarily unavailable.',
+      );
+    }
+    const { data, error } = verification;
+    if (error || !data?.claims) {
       throw new UnauthorizedException(
         'Your session is invalid or has expired.',
       );
     }
 
-    const user = data.user;
-    const normalizedEmail = user.email?.trim().toLowerCase();
+    const claims = data.claims;
+    const subject = AuthSubjectSchema.safeParse(claims.sub);
+    const expectedIssuer = `${serverEnvironment.supabaseUrl!.replace(/\/$/, '')}/auth/v1`;
+    const audience = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+    if (
+      !subject.success ||
+      claims.iss !== expectedIssuer ||
+      !audience.includes('authenticated')
+    ) {
+      throw new UnauthorizedException(
+        'Your session is invalid or has expired.',
+      );
+    }
+
+    const authUserId = subject.data;
+    const pending = this.activeMemberLookups.get(authUserId);
+    if (pending) return pending;
+
+    const member = this.resolveVerifiedIdentity(authUserId, accessToken);
+    this.activeMemberLookups.set(authUserId, member);
+
+    try {
+      return await member;
+    } finally {
+      if (this.activeMemberLookups.get(authUserId) === member) {
+        this.activeMemberLookups.delete(authUserId);
+      }
+    }
+  }
+
+  private async resolveVerifiedIdentity(
+    authUserId: string,
+    accessToken: string,
+  ): Promise<Member> {
+    let verifiedUser: User | undefined;
 
     try {
       let member = await this.prisma.member.findUnique({
-        where: { authUserId: user.id },
+        where: { authUserId },
       });
+
+      if (!member || member.status === 'INVITED') {
+        const { data, error } = await this.supabase!.auth.getUser(accessToken);
+        if (error || !data.user || data.user.id !== authUserId) {
+          throw new UnauthorizedException(
+            'Your session is invalid or has expired.',
+          );
+        }
+        verifiedUser = data.user;
+      }
+
+      const normalizedEmail = verifiedUser?.email?.trim().toLowerCase();
 
       if (
         member?.status === 'INVITED' &&
         normalizedEmail &&
-        user.email_confirmed_at &&
+        verifiedUser?.email_confirmed_at &&
         member.email.toLowerCase() === normalizedEmail
       ) {
         member = await this.prisma.member.update({
@@ -81,7 +148,7 @@ export class AuthService {
         });
       }
 
-      if (!member && normalizedEmail && user.email_confirmed_at) {
+      if (!member && normalizedEmail && verifiedUser?.email_confirmed_at) {
         const emailMember = await this.prisma.member.findFirst({
           where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
         });
@@ -98,7 +165,7 @@ export class AuthService {
               status: { in: ['INVITED', 'ACTIVE'] },
             },
             data: {
-              authUserId: user.id,
+              authUserId,
               status: 'ACTIVE',
             },
           });
@@ -109,7 +176,7 @@ export class AuthService {
             });
           } else {
             member = await this.prisma.member.findUnique({
-              where: { authUserId: user.id },
+              where: { authUserId },
             });
           }
         }
@@ -123,7 +190,10 @@ export class AuthService {
 
       return member;
     } catch (error) {
-      if (error instanceof ForbiddenException) {
+      if (
+        error instanceof ForbiddenException ||
+        error instanceof UnauthorizedException
+      ) {
         throw error;
       }
 

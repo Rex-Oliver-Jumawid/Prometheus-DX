@@ -4,7 +4,6 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
-  ProjectCreateOptionsResponseSchema,
   type ProjectDepartmentSummary,
   type ProjectMemberSummary,
 } from '../../../shared/contracts/project';
@@ -12,7 +11,6 @@ import {
   CreateOutcomeRequestSchema,
   CreateStageRequestSchema,
   OutcomeSchema,
-  ProjectWorkflowResponseSchema,
   StageSchema,
   UpdateOutcomeRequestSchema,
   UpdateStageRequestSchema,
@@ -25,9 +23,11 @@ import {
 import { apiFetch } from '../../lib/api';
 import { OutcomeWorkArea } from './OutcomeWorkArea';
 import { OutcomeDeliveryPanel } from './OutcomeDeliveryPanel';
-
-const workflowKey = (projectId: string) =>
-  ['projects', 'workflow', projectId] as const;
+import {
+  projectCreateOptionsQuery,
+  projectKeys,
+  projectWorkflowQuery,
+} from './project-queries';
 
 function errorMessage(error: unknown) {
   return error instanceof Error
@@ -44,7 +44,8 @@ function lifecycleLabel(status: Outcome['lifecycleStatus']) {
 
 function deptClass(shortLabel: string) {
   const norm = shortLabel.toLowerCase();
-  if (norm.includes('sem') || norm.includes('s&m') || norm.includes('sm')) return 'sm';
+  if (norm.includes('sem') || norm.includes('s&m') || norm.includes('sm'))
+    return 'sm';
   if (norm.includes('rd') || norm.includes('r&d')) return 'rd';
   if (norm.includes('creative') || norm.includes('design')) return 'creative';
   return 'general';
@@ -243,7 +244,8 @@ function StageDialog({
               {stage ? 'Edit project stage' : 'Add project stage'}
             </h2>
             <p className="vw-modal-subtitle">
-              Stages organize the Project workflow into a deterministic sequence.
+              Stages organize the Project workflow into a deterministic
+              sequence.
             </p>
           </div>
           <button
@@ -333,7 +335,10 @@ function OutcomeDialog({
   isSaving: boolean;
   saveError: unknown;
   onClose: () => void;
-  onSave: (input: CreateOutcomeRequest, targetStageId?: string) => Promise<unknown>;
+  onSave: (
+    input: CreateOutcomeRequest,
+    targetStageId?: string,
+  ) => Promise<unknown>;
 }) {
   const [selectedStageId, setSelectedStageId] = useState(stage.id);
   const dialogRef = useRef<HTMLElement>(null);
@@ -449,13 +454,18 @@ function OutcomeDialog({
                   ))}
                 </select>
               ) : (
-                <input id="workflow-outcome-stage" value={stage.name} disabled />
+                <input
+                  id="workflow-outcome-stage"
+                  value={stage.name}
+                  disabled
+                />
               )}
             </div>
 
             <div className="vw-add-project-field">
               <label>
-                Departments <span className="pw-field-hint">Select one or more</span>
+                Departments{' '}
+                <span className="pw-field-hint">Select one or more</span>
               </label>
               <div
                 className="pw-multi-check-grid pw-department-check-grid"
@@ -471,7 +481,13 @@ function OutcomeDialog({
                     />
                     <span>
                       {department.name}{' '}
-                      <small style={{ opacity: 0.65, fontSize: '0.85em', marginLeft: 4 }}>
+                      <small
+                        style={{
+                          opacity: 0.65,
+                          fontSize: '0.85em',
+                          marginLeft: 4,
+                        }}
+                      >
                         {department.shortLabel}
                       </small>
                     </span>
@@ -487,7 +503,8 @@ function OutcomeDialog({
 
             <div className="vw-add-project-field">
               <label>
-                Members <span className="pw-field-hint">Select one or more</span>
+                Members{' '}
+                <span className="pw-field-hint">Select one or more</span>
               </label>
               {members.length > 0 ? (
                 <div
@@ -535,7 +552,8 @@ function OutcomeDialog({
 
             <div className="vw-add-project-field">
               <label htmlFor="workflow-outcome-description">
-                Outcome description <span className="pw-field-hint">Optional</span>
+                Outcome description{' '}
+                <span className="pw-field-hint">Optional</span>
               </label>
               <textarea
                 id="workflow-outcome-description"
@@ -562,7 +580,8 @@ function OutcomeDialog({
                     </span>
                   </label>
                   <p>
-                    Define exactly what must be true before this outcome can be accepted.
+                    Define exactly what must be true before this outcome can be
+                    accepted.
                   </p>
                 </div>
                 <button
@@ -605,7 +624,8 @@ function OutcomeDialog({
 
             <div className="vw-add-project-field">
               <label>
-                Prerequisite outcome <span className="pw-field-hint">Optional</span>
+                Prerequisite outcome{' '}
+                <span className="pw-field-hint">Optional</span>
               </label>
               {availablePrerequisites.length ? (
                 <div className="pw-multi-check-grid pw-prereq-check-grid">
@@ -621,12 +641,11 @@ function OutcomeDialog({
                   ))}
                 </div>
               ) : (
-                <p className="vw-empty-note">
-                  No other Outcomes exist yet.
-                </p>
+                <p className="vw-empty-note">No other Outcomes exist yet.</p>
               )}
               <div className="vw-add-project-preview">
-                Select a prerequisite only if this outcome must wait for another outcome before work begins.
+                Select a prerequisite only if this outcome must wait for another
+                outcome before work begins.
               </div>
               {errors.prerequisiteOutcomeIds?.message && (
                 <small className="projects-field-error">
@@ -690,29 +709,13 @@ export function ProjectWorkflow({
   const [scope, setScope] = useState<'whole' | 'mine'>('whole');
   const queryClient = useQueryClient();
   const workflow = useQuery({
-    queryKey: workflowKey(projectId),
-    queryFn: ({ signal }) =>
-      apiFetch(
-        `/projects/${projectId}/workflow`,
-        ProjectWorkflowResponseSchema,
-        {
-          accessToken,
-          signal,
-        },
-      ),
-    retry: false,
+    ...projectWorkflowQuery(projectId, accessToken),
   });
   const options = useQuery({
-    queryKey: ['projects', 'create-options'],
-    queryFn: ({ signal }) =>
-      apiFetch('/projects/create-options', ProjectCreateOptionsResponseSchema, {
-        accessToken,
-        signal,
-      }),
+    ...projectCreateOptionsQuery(accessToken),
     enabled: Boolean(
       editor && 'stage' in editor && editor.type.includes('outcome'),
     ),
-    retry: false,
   });
 
   const closeEditor = () => setEditor(null);
@@ -720,13 +723,15 @@ export function ProjectWorkflow({
     updater: (current: ProjectWorkflowResponse) => ProjectWorkflowResponse,
   ) => {
     queryClient.setQueryData<ProjectWorkflowResponse>(
-      workflowKey(projectId),
+      projectKeys.workflow(projectId),
       (current) => (current ? updater(current) : current),
     );
   };
-  const completeMutation = async () => {
+  const completeMutation = () => {
     closeEditor();
-    await queryClient.invalidateQueries({ queryKey: workflowKey(projectId) });
+    void queryClient.invalidateQueries({
+      queryKey: projectKeys.workflow(projectId),
+    });
   };
   const createStage = useMutation({
     mutationFn: (input: CreateStageRequest) =>
@@ -735,14 +740,14 @@ export function ProjectWorkflow({
         method: 'POST',
         body: input,
       }),
-    onSuccess: async (created) => {
+    onSuccess: (created) => {
       updateWorkflowCache((current) => ({
         ...current,
         stages: [...current.stages, created].sort(
           (first, second) => first.position - second.position,
         ),
       }));
-      await completeMutation();
+      completeMutation();
     },
   });
   const updateStage = useMutation({
@@ -758,14 +763,14 @@ export function ProjectWorkflow({
         method: 'PATCH',
         body: input,
       }),
-    onSuccess: async (updated) => {
+    onSuccess: (updated) => {
       updateWorkflowCache((current) => ({
         ...current,
         stages: current.stages.map((stage) =>
           stage.id === updated.id ? updated : stage,
         ),
       }));
-      await completeMutation();
+      completeMutation();
     },
   });
   const createOutcome = useMutation({
@@ -785,7 +790,7 @@ export function ProjectWorkflow({
           body: input,
         },
       ),
-    onSuccess: async (created, variables) => {
+    onSuccess: (created, variables) => {
       updateWorkflowCache((current) => ({
         ...current,
         stages: current.stages.map((stage) =>
@@ -799,7 +804,7 @@ export function ProjectWorkflow({
             : stage,
         ),
       }));
-      await completeMutation();
+      completeMutation();
     },
   });
   const updateOutcome = useMutation({
@@ -815,7 +820,7 @@ export function ProjectWorkflow({
         method: 'PATCH',
         body: input,
       }),
-    onSuccess: async (updated) => {
+    onSuccess: (updated) => {
       updateWorkflowCache((current) => ({
         ...current,
         stages: current.stages.map((stage) => ({
@@ -825,7 +830,7 @@ export function ProjectWorkflow({
           ),
         })),
       }));
-      await completeMutation();
+      completeMutation();
     },
   });
   const joinOutcome = useMutation({
@@ -844,13 +849,21 @@ export function ProjectWorkflow({
           ),
         })),
       }));
-      await queryClient.invalidateQueries({ queryKey: ['projects'] });
+      void Promise.all([
+        queryClient.invalidateQueries({ queryKey: projectKeys.list }),
+        queryClient.invalidateQueries({
+          queryKey: projectKeys.detail(projectId),
+        }),
+      ]);
     },
   });
 
   if (workflow.isPending) {
     return (
-      <div className="pw-board-skeleton-wrap" aria-label="Loading Stages and Outcomes">
+      <div
+        className="pw-board-skeleton-wrap"
+        aria-label="Loading Stages and Outcomes"
+      >
         <div className="pw-board-skeleton">
           <div className="pw-stage-column-skeleton" />
           <div className="pw-stage-column-skeleton" />
@@ -1080,7 +1093,10 @@ export function ProjectWorkflow({
           </div>
         </div>
         <div className="content-board-actions scope-actions-right">
-          <div className="board-scope-toggle" aria-label="Project content scope">
+          <div
+            className="board-scope-toggle"
+            aria-label="Project content scope"
+          >
             <button
               type="button"
               className={`board-scope-btn ${scope === 'whole' ? 'active' : ''}`}
@@ -1104,7 +1120,10 @@ export function ProjectWorkflow({
                 disabled={workflow.data.stages.length === 0}
                 onClick={() => {
                   if (workflow.data.stages.length > 0) {
-                    setEditor({ type: 'create-outcome', stage: workflow.data.stages[0] });
+                    setEditor({
+                      type: 'create-outcome',
+                      stage: workflow.data.stages[0],
+                    });
                   }
                 }}
               >
@@ -1218,11 +1237,7 @@ export function ProjectWorkflow({
                       const prereqsInSameStage = new Set<string>();
                       stageOutcomes.forEach((o) => {
                         o.prerequisites.forEach((p) => {
-                          if (
-                            stageOutcomes.some(
-                              (item) => item.id === p.id,
-                            )
-                          ) {
+                          if (stageOutcomes.some((item) => item.id === p.id)) {
                             prereqsInSameStage.add(p.id);
                           }
                         });
@@ -1249,7 +1264,9 @@ export function ProjectWorkflow({
                                 : prereqOutcome?.hasForReview
                                   ? 'For Review'
                                   : prereqOutcome
-                                    ? lifecycleLabel(prereqOutcome.lifecycleStatus)
+                                    ? lifecycleLabel(
+                                        prereqOutcome.lifecycleStatus,
+                                      )
                                     : 'Waiting';
                             const depStatusLabel = prereq.resolved
                               ? lifecycleLabel(outcome.lifecycleStatus)

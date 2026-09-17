@@ -81,15 +81,25 @@ The normal broad gates are `pnpm verify`, `pnpm verify:e2e`, and `pnpm verify:re
 
 Phase 5 work, submission, review, acceptance, reopening, and dependency slices are implemented.
 
-The initial distinct-account core browser suite passes 18/18 tests.
+The distinct-account core browser suite passes 28/28 tests after the performance changes.
 
-The previously recorded `pnpm verify` passes 106/106 tests, typecheck, lint, and both builds.
+The current `pnpm verify` passes 112 Node tests, 11 component tests, typecheck, lint, and both builds.
+
+The Project browser suite passes 5/5 tests, including optimistic status persistence after authoritative responses.
+
+The Registry member browser acceptance passes in isolation.
+
+Hosted performance measurement and implementation are recorded as P5-D06 in the Phase 5 journal.
+
+The first complete `pnpm verify:e2e` run reached 80/91 passing tests and retained five failures.
+
+Four of those failures were stale or timing-sensitive acceptance assumptions, and the corrected affected suites now pass except for the existing Project Members acceptance path that expects an unmounted panel.
 
 Prisma generation/validation pass and all 13 migrations are applied.
 
 The testing infrastructure now includes the React component-test layer, Chromium development E2E, retained Playwright failure evidence, and release-level Firefox/WebKit commands.
 
-Expanded edge-case verification, final full regression, screenshot review, and formal acceptance closure remain outstanding.
+Expanded edge-case verification, formal acceptance closure, and a full regression run after the final test maintenance remain outstanding.
 
 As Phase 5 tests are touched, move permission matrices, validation, direct API status assertions, stale-write checks, and concurrency checks below Playwright where practical.
 

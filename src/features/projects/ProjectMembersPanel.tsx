@@ -27,12 +27,13 @@ export function ProjectMembersPanel({
   const queryClient = useQueryClient();
   const members = useQuery({
     queryKey: membersKey(projectId),
-    queryFn: ({ signal }) =>
+    queryFn: () =>
       apiFetch(`/projects/${projectId}/members`, ProjectMembersResponseSchema, {
         accessToken,
-        signal,
       }),
     retry: false,
+    staleTime: 30_000,
+    refetchOnMount: 'always',
   });
   const updateAccess = useMutation({
     mutationFn: ({
@@ -51,7 +52,7 @@ export function ProjectMembersPanel({
           body: UpdateProjectMemberAccessRequestSchema.parse({ accessLevel }),
         },
       ),
-    onSuccess: async (updated: ProjectMember) => {
+    onSuccess: (updated: ProjectMember) => {
       queryClient.setQueryData(
         membersKey(projectId),
         (current: typeof members.data) =>
@@ -64,13 +65,6 @@ export function ProjectMembersPanel({
               }
             : current,
       );
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: membersKey(projectId) }),
-        queryClient.invalidateQueries({
-          queryKey: ['projects', 'detail', projectId],
-        }),
-        queryClient.invalidateQueries({ queryKey: ['projects', 'list'] }),
-      ]);
     },
   });
 

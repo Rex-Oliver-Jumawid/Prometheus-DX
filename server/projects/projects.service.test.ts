@@ -301,6 +301,21 @@ describe('ProjectsService', () => {
         },
       ),
     ).resolves.toMatchObject({ status: 'IN_PROGRESS' });
+    expect(database.project.findUnique).toHaveBeenCalledWith({
+      where: { id: '55555555-5555-4555-8555-555555555555' },
+      relationLoadStrategy: 'join',
+      select: {
+        id: true,
+        status: true,
+        doneAt: true,
+        updatedAt: true,
+        leadMemberId: true,
+        members: {
+          where: { memberId: lead.id },
+          select: { accessLevel: true },
+        },
+      },
+    });
     expect(database.project.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -411,8 +426,6 @@ describe('ProjectsService', () => {
       ),
     ).resolves.toMatchObject({
       status: 'IN_PROGRESS',
-      currentMemberAccess: 'CAN_EDIT',
-      canChangeStatus: true,
     });
     expect(database.project.update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -502,9 +515,7 @@ describe('ProjectsService', () => {
           id: 'stage-2',
           name: 'Implementation',
           position: 2,
-          outcomes: [
-            { id: 'o-3', lifecycleStatus: 'NEEDS_REVISION' },
-          ],
+          outcomes: [{ id: 'o-3', lifecycleStatus: 'NEEDS_REVISION' }],
         },
       ],
     });

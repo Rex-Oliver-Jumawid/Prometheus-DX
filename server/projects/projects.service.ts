@@ -15,6 +15,7 @@ import type {
   CreateProjectRequest,
   ProjectCreateOptionsResponse,
   Project,
+  ProjectStatusUpdateResponse,
   UpdateProjectStatusRequest,
 } from '../../shared/contracts/project';
 import { PrismaService } from '../database/prisma.service';
@@ -54,6 +55,7 @@ export class ProjectsService {
 
   async listProjects(currentMember: Member): Promise<Project[]> {
     const projects = await this.prisma.project.findMany({
+      relationLoadStrategy: 'join',
       include: projectInclude,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
@@ -79,6 +81,7 @@ export class ProjectsService {
   async getProject(currentMember: Member, projectId: string): Promise<Project> {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
+      relationLoadStrategy: 'join',
       include: projectInclude,
     });
     if (!project) throw new NotFoundException('Project not found.');
@@ -134,6 +137,7 @@ export class ProjectsService {
 
       return transaction.project.findUniqueOrThrow({
         where: { id: created.id },
+        relationLoadStrategy: 'join',
         include: projectInclude,
       });
     });
@@ -145,17 +149,26 @@ export class ProjectsService {
     currentMember: Member,
     projectId: string,
     input: UpdateProjectStatusRequest,
-  ): Promise<Project> {
+  ): Promise<ProjectStatusUpdateResponse> {
     const project = await this.prisma.$transaction(async (transaction) => {
       const existing = await transaction.project.findUnique({
         where: { id: projectId },
-        include: projectInclude,
+        relationLoadStrategy: 'join',
+        select: {
+          id: true,
+          status: true,
+          doneAt: true,
+          updatedAt: true,
+          leadMemberId: true,
+          members: {
+            where: { memberId: currentMember.id },
+            select: { accessLevel: true },
+          },
+        },
       });
 
       if (!existing) throw new NotFoundException('Project not found.');
-      const currentProjectMember = existing.members.find(
-        ({ memberId }) => memberId === currentMember.id,
-      );
+      const currentProjectMember = existing.members[0];
       if (
         existing.leadMemberId !== currentMember.id &&
         currentProjectMember?.accessLevel !== 'CAN_EDIT'
@@ -187,11 +200,21 @@ export class ProjectsService {
             },
           },
         },
-        include: projectInclude,
+        select: {
+          id: true,
+          status: true,
+          doneAt: true,
+          updatedAt: true,
+        },
       });
     });
 
-    return this.toProject(project, currentMember.id);
+    return {
+      id: project.id,
+      status: project.status,
+      doneAt: project.doneAt?.toISOString() ?? null,
+      updatedAt: project.updatedAt.toISOString(),
+    };
   }
 
   private toProject(project: ProjectRecord, currentMemberId: string): Project {

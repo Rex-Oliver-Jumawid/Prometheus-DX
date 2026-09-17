@@ -30,6 +30,11 @@ export class RegistryController {
     private readonly registryService: RegistryService,
   ) {}
 
+  @Get()
+  overview() {
+    return this.registryService.getOverview();
+  }
+
   @Get('access')
   access() {
     return { allowed: true as const, phase: 1 as const };

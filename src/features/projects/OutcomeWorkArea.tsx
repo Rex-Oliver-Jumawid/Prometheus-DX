@@ -338,9 +338,10 @@ export function OutcomeWorkArea({
   const path = `/projects/${projectId}/outcomes/${outcomeId}/work`;
   const work = useQuery({
     queryKey,
-    queryFn: ({ signal }) =>
-      apiFetch(path, OutcomeWorkSchema, { accessToken, signal }),
+    queryFn: () => apiFetch(path, OutcomeWorkSchema, { accessToken }),
     retry: false,
+    staleTime: 10_000,
+    refetchOnMount: 'always',
   });
   const mutation = useMutation({
     mutationFn: (input: Change) =>

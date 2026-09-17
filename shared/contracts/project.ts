@@ -81,6 +81,13 @@ export const UpdateProjectStatusRequestSchema = z.object({
   status: z.enum(['PLANNING', 'IN_PROGRESS', 'DONE']),
 });
 
+export const ProjectStatusUpdateResponseSchema = z.object({
+  id: z.string().uuid(),
+  status: ProjectStatusSchema,
+  doneAt: z.string().datetime().nullable(),
+  updatedAt: z.string().datetime(),
+});
+
 export type ProjectStatus = z.infer<typeof ProjectStatusSchema>;
 export type ProjectAccessLevel = z.infer<typeof ProjectAccessLevelSchema>;
 export type ProjectDepartmentSummary = z.infer<
@@ -96,6 +103,9 @@ export type ProjectCreateOptionsResponse = z.infer<
 export type CreateProjectRequest = z.infer<typeof CreateProjectRequestSchema>;
 export type UpdateProjectStatusRequest = z.infer<
   typeof UpdateProjectStatusRequestSchema
+>;
+export type ProjectStatusUpdateResponse = z.infer<
+  typeof ProjectStatusUpdateResponseSchema
 >;
 export type ProjectStageSummary = z.infer<typeof ProjectStageSummarySchema>;
 export type ProjectMetrics = z.infer<typeof ProjectMetricsSchema>;

@@ -12,6 +12,7 @@ import type {
   CreateMemberRequest,
   RegistryDepartment,
   RegistryMember,
+  RegistryOverviewResponse,
   UpdateDepartmentRequest,
   UpdateMemberRequest,
 } from '../../shared/contracts/registry';
@@ -30,6 +31,14 @@ export class RegistryService {
     @Inject(INVITATION_DELIVERY)
     private readonly invitationDelivery: InvitationDelivery,
   ) {}
+
+  async getOverview(): Promise<RegistryOverviewResponse> {
+    const [departments, members] = await Promise.all([
+      this.listDepartments(),
+      this.listMembers(),
+    ]);
+    return { departments, members };
+  }
 
   async listDepartments(): Promise<RegistryDepartment[]> {
     const departments = await this.prisma.department.findMany({

@@ -41,6 +41,25 @@ function delivery(send = vi.fn().mockResolvedValue(undefined)) {
 }
 
 describe('RegistryService invitation behavior', () => {
+  it('loads Registry departments and members in one overview operation', async () => {
+    const database = {
+      department: {
+        findMany: vi
+          .fn()
+          .mockResolvedValue([{ ...department, _count: { members: 1 } }]),
+      },
+      member: { findMany: vi.fn().mockResolvedValue([member]) },
+    } as unknown as PrismaService;
+    const service = new RegistryService(database, delivery());
+
+    await expect(service.getOverview()).resolves.toMatchObject({
+      departments: [{ id: department.id, memberCount: 1 }],
+      members: [{ id: member.id, departmentId: department.id }],
+    });
+    expect(database.department.findMany).toHaveBeenCalledOnce();
+    expect(database.member.findMany).toHaveBeenCalledOnce();
+  });
+
   it('keeps one invited Member when initial delivery is unavailable', async () => {
     const send = vi.fn().mockRejectedValue(new Error('unavailable'));
     const database = {

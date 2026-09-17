@@ -1,16 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import {
-  ProjectDetailResponseSchema,
+  ProjectStatusUpdateResponseSchema,
   UpdateProjectStatusRequestSchema,
+  type Project,
   type ProjectStatus,
 } from '../../../shared/contracts/project';
 import { useAuth } from '../auth/auth-context';
 import { ApiRequestError, apiFetch } from '../../lib/api';
 import { ProjectWorkflow } from './ProjectWorkflow';
+import {
+  projectDetailQuery,
+  projectKeys,
+  projectWorkflowQuery,
+} from './project-queries';
 import './projects.css';
-
-const projectsKey = ['projects', 'list'] as const;
 const statusOptions: ProjectStatus[] = ['PLANNING', 'IN_PROGRESS', 'DONE'];
 
 function statusLabel(status: ProjectStatus) {
@@ -26,40 +30,113 @@ function errorMessage(error: unknown) {
     : 'Something went wrong. Please try again.';
 }
 
+function withProjectStatus(
+  project: Project,
+  status: ProjectStatus,
+  server?: { doneAt: string | null; updatedAt: string },
+): Project {
+  const progressPercentage =
+    status === 'DONE'
+      ? 100
+      : project.metrics?.totalOutcomes
+        ? Math.round(
+            (project.metrics.acceptedOutcomes / project.metrics.totalOutcomes) *
+              100,
+          )
+        : 0;
+
+  return {
+    ...project,
+    status,
+    doneAt:
+      server?.doneAt ??
+      (status === 'DONE'
+        ? new Date().toISOString()
+        : project.status === 'DONE'
+          ? null
+          : project.doneAt),
+    updatedAt: server?.updatedAt ?? project.updatedAt,
+    metrics: project.metrics
+      ? { ...project.metrics, progressPercentage }
+      : project.metrics,
+  };
+}
+
 export function ProjectOverviewPage() {
   const { projectId, outcomeId } = useParams();
   const { session } = useAuth();
   const queryClient = useQueryClient();
   const accessToken = session?.access_token;
-  const detailKey = ['projects', 'detail', projectId] as const;
+  const detailKey = projectKeys.detail(projectId ?? 'missing-project');
 
   const project = useQuery({
-    queryKey: detailKey,
-    queryFn: ({ signal }) =>
-      apiFetch(`/projects/${projectId}`, ProjectDetailResponseSchema, {
-        accessToken,
-        signal,
-      }),
-    enabled: Boolean(projectId),
-    retry: false,
+    ...projectDetailQuery(projectId ?? 'missing-project', accessToken),
+    enabled: Boolean(projectId && accessToken),
+  });
+  useQuery({
+    ...projectWorkflowQuery(projectId ?? 'missing-project', accessToken),
+    enabled: Boolean(projectId && accessToken),
   });
 
   const updateStatus = useMutation({
+    scope: { id: `project-status-${projectId ?? 'missing-project'}` },
     mutationFn: (status: ProjectStatus) =>
-      apiFetch(`/projects/${projectId}/status`, ProjectDetailResponseSchema, {
-        accessToken,
-        method: 'PATCH',
-        body: UpdateProjectStatusRequestSchema.parse({ status }),
-      }),
-    onSuccess: async (updated) => {
-      queryClient.setQueryData(detailKey, updated);
-      await queryClient.invalidateQueries({ queryKey: projectsKey });
+      apiFetch(
+        `/projects/${projectId}/status`,
+        ProjectStatusUpdateResponseSchema,
+        {
+          accessToken,
+          method: 'PATCH',
+          body: UpdateProjectStatusRequestSchema.parse({ status }),
+        },
+      ),
+    onMutate: async (status) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: detailKey }),
+        queryClient.cancelQueries({ queryKey: projectKeys.list }),
+      ]);
+      const previousDetail = queryClient.getQueryData<Project>(detailKey);
+      const previousList = queryClient.getQueryData<Project[]>(
+        projectKeys.list,
+      );
+      queryClient.setQueryData<Project>(detailKey, (current) =>
+        current ? withProjectStatus(current, status) : current,
+      );
+      queryClient.setQueryData<Project[]>(projectKeys.list, (current) =>
+        current?.map((item) =>
+          item.id === projectId ? withProjectStatus(item, status) : item,
+        ),
+      );
+      return { previousDetail, previousList };
+    },
+    onError: (_error, _status, context) => {
+      if (context?.previousDetail) {
+        queryClient.setQueryData(detailKey, context.previousDetail);
+      }
+      if (context?.previousList) {
+        queryClient.setQueryData(projectKeys.list, context.previousList);
+      }
+    },
+    onSuccess: (updated) => {
+      const reconcile = (current: Project) =>
+        withProjectStatus(current, updated.status, updated);
+      queryClient.setQueryData<Project>(detailKey, (current) =>
+        current ? reconcile(current) : current,
+      );
+      queryClient.setQueryData<Project[]>(projectKeys.list, (current) =>
+        current?.map((item) =>
+          item.id === updated.id ? reconcile(item) : item,
+        ),
+      );
     },
   });
 
   if (project.isPending) {
     return (
-      <section className="pw-project-page pw-project-page-skeleton" aria-label="Loading project workspace">
+      <section
+        className="pw-project-page pw-project-page-skeleton"
+        aria-label="Loading project workspace"
+      >
         <div className="pw-project-header">
           <div className="pw-sk-kicker" />
           <div className="pw-sk-title" />
@@ -133,7 +210,11 @@ export function ProjectOverviewPage() {
     : null;
 
   return (
-    <div id="pwProjectPage" className="pw-project-page" aria-labelledby="pwProjectTitle">
+    <div
+      id="pwProjectPage"
+      className="pw-project-page"
+      aria-labelledby="pwProjectTitle"
+    >
       <div className="pw-top-bar">
         <div className="pw-breadcrumb-pill">
           <Link to="/projects" className="pw-breadcrumb-link">
@@ -150,21 +231,28 @@ export function ProjectOverviewPage() {
         <div className="pw-project-kicker">PROJECT WORKSPACE</div>
         <h1 id="pwProjectTitle">{value.name}</h1>
         <p id="pwProjectDescription">
-          {value.description || 'Client-facing management platform with onboarding, account tracking, dashboards, communication, and administrative tools.'}
+          {value.description ||
+            'Client-facing management platform with onboarding, account tracking, dashboards, communication, and administrative tools.'}
         </p>
 
         <div className="pw-project-meta">
           <div className="pw-project-meta-card project-overview-card">
             <span>Project lead</span>
             <strong id="pwProjectLead">{value.lead.fullName}</strong>
-            <span className="pw-meta-sub pw-project-lead-email">{value.lead.email}</span>
+            <span className="pw-meta-sub pw-project-lead-email">
+              {value.lead.email}
+            </span>
             <div className="sr-only">
               <h2 id="project-people-title">Project ownership</h2>
               <dl>
                 <dt>Project Lead</dt>
-                <dd>{value.lead.fullName} {value.lead.email}</dd>
+                <dd>
+                  {value.lead.fullName} {value.lead.email}
+                </dd>
                 <dt>Created by</dt>
-                <dd>{value.creator.fullName} {value.creator.email}</dd>
+                <dd>
+                  {value.creator.fullName} {value.creator.email}
+                </dd>
               </dl>
             </div>
           </div>
@@ -179,9 +267,7 @@ export function ProjectOverviewPage() {
                   value={value.status}
                   disabled={updateStatus.isPending}
                   onChange={(event) =>
-                    void updateStatus.mutateAsync(
-                      event.target.value as ProjectStatus,
-                    )
+                    updateStatus.mutate(event.target.value as ProjectStatus)
                   }
                 >
                   {statusOptions.map((status) => (
@@ -191,7 +277,9 @@ export function ProjectOverviewPage() {
                   ))}
                 </select>
               ) : (
-                <span className={`pw-project-state-pill ${value.status.toLowerCase()}`}>
+                <span
+                  className={`pw-project-state-pill ${value.status.toLowerCase()}`}
+                >
                   {statusLabel(value.status)}
                 </span>
               )}

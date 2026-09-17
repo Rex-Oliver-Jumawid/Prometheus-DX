@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CreateProjectRequestSchema,
   ProjectCreateOptionsResponseSchema,
+  ProjectStatusUpdateResponseSchema,
   UpdateProjectStatusRequestSchema,
 } from './project';
 
@@ -25,6 +26,19 @@ describe('CreateProjectRequestSchema', () => {
         departmentIds: [input.departmentIds[0], input.departmentIds[0]],
       }).success,
     ).toBe(false);
+  });
+});
+
+describe('ProjectStatusUpdateResponseSchema', () => {
+  it('accepts the narrow authoritative status mutation response', () => {
+    expect(
+      ProjectStatusUpdateResponseSchema.safeParse({
+        id: '11111111-1111-4111-8111-111111111111',
+        status: 'IN_PROGRESS',
+        doneAt: null,
+        updatedAt: '2026-09-18T00:00:00.000Z',
+      }).success,
+    ).toBe(true);
   });
 });
 

@@ -3,6 +3,7 @@ import type { Member } from '@prisma/client';
 import type { User } from '@supabase/supabase-js';
 import { describe, expect, it, vi } from 'vitest';
 import type { PrismaService } from '../database/prisma.service';
+import { serverEnvironment } from '../config/env';
 import { AuthService, type SupabaseAuthClient } from './auth.service';
 
 const activeMember = {
@@ -25,9 +26,27 @@ function supabase(
   user: Partial<User> | null,
   error: { message: string } | null = null,
 ): SupabaseAuthClient {
+  const claims = user?.id
+    ? {
+        sub: user.id,
+        iss: `${serverEnvironment.supabaseUrl!.replace(/\/$/, '')}/auth/v1`,
+        aud: 'authenticated',
+        exp: Math.floor(Date.now() / 1_000) + 3_600,
+        iat: Math.floor(Date.now() / 1_000),
+        role: 'authenticated',
+        aal: 'aal1' as const,
+        session_id: '88888888-8888-4888-8888-888888888888',
+      }
+    : undefined;
   return {
-    auth: { getUser: vi.fn().mockResolvedValue({ data: { user }, error }) },
-  } as SupabaseAuthClient;
+    auth: {
+      getClaims: vi.fn().mockResolvedValue({
+        data: error || !claims ? null : { claims },
+        error,
+      }),
+      getUser: vi.fn().mockResolvedValue({ data: { user }, error }),
+    },
+  } as unknown as SupabaseAuthClient;
 }
 
 function prisma(input: {
@@ -65,13 +84,79 @@ const confirmedUser = {
 
 describe('AuthService', () => {
   it('resolves the active member from the stable Supabase identity', async () => {
-    const service = new AuthService(
-      prisma({ byAuth: activeMember }),
-      supabase(confirmedUser),
-    );
+    const auth = supabase(confirmedUser);
+    const service = new AuthService(prisma({ byAuth: activeMember }), auth);
     await expect(service.resolveActiveMember('token')).resolves.toEqual(
       activeMember,
     );
+    expect(auth.auth.getClaims).toHaveBeenCalledWith('token');
+    expect(auth.auth.getUser).not.toHaveBeenCalled();
+  });
+
+  it('coalesces concurrent active-member lookups after verifying each token', async () => {
+    const database = prisma({ byAuth: activeMember, linked: activeMember });
+    const auth = supabase(confirmedUser);
+    const service = new AuthService(database, auth);
+
+    await expect(
+      Promise.all([
+        service.resolveActiveMember('token'),
+        service.resolveActiveMember('token'),
+      ]),
+    ).resolves.toEqual([activeMember, activeMember]);
+    expect(auth.auth.getClaims).toHaveBeenCalledTimes(2);
+    expect(database.member.findUnique).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects verified claims from the wrong issuer', async () => {
+    const auth = supabase(confirmedUser);
+    vi.mocked(auth.auth.getClaims).mockResolvedValue({
+      data: {
+        claims: {
+          sub: confirmedUser.id,
+          iss: 'https://untrusted.example/auth/v1',
+          aud: 'authenticated',
+          exp: Math.floor(Date.now() / 1_000) + 3_600,
+          iat: Math.floor(Date.now() / 1_000),
+          role: 'authenticated',
+          aal: 'aal1',
+          session_id: '88888888-8888-4888-8888-888888888888',
+        },
+      },
+      error: null,
+    });
+    const database = prisma({ byAuth: activeMember });
+    const service = new AuthService(database, auth);
+
+    await expect(service.resolveActiveMember('token')).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+    expect(database.member.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('rechecks membership on sequential requests and rejects deactivation immediately', async () => {
+    const deactivated = {
+      ...activeMember,
+      status: 'DEACTIVATED',
+      deactivatedAt: new Date(),
+    } satisfies Member;
+    const database = {
+      member: {
+        findUnique: vi
+          .fn()
+          .mockResolvedValueOnce(activeMember)
+          .mockResolvedValueOnce(deactivated),
+      },
+    } as unknown as PrismaService;
+    const service = new AuthService(database, supabase(confirmedUser));
+
+    await expect(service.resolveActiveMember('token')).resolves.toEqual(
+      activeMember,
+    );
+    await expect(service.resolveActiveMember('token')).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(database.member.findUnique).toHaveBeenCalledTimes(2);
   });
 
   it('links a confirmed first sign-in to the existing invited member', async () => {
@@ -197,6 +282,9 @@ describe('AuthService', () => {
     const service = new AuthService(
       prisma({ byAuth: member }),
       supabase(confirmedUser),
+    );
+    await expect(service.resolveActiveMember('token')).rejects.toBeInstanceOf(
+      ForbiddenException,
     );
     await expect(service.resolveActiveMember('token')).rejects.toBeInstanceOf(
       ForbiddenException,

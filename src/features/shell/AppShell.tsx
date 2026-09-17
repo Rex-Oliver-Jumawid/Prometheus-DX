@@ -1,5 +1,8 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/auth-context';
+import { projectsListQuery } from '../projects/project-queries';
+import { registryOverviewQuery } from '../registry/registry-queries';
 import { NavIcon } from './Icons';
 import {
   breadcrumbsForPath,
@@ -10,7 +13,8 @@ import { Avatar, ProfileDrawer } from './ProfileDrawer';
 import { useShellStore } from './shell-store';
 
 export function AppShell() {
-  const { member } = useAuth();
+  const { member, session } = useAuth();
+  const queryClient = useQueryClient();
   const location = useLocation();
   const mobileOpen = useShellStore((state) => state.mobileNavigationOpen);
   const setMobileOpen = useShellStore((state) => state.setMobileNavigationOpen);
@@ -20,6 +24,15 @@ export function AppShell() {
   const breadcrumbs = isProjectSection
     ? []
     : breadcrumbsForPath(location.pathname);
+  const prefetchNavigation = (path: string) => {
+    if (path === '/projects') {
+      void queryClient.prefetchQuery(projectsListQuery(session?.access_token));
+    } else if (path === '/registry') {
+      void queryClient.prefetchQuery(
+        registryOverviewQuery(session?.access_token),
+      );
+    }
+  };
 
   return (
     <div className={`workspace-shell${mobileOpen ? ' mobile-nav-open' : ''}`}>
@@ -45,6 +58,8 @@ export function AppShell() {
               to={item.path}
               end={item.path === '/'}
               onClick={() => setMobileOpen(false)}
+              onMouseEnter={() => prefetchNavigation(item.path)}
+              onFocus={() => prefetchNavigation(item.path)}
               className={({ isActive }) =>
                 `shell-nav-item${isActive ? ' active' : ''}`
               }
@@ -63,6 +78,8 @@ export function AppShell() {
                 key={item.path}
                 to={item.path}
                 onClick={() => setMobileOpen(false)}
+                onMouseEnter={() => prefetchNavigation(item.path)}
+                onFocus={() => prefetchNavigation(item.path)}
                 className={({ isActive }) =>
                   `sidebar-utility${isActive ? ' active' : ''}`
                 }

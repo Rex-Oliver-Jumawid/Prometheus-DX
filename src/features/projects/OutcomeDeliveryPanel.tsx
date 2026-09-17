@@ -8,6 +8,7 @@ import {
   type Submission,
 } from '../../../shared/contracts/outcome-delivery';
 import { apiFetch } from '../../lib/api';
+import { projectKeys } from './project-queries';
 import { ProjectDialog } from './ProjectDialog';
 import { OutcomeReviewDialog } from './OutcomeReviewDialog';
 import { OutputContent } from './OutputContent';
@@ -161,9 +162,10 @@ export function OutcomeDeliveryPanel({
   const path = `/projects/${projectId}/outcomes/${outcomeId}/delivery`;
   const delivery = useQuery({
     queryKey: key,
-    queryFn: ({ signal }) =>
-      apiFetch(path, OutcomeDeliverySchema, { accessToken, signal }),
+    queryFn: () => apiFetch(path, OutcomeDeliverySchema, { accessToken }),
     retry: false,
+    staleTime: 10_000,
+    refetchOnMount: 'always',
   });
   const mutation = useMutation({
     mutationFn: ({ action, body }: { action: string; body: unknown }) =>
@@ -175,10 +177,17 @@ export function OutcomeDeliveryPanel({
       }),
     onSuccess: (data, { action }) => {
       queryClient.setQueryData(key, data);
-      if (action !== 'draft' && action !== 'review-draft')
-        void queryClient.invalidateQueries({
-          queryKey: ['projects'],
-        });
+      if (action !== 'draft' && action !== 'review-draft') {
+        void Promise.all([
+          queryClient.invalidateQueries({ queryKey: projectKeys.list }),
+          queryClient.invalidateQueries({
+            queryKey: projectKeys.detail(projectId),
+          }),
+          queryClient.invalidateQueries({
+            queryKey: projectKeys.workflow(projectId),
+          }),
+        ]);
+      }
     },
   });
   const act = async (action: string, body: unknown) => {

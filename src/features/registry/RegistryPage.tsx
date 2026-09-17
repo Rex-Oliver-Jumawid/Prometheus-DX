@@ -6,23 +6,23 @@ import {
   CreateDepartmentRequestSchema,
   CreateMemberRequestSchema,
   RegistryDepartmentSchema,
-  RegistryDepartmentsResponseSchema,
   RegistryMemberSchema,
-  RegistryMembersResponseSchema,
   UpdateMemberRequestSchema,
   type CreateDepartmentRequest,
   type DepartmentFormValues,
   type MemberFormValues,
   type RegistryDepartment,
   type RegistryMember,
+  type RegistryOverviewResponse,
   type UpdateMemberRequest,
 } from '../../../shared/contracts/registry';
 import { apiFetch } from '../../lib/api';
+import {
+  registryOverviewQuery,
+  registryOverviewQueryKey,
+} from './registry-queries';
 import './registry.css';
 import './member-name-combobox.css';
-
-const departmentsQueryKey = ['registry', 'departments'] as const;
-const membersQueryKey = ['registry', 'members'] as const;
 
 type DepartmentDialogState =
   { mode: 'create' } | { mode: 'edit'; department: RegistryDepartment };
@@ -52,6 +52,18 @@ function sortDepartments(
   return [...departments].sort((left, right) =>
     left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }),
   );
+}
+
+function withMemberCounts(
+  departments: RegistryDepartment[],
+  members: RegistryMember[],
+): RegistryDepartment[] {
+  return departments.map((department) => ({
+    ...department,
+    memberCount: members.filter(
+      (member) => member.departmentId === department.id,
+    ).length,
+  }));
 }
 
 function DepartmentDialog({
@@ -727,25 +739,11 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
   const [memberDialogState, setMemberDialogState] =
     useState<MemberDialogState | null>(null);
 
-  const departments = useQuery({
-    queryKey: departmentsQueryKey,
-    queryFn: ({ signal }) =>
-      apiFetch('/registry/departments', RegistryDepartmentsResponseSchema, {
-        accessToken,
-        signal,
-      }),
-    retry: false,
+  const overview = useQuery({
+    ...registryOverviewQuery(accessToken),
   });
-
-  const members = useQuery({
-    queryKey: membersQueryKey,
-    queryFn: ({ signal }) =>
-      apiFetch('/registry/members', RegistryMembersResponseSchema, {
-        accessToken,
-        signal,
-      }),
-    retry: false,
-  });
+  const departments = { ...overview, data: overview.data?.departments ?? [] };
+  const members = { ...overview, data: overview.data?.members ?? [] };
 
   const saveDepartment = useMutation({
     mutationFn: ({ departmentId, request }: SaveDepartmentInput) =>
@@ -761,15 +759,20 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
         },
       ),
     onSuccess: (savedDepartment) => {
-      queryClient.setQueryData<RegistryDepartment[]>(
-        departmentsQueryKey,
-        (current = []) =>
-          sortDepartments([
-            ...current.filter(
-              (department) => department.id !== savedDepartment.id,
-            ),
-            savedDepartment,
-          ]),
+      queryClient.setQueryData<RegistryOverviewResponse>(
+        registryOverviewQueryKey,
+        (current) =>
+          current
+            ? {
+                ...current,
+                departments: sortDepartments([
+                  ...current.departments.filter(
+                    (department) => department.id !== savedDepartment.id,
+                  ),
+                  savedDepartment,
+                ]),
+              }
+            : current,
       );
       setDialogState(null);
     },
@@ -787,19 +790,24 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
         },
       ),
     onSuccess: (savedMember) => {
-      queryClient.setQueryData<RegistryMember[]>(
-        membersQueryKey,
-        (current = []) =>
-          [
-            ...current.filter((member) => member.id !== savedMember.id),
+      queryClient.setQueryData<RegistryOverviewResponse>(
+        registryOverviewQueryKey,
+        (current) => {
+          if (!current) return current;
+          const nextMembers = [
+            ...current.members.filter((member) => member.id !== savedMember.id),
             savedMember,
           ].sort((left, right) =>
             left.fullName.localeCompare(right.fullName, undefined, {
               sensitivity: 'base',
             }),
-          ),
+          );
+          return {
+            departments: withMemberCounts(current.departments, nextMembers),
+            members: nextMembers,
+          };
+        },
       );
-      void queryClient.invalidateQueries({ queryKey: departmentsQueryKey });
       setMemberDialogState(null);
     },
   });
@@ -812,12 +820,17 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
         { accessToken, method: 'POST' },
       ),
     onSuccess: (savedMember) => {
-      queryClient.setQueryData<RegistryMember[]>(
-        membersQueryKey,
-        (current = []) =>
-          current.map((member) =>
-            member.id === savedMember.id ? savedMember : member,
-          ),
+      queryClient.setQueryData<RegistryOverviewResponse>(
+        registryOverviewQueryKey,
+        (current) =>
+          current
+            ? {
+                ...current,
+                members: current.members.map((member) =>
+                  member.id === savedMember.id ? savedMember : member,
+                ),
+              }
+            : current,
       );
     },
   });

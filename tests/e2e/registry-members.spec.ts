@@ -305,7 +305,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
     page.locator('.registry-department-card').filter({
       hasText: department.name,
     }),
-  ).toContainText('1 member');
+  ).toContainText('2 members');
 
   await page.reload();
   await expect(

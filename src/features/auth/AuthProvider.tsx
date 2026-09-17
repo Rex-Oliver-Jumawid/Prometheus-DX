@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Session } from '@supabase/supabase-js';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { CurrentMemberSchema } from '../../../shared/contracts/member';
 import { apiFetch } from '../../lib/api';
 import { getSupabaseClient } from '../../lib/supabase';
@@ -10,6 +10,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const client = getSupabaseClient();
   const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const authenticatedUserId = useRef<string | null>(null);
 
   useEffect(() => {
     if (!client) {
@@ -19,12 +20,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let active = true;
     void client.auth.getSession().then(({ data }) => {
-      if (active) setSession(data.session);
+      if (active) {
+        authenticatedUserId.current = data.session?.user.id ?? null;
+        setSession(data.session);
+      }
     });
     const { data } = client.auth.onAuthStateChange((_event, nextSession) => {
+      const nextUserId = nextSession?.user.id ?? null;
+      if (
+        authenticatedUserId.current &&
+        authenticatedUserId.current !== nextUserId
+      ) {
+        queryClient.clear();
+      }
+      authenticatedUserId.current = nextUserId;
       setSession(nextSession);
-      if (!nextSession)
-        queryClient.removeQueries({ queryKey: ['current-member'] });
     });
 
     return () => {
@@ -54,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     memberError: memberQuery.error,
     retryAuthorization: () => void memberQuery.refetch(),
     signOut: async () => {
-      queryClient.removeQueries({ queryKey: ['current-member'] });
+      queryClient.clear();
       setSession(null);
       if (client) await client.auth.signOut({ scope: 'local' });
     },

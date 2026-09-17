@@ -417,7 +417,7 @@ test('F4-25: Participating derives from membership and excludes creator-only Pro
   test.skip(!hasCredentials, 'Requires E2E member credentials.');
   await signIn(page);
   await page.goto('/projects');
-  await page.getByRole('tab', { name: 'Participating' }).click();
+  await page.getByRole('tab', { name: 'My Projects' }).click();
   await expect(
     page.getByRole('heading', { name: `Participating Project ${runId}` }),
   ).toBeVisible();
@@ -426,7 +426,7 @@ test('F4-25: Participating derives from membership and excludes creator-only Pro
   ).toHaveCount(0);
 });
 
-test('F4-26: a Lead who joins remains under Leading and not Participating', async ({
+test('F4-26: a Lead who joins remains identified as Lead in My Projects', async ({
   page,
 }) => {
   test.skip(!hasCredentials, 'Requires E2E member credentials.');
@@ -441,12 +441,13 @@ test('F4-26: a Lead who joins remains under Leading and not Participating', asyn
     ).status,
   ).toBe(201);
   await page.goto('/projects');
-  await page.getByRole('tab', { name: 'Leading' }).click();
-  await expect(
-    page.getByRole('heading', { name: `Leading Membership Project ${runId}` }),
-  ).toBeVisible();
-  await page.getByRole('tab', { name: 'Participating' }).click();
-  await expect(
-    page.getByRole('heading', { name: `Leading Membership Project ${runId}` }),
-  ).toHaveCount(0);
+  await page.getByRole('tab', { name: 'My Projects' }).click();
+  const projectCard = page.locator('.vw-overview-project').filter({
+    has: page.getByRole('heading', {
+      name: `Leading Membership Project ${runId}`,
+    }),
+  });
+  await expect(projectCard).toBeVisible();
+  await expect(projectCard.getByText('Lead', { exact: true })).toBeVisible();
+  await expect(projectCard.getByText('Member', { exact: true })).toHaveCount(0);
 });

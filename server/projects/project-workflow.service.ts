@@ -71,6 +71,7 @@ export class ProjectWorkflowService {
   ): Promise<ProjectWorkflowResponse> {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
+      relationLoadStrategy: 'join',
       select: {
         id: true,
         leadMemberId: true,
@@ -101,6 +102,7 @@ export class ProjectWorkflowService {
     if (!project) throw new NotFoundException('Project not found.');
     const members = await this.prisma.projectMember.findMany({
       where: { projectId },
+      relationLoadStrategy: 'join',
       include: {
         member: {
           select: {

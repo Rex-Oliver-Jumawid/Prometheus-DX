@@ -77,6 +77,11 @@ export const RegistryMemberSchema = z.object({
 
 export const RegistryMembersResponseSchema = z.array(RegistryMemberSchema);
 
+export const RegistryOverviewResponseSchema = z.object({
+  departments: RegistryDepartmentsResponseSchema,
+  members: RegistryMembersResponseSchema,
+});
+
 const MemberDetailsRequestSchema = z.object({
   fullName: z.string().trim().min(1, "Enter the member's full name."),
   email: z.string().trim().toLowerCase().email('Enter a valid email address.'),
@@ -92,6 +97,9 @@ export const CreateMemberRequestSchema = MemberDetailsRequestSchema.extend({
 export const UpdateMemberRequestSchema = MemberDetailsRequestSchema;
 
 export type RegistryMember = z.infer<typeof RegistryMemberSchema>;
+export type RegistryOverviewResponse = z.infer<
+  typeof RegistryOverviewResponseSchema
+>;
 export type CreateMemberRequest = z.infer<typeof CreateMemberRequestSchema>;
 export type UpdateMemberRequest = z.infer<typeof UpdateMemberRequestSchema>;
 export type MemberFormValues = z.input<typeof MemberDetailsRequestSchema>;
