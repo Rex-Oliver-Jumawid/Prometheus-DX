@@ -966,15 +966,43 @@
 
 .pw-top-bar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
+  gap: 12px;
   width: 100%;
+  flex-wrap: wrap;
+}
+
+/* Back navigation link — lightweight, no button appearance */
+.pw-back-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  color: #7b7068;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 5px 0;
+  transition: color 0.15s ease;
+  white-space: nowrap;
+}
+
+.pw-back-nav:hover {
+  color: #24201d;
+}
+
+.pw-back-nav:focus-visible {
+  outline: 2px solid rgba(203, 77, 34, 0.45);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 .pw-breadcrumb-pill {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 6px 14px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.9);
@@ -982,12 +1010,19 @@
   box-shadow: 0 2px 8px rgba(47, 35, 29, 0.04);
   font-family: Inter, system-ui, -apple-system, sans-serif;
   font-size: 11px;
+  /* Responsive: pill never gets so wide it crowds out the back link */
+  max-width: min(640px, 55vw);
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .pw-breadcrumb-link {
   color: #7b7068;
   text-decoration: none;
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: color 0.15s ease;
 }
 
@@ -995,17 +1030,33 @@
   color: #24201d;
 }
 
+/* Intermediate non-current breadcrumb segment (Stage Name on outcome route) */
+.pw-breadcrumb-seg {
+  color: #7b7068;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex-shrink: 1;
+  max-width: 180px;
+}
+
 .pw-breadcrumb-sep {
   color: #b5aba3;
+  flex-shrink: 0;
 }
 
 .pw-breadcrumb-current {
   color: #201a16;
   font-weight: 700;
-  max-width: 280px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  flex-shrink: 1;
+  /* Removed the hard 280px max-width — the pill's own max-width and
+     overflow:hidden provides graceful constraint at any viewport width. */
 }
 
 .pw-project-meta {

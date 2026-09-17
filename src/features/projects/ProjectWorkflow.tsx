@@ -919,9 +919,6 @@ export function ProjectWorkflow({
       >
         <div className="workflow-section-heading">
           <div>
-            <Link className="project-back-link" to={`/projects/${projectId}`}>
-              Back to workflow
-            </Link>
             <p className="projects-kicker">
               STAGE {selectedStage.position + 1} / {selectedStage.name}
             </p>

@@ -137,7 +137,9 @@ export function AppShell() {
           </nav>
         </header>
         <main className="workspace-content">
-          <Outlet />
+          <div className="workspace-content-scroll">
+            <Outlet />
+          </div>
         </main>
       </div>
       <ProfileDrawer member={member} />

@@ -73,7 +73,7 @@ export function ProjectOverviewPage() {
     ...projectDetailQuery(projectId ?? 'missing-project', accessToken),
     enabled: Boolean(projectId && accessToken),
   });
-  useQuery({
+  const workflow = useQuery({
     ...projectWorkflowQuery(projectId ?? 'missing-project', accessToken),
     enabled: Boolean(projectId && accessToken),
   });
@@ -216,15 +216,94 @@ export function ProjectOverviewPage() {
       aria-labelledby="pwProjectTitle"
     >
       <div className="pw-top-bar">
-        <div className="pw-breadcrumb-pill">
-          <Link to="/projects" className="pw-breadcrumb-link">
-            Projects
+        {outcomeId ? (
+          <Link
+            to={`/projects/${projectId}`}
+            className="pw-back-nav"
+            aria-label="Back to Project Workspace"
+          >
+            ← Back to Workspace
           </Link>
-          <span className="pw-breadcrumb-sep">/</span>
-          <strong className="pw-breadcrumb-current" title={value.name}>
-            {value.name}
-          </strong>
-        </div>
+        ) : (
+          <Link
+            to="/projects"
+            className="pw-back-nav"
+            aria-label="Back to Projects list"
+          >
+            ← Back to Projects
+          </Link>
+        )}
+
+        {(() => {
+          if (outcomeId && workflow.data) {
+            const allOutcomes = workflow.data.stages.flatMap((s) => s.outcomes);
+            const breadcrumbOutcome = allOutcomes.find(
+              (o) => o.id === outcomeId,
+            );
+            const breadcrumbStage = breadcrumbOutcome
+              ? workflow.data.stages.find(
+                  (s) => s.id === breadcrumbOutcome.stageId,
+                )
+              : undefined;
+            return (
+              <nav
+                className="pw-breadcrumb-pill"
+                aria-label="Breadcrumb"
+              >
+                <Link to="/projects" className="pw-breadcrumb-link">
+                  Projects
+                </Link>
+                <span className="pw-breadcrumb-sep" aria-hidden="true">/</span>
+                <Link
+                  to={`/projects/${projectId}`}
+                  className="pw-breadcrumb-link"
+                  title={value.name}
+                >
+                  {value.name}
+                </Link>
+                {breadcrumbStage && (
+                  <>
+                    <span className="pw-breadcrumb-sep" aria-hidden="true">/</span>
+                    <span className="pw-breadcrumb-seg" title={breadcrumbStage.name}>
+                      {breadcrumbStage.name}
+                    </span>
+                  </>
+                )}
+                {breadcrumbOutcome && (
+                  <>
+                    <span className="pw-breadcrumb-sep" aria-hidden="true">/</span>
+                    <strong
+                      className="pw-breadcrumb-current"
+                      title={breadcrumbOutcome.title}
+                      aria-current="page"
+                    >
+                      {breadcrumbOutcome.title}
+                    </strong>
+                  </>
+                )}
+              </nav>
+            );
+          }
+
+          return (
+            <nav
+              className="pw-breadcrumb-pill"
+              aria-label="Breadcrumb"
+            >
+              <Link to="/projects" className="pw-breadcrumb-link">
+                Projects
+              </Link>
+              <span className="pw-breadcrumb-sep" aria-hidden="true">/</span>
+              <strong
+                className="pw-breadcrumb-current"
+                title={value.name}
+                aria-current="page"
+              >
+                {value.name}
+              </strong>
+            </nav>
+          );
+        })()}
       </div>
 
       <section className="pw-project-header">
