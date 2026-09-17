@@ -90,6 +90,41 @@ const sampleProjects: Project[] = [
       progressPercentage: 54,
     },
   },
+  {
+    id: '33333333-3333-4333-8333-333333333333',
+    name: 'Prometheus Brand Site v1',
+    description: 'Completed first-release company website.',
+    status: 'DONE',
+    lead: {
+      id: 'member-3',
+      fullName: 'Bea Santos',
+      email: 'bea@example.com',
+    },
+    creator: {
+      id: 'member-3',
+      fullName: 'Bea Santos',
+      email: 'bea@example.com',
+    },
+    departments: [
+      { id: 'dept-3', name: 'R&D', shortLabel: 'R&D' },
+      { id: 'dept-4', name: 'Creatives', shortLabel: 'Creatives' },
+    ],
+    isParticipating: false,
+    currentMemberAccess: null,
+    canChangeStatus: false,
+    doneAt: '2026-08-28T00:00:00.000Z',
+    archivedAt: null,
+    createdAt: '2026-08-01T00:00:00.000Z',
+    updatedAt: '2026-08-28T00:00:00.000Z',
+    metrics: {
+      totalOutcomes: 5,
+      openOutcomes: 0,
+      acceptedOutcomes: 5,
+      activeStagesCount: 0,
+      activeStages: [],
+      progressPercentage: 100,
+    },
+  },
 ];
 
 vi.mock('../../lib/api', () => ({
@@ -135,9 +170,7 @@ describe('ProjectsPage', () => {
     expect(screen.getByText('Done')).toBeInTheDocument();
 
     expect(screen.getByText('Client Management System')).toBeInTheDocument();
-
-    // Done group has 0 projects, so empty text should be visible
-    expect(screen.getByText('No done projects yet.')).toBeInTheDocument();
+    expect(screen.getByText('Prometheus Brand Site v1')).toBeInTheDocument();
   });
 
   it('displays card metrics, department tags, workers, and workspace link', async () => {
@@ -189,6 +222,27 @@ describe('ProjectsPage', () => {
     const allProjectsTab = screen.getByRole('tab', { name: 'All Projects' });
     await user.click(allProjectsTab);
     expect(screen.getByText('Client Management System')).toBeInTheDocument();
+  });
+
+  it('switches to Archives tab and renders completed project rows', async () => {
+    const user = userEvent.setup();
+    renderProjectsPage();
+
+    expect(await screen.findByText('First 10 Customers')).toBeInTheDocument();
+
+    const archivesTab = screen.getByRole('tab', { name: 'Archives' });
+    await user.click(archivesTab);
+
+    expect(screen.getByText('Archived projects')).toBeInTheDocument();
+    expect(screen.getByText('Completed work is kept here as a readable project record.')).toBeInTheDocument();
+    expect(screen.getByText('1 completed')).toBeInTheDocument();
+    expect(screen.getByText('Prometheus Brand Site v1')).toBeInTheDocument();
+    expect(screen.getByText('Completed first-release company website.')).toBeInTheDocument();
+    expect(screen.getByText('Bea Santos')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View project →' })).toHaveAttribute(
+      'href',
+      '/projects/33333333-3333-4333-8333-333333333333',
+    );
   });
 
   it('collapses and expands a status group', async () => {

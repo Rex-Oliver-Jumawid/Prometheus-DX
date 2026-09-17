@@ -53,10 +53,25 @@ const STATUS_GROUPS: StatusGroupConfig[] = [
   },
 ];
 
+function formatCompletionDate(dateStr?: string) {
+  if (!dateStr) return 'Done';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return 'Done';
+    return d.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  } catch {
+    return 'Done';
+  }
+}
+
 interface ProjectCardProps {
   project: Project;
   currentMemberId?: string;
-  scope: 'all' | 'mine';
+  scope: 'all' | 'mine' | 'archives';
 }
 
 function ProjectCard({ project, currentMemberId, scope }: ProjectCardProps) {
@@ -163,7 +178,7 @@ function ProjectCard({ project, currentMemberId, scope }: ProjectCardProps) {
 export function ProjectsPage() {
   const { member, session } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [scope, setScope] = useState<'all' | 'mine'>('all');
+  const [scope, setScope] = useState<'all' | 'mine' | 'archives'>('all');
   const [search, setSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<
     Record<string, boolean>
@@ -224,8 +239,9 @@ export function ProjectsPage() {
   const filteredProjects = useMemo(() => {
     const data = projects.data ?? [];
     const scoped = data.filter((project) => {
-      if (scope === 'all') return true;
-      return project.lead.id === member?.id || project.isParticipating;
+      if (scope === 'archives') return project.status === 'DONE';
+      if (scope === 'mine') return project.lead.id === member?.id || project.isParticipating;
+      return true;
     });
 
     const trimmed = search.trim().toLowerCase();
@@ -273,6 +289,7 @@ export function ProjectsPage() {
             className="vw-project-scope-toggle"
             role="tablist"
             aria-label="Project scope"
+            data-scope={scope}
           >
             <button
               type="button"
@@ -291,6 +308,15 @@ export function ProjectsPage() {
               onClick={() => setScope('mine')}
             >
               My Projects
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={scope === 'archives'}
+              className={`vw-project-scope-button ${scope === 'archives' ? 'active' : ''}`}
+              onClick={() => setScope('archives')}
+            >
+              Archives
             </button>
           </div>
 
@@ -328,6 +354,59 @@ export function ProjectsPage() {
             Retry
           </button>
         </div>
+      ) : scope === 'archives' ? (
+        <section className="vw-archive-shell" aria-label="Archived projects">
+          <header className="vw-archive-head">
+            <div>
+              <strong>Archived projects</strong>
+              <span>Completed work is kept here as a readable project record.</span>
+            </div>
+            <div className="vw-archive-count">
+              {filteredProjects.length} completed
+            </div>
+          </header>
+          {filteredProjects.length > 0 ? (
+            <div className="vw-archive-list">
+              {filteredProjects.map((project) => (
+                <article key={project.id} className="vw-archive-project-row">
+                  <div>
+                    <div className="vw-archive-project-title">{project.name}</div>
+                    <div className="vw-archive-project-desc">
+                      {project.description || 'Completed project.'}
+                    </div>
+                  </div>
+                  <div className="vw-archive-meta">
+                    <div className="vw-archive-meta-label">Project Lead</div>
+                    <div className="vw-archive-meta-value">{project.lead.fullName}</div>
+                  </div>
+                  <div className="vw-archive-meta">
+                    <div className="vw-archive-meta-label">Completed</div>
+                    <div className="vw-archive-meta-value">
+                      {formatCompletionDate(project.updatedAt)}
+                    </div>
+                    <div className="vw-archive-depts">
+                      {project.departments.map((dept) => (
+                        <span key={dept.id}>{dept.name}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <Link
+                    to={`/projects/${project.id}`}
+                    className="vw-archive-open"
+                  >
+                    View project →
+                  </Link>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="vw-archive-empty">
+              {search.trim()
+                ? 'No completed projects match your search.'
+                : 'No completed projects yet.'}
+            </div>
+          )}
+        </section>
       ) : (
         <div className="vw-projects-board">
           {STATUS_GROUPS.map((group) => {
