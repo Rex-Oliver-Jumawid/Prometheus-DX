@@ -138,7 +138,9 @@ export function AppShell() {
         </header>
         <main className="workspace-content">
           <div className="workspace-content-scroll">
-            <Outlet />
+            <div className="workspace-content-inner">
+              <Outlet />
+            </div>
           </div>
         </main>
       </div>
