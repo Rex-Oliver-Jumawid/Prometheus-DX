@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import {
   MemberScheduleSchema,
@@ -39,19 +39,51 @@ const DAY_LABELS: Record<Weekday, string> = {
   SUNDAY: 'Sunday',
 };
 
+const CALENDAR_START_MINUTES = 7 * 60;
+const CALENDAR_END_MINUTES = 24 * 60;
+const CALENDAR_ROW_HEIGHT = 54;
+
+function minutesToClock(minutes: number): string {
+  if (minutes === 24 * 60) return '00:00';
+  return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(
+    minutes % 60,
+  ).padStart(2, '0')}`;
+}
+
+function currentWeekDateLabels(): Record<Weekday, string> {
+  const manilaParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+  }).formatToParts(new Date());
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(manilaParts.find((item) => item.type === type)?.value ?? 0);
+  const today = new Date(
+    Date.UTC(part('year'), part('month') - 1, part('day'), 12),
+  );
+  const mondayOffset = (today.getUTCDay() + 6) % 7;
+  const monday = new Date(today);
+  monday.setUTCDate(today.getUTCDate() - mondayOffset);
+  const label = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'UTC',
+    month: 'short',
+    day: 'numeric',
+  });
+
+  return Object.fromEntries(
+    WEEKDAYS.map((weekday, index) => {
+      const date = new Date(monday);
+      date.setUTCDate(monday.getUTCDate() + index);
+      return [weekday, label.format(date)];
+    }),
+  ) as Record<Weekday, string>;
+}
+
 function formatMinutes(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const remainder = minutes % 60;
   return remainder ? `${hours}h ${remainder}m` : `${hours}h`;
-}
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase();
 }
 
 function defaultFormValues(
@@ -90,6 +122,10 @@ export function SchedulePage() {
   const [configuring, setConfiguring] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState(member?.id ?? '');
+  const [selectedPeopleIds, setSelectedPeopleIds] = useState<string[] | null>(
+    null,
+  );
+  const [departmentId, setDepartmentId] = useState('');
   const teamQuery = useQuery(teamScheduleQuery(session?.access_token));
   const mineQuery = useQuery(myScheduleQuery(session?.access_token));
   const historyQuery = useQuery({
@@ -213,6 +249,29 @@ export function SchedulePage() {
   const members = teamQuery.data?.members ?? [];
   const ownMember = members.find((item) => item.id === member?.id);
   const ownSchedule = mineQuery.data?.schedule ?? ownMember?.schedule ?? null;
+  const departments = Array.from(
+    new Map(
+      members.map((item) => [item.department.id, item.department]),
+    ).values(),
+  ).sort((left, right) => left.name.localeCompare(right.name));
+  const peopleIds = selectedPeopleIds ?? members.map((item) => item.id);
+  const filteredMembers = members.filter(
+    (item) =>
+      peopleIds.includes(item.id) &&
+      (!departmentId || item.department.id === departmentId),
+  );
+  const visibleBlockCount = filteredMembers.reduce(
+    (total, item) => total + (item.schedule?.blocks.length ?? 0),
+    0,
+  );
+
+  const togglePerson = (memberId: string) => {
+    const currentIds = selectedPeopleIds ?? members.map((item) => item.id);
+    const nextIds = currentIds.includes(memberId)
+      ? currentIds.filter((id) => id !== memberId)
+      : [...currentIds, memberId];
+    setSelectedPeopleIds(nextIds.length === members.length ? null : nextIds);
+  };
 
   return (
     <section className="schedule-page" aria-labelledby="schedule-title">
@@ -318,6 +377,68 @@ export function SchedulePage() {
         </section>
       ) : (
         <>
+          <section className="schedule-filters" aria-label="Schedule filters">
+            <div className="schedule-filterbar">
+              <details className="schedule-people-filter">
+                <summary>
+                  <span className="schedule-filter-control-label">People</span>
+                  <span className="schedule-filter-control">
+                    {peopleIds.length === members.length
+                      ? `All ${members.length} members`
+                      : `${peopleIds.length} selected`}
+                    <span aria-hidden="true">⌄</span>
+                  </span>
+                </summary>
+                <div className="schedule-people-menu">
+                  {members.map((item) => (
+                    <label key={item.id}>
+                      <input
+                        type="checkbox"
+                        aria-label={item.fullName}
+                        checked={peopleIds.includes(item.id)}
+                        onChange={() => togglePerson(item.id)}
+                      />
+                      <span aria-hidden="true" data-label={item.fullName} />
+                    </label>
+                  ))}
+                </div>
+              </details>
+
+              <label className="schedule-filter-field">
+                <span>Department</span>
+                <select
+                  aria-label="Department"
+                  value={departmentId}
+                  onChange={(event) => setDepartmentId(event.target.value)}
+                >
+                  <option value="">All departments</option>
+                  {departments.map((department) => (
+                    <option key={department.id} value={department.id}>
+                      {department.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="schedule-filter-field">
+                <span>View</span>
+                <div className="schedule-static-value">Merged week</div>
+              </div>
+
+              <div className="schedule-filter-field">
+                <span>Time range</span>
+                <div className="schedule-static-value">7:00 AM - 12:00 AM</div>
+              </div>
+
+              <div className="schedule-filter-summary">
+                <span>Showing</span>
+                <strong>
+                  Merged schedule · {filteredMembers.length} visible
+                </strong>
+              </div>
+            </div>
+          </section>
+
           {configuring && (
             <form
               className="schedule-panel configure-panel"
@@ -478,12 +599,46 @@ export function SchedulePage() {
               <div>
                 <p className="page-kicker">MERGED WEEK</p>
                 <h2>Team Schedule</h2>
-                <p>Recurring planned availability. Times use Asia/Manila.</p>
+                <p>Each horizontal band is one hour. Times use Asia/Manila.</p>
               </div>
-              <span className="timezone-pill">UTC+08:00 · Asia/Manila</span>
+              <div className="schedule-legend" aria-label="Schedule legend">
+                <span>
+                  <i className="mine" />
+                  Your schedule
+                </span>
+                <span>
+                  <i className="team" />
+                  Team schedule
+                </span>
+                <span>
+                  <i className="rest" />
+                  Rest day
+                </span>
+              </div>
             </div>
-            <TeamWeek members={members} currentMemberId={member?.id} />
+            <TeamCalendar
+              members={filteredMembers}
+              currentMemberId={member?.id}
+            />
+            {visibleBlockCount === 0 && (
+              <div className="schedule-calendar-empty">
+                No schedule blocks match these filters.
+              </div>
+            )}
           </section>
+
+          <aside className="schedule-note">
+            <span aria-hidden="true">↔</span>
+            <div>
+              <strong>
+                Redistribute hours instead of forcing identical days.
+              </strong>
+              <p>
+                Generate a base schedule, then adjust your own blocks while
+                keeping the weekly target visible.
+              </p>
+            </div>
+          </aside>
         </>
       )}
     </section>
@@ -595,56 +750,173 @@ function ScheduleSummary({
   );
 }
 
-function TeamWeek({
+function TeamCalendar({
   members,
   currentMemberId,
 }: {
   members: TeamScheduleResponse['members'];
   currentMemberId?: string;
 }) {
+  const dateLabels = useMemo(currentWeekDateLabels, []);
+  const hourRows = Array.from(
+    { length: (CALENDAR_END_MINUTES - CALENDAR_START_MINUTES) / 60 },
+    (_, index) => CALENDAR_START_MINUTES + index * 60,
+  );
+
   return (
-    <div className="team-week">
-      {WEEKDAYS.map((day) => {
-        const entries = members.flatMap((member) =>
-          (member.schedule?.blocks ?? [])
-            .filter((block) => block.weekday === day)
-            .map((block) => ({ member, block })),
-        );
+    <div className="schedule-calendar-scroll">
+      <div className="schedule-calendar-stage">
+        <div className="schedule-calendar-head-row">
+          <div className="schedule-calendar-time-head">Time</div>
+          {WEEKDAYS.map((day) => {
+            const hasBlocks = members.some((item) =>
+              item.schedule?.blocks.some((block) => block.weekday === day),
+            );
+            const isRestDay =
+              (day === 'SATURDAY' || day === 'SUNDAY') && !hasBlocks;
+            return (
+              <div
+                className={`schedule-calendar-day-head${isRestDay ? ' rest-day' : ''}`}
+                key={day}
+              >
+                <strong>{DAY_LABELS[day]}</strong>
+                <small>{dateLabels[day]}</small>
+                {isRestDay && <span>Rest</span>}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="schedule-calendar-body">
+          <div className="schedule-time-axis">
+            {hourRows.map((minutes) => (
+              <div key={minutes}>{formatClock(minutesToClock(minutes))}</div>
+            ))}
+          </div>
+          {WEEKDAYS.map((day) => (
+            <CalendarDay
+              day={day}
+              key={day}
+              members={members}
+              currentMemberId={currentMemberId}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="compact-team-week">
+        {WEEKDAYS.map((day) => {
+          const entries = members.flatMap((member) =>
+            (member.schedule?.blocks ?? [])
+              .filter((block) => block.weekday === day)
+              .map((block) => ({ member, block })),
+          );
+          return (
+            <article key={day}>
+              <header>
+                <strong>{DAY_LABELS[day]}</strong>
+                <span>{dateLabels[day]}</span>
+              </header>
+              <div>
+                {entries.length ? (
+                  entries.map(({ member, block }) => (
+                    <div
+                      className={member.id === currentMemberId ? 'mine' : ''}
+                      key={block.id}
+                    >
+                      <strong
+                        aria-label={member.fullName}
+                        data-label={member.fullName}
+                      />
+                      <span
+                        aria-label={`${formatClock(block.startTime)} - ${formatClock(block.endTime)}`}
+                        data-label={`${formatClock(block.startTime)} - ${formatClock(block.endTime)}`}
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <p>No shared availability</p>
+                )}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function CalendarDay({
+  day,
+  members,
+  currentMemberId,
+}: {
+  day: Weekday;
+  members: TeamScheduleResponse['members'];
+  currentMemberId?: string;
+}) {
+  const entries = members
+    .flatMap((member) =>
+      (member.schedule?.blocks ?? [])
+        .filter((block) => block.weekday === day)
+        .map((block) => ({
+          member,
+          block,
+          start: clockTimeToMinutes(block.startTime),
+          end: clockTimeToMinutes(block.endTime),
+        })),
+    )
+    .filter(
+      (entry) =>
+        entry.end > CALENDAR_START_MINUTES &&
+        entry.start < CALENDAR_END_MINUTES,
+    )
+    .sort(
+      (left, right) =>
+        left.start - right.start ||
+        left.end - right.end ||
+        left.member.fullName.localeCompare(right.member.fullName),
+    );
+  const laneEnds: number[] = [];
+  const positioned = entries.map((entry) => {
+    let lane = laneEnds.findIndex((end) => end <= entry.start);
+    if (lane === -1) lane = laneEnds.length;
+    laneEnds[lane] = entry.end;
+    return { ...entry, lane };
+  });
+  const laneCount = Math.max(1, laneEnds.length);
+
+  return (
+    <div
+      className={`schedule-calendar-day${entries.length === 0 ? ' empty' : ''}`}
+      aria-label={DAY_LABELS[day]}
+    >
+      {positioned.map(({ member, block, start, end, lane }) => {
+        const visibleStart = Math.max(start, CALENDAR_START_MINUTES);
+        const visibleEnd = Math.min(end, CALENDAR_END_MINUTES);
+        const top =
+          ((visibleStart - CALENDAR_START_MINUTES) / 60) * CALENDAR_ROW_HEIGHT;
+        const height = ((visibleEnd - visibleStart) / 60) * CALENDAR_ROW_HEIGHT;
+        const width = 100 / laneCount;
+        const style = {
+          top,
+          height: Math.max(height, 18),
+          left: `calc(${lane * width}% + 3px)`,
+          width: `calc(${width}% - 6px)`,
+        } satisfies CSSProperties;
+
         return (
-          <article className="team-day" key={day}>
-            <header>
-              <strong>{DAY_LABELS[day]}</strong>
-              <span>
-                {entries.length} {entries.length === 1 ? 'block' : 'blocks'}
-              </span>
-            </header>
-            <div className="team-day-blocks">
-              {entries.length === 0 ? (
-                <span className="team-day-empty">No shared availability</span>
-              ) : (
-                entries.map(({ member, block }) => (
-                  <div
-                    className={`team-member-block${member.id === currentMemberId ? ' mine' : ''}`}
-                    key={block.id}
-                  >
-                    <span className="schedule-avatar" aria-hidden="true">
-                      {initials(member.fullName)}
-                    </span>
-                    <span className="team-member-copy">
-                      <strong>{member.fullName}</strong>
-                      <small>
-                        {formatClock(block.startTime)} -{' '}
-                        {formatClock(block.endTime)}
-                      </small>
-                    </span>
-                    <span className="department-chip">
-                      {member.department.shortLabel}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </article>
+          <div
+            className={`schedule-calendar-block${member.id === currentMemberId ? ' mine' : ''}${width < 34 ? ' thin' : ''}`}
+            key={block.id}
+            style={style}
+            title={`${member.fullName}: ${formatClock(block.startTime)} - ${formatClock(block.endTime)}`}
+          >
+            <strong>{member.fullName}</strong>
+            <small>
+              {formatClock(block.startTime)} - {formatClock(block.endTime)}
+            </small>
+          </div>
         );
       })}
     </div>

@@ -174,6 +174,29 @@ describe('SchedulePage', () => {
     expect(screen.getByText('9:00 AM - 5:00 PM')).toBeInTheDocument();
   });
 
+  it('filters the merged calendar by people and department', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await screen.findByRole('heading', {
+      name: 'Your schedule is ready to configure',
+    });
+    expect(screen.getByText('Member Two')).toBeInTheDocument();
+
+    await user.click(screen.getByText('All 2 members'));
+    await user.click(screen.getByRole('checkbox', { name: 'Member Two' }));
+    expect(screen.getByText('1 selected')).toBeInTheDocument();
+    expect(screen.queryByText('Member Two')).not.toBeInTheDocument();
+
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Department' }),
+      'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    );
+    expect(
+      screen.getByText('No schedule blocks match these filters.'),
+    ).toBeInTheDocument();
+  });
+
   it('moves from Shifts into Team Schedule configuration and saves a block', async () => {
     const user = userEvent.setup();
     renderPage();

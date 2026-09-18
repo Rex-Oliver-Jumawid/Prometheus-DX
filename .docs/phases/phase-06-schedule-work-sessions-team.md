@@ -503,6 +503,60 @@ Prefer explicit resource envelopes for future optional singleton resources.
 - `server/schedule/schedule.controller.ts`
 - `server/schedule/schedule.controller.test.ts`
 
+### P6-D08 - Render Team Schedule as one continuous hourly calendar
+
+**Status:** Implemented
+**Area:** Schedule UI
+**Impact:** Medium
+
+#### What gave us a hard time
+
+The completed production Schedule used independent day cards, while the HTML prototype and the Figma `Team Schedule` and `Team Schedule bottom` frames showed one continuous 7:00 AM-to-midnight calendar.
+
+#### Root cause or constraint
+
+The day-card presentation preserved the persisted data and permissions but did not reproduce the intended merged-week hierarchy, hourly geometry, filter bar, overlapping lanes, rest-day treatment, or compact responsive view.
+
+#### Options considered
+
+1. Restyle the existing day cards.
+2. Rebuild only the Team Schedule presentation as a time-positioned calendar while preserving the current API, configuration form, Shifts view, and authorization boundary.
+
+#### Decision
+
+Use option 2.
+
+#### Result
+
+Team Schedule now renders real ScheduleBlocks in a Figma-aligned hourly grid with current-week date labels, people and Department filters, deterministic overlap lanes, current-Member emphasis, weekend rest treatment, a responsive compact view, and the prototype guidance card.
+Schedule writes remain self-only and continue through the existing validated API and transactional persistence path.
+
+#### What we learned
+
+Visual fidelity can be corrected at the presentation boundary without duplicating schedule state or changing backend authority.
+
+#### Next approach
+
+Keep future calendar interactions derived from canonical ScheduleBlocks and add date-specific behavior only when ScheduleOverride becomes an accepted requirement.
+
+#### Related changes
+
+- `src/features/schedule/SchedulePage.tsx`
+- `src/features/schedule/schedule.css`
+- `src/features/schedule/SchedulePage.test.tsx`
+
+Post-completion Figma alignment verification performed on 2026-09-18:
+
+- Live Figma design context was inspected for nodes `2:1948` and `2:2657`.
+- `pnpm exec vitest run src/features/schedule/SchedulePage.test.tsx --config vitest.ui.config.ts`: 6/6 passed, including people and Department filtering.
+- `pnpm typecheck`: passed.
+- `pnpm lint`: completed with zero errors and the pre-existing `RegistryPage.tsx` hook dependency warning.
+- `pnpm exec playwright test tests/e2e/schedule.spec.ts --project=chromium`: 2/2 passed.
+- `pnpm verify`: passed with project doctor, lint, typecheck, 153/153 enabled Node tests, 61/61 component tests, and both production builds.
+- A later screenshot-only rerun could not start because the external Supabase pooler was unreachable.
+- The apparent post-implementation visual mismatch was traced to Vite and Nest processes still running from the separate `Prometheus-phase-6` worktree.
+- Restarting both development processes from `Prometheus-integration` loaded the updated Team Schedule, and the focused authenticated Schedule journey passed again.
+
 ## Known Limitations
 
 Date-specific schedule overrides are not implemented.
