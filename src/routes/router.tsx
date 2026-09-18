@@ -10,6 +10,7 @@ import { AppShell } from '../features/shell/AppShell';
 import { PlaceholderPage } from '../features/shell/PlaceholderPage';
 import {
   loadProjectOverviewRoute,
+  loadNotificationsRoute,
   loadRegistryRoute,
   loadScheduleRoute,
   loadTeamRoute,
@@ -44,10 +45,7 @@ export const router = createBrowserRouter([
           { path: '/visiwork', element: <PlaceholderPage title="VisiWork" /> },
           { path: '/schedule', lazy: loadScheduleRoute },
           { path: '/team', lazy: loadTeamRoute },
-          {
-            path: '/notifications',
-            element: <PlaceholderPage title="Notifications" />,
-          },
+          { path: '/notifications', lazy: loadNotificationsRoute },
           { path: '/registry', lazy: loadRegistryRoute },
         ],
       },

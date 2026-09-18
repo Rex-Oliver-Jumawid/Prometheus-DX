@@ -26,6 +26,7 @@ export const UnreadNotificationCountSchema = z.object({
 });
 
 export type NotificationView = z.infer<typeof NotificationSchema>;
+export type NotificationType = z.infer<typeof NotificationTypeSchema>;
 export type NotificationListResponse = z.infer<
   typeof NotificationListResponseSchema
 >;

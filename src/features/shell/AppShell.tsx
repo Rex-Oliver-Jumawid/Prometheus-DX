@@ -5,6 +5,11 @@ import { projectsListQuery } from '../projects/project-queries';
 import { registryOverviewQuery } from '../registry/registry-queries';
 import { teamScheduleQuery } from '../schedule/schedule-queries';
 import { WorkAttendanceControl } from '../work-sessions/WorkAttendanceControl';
+import {
+  NotificationBadge,
+  NotificationBell,
+} from '../notifications/NotificationBell';
+import { useUnreadNotificationCount } from '../notifications/useUnreadNotificationCount';
 import { teamWorkSummaryQuery } from '../work-sessions/work-session-queries';
 import {
   loadRegistryRoute,
@@ -24,6 +29,7 @@ export function AppShell() {
   const { member, session } = useAuth();
   const queryClient = useQueryClient();
   const location = useLocation();
+  const unreadNotifications = useUnreadNotificationCount();
   const mobileOpen = useShellStore((state) => state.mobileNavigationOpen);
   const setMobileOpen = useShellStore((state) => state.setMobileNavigationOpen);
   const setProfileOpen = useShellStore((state) => state.setProfileOpen);
@@ -107,6 +113,11 @@ export function AppShell() {
                   <NavIcon name={item.icon} />
                 </span>
                 <span className="utility-label">{item.label}</span>
+                {item.path === '/notifications' && (
+                  <NotificationBadge
+                    count={unreadNotifications.data?.count ?? 0}
+                  />
+                )}
               </NavLink>
             ))}
           </nav>
@@ -154,6 +165,7 @@ export function AppShell() {
               </span>
             ))}
           </nav>
+          <NotificationBell />
         </header>
         <main className="workspace-content">
           <Outlet />

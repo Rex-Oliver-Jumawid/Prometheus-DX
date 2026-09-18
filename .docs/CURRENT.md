@@ -12,7 +12,7 @@ Phase 7 - Notifications and Home
 
 Status: In progress.
 
-The notification backend and persistence foundation is delivered.
+The notification backend and persistence foundation, Notifications UI, notification navigation, and shell bell/unread integration are delivered.
 Phase 7 is not complete.
 
 Formal implementation record:
@@ -82,10 +82,10 @@ The normal broad gates are `pnpm verify`, `pnpm verify:e2e`, and `pnpm verify:re
 
 ## Next Action
 
-Implement the Notifications UI and shell bell/unread integration as the next bounded Phase 7 slice.
+Implement Home aggregation and Home UI as the next bounded Phase 7 slice.
 
 Migration `20260918020000_phase_07_notifications` is deployed and all 16 migrations are applied.
-The four required notification events, authenticated inbox APIs, idempotency constraint, and live PostgreSQL integration test pass.
+The four required notification events, authenticated inbox APIs, idempotency constraint, Notifications UI, shell unread indicators, persisted read behavior, and focused Chromium notification journey pass.
 
 Do not start Home aggregation or Home UI in the notification UI slice.
 Do not mark Phase 5 complete from this branch.
