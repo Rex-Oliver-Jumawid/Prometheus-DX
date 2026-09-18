@@ -133,6 +133,7 @@ export function SchedulePage() {
     setSelectedMemberId(member?.id ?? '');
     form.reset(defaultFormValues(mineQuery.data ?? null));
     setFormError(null);
+    mutation.reset();
     setConfiguring(true);
   };
 

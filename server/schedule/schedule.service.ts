@@ -41,11 +41,18 @@ export class ScheduleService {
         },
         schedule: {
           include: {
-            blocks: { orderBy: [{ weekday: 'asc' }, { startTime: 'asc' }] },
+            blocks: {
+              orderBy: [
+                { weekday: 'asc' },
+                { startTime: 'asc' },
+                { endTime: 'asc' },
+                { id: 'asc' },
+              ],
+            },
           },
         },
       },
-      orderBy: [{ fullName: 'asc' }, { createdAt: 'asc' }],
+      orderBy: [{ fullName: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
     });
 
     return {
@@ -63,7 +70,14 @@ export class ScheduleService {
     const schedule = await this.prisma.memberSchedule.findUnique({
       where: { memberId },
       include: {
-        blocks: { orderBy: [{ weekday: 'asc' }, { startTime: 'asc' }] },
+        blocks: {
+          orderBy: [
+            { weekday: 'asc' },
+            { startTime: 'asc' },
+            { endTime: 'asc' },
+            { id: 'asc' },
+          ],
+        },
       },
     });
     return schedule ? this.toSchedule(schedule) : null;
@@ -107,7 +121,14 @@ export class ScheduleService {
       return database.memberSchedule.findUniqueOrThrow({
         where: { id: saved.id },
         include: {
-          blocks: { orderBy: [{ weekday: 'asc' }, { startTime: 'asc' }] },
+          blocks: {
+            orderBy: [
+              { weekday: 'asc' },
+              { startTime: 'asc' },
+              { endTime: 'asc' },
+              { id: 'asc' },
+            ],
+          },
         },
       });
     });
@@ -135,7 +156,9 @@ export class ScheduleService {
           (left, right) =>
             WEEKDAYS.indexOf(left.weekday as Weekday) -
               WEEKDAYS.indexOf(right.weekday as Weekday) ||
-            left.startTime.getTime() - right.startTime.getTime(),
+            left.startTime.getTime() - right.startTime.getTime() ||
+            left.endTime.getTime() - right.endTime.getTime() ||
+            left.id.localeCompare(right.id),
         )
         .map((block) => ({
           id: block.id,

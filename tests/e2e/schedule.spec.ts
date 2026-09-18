@@ -168,4 +168,14 @@ test('member configures, refreshes, edits, removes, and returns from Shifts to T
       where: { schedule: { memberId: currentMemberId } },
     }),
   ).resolves.toBe(0);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(
+    page.getByRole('heading', { name: 'Schedule', exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
 });

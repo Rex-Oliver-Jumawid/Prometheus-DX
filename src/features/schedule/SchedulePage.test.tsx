@@ -176,4 +176,89 @@ describe('SchedulePage', () => {
       ),
     );
   });
+
+  it('clears a failed save message when configuration is reopened', async () => {
+    const user = userEvent.setup();
+    mocks.apiFetch.mockImplementation(
+      (path: string, _schema: unknown, options?: { method?: string }) => {
+        if (path === '/schedule/team')
+          return Promise.resolve(teamResponse(null));
+        if (path === '/schedule/me' && options?.method === 'PUT')
+          return Promise.reject(new Error('Schedule save failed.'));
+        if (path === '/schedule/me') return Promise.resolve(null);
+        throw new Error(`Unexpected request: ${path}`);
+      },
+    );
+    renderPage();
+
+    await screen.findByRole('heading', {
+      name: 'Your schedule is ready to configure',
+    });
+    await user.click(
+      screen.getAllByRole('button', { name: 'Configure My Schedule' })[0],
+    );
+    await user.click(screen.getByRole('button', { name: 'Save Schedule' }));
+    expect(
+      await screen.findByText('Schedule save failed.'),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await user.click(
+      screen.getAllByRole('button', { name: 'Configure My Schedule' })[0],
+    );
+
+    expect(screen.queryByText('Schedule save failed.')).not.toBeInTheDocument();
+  });
+
+  it('shows overlap validation without sending an invalid update', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await screen.findByRole('heading', {
+      name: 'Your schedule is ready to configure',
+    });
+    await user.click(
+      screen.getAllByRole('button', { name: 'Configure My Schedule' })[0],
+    );
+    await user.click(screen.getByRole('button', { name: 'Add Block' }));
+    await user.click(screen.getByRole('button', { name: 'Add Block' }));
+    await user.click(screen.getByRole('button', { name: 'Save Schedule' }));
+
+    expect(
+      await screen.findByText(
+        'Schedule blocks on the same day cannot overlap.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      mocks.apiFetch.mock.calls.some(
+        ([path, , options]) =>
+          path === '/schedule/me' && options?.method === 'PUT',
+      ),
+    ).toBe(false);
+  });
+
+  it('recovers from a load error through the retry action', async () => {
+    const user = userEvent.setup();
+    let failTeamRequest = true;
+    mocks.apiFetch.mockImplementation((path: string) => {
+      if (path === '/schedule/team') {
+        return failTeamRequest
+          ? Promise.reject(new Error('Team Schedule unavailable.'))
+          : Promise.resolve(teamResponse(null));
+      }
+      if (path === '/schedule/me') return Promise.resolve(null);
+      throw new Error(`Unexpected request: ${path}`);
+    });
+    renderPage();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Team Schedule unavailable.',
+    );
+    failTeamRequest = false;
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+
+    expect(
+      await screen.findByRole('heading', { name: 'Schedule' }),
+    ).toBeInTheDocument();
+  });
 });

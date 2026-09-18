@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { WorkspaceRole, type Member } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -15,17 +15,20 @@ let departmentId: string;
 let owner: Member;
 let administrator: Member;
 let projectLead: Member;
+let deactivatedMember: Member;
 
 async function createMember(
   label: string,
   workspaceRole: WorkspaceRole = WorkspaceRole.MEMBER,
+  status: 'ACTIVE' | 'DEACTIVATED' = 'ACTIVE',
 ) {
   return prisma.member.create({
     data: {
       email: `${runId}-${label}@example.com`,
       fullName: `${label} ${runId}`,
       departmentId,
-      status: 'ACTIVE',
+      position: `${label} position`,
+      status,
       workspaceRole,
     },
   });
@@ -39,11 +42,13 @@ describe.runIf(runDatabaseIntegration)(
         data: { name: runId, shortLabel: 'SCHED' },
       });
       departmentId = department.id;
-      [owner, administrator, projectLead] = await Promise.all([
-        createMember('owner'),
-        createMember('administrator', WorkspaceRole.ADMINISTRATOR),
-        createMember('project-lead'),
-      ]);
+      [owner, administrator, projectLead, deactivatedMember] =
+        await Promise.all([
+          createMember('owner'),
+          createMember('administrator', WorkspaceRole.ADMINISTRATOR),
+          createMember('project-lead'),
+          createMember('deactivated', WorkspaceRole.MEMBER, 'DEACTIVATED'),
+        ]);
       await prisma.project.create({
         data: {
           name: runId,
@@ -122,13 +127,32 @@ describe.runIf(runDatabaseIntegration)(
         ],
       });
       const team = await service.getTeamSchedule();
-      expect(
-        team.members.find((member) => member.id === owner.id)?.schedule,
-      ).toMatchObject({
-        blocks: [
-          { weekday: 'WEDNESDAY', startTime: '09:00', endTime: '17:00' },
-        ],
+      const ownerResult = team.members.find((member) => member.id === owner.id);
+      expect(ownerResult).toMatchObject({
+        position: 'owner position',
+        department: {
+          id: departmentId,
+          name: runId,
+          shortLabel: 'SCHED',
+        },
+        schedule: {
+          blocks: [
+            { weekday: 'WEDNESDAY', startTime: '09:00', endTime: '17:00' },
+          ],
+        },
       });
+      expect(
+        team.members.some((member) => member.id === deactivatedMember.id),
+      ).toBe(false);
+      expect(team.members.map((member) => member.fullName)).toEqual(
+        [...team.members]
+          .sort(
+            (left, right) =>
+              left.fullName.localeCompare(right.fullName) ||
+              left.id.localeCompare(right.id),
+          )
+          .map((member) => member.fullName),
+      );
 
       const schedule = await prisma.memberSchedule.findUniqueOrThrow({
         where: { memberId: owner.id },
@@ -143,6 +167,33 @@ describe.runIf(runDatabaseIntegration)(
           },
         }),
       ).rejects.toThrow();
+    });
+
+    it('rejects overlapping replacement without corrupting the saved schedule', async () => {
+      await service.replaceMemberSchedule(owner, owner.id, {
+        targetWeeklyMinutes: 480,
+        blocks: [
+          { weekday: 'MONDAY', startTime: '09:00', endTime: '12:00' },
+          { weekday: 'MONDAY', startTime: '12:00', endTime: '17:00' },
+        ],
+      });
+
+      await expect(
+        service.replaceMemberSchedule(owner, owner.id, {
+          targetWeeklyMinutes: 360,
+          blocks: [
+            { weekday: 'MONDAY', startTime: '09:00', endTime: '13:00' },
+            { weekday: 'MONDAY', startTime: '12:00', endTime: '15:00' },
+          ],
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      await expect(service.getMemberSchedule(owner.id)).resolves.toMatchObject({
+        targetWeeklyMinutes: 480,
+        blocks: [
+          { weekday: 'MONDAY', startTime: '09:00', endTime: '12:00' },
+          { weekday: 'MONDAY', startTime: '12:00', endTime: '17:00' },
+        ],
+      });
     });
   },
 );

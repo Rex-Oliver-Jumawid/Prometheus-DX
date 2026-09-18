@@ -71,4 +71,46 @@ describe('ScheduleService', () => {
     expect(createMany).not.toHaveBeenCalled();
     expect(result.blocks).toEqual([]);
   });
+
+  it('lists only active Registry members in deterministic name order', async () => {
+    const findMany = vi.fn().mockResolvedValue([
+      {
+        id: '11111111-1111-4111-8111-111111111111',
+        fullName: 'Alpha Member',
+        position: 'Designer',
+        department: {
+          id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+          name: 'Creatives',
+          shortLabel: 'CRT',
+        },
+        schedule: null,
+      },
+    ]);
+    const service = new ScheduleService({
+      member: { findMany },
+    } as unknown as PrismaService);
+
+    await expect(service.getTeamSchedule()).resolves.toEqual({
+      timezone: 'Asia/Manila',
+      members: [
+        {
+          id: '11111111-1111-4111-8111-111111111111',
+          fullName: 'Alpha Member',
+          position: 'Designer',
+          department: {
+            id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+            name: 'Creatives',
+            shortLabel: 'CRT',
+          },
+          schedule: null,
+        },
+      ],
+    });
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { status: 'ACTIVE' },
+        orderBy: [{ fullName: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
+      }),
+    );
+  });
 });

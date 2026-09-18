@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import type { Member } from '@prisma/client';
 import { describe, expect, it, vi } from 'vitest';
 import { ScheduleController } from './schedule.controller';
@@ -22,6 +22,25 @@ describe('ScheduleController', () => {
         { targetWeeklyMinutes: 0, blocks: [] },
       ),
     ).toThrow(ForbiddenException);
+    expect(service.replaceMemberSchedule).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed schedule input before calling the service', () => {
+    const service = {
+      replaceMemberSchedule: vi.fn(),
+    } as unknown as ScheduleService;
+    const controller = new ScheduleController(service);
+    const currentMember = {
+      id: '11111111-1111-4111-8111-111111111111',
+      workspaceRole: 'MEMBER',
+    } as Member;
+
+    expect(() =>
+      controller.updateMySchedule(currentMember, {
+        targetWeeklyMinutes: 480,
+        blocks: [{ weekday: 'FUNDAY', startTime: '09:00', endTime: '17:00' }],
+      }),
+    ).toThrow(BadRequestException);
     expect(service.replaceMemberSchedule).not.toHaveBeenCalled();
   });
 });
