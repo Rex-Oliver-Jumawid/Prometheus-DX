@@ -107,7 +107,7 @@ function renderWorkspace(
     if (path === `/projects/${projectId}/workflow`) {
       return Promise.resolve(fixture);
     }
-    if (path === `/projects/${projectId}/outcomes/${outcomeId}/work`) {
+    if (path.startsWith(`/projects/${projectId}/outcomes/${outcomeId}/work`)) {
       return workPromise ?? Promise.resolve(workData);
     }
     if (path.startsWith(`/projects/${projectId}/outcomes/${outcomeId}/delivery`)) {
@@ -431,5 +431,367 @@ describe('Outcome Workspace - Empty State', () => {
     expect(stateActionsContainer?.querySelector('.workflow-state')).not.toBeNull();
     expect(stateActionsContainer?.contains(deleteBtn)).toBe(true);
   });
+
+  it('renders FeatureComposer with name, description, Cancel, and Add feature buttons and handles submission', async () => {
+    renderWorkspace({ workData: { ...emptyWorkData, canPlan: true } });
+    await screen.findByText('No features defined yet');
+
+    const addFeatureBtn = screen.getByRole('button', { name: '＋ Add feature' });
+    fireEvent.click(addFeatureBtn);
+
+    const nameInput = screen.getByPlaceholderText('Feature name');
+    const descInput = screen.getByPlaceholderText('Short description (optional)');
+    const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
+    const submitBtn = screen.getByRole('button', { name: 'Add feature' });
+
+    expect(nameInput).toBeInTheDocument();
+    expect(descInput).toBeInTheDocument();
+    expect(cancelBtn).toBeInTheDocument();
+    expect(submitBtn).toBeInTheDocument();
+
+    fireEvent.change(nameInput, { target: { value: 'Frontend UI' } });
+    fireEvent.change(descInput, { target: { value: 'Complete components' } });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledWith(
+        `/projects/${projectId}/outcomes/${outcomeId}/work/features`,
+        expect.anything(),
+        expect.objectContaining({
+          method: 'POST',
+          body: {
+            title: 'Frontend UI',
+            description: 'Complete components',
+          },
+        }),
+      );
+    });
+  });
+
+  it('renders inline Add Task in feature card and handles submission', async () => {
+    const workWithFeatures = {
+      ...emptyWorkData,
+      canPlan: true,
+      canExecute: true,
+      features: [
+        {
+          id: 'feat-10',
+          title: 'Database Layer',
+          description: '',
+          status: 'TODO' as const,
+          tasks: [],
+          createdAt: '2026-09-18T00:00:00.000Z',
+          updatedAt: '2026-09-18T00:00:00.000Z',
+        },
+      ],
+    };
+    renderWorkspace({ workData: workWithFeatures });
+    await screen.findByText('Database Layer');
+
+    const taskInput = screen.getByPlaceholderText('Add a task...');
+    const addTaskBtn = screen.getByRole('button', { name: 'Add task' });
+
+    expect(taskInput).toBeInTheDocument();
+    expect(addTaskBtn).toBeInTheDocument();
+    expect(addTaskBtn).toBeDisabled();
+
+    fireEvent.change(taskInput, { target: { value: 'Write migrations' } });
+    expect(addTaskBtn).not.toBeDisabled();
+
+    fireEvent.click(addTaskBtn);
+
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledWith(
+        `/projects/${projectId}/outcomes/${outcomeId}/work/features/feat-10/tasks`,
+        expect.anything(),
+        expect.objectContaining({
+          method: 'POST',
+          body: {
+            title: 'Write migrations',
+          },
+        }),
+      );
+    });
+  });
+
+  it('renders FeatureComposer at the bottom when adding another feature', async () => {
+    const workWithFeatures = {
+      ...emptyWorkData,
+      canPlan: true,
+      canExecute: true,
+      features: [
+        {
+          id: 'feat-1',
+          title: 'Existing Feature',
+          description: '',
+          status: 'TODO' as const,
+          tasks: [],
+          createdAt: '2026-09-18T00:00:00.000Z',
+          updatedAt: '2026-09-18T00:00:00.000Z',
+        },
+      ],
+    };
+    renderWorkspace({ workData: workWithFeatures });
+    await screen.findByText('Existing Feature');
+
+    const addAnotherBtn = screen.getByRole('button', { name: '＋ Add another feature' });
+    fireEvent.click(addAnotherBtn);
+
+    const nameInput = screen.getByPlaceholderText('Feature name');
+    expect(nameInput).toBeInTheDocument();
+    // Verify it is positioned after the existing feature card
+    const featureCard = screen.getByText('Existing Feature').closest('article');
+    const form = nameInput.closest('form');
+    expect(featureCard).not.toBeNull();
+    expect(form).not.toBeNull();
+    expect(
+      Boolean(
+        featureCard!.compareDocumentPosition(form!) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    ).toBe(true);
+  });
+
+  it('renders sleek FeatureComposer on Edit feature and does not render No tasks yet note', async () => {
+    const workWithFeatures = {
+      ...emptyWorkData,
+      canPlan: true,
+      canExecute: true,
+      features: [
+        {
+          id: 'feat-1',
+          title: 'Make a Prototype',
+          description: 'do a prototype',
+          status: 'TODO' as const,
+          tasks: [],
+          createdAt: '2026-09-18T00:00:00.000Z',
+          updatedAt: '2026-09-18T00:00:00.000Z',
+        },
+      ],
+    };
+    renderWorkspace({ workData: workWithFeatures });
+    await screen.findByText('Make a Prototype');
+
+    // Verify "No tasks yet." is not rendered
+    expect(screen.queryByText('No tasks yet.')).toBeNull();
+
+    const editBtn = screen.getByRole('button', { name: 'Edit feature' });
+    fireEvent.click(editBtn);
+
+    // Should render FeatureComposer prefilled
+    const nameInput = screen.getByDisplayValue('Make a Prototype');
+    const descInput = screen.getByDisplayValue('do a prototype');
+    const saveBtn = screen.getByRole('button', { name: 'Save feature' });
+
+    expect(nameInput).toBeInTheDocument();
+    expect(descInput).toBeInTheDocument();
+    expect(saveBtn).toBeInTheDocument();
+
+    fireEvent.change(nameInput, { target: { value: 'Make a Prototype v2' } });
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledWith(
+        `/projects/${projectId}/outcomes/${outcomeId}/work/features/feat-1`,
+        expect.anything(),
+        expect.objectContaining({
+          method: 'PATCH',
+          body: expect.objectContaining({
+            title: 'Make a Prototype v2',
+          }),
+        }),
+      );
+    });
+  });
+
+  it('optimistically updates task checkbox, status badge, and context rail immediately on check', async () => {
+    let resolveTaskUpdate: (val: unknown) => void = () => {};
+    const taskUpdatePromise = new Promise((resolve) => {
+      resolveTaskUpdate = resolve;
+    });
+
+    const workWithTasks = {
+      ...emptyWorkData,
+      canPlan: true,
+      canExecute: true,
+      completedTasks: 0,
+      totalTasks: 2,
+      progress: 0,
+      features: [
+        {
+          id: 'feat-1',
+          title: 'Make a Prototype',
+          description: 'do a prototype',
+          status: 'TODO' as const,
+          createdAt: '2026-09-18T00:00:00.000Z',
+          updatedAt: '2026-09-18T00:00:00.000Z',
+          tasks: [
+            {
+              id: 'task-1',
+              title: 'First Task',
+              description: '',
+              position: 0,
+              status: 'TODO' as const,
+              completedAt: null,
+              createdAt: '2026-09-18T00:00:00.000Z',
+              updatedAt: '2026-09-18T00:00:00.000Z',
+            },
+            {
+              id: 'task-2',
+              title: 'Second Task',
+              description: '',
+              position: 1,
+              status: 'TODO' as const,
+              completedAt: null,
+              createdAt: '2026-09-18T00:00:00.000Z',
+              updatedAt: '2026-09-18T00:00:00.000Z',
+            },
+          ],
+        },
+      ],
+    };
+
+    renderWorkspace({ workData: workWithTasks });
+    await screen.findByText('First Task');
+
+    // Initially 0 / 2 tasks and 0%
+    expect(screen.getByText('0/2 tasks')).toBeInTheDocument();
+    expect(screen.getByText('0 / 2')).toBeInTheDocument();
+    expect(screen.getAllByText('0%').length).toBeGreaterThanOrEqual(1);
+
+    const checkbox = screen.getByRole('checkbox', { name: 'Complete First Task' });
+    expect(checkbox).not.toBeChecked();
+
+    // Mock API to hang on state change to simulate network delay
+    vi.mocked(apiFetch).mockImplementation((path: string, _schema: unknown, opts: unknown) => {
+      const options = opts as { method?: string } | undefined;
+      if (path.includes('/tasks/task-1/state') && options?.method === 'PATCH') {
+        return taskUpdatePromise;
+      }
+      if (path.startsWith(`/projects/${projectId}/outcomes/${outcomeId}/work`)) {
+        return Promise.resolve(workWithTasks);
+      }
+      return Promise.resolve({ success: true });
+    });
+
+    // Click checkbox
+    fireEvent.click(checkbox);
+
+    // Immediately and optimistically checked without waiting for taskUpdatePromise to resolve
+    await waitFor(() => {
+      expect(checkbox).toBeChecked();
+      expect(screen.getByText('1/2 tasks')).toBeInTheDocument();
+      expect(screen.getByText('1 / 2')).toBeInTheDocument();
+      expect(screen.getAllByText('50%').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText('Done')).toBeInTheDocument();
+    });
+
+    // Now resolve the promise
+    resolveTaskUpdate({
+      ...workWithTasks,
+      completedTasks: 1,
+      progress: 50,
+      features: [
+        {
+          ...workWithTasks.features[0],
+          tasks: [
+            {
+              ...workWithTasks.features[0].tasks[0],
+              status: 'DONE',
+              completedAt: '2026-09-18T00:01:00.000Z',
+            },
+            workWithTasks.features[0].tasks[1],
+          ],
+        },
+      ],
+    });
+
+    await waitFor(() => {
+      expect(checkbox).toBeChecked();
+    });
+  });
+
+  it('rolls back task status and progress if state update fails', async () => {
+    let rejectTaskUpdate: (err: Error) => void = () => {};
+    const taskUpdatePromise = new Promise((_, reject) => {
+      rejectTaskUpdate = reject;
+    });
+
+    const workWithTasks = {
+      ...emptyWorkData,
+      canPlan: true,
+      canExecute: true,
+      completedTasks: 0,
+      totalTasks: 2,
+      progress: 0,
+      features: [
+        {
+          id: 'feat-1',
+          title: 'Make a Prototype',
+          description: 'do a prototype',
+          status: 'TODO' as const,
+          createdAt: '2026-09-18T00:00:00.000Z',
+          updatedAt: '2026-09-18T00:00:00.000Z',
+          tasks: [
+            {
+              id: 'task-1',
+              title: 'First Task',
+              description: '',
+              position: 0,
+              status: 'TODO' as const,
+              completedAt: null,
+              createdAt: '2026-09-18T00:00:00.000Z',
+              updatedAt: '2026-09-18T00:00:00.000Z',
+            },
+            {
+              id: 'task-2',
+              title: 'Second Task',
+              description: '',
+              position: 1,
+              status: 'TODO' as const,
+              completedAt: null,
+              createdAt: '2026-09-18T00:00:00.000Z',
+              updatedAt: '2026-09-18T00:00:00.000Z',
+            },
+          ],
+        },
+      ],
+    };
+
+    renderWorkspace({ workData: workWithTasks });
+    await screen.findByText('First Task');
+
+    const checkbox = screen.getByRole('checkbox', { name: 'Complete First Task' });
+    expect(checkbox).not.toBeChecked();
+
+    vi.mocked(apiFetch).mockImplementation((path: string, _schema: unknown, opts: unknown) => {
+      const options = opts as { method?: string } | undefined;
+      if (path.includes('/tasks/task-1/state') && options?.method === 'PATCH') {
+        return taskUpdatePromise;
+      }
+      if (path.startsWith(`/projects/${projectId}/outcomes/${outcomeId}/work`)) {
+        return Promise.resolve(workWithTasks);
+      }
+      return Promise.resolve({ success: true });
+    });
+
+    fireEvent.click(checkbox);
+
+    // Optimistically checked
+    await waitFor(() => {
+      expect(checkbox).toBeChecked();
+    });
+
+    // Reject the mutation
+    rejectTaskUpdate(new Error('Network failure'));
+
+    // Rolls back
+    await waitFor(() => {
+      expect(checkbox).not.toBeChecked();
+      expect(screen.getByText('0/2 tasks')).toBeInTheDocument();
+      expect(screen.getByText('0 / 2')).toBeInTheDocument();
+    });
+  });
 });
+
 

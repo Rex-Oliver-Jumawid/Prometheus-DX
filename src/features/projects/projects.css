@@ -1363,7 +1363,7 @@
 .board {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 315px;
+  grid-auto-columns: 340px;
   gap: 14px;
   width: max-content;
   min-width: 100%;
@@ -1411,14 +1411,21 @@
   margin: 0;
   color: #24201d;
   font-family: Inter, system-ui, -apple-system, sans-serif;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 750;
-  line-height: 1.25;
+  line-height: 1.3;
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
+  word-break: normal;
+  white-space: normal;
+}
+
+.stage-title-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .stage-desc {

@@ -856,9 +856,8 @@ export function ProjectWorkflow({
   });
   const options = useQuery({
     ...projectCreateOptionsQuery(accessToken),
-    enabled: Boolean(
-      editor?.type === 'create-outcome' || editor?.type === 'edit-outcome',
-    ),
+    enabled: Boolean(workflow.data?.canManageStructure || accessToken),
+    staleTime: 5 * 60 * 1000,
   });
 
   const closeEditor = () => setEditor(null);
@@ -1469,59 +1468,61 @@ export function ProjectWorkflow({
                     </div>
                     <div className="stage-title-row">
                       <h3 className="stage-title">{stage.name}</h3>
-                      <span className="count">
-                        {stageOutcomes.length} outcome
-                        {stageOutcomes.length === 1 ? '' : 's'}
-                      </span>
-                      {workflow.data.canManageStructure && (
-                        <div className="pw-stage-actions">
-                          <button
-                            type="button"
-                            className="pw-stage-edit"
-                            title="Rename stage"
-                            aria-label={`Edit Stage ${stage.name}`}
-                            onClick={() =>
-                              setEditor({ type: 'edit-stage', stage })
-                            }
-                          >
-                            <svg
-                              width="12"
-                              height="12"
-                              viewBox="0 0 12 12"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.4"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              aria-hidden="true"
+                      <div className="stage-title-meta">
+                        <span className="count">
+                          {stageOutcomes.length} outcome
+                          {stageOutcomes.length === 1 ? '' : 's'}
+                        </span>
+                        {workflow.data.canManageStructure && (
+                          <div className="pw-stage-actions">
+                            <button
+                              type="button"
+                              className="pw-stage-edit"
+                              title="Rename stage"
+                              aria-label={`Edit Stage ${stage.name}`}
+                              onClick={() =>
+                                setEditor({ type: 'edit-stage', stage })
+                              }
                             >
-                              <path d="M8.5 1.5l2 2L3.5 10.5H1.5v-2L8.5 1.5z" />
-                            </svg>
-                          </button>
-                          <button
-                            type="button"
-                            className="pw-stage-delete"
-                            title="Delete stage"
-                            aria-label={`Delete Stage ${stage.name}`}
-                            onClick={() =>
-                              setEditor({ type: 'delete-stage', stage })
-                            }
-                          >
-                            <svg
-                              width="11"
-                              height="11"
-                              viewBox="0 0 12 12"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              aria-hidden="true"
+                              <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 12 12"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.4"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                aria-hidden="true"
+                              >
+                                <path d="M8.5 1.5l2 2L3.5 10.5H1.5v-2L8.5 1.5z" />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              className="pw-stage-delete"
+                              title="Delete stage"
+                              aria-label={`Delete Stage ${stage.name}`}
+                              onClick={() =>
+                                setEditor({ type: 'delete-stage', stage })
+                              }
                             >
-                              <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" />
-                            </svg>
-                          </button>
-                        </div>
-                      )}
+                              <svg
+                                width="11"
+                                height="11"
+                                viewBox="0 0 12 12"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                aria-hidden="true"
+                              >
+                                <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" />
+                              </svg>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     {stage.description && (
                       <p className="stage-desc">{stage.description}</p>
@@ -1990,23 +1991,7 @@ export function ProjectWorkflow({
           }
         />
       )}
-      {outcomeEditor && options.isPending && (
-        <div className="workflow-editor-loading" role="status">
-          Loading Outcome options...
-        </div>
-      )}
-      {outcomeEditor && options.isError && (
-        <div className="workflow-editor-loading" role="alert">
-          Outcome options could not be loaded.
-          <button type="button" onClick={() => void options.refetch()}>
-            Retry
-          </button>
-          <button type="button" onClick={closeEditor}>
-            Cancel
-          </button>
-        </div>
-      )}
-      {outcomeEditor && options.isSuccess && (
+      {outcomeEditor && (
         <OutcomeDialog
           stage={outcomeEditor.stage}
           stages={workflow.data.stages}
@@ -2015,8 +2000,8 @@ export function ProjectWorkflow({
               ? outcomeEditor.outcome
               : undefined
           }
-          departments={options.data.departments}
-          members={options.data.leads}
+          departments={options.data?.departments ?? []}
+          members={options.data?.leads ?? []}
           availablePrerequisites={allOutcomes.filter(
             (item) =>
               outcomeEditor.type !== 'edit-outcome' ||
