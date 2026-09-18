@@ -9,3 +9,9 @@ export function loadRegistryRoute() {
     Component: module.RegistryGate,
   }));
 }
+
+export function loadScheduleRoute() {
+  return import('../features/schedule/SchedulePage').then((module) => ({
+    Component: module.SchedulePage,
+  }));
+}

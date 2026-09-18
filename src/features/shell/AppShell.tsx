@@ -3,7 +3,11 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/auth-context';
 import { projectsListQuery } from '../projects/project-queries';
 import { registryOverviewQuery } from '../registry/registry-queries';
-import { loadRegistryRoute } from '../../routes/route-modules';
+import { teamScheduleQuery } from '../schedule/schedule-queries';
+import {
+  loadRegistryRoute,
+  loadScheduleRoute,
+} from '../../routes/route-modules';
 import { NavIcon } from './Icons';
 import {
   breadcrumbsForPath,
@@ -32,6 +36,11 @@ export function AppShell() {
       void Promise.all([
         loadRegistryRoute(),
         queryClient.prefetchQuery(registryOverviewQuery(session?.access_token)),
+      ]);
+    } else if (path === '/schedule') {
+      void Promise.all([
+        loadScheduleRoute(),
+        queryClient.prefetchQuery(teamScheduleQuery(session?.access_token)),
       ]);
     }
   };

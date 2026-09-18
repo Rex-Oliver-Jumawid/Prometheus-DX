@@ -53,6 +53,16 @@ enum SubmissionReviewStatus {
   REVIEWED
 }
 
+enum Weekday {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
 model Department {
   id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
@@ -105,10 +115,38 @@ model Member {
   acceptedOutcomes            OutcomeAcceptance[]          @relation("OutcomeAcceptedBy")
   reopenedOutcomes            OutcomeAcceptance[]          @relation("OutcomeReopenedBy")
   acceptanceCredits           OutcomeAcceptanceMember[]
+  schedule                    MemberSchedule?
 
   @@index([departmentId])
   @@index([status])
   @@map("members")
+}
+
+model MemberSchedule {
+  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId            String          @unique @map("member_id") @db.Uuid
+  targetWeeklyMinutes Int             @map("target_weekly_minutes")
+  createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  member              Member          @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  blocks              ScheduleBlock[]
+
+  @@map("member_schedules")
+}
+
+model ScheduleBlock {
+  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scheduleId String         @map("schedule_id") @db.Uuid
+  weekday    Weekday
+  startTime  DateTime       @map("start_time") @db.Time(0)
+  endTime    DateTime       @map("end_time") @db.Time(0)
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  schedule   MemberSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, weekday, startTime, endTime])
+  @@index([scheduleId, weekday, startTime])
+  @@map("schedule_blocks")
 }
 
 model Project {

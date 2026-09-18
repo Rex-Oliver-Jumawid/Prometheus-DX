@@ -8,7 +8,11 @@ import { ProjectsPage } from '../features/projects/ProjectsPage';
 import { NotFoundPage } from '../features/foundation/NotFoundPage';
 import { AppShell } from '../features/shell/AppShell';
 import { PlaceholderPage } from '../features/shell/PlaceholderPage';
-import { loadProjectOverviewRoute, loadRegistryRoute } from './route-modules';
+import {
+  loadProjectOverviewRoute,
+  loadRegistryRoute,
+  loadScheduleRoute,
+} from './route-modules';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -32,7 +36,7 @@ export const router = createBrowserRouter([
             lazy: loadProjectOverviewRoute,
           },
           { path: '/visiwork', element: <PlaceholderPage title="VisiWork" /> },
-          { path: '/schedule', element: <PlaceholderPage title="Schedule" /> },
+          { path: '/schedule', lazy: loadScheduleRoute },
           { path: '/team', element: <PlaceholderPage title="Team" /> },
           {
             path: '/notifications',
