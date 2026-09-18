@@ -189,4 +189,32 @@ export class ProjectWorkflowController {
       memberId,
     );
   }
+
+  @Delete('outcomes/:outcomeId')
+  async deleteOutcome(
+    @CurrentMember() currentMember: Member,
+    @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
+    @Param('outcomeId', new ParseUUIDPipe({ version: '4' })) outcomeId: string,
+  ) {
+    await this.workflowService.deleteOutcome(
+      currentMember,
+      projectId,
+      outcomeId,
+    );
+    return { success: true };
+  }
+
+  @Delete('stages/:stageId')
+  async deleteStage(
+    @CurrentMember() currentMember: Member,
+    @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
+    @Param('stageId', new ParseUUIDPipe({ version: '4' })) stageId: string,
+  ) {
+    await this.workflowService.deleteStage(
+      currentMember,
+      projectId,
+      stageId,
+    );
+    return { success: true };
+  }
 }

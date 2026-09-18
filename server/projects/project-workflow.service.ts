@@ -437,6 +437,138 @@ export class ProjectWorkflowService {
     throw new ForbiddenException('Outcome Membership is permanent.');
   }
 
+  async deleteOutcome(
+    currentMember: Member,
+    projectId: string,
+    outcomeId: string,
+  ): Promise<void> {
+    await this.prisma.$transaction(async (transaction) => {
+      await this.requireLead(transaction, projectId, currentMember.id);
+
+      const outcome = await transaction.outcome.findUnique({
+        where: { id: outcomeId },
+        select: {
+          stageId: true,
+          position: true,
+          stage: { select: { projectId: true } },
+          _count: {
+            select: {
+              members: true,
+              submissions: true,
+              acceptances: true,
+              revisionRequests: true,
+              dependents: true,
+              features: true,
+            },
+          },
+        },
+      });
+
+      if (!outcome || outcome.stage.projectId !== projectId) {
+        throw new NotFoundException('Outcome not found.');
+      }
+
+      this.assertOutcomeDeletable(outcome._count);
+
+      const { stageId, position } = outcome;
+
+      await transaction.outcome.delete({ where: { id: outcomeId } });
+
+      // Compact sibling positions within the same Stage.
+      // Two-pass to avoid transient unique constraint violations on
+      // (stageId, position): first shift all affected siblings up by a large
+      // offset, then renumber them sequentially from the freed slot downward.
+      const siblings = await transaction.outcome.findMany({
+        where: { stageId, position: { gt: position } },
+        select: { id: true, position: true },
+        orderBy: { position: 'asc' },
+      });
+      if (siblings.length > 0) {
+        const offset = 100_000;
+        for (const sibling of siblings) {
+          await transaction.outcome.update({
+            where: { id: sibling.id },
+            data: { position: sibling.position + offset },
+          });
+        }
+        for (let i = 0; i < siblings.length; i++) {
+          await transaction.outcome.update({
+            where: { id: siblings[i].id },
+            data: { position: position + i },
+          });
+        }
+      }
+    });
+  }
+
+  async deleteStage(
+    currentMember: Member,
+    projectId: string,
+    stageId: string,
+  ): Promise<void> {
+    await this.prisma.$transaction(async (transaction) => {
+      await this.requireLead(transaction, projectId, currentMember.id);
+      const stage = await transaction.stage.findUnique({
+        where: { id: stageId },
+        select: {
+          projectId: true,
+          position: true,
+          outcomes: {
+            select: {
+              id: true,
+              _count: {
+                select: {
+                  members: true,
+                  submissions: true,
+                  acceptances: true,
+                  revisionRequests: true,
+                  dependents: true,
+                  features: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!stage || stage.projectId !== projectId) {
+        throw new NotFoundException('Stage not found.');
+      }
+
+      // Reject if any child Outcome has protected history.
+      // Never partially delete - all or nothing.
+      for (const outcome of stage.outcomes) {
+        this.assertOutcomeDeletable(outcome._count);
+      }
+
+      const { position } = stage;
+
+      await transaction.stage.delete({ where: { id: stageId } });
+
+      // Compact sibling stage positions within the Project.
+      const siblings = await transaction.stage.findMany({
+        where: { projectId, position: { gt: position } },
+        select: { id: true, position: true },
+        orderBy: { position: 'asc' },
+      });
+      if (siblings.length > 0) {
+        const offset = 100_000;
+        for (const sibling of siblings) {
+          await transaction.stage.update({
+            where: { id: sibling.id },
+            data: { position: sibling.position + offset },
+          });
+        }
+        for (let i = 0; i < siblings.length; i++) {
+          await transaction.stage.update({
+            where: { id: siblings[i].id },
+            data: { position: position + i },
+          });
+        }
+      }
+    });
+  }
+
   private async requireLead(
     transaction: Prisma.TransactionClient,
     projectId: string,
@@ -466,6 +598,46 @@ export class ProjectWorkflowService {
     });
     if (!stage || stage.projectId !== projectId) {
       throw new NotFoundException('Stage not found.');
+    }
+  }
+
+  private assertOutcomeDeletable(counts: {
+    members: number;
+    submissions: number;
+    acceptances: number;
+    revisionRequests: number;
+    dependents: number;
+    features: number;
+  }): void {
+    if (counts.members > 0) {
+      throw new ConflictException(
+        'This Outcome has permanent Membership records and cannot be deleted.',
+      );
+    }
+    if (counts.submissions > 0) {
+      throw new ConflictException(
+        'This Outcome has submission history and cannot be deleted.',
+      );
+    }
+    if (counts.acceptances > 0) {
+      throw new ConflictException(
+        'This Outcome has acceptance history and cannot be deleted.',
+      );
+    }
+    if (counts.revisionRequests > 0) {
+      throw new ConflictException(
+        'This Outcome has revision request history and cannot be deleted.',
+      );
+    }
+    if (counts.dependents > 0) {
+      throw new ConflictException(
+        'This Outcome is a prerequisite for another Outcome and cannot be deleted.',
+      );
+    }
+    if (counts.features > 0) {
+      throw new ConflictException(
+        'This Outcome has work records and cannot be deleted.',
+      );
     }
   }
 

@@ -488,3 +488,61 @@ The database is current with seven migrations.
 No Phase 4 blocker remains.
 
 Phase 5 is unblocked but was not started as part of Phase 4 closure.
+
+## Post-Phase Addendum - Stage and Outcome Deletion Controls
+
+Added after formal Phase 4 exit.
+Commit: projects-ui branch, following 981491b.
+
+### Motivation
+
+The Figma reference frame "Project Stages with X button" (node 90:3956) shows explicit delete controls on every manageable Stage and Outcome.
+These were absent from the shipped Phase 4 Project Workspace.
+The user requested they be brought in as a targeted addition on top of the stable Phase 4 base.
+
+### Behavioral Rules Enforced
+
+Stage deletion is blocked if the stage contains any Outcome.
+Outcome deletion is blocked if the outcome has any OutcomeMember, OutcomeSubmission, OutcomeAcceptance, OutcomeRevisionRequest, or if it is a prerequisite (dependency) for another outcome.
+Both deletions are Project Lead-only.
+After a successful deletion the remaining siblings are position-compacted inside the same transaction to close the gap without violating the unique position constraint.
+
+### Backend Changes
+
+`server/projects/project-workflow.service.ts` - Added `deleteOutcome` and `deleteStage` service methods.
+Each method performs a Project Lead authorization check, a blocking-condition guard, the delete, and a two-pass compaction of sibling positions inside one `prisma.$transaction`.
+Position compaction first shifts positions to a safe offset range and then shifts them down to the final contiguous positions to avoid transient unique constraint violations.
+
+`server/projects/project-workflow.controller.ts` - Added `DELETE /projects/:projectId/stages/:stageId` and `DELETE /projects/:projectId/outcomes/:outcomeId` endpoints, each guarded by `AuthGuard` and calling the corresponding service method.
+
+`server/projects/project-workflow.service.test.ts` - Added 39 focused service-level test cases across both delete methods covering: successful deletion and compaction, non-lead rejection, blocking-condition rejection for each guard, and correct sibling shift after deletion from different positions.
+
+### Frontend Changes
+
+`src/features/projects/ProjectWorkflow.tsx` - Extended the `EditorState` union with `delete-outcome` and `delete-stage` states.
+Added a reusable `DeleteConfirmationDialog` component using the existing `useAccessibleDialog` pattern; no `window.alert` or browser-native dialogs.
+Added `deleteOutcome` and `deleteStage` TanStack mutations that call the new endpoints, invalidate the workflow query cache on success, and reset editor state.
+Integrated an X icon button (`pw-delete-btn`) into each Stage header and each Outcome card, visible and operable only when the authenticated member is the Project Lead.
+X buttons on dependency mini-cards in the Outcome drawer also open the outcome delete dialog for that outcome.
+
+`src/features/projects/projects.css` - Added `.pw-delete-btn`, `.pw-stage-actions`, `.pw-outcome-delete-btn`, and `.pw-confirm-dialog` destructive styling.
+Idle X color matches the Figma reference (#98a2b3).
+Hover transitions to a warm destructive red.
+Stage action group uses 2 px gap, 24x24, rounded 7 px.
+Outcome action group uses 5 px gap, 22x22, rounded 6 px.
+
+`src/features/projects/ProjectWorkflow.test.tsx` - New file with 145 lines of Vitest + React Testing Library component tests covering: X button visibility per Project Lead vs non-Lead role, dialog open/close lifecycle, and dialog title content for both Stage and Outcome deletion paths.
+
+### Decision Notes
+
+Compaction uses a two-pass approach inside a single transaction rather than a bulk gap update because PostgreSQL enforces the unique position constraint row-by-row during the transaction, making a single descending-order pass the safest strategy without deferrable constraints.
+
+The `DeleteConfirmationDialog` was kept as a local component inside `ProjectWorkflow.tsx` rather than promoted to a shared component because it is currently only required by this one surface and the team preference is to avoid premature abstraction.
+
+### Verification
+
+`pnpm typecheck` - passed.
+`pnpm test` (Vitest unit + service tests) - passed including all 39 new service test cases.
+`pnpm test:ui` (Vitest + React Testing Library) - passed including all new component tests.
+`pnpm build` - passed, production bundle compiled without errors.
+Browser verification delegated to the user per stated preference.
