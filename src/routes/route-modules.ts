@@ -15,3 +15,9 @@ export function loadScheduleRoute() {
     Component: module.SchedulePage,
   }));
 }
+
+export function loadTeamRoute() {
+  return import('../features/team/TeamPage').then((module) => ({
+    Component: module.TeamPage,
+  }));
+}

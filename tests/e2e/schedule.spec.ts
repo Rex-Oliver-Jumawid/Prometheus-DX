@@ -1,4 +1,4 @@
-import { PrismaClient, type Weekday } from '@prisma/client';
+import { PrismaClient, type Weekday, type WorkSession } from '@prisma/client';
 import { expect, test, type Page } from '@playwright/test';
 
 const prisma = new PrismaClient();
@@ -17,6 +17,9 @@ type OriginalSchedule = {
 let currentMemberId = '';
 let fixtureMemberId = '';
 let originalSchedule: OriginalSchedule = null;
+let originalUnresolvedSession: WorkSession | null = null;
+let currentMemberName = '';
+const createdWorkSessionIds: string[] = [];
 
 test.describe.configure({ mode: 'serial' });
 
@@ -30,6 +33,7 @@ test.beforeAll(async () => {
   });
   if (!member) throw new Error('E2E member record was not found.');
   currentMemberId = member.id;
+  currentMemberName = member.fullName;
   originalSchedule = member.schedule
     ? {
         targetWeeklyMinutes: member.schedule.targetWeeklyMinutes,
@@ -41,6 +45,14 @@ test.beforeAll(async () => {
       }
     : null;
   await prisma.memberSchedule.deleteMany({ where: { memberId: member.id } });
+  originalUnresolvedSession = await prisma.workSession.findFirst({
+    where: { memberId: member.id, timeOut: null },
+  });
+  if (originalUnresolvedSession) {
+    await prisma.workSession.delete({
+      where: { id: originalUnresolvedSession.id },
+    });
+  }
 
   const teammate = await prisma.member.create({
     data: {
@@ -67,6 +79,19 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
+  if (createdWorkSessionIds.length) {
+    await prisma.workSessionCorrection.deleteMany({
+      where: { workSessionId: { in: createdWorkSessionIds } },
+    });
+    await prisma.workSession.deleteMany({
+      where: { id: { in: createdWorkSessionIds } },
+    });
+  }
+  if (originalUnresolvedSession) {
+    await prisma.workSession.create({
+      data: originalUnresolvedSession,
+    });
+  }
   if (fixtureMemberId) {
     await prisma.member.deleteMany({ where: { id: fixtureMemberId } });
   }
@@ -86,6 +111,15 @@ test.afterAll(async () => {
   }
   await prisma.$disconnect();
 });
+
+function currentManilaWeekday(): Weekday {
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Manila',
+    weekday: 'long',
+  })
+    .format(new Date())
+    .toUpperCase() as Weekday;
+}
 
 async function signIn(page: Page) {
   await page.goto('/login');
@@ -124,8 +158,8 @@ test('member configures, refreshes, edits, removes, and returns from Shifts to T
     .click();
   await page.getByRole('button', { name: 'Add Block' }).click();
   await page.getByLabel('Target hours per week').fill('4');
-  await page.getByLabel('Start').fill('08:00');
-  await page.getByLabel('End').fill('12:00');
+  await page.getByLabel('Start', { exact: true }).fill('08:00');
+  await page.getByLabel('End', { exact: true }).fill('12:00');
   await page.getByRole('button', { name: 'Save Schedule' }).click();
   await expect(
     page.getByRole('heading', { name: 'Configure My Schedule' }),
@@ -152,7 +186,7 @@ test('member configures, refreshes, edits, removes, and returns from Shifts to T
     page.getByRole('heading', { name: 'Configure My Schedule' }),
   ).toBeVisible();
 
-  await page.getByLabel('End').fill('13:00');
+  await page.getByLabel('End', { exact: true }).fill('13:00');
   await page.getByRole('button', { name: 'Save Schedule' }).click();
   await page.reload();
   await expect(page.getByText('8:00 AM - 1:00 PM')).toBeVisible();
@@ -163,6 +197,9 @@ test('member configures, refreshes, edits, removes, and returns from Shifts to T
     .click();
   await page.getByRole('button', { name: 'Remove block 1' }).click();
   await page.getByRole('button', { name: 'Save Schedule' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Configure My Schedule' }),
+  ).toHaveCount(0);
   await expect(
     prisma.scheduleBlock.count({
       where: { schedule: { memberId: currentMemberId } },
@@ -178,4 +215,71 @@ test('member configures, refreshes, edits, removes, and returns from Shifts to T
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+});
+
+test('planned Schedule flows through persisted Time In, Team Working Now, Time Out, and weekly history', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  test.skip(!hasCredentials, 'Requires configured Prometheus E2E credentials.');
+
+  await prisma.memberSchedule.upsert({
+    where: { memberId: currentMemberId },
+    create: {
+      memberId: currentMemberId,
+      targetWeeklyMinutes: 360,
+      blocks: {
+        create: {
+          weekday: currentManilaWeekday(),
+          startTime: new Date('1970-01-01T09:00:00.000Z'),
+          endTime: new Date('1970-01-01T15:00:00.000Z'),
+        },
+      },
+    },
+    update: {
+      targetWeeklyMinutes: 360,
+      blocks: {
+        deleteMany: {},
+        create: {
+          weekday: currentManilaWeekday(),
+          startTime: new Date('1970-01-01T09:00:00.000Z'),
+          endTime: new Date('1970-01-01T15:00:00.000Z'),
+        },
+      },
+    },
+  });
+
+  await signIn(page);
+  const attendance = page.getByLabel('Time attendance');
+  await attendance.getByRole('button', { name: /Time In/ }).click();
+  await expect(attendance.getByRole('button', { name: /Time Out/ })).toBeVisible();
+
+  const openSession = await prisma.workSession.findFirstOrThrow({
+    where: { memberId: currentMemberId, timeOut: null, status: 'OPEN' },
+  });
+  createdWorkSessionIds.push(openSession.id);
+  await prisma.workSession.update({
+    where: { id: openSession.id },
+    data: { timeIn: new Date(Date.now() - 5 * 60 * 1_000) },
+  });
+
+  await page.reload();
+  await expect(attendance.getByRole('button', { name: /Time Out/ })).toBeVisible();
+
+  await page.goto('/team');
+  const memberCard = page.locator('.team-card').filter({ hasText: currentMemberName });
+  await expect(memberCard.getByText('Working Now')).toBeVisible();
+  await expect(memberCard.getByText('6h')).toBeVisible();
+
+  await attendance.getByRole('button', { name: /Time Out/ }).click();
+  await expect(memberCard.getByText('Timed Out')).toBeVisible();
+  await expect(
+    prisma.workSession.findUnique({ where: { id: openSession.id } }),
+  ).resolves.toMatchObject({ status: 'COMPLETED' });
+
+  await page.goto('/schedule');
+  await page.getByRole('tab', { name: 'Shifts' }).click();
+  await expect(page.getByText('Weekly work history')).toBeVisible();
+  await expect(page.getByText('COMPLETED').first()).toBeVisible();
+  await expect(page.getByText('6h').first()).toBeVisible();
 });

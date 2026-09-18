@@ -103,7 +103,9 @@ export const MemberScheduleSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
-export const MyScheduleResponseSchema = MemberScheduleSchema.nullable();
+export const MyScheduleResponseSchema = z.object({
+  schedule: MemberScheduleSchema.nullable(),
+});
 
 export type MemberSchedule = z.infer<typeof MemberScheduleSchema>;
 

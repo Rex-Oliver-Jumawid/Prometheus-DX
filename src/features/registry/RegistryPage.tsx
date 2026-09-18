@@ -527,10 +527,12 @@ function MemberDialog({
                 }}
                 onBlur={(event) => {
                   void fullNameRegistration.onBlur(event);
-                  window.setTimeout(
-                    () => setFullNameSuggestionsOpen(false),
-                    100,
-                  );
+                  const input = event.currentTarget;
+                  window.setTimeout(() => {
+                    if (document.activeElement !== input) {
+                      setFullNameSuggestionsOpen(false);
+                    }
+                  }, 100);
                 }}
                 onKeyDown={(event) => {
                   if (state.mode !== 'create' || !fullNameSuggestionsOpen)
@@ -548,14 +550,18 @@ function MemberDialog({
                     setActiveMemberSuggestion((current) =>
                       Math.max(current - 1, 0),
                     );
-                  } else if (
-                    event.key === 'Enter' &&
-                    existingMemberSuggestions[activeMemberSuggestion]
-                  ) {
-                    event.preventDefault();
-                    selectExistingMember(
-                      existingMemberSuggestions[activeMemberSuggestion],
-                    );
+                  } else if (event.key === 'Enter') {
+                    const selectedMember =
+                      existingMemberSuggestions[
+                        Math.min(
+                          activeMemberSuggestion,
+                          existingMemberSuggestions.length - 1,
+                        )
+                      ];
+                    if (selectedMember) {
+                      event.preventDefault();
+                      selectExistingMember(selectedMember);
+                    }
                   } else if (event.key === 'Escape') {
                     event.preventDefault();
                     event.stopPropagation();

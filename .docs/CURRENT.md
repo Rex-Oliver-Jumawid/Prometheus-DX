@@ -8,19 +8,19 @@ Canonical requirements belong in `.context/`.
 
 ## Current Phase
 
-Phase 5 - Outcome Work, Submission, Review, and Dependencies
+Phase 6 - Schedule, Work Sessions, and Team
 
 Status: In progress.
 
 Formal implementation record:
 
-`.docs/phases/phase-05-work-review.md`
+`.docs/phases/phase-06-schedule-work-sessions-team.md`
 
 ## Previous Phase
 
-Phase 4 - Project Workflow Structure
+Phase 5 - Outcome Work, Submission, Review, and Dependencies
 
-Status: Complete.
+Status: In progress on its own branch and not marked complete here.
 
 ## Verified Baseline
 
@@ -79,53 +79,27 @@ The normal broad gates are `pnpm verify`, `pnpm verify:e2e`, and `pnpm verify:re
 
 ## Next Action
 
-Phase 5 work, submission, review, acceptance, reopening, and dependency slices are implemented.
+Phase 6 Schedule Slice 1 and the integrated Work Sessions plus Team Slice 2 are implemented.
 
-The distinct-account core browser suite passes 28/28 tests after the performance changes.
+Migration `20260918010000_phase_06_work_sessions` is deployed and all 15 migrations are applied.
 
-The current non-browser verification passes 113 Node tests, 11 component tests, typecheck, lint, and both builds.
+Live database integration passes 4 Schedule tests, 5 WorkSession tests, and 2 Team tests.
 
-The Project browser suite passes 5/5 tests, including optimistic status persistence after authoritative responses.
+Focused component coverage passes 10 tests across Schedule, attendance, and Team.
 
-The Registry member browser acceptance passes in isolation.
+The authenticated Phase 6 Chromium file passes both the Schedule Slice 1 journey and the integrated Schedule, Time In, refresh, Team Working Now, Time Out, and weekly-history journey.
 
-Hosted performance measurement and implementation are recorded as P5-D06 in the Phase 5 journal.
+The broad `pnpm verify` gate passes with 139 enabled Node tests, 22 component tests, and both production builds.
 
-The follow-up latency pass is recorded as P5-D07.
-It adds a lightweight Projects list read model and reduces authoritative Project status PATCH from 1593 milliseconds median to 1197 milliseconds median without changing authorization or history semantics.
-The remaining warm-read floor is dominated by active Member resolution and Supavisor transaction-pool round trips.
-The database is in AWS `ap-south-1`; the deployed API region and safe session-pool connection budget still require manual verification before any infrastructure change.
+The final full Chromium run passed 90 tests, including both Phase 6 journeys.
+One pre-existing Phase 4 Project Members test failed because the current Project page does not mount the existing `ProjectMembersPanel`, and its three serial dependents did not run.
+Project UI was not changed from this branch.
 
-The first complete `pnpm verify:e2e` run reached 80/91 passing tests and retained five failures.
+Manual visual, responsive, and console acceptance must still be recorded before Phase 6 is marked complete.
+The Project Members acceptance file should be rerun after its owning Project UI work is integrated.
 
-Four of those failures were stale or timing-sensitive acceptance assumptions, and the corrected affected suites now pass except for the existing Project Members acceptance path that expects an unmounted panel.
-
-Prisma generation/validation pass and all 13 migrations are applied.
-
-The testing infrastructure now includes the React component-test layer, Chromium development E2E, retained Playwright failure evidence, and release-level Firefox/WebKit commands.
-
-Expanded edge-case verification, formal acceptance closure, and a full regression run after the final test maintenance remain outstanding.
-
-As Phase 5 tests are touched, move permission matrices, validation, direct API status assertions, stale-write checks, and concurrency checks below Playwright where practical.
-
-Keep Playwright focused on critical complete browser journeys rather than rewriting all existing acceptance coverage at once.
-
-The prerequisite-reopening rule is documented in `.context/data-model.md`: unfinished dependents relock, explicit overrides remain effective, and accepted dependents retain acceptance.
-
-Before continuing Phase 5:
-
-1. Read `AGENTS.md`.
-2. Read this file.
-3. Read `.agents/skills/prometheus-phase-delivery/SKILL.md`.
-4. Read `.agents/skills/prometheus-database-change/SKILL.md` before any Prisma or migration work.
-5. Read `.context/phases.md`, especially Phase 5.
-6. Read the Phase 5 portions of `.context/data-model.md`, `.context/user-flows.md`, and the SRS.
-7. Read `.testcases/phase-05-work-review-tests.md`.
-8. Read the live Phase 5 implementation journal.
-9. Preserve the completed Phase 0 through Phase 4 regression baseline.
-10. Follow the layered testing ownership defined in `AGENTS.md` and `CONTRIBUTING.md`.
-
-Do not treat Phase 5 as complete until all slices and the full regression/acceptance gate pass.
+Do not mark Phase 5 complete from this branch.
+Do not add ScheduleOverride or realtime presence without a concrete acceptance requirement.
 
 ## Handoff Maintenance Rule
 

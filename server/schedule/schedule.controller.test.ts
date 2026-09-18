@@ -5,6 +5,20 @@ import { ScheduleController } from './schedule.controller';
 import type { ScheduleService } from './schedule.service';
 
 describe('ScheduleController', () => {
+  it('returns an explicit JSON resource when the member has no schedule', async () => {
+    const service = {
+      getMemberSchedule: vi.fn().mockResolvedValue(null),
+    } as unknown as ScheduleService;
+    const controller = new ScheduleController(service);
+    const currentMember = {
+      id: '11111111-1111-4111-8111-111111111111',
+    } as Member;
+
+    await expect(controller.mySchedule(currentMember)).resolves.toEqual({
+      schedule: null,
+    });
+  });
+
   it('rejects a direct attempt to update another member schedule', () => {
     const service = {
       replaceMemberSchedule: vi.fn(),

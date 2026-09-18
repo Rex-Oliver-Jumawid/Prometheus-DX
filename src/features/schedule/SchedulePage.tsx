@@ -10,8 +10,18 @@ import {
   type UpdateScheduleRequest,
   type Weekday,
 } from '../../../shared/contracts/schedule';
+import type { WorkSessionHistoryResponse } from '../../../shared/contracts/work-session';
 import { apiFetch } from '../../lib/api';
 import { useAuth } from '../auth/auth-context';
+import {
+  formatHours,
+  formatManilaDateTime,
+} from '../work-sessions/work-session-format';
+import {
+  teamWorkSummaryQuery,
+  workSessionHistoryQuery,
+} from '../work-sessions/work-session-queries';
+import { formatClock } from './schedule-format';
 import {
   myScheduleQuery,
   scheduleKeys,
@@ -33,13 +43,6 @@ function formatMinutes(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const remainder = minutes % 60;
   return remainder ? `${hours}h ${remainder}m` : `${hours}h`;
-}
-
-function formatClock(value: string): string {
-  const [hoursValue, minutes] = value.split(':');
-  const hours = Number(hoursValue);
-  const suffix = hours >= 12 ? 'PM' : 'AM';
-  return `${hours % 12 || 12}:${minutes} ${suffix}`;
 }
 
 function initials(name: string): string {
@@ -89,6 +92,14 @@ export function SchedulePage() {
   const [selectedMemberId, setSelectedMemberId] = useState(member?.id ?? '');
   const teamQuery = useQuery(teamScheduleQuery(session?.access_token));
   const mineQuery = useQuery(myScheduleQuery(session?.access_token));
+  const historyQuery = useQuery({
+    ...workSessionHistoryQuery(session?.access_token),
+    enabled: view === 'shifts',
+  });
+  const teamWorkQuery = useQuery({
+    ...teamWorkSummaryQuery(session?.access_token),
+    enabled: view === 'shifts',
+  });
   const form = useForm<UpdateScheduleRequest>({
     defaultValues: defaultFormValues(null),
   });
@@ -98,7 +109,7 @@ export function SchedulePage() {
 
   useEffect(() => {
     if (!mineQuery.isPending) {
-      form.reset(defaultFormValues(mineQuery.data ?? null));
+      form.reset(defaultFormValues(mineQuery.data?.schedule ?? null));
     }
   }, [form, mineQuery.data, mineQuery.isPending]);
 
@@ -114,7 +125,7 @@ export function SchedulePage() {
         body: input,
       }),
     onSuccess: async (saved) => {
-      queryClient.setQueryData(scheduleKeys.mine, saved);
+      queryClient.setQueryData(scheduleKeys.mine, { schedule: saved });
       await queryClient.invalidateQueries({ queryKey: scheduleKeys.team });
       setConfiguring(false);
     },
@@ -127,11 +138,14 @@ export function SchedulePage() {
       teamQuery.data?.members[0],
     [member?.id, selectedMemberId, teamQuery.data?.members],
   );
+  const selectedWorkMember = teamWorkQuery.data?.members.find(
+    (item) => item.id === selectedMember?.id,
+  );
 
   const enterConfiguration = () => {
     setView('team');
     setSelectedMemberId(member?.id ?? '');
-    form.reset(defaultFormValues(mineQuery.data ?? null));
+    form.reset(defaultFormValues(mineQuery.data?.schedule ?? null));
     setFormError(null);
     mutation.reset();
     setConfiguring(true);
@@ -198,7 +212,7 @@ export function SchedulePage() {
 
   const members = teamQuery.data?.members ?? [];
   const ownMember = members.find((item) => item.id === member?.id);
-  const ownSchedule = mineQuery.data ?? ownMember?.schedule ?? null;
+  const ownSchedule = mineQuery.data?.schedule ?? ownMember?.schedule ?? null;
 
   return (
     <section className="schedule-page" aria-labelledby="schedule-title">
@@ -269,7 +283,38 @@ export function SchedulePage() {
               </select>
             </label>
           </div>
+          <div className="work-week-stats">
+            <article>
+              <span>Scheduled</span>
+              <strong>
+                {formatMinutes(selectedWorkMember?.scheduledMinutes ?? 0)}
+              </strong>
+              <small>Recurring planned hours</small>
+            </article>
+            <article>
+              <span>Worked</span>
+              <strong>
+                {formatHours(selectedWorkMember?.actualWorkedSeconds ?? 0)}
+              </strong>
+              <small>Persisted Time In / Out</small>
+            </article>
+            <article>
+              <span>Status</span>
+              <strong>
+                {selectedWorkMember?.workingNow ? 'Working Now' : 'Timed Out'}
+              </strong>
+              <small>From unresolved OPEN session</small>
+            </article>
+          </div>
           <ScheduleSummary schedule={selectedMember?.schedule ?? null} />
+          {selectedMember?.id === member?.id && (
+            <WorkHistory
+              pending={historyQuery.isPending}
+              error={historyQuery.error}
+              history={historyQuery.data}
+              retry={() => void historyQuery.refetch()}
+            />
+          )}
         </section>
       ) : (
         <>
@@ -440,6 +485,66 @@ export function SchedulePage() {
             <TeamWeek members={members} currentMemberId={member?.id} />
           </section>
         </>
+      )}
+    </section>
+  );
+}
+
+function WorkHistory({
+  pending,
+  error,
+  history,
+  retry,
+}: {
+  pending: boolean;
+  error: Error | null;
+  history: WorkSessionHistoryResponse | undefined;
+  retry: () => void;
+}) {
+  return (
+    <section className="work-history" aria-labelledby="work-history-title">
+      <div className="work-history-head">
+        <div>
+          <p className="page-kicker">ACTUAL WORK</p>
+          <h3 id="work-history-title">Weekly work history</h3>
+        </div>
+        {history && (
+          <strong>{formatHours(history.totalDurationSeconds)}</strong>
+        )}
+      </div>
+      {pending ? (
+        <p>Loading work history...</p>
+      ) : error ? (
+        <div className="work-history-error" role="alert">
+          <span>{error.message}</span>
+          <button onClick={retry}>Try again</button>
+        </div>
+      ) : history?.sessions.length ? (
+        <div className="work-history-list">
+          {history.sessions.map((session) => (
+            <article key={session.id}>
+              <div>
+                <strong>{formatManilaDateTime(session.timeIn)}</strong>
+                <span>
+                  {session.timeOut
+                    ? `to ${formatManilaDateTime(session.timeOut)}`
+                    : session.status === 'OPEN'
+                      ? 'Active session'
+                      : 'Correction required'}
+                </span>
+              </div>
+              <div className="work-history-duration">
+                <strong>{formatHours(session.durationSeconds)}</strong>
+                <span>{session.status.replace('_', ' ')}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="schedule-empty compact">
+          <strong>No work sessions this week</strong>
+          <span>Time In to begin recording actual work separately.</span>
+        </div>
       )}
     </section>
   );

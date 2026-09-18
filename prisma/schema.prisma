@@ -63,6 +63,12 @@ enum Weekday {
   SUNDAY
 }
 
+enum WorkSessionStatus {
+  OPEN
+  COMPLETED
+  NEEDS_CORRECTION
+}
+
 model Department {
   id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
@@ -116,6 +122,8 @@ model Member {
   reopenedOutcomes            OutcomeAcceptance[]          @relation("OutcomeReopenedBy")
   acceptanceCredits           OutcomeAcceptanceMember[]
   schedule                    MemberSchedule?
+  workSessions                WorkSession[]
+  workSessionCorrections      WorkSessionCorrection[]
 
   @@index([departmentId])
   @@index([status])
@@ -147,6 +155,40 @@ model ScheduleBlock {
   @@unique([scheduleId, weekday, startTime, endTime])
   @@index([scheduleId, weekday, startTime])
   @@map("schedule_blocks")
+}
+
+model WorkSession {
+  id          String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId    String                  @map("member_id") @db.Uuid
+  timeIn      DateTime                @map("time_in") @db.Timestamptz(6)
+  timeOut     DateTime?               @map("time_out") @db.Timestamptz(6)
+  status      WorkSessionStatus       @default(OPEN)
+  createdAt   DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  member      Member                  @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  corrections WorkSessionCorrection[]
+
+  @@index([memberId, timeIn])
+  @@index([memberId, status])
+  @@map("work_sessions")
+}
+
+model WorkSessionCorrection {
+  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workSessionId   String      @map("work_session_id") @db.Uuid
+  memberId        String      @map("member_id") @db.Uuid
+  previousTimeIn  DateTime    @map("previous_time_in") @db.Timestamptz(6)
+  previousTimeOut DateTime?   @map("previous_time_out") @db.Timestamptz(6)
+  newTimeIn       DateTime    @map("new_time_in") @db.Timestamptz(6)
+  newTimeOut      DateTime    @map("new_time_out") @db.Timestamptz(6)
+  reason          String
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  workSession     WorkSession @relation(fields: [workSessionId], references: [id], onDelete: Restrict)
+  member          Member      @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@index([workSessionId, createdAt])
+  @@index([memberId, createdAt])
+  @@map("work_session_corrections")
 }
 
 model Project {

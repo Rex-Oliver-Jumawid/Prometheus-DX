@@ -32,8 +32,10 @@ export class ScheduleController {
   }
 
   @Get('me')
-  mySchedule(@CurrentMember() currentMember: Member) {
-    return this.scheduleService.getMemberSchedule(currentMember.id);
+  async mySchedule(@CurrentMember() currentMember: Member) {
+    return {
+      schedule: await this.scheduleService.getMemberSchedule(currentMember.id),
+    };
   }
 
   @Put('me')

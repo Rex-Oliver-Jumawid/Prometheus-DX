@@ -4,9 +4,12 @@ import { useAuth } from '../auth/auth-context';
 import { projectsListQuery } from '../projects/project-queries';
 import { registryOverviewQuery } from '../registry/registry-queries';
 import { teamScheduleQuery } from '../schedule/schedule-queries';
+import { WorkAttendanceControl } from '../work-sessions/WorkAttendanceControl';
+import { teamWorkSummaryQuery } from '../work-sessions/work-session-queries';
 import {
   loadRegistryRoute,
   loadScheduleRoute,
+  loadTeamRoute,
 } from '../../routes/route-modules';
 import { NavIcon } from './Icons';
 import {
@@ -41,6 +44,11 @@ export function AppShell() {
       void Promise.all([
         loadScheduleRoute(),
         queryClient.prefetchQuery(teamScheduleQuery(session?.access_token)),
+      ]);
+    } else if (path === '/team') {
+      void Promise.all([
+        loadTeamRoute(),
+        queryClient.prefetchQuery(teamWorkSummaryQuery(session?.access_token)),
       ]);
     }
   };
@@ -152,6 +160,7 @@ export function AppShell() {
         </main>
       </div>
       <ProfileDrawer member={member} />
+      <WorkAttendanceControl />
     </div>
   );
 }

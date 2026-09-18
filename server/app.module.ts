@@ -5,6 +5,8 @@ import { AuthModule } from './auth/auth.module';
 import { RegistryModule } from './registry/registry.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ScheduleModule } from './schedule/schedule.module';
+import { TeamModule } from './team/team.module';
+import { WorkSessionsModule } from './work-sessions/work-sessions.module';
 
 @Module({
   imports: [
@@ -14,6 +16,8 @@ import { ScheduleModule } from './schedule/schedule.module';
     RegistryModule,
     ProjectsModule,
     ScheduleModule,
+    WorkSessionsModule,
+    TeamModule,
   ],
 })
 export class AppModule {}

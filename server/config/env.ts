@@ -16,6 +16,7 @@ const ServerEnvironmentSchema = z.object({
   BREVO_SENDER_EMAIL: z.string().email().optional(),
   BREVO_SENDER_NAME: z.string().min(1).optional(),
   INVITATION_DELIVERY_MODE: z.enum(['brevo', 'disabled']).default('brevo'),
+  WORK_SESSION_MAX_HOURS: z.coerce.number().positive().max(168).default(16),
 });
 
 const parsed = ServerEnvironmentSchema.parse(process.env);
@@ -33,4 +34,5 @@ export const serverEnvironment = {
   brevoSenderEmail: parsed.BREVO_SENDER_EMAIL,
   brevoSenderName: parsed.BREVO_SENDER_NAME,
   invitationDeliveryMode: parsed.INVITATION_DELIVERY_MODE,
+  workSessionMaxHours: parsed.WORK_SESSION_MAX_HOURS,
 };

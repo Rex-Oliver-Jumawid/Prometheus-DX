@@ -29,6 +29,7 @@ async function createMember(
       departmentId,
       position: `${label} position`,
       status,
+      deactivatedAt: status === 'DEACTIVATED' ? new Date() : null,
       workspaceRole,
     },
   });

@@ -159,7 +159,7 @@ The root `README.md` should summarize this status, while each phase journal reco
 | 3 | Project Core | Complete | `phase-03-project-core.md` |
 | 4 | Project Workflow Structure | Complete | `phase-04-project-workflow.md` |
 | 5 | Outcome Work, Submission, Review, and Dependencies | In progress - slices 1-4 delivered; final acceptance and regression pending | `phase-05-work-review.md` |
-| 6 | Schedule, Work Sessions, and Team | In progress in parallel - Schedule Slice 1 implemented; verification in progress | `phase-06-schedule-work-sessions-team.md` |
+| 6 | Schedule, Work Sessions, and Team | In progress in parallel - Schedule Slice 1 and integrated Work Sessions plus Team Slice 2 implemented; closure verification pending | `phase-06-schedule-work-sessions-team.md` |
 | 7 | Notifications and Home | Not started | To be created |
 | 8 | VisiWork and Reporting | Not started | To be created |
 | 9 | Collaboration, Realtime, and Attachments | Not started | To be created |

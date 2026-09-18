@@ -308,10 +308,9 @@
 
 .schedule-block-row {
   display: grid;
-  grid-template-columns: minmax(130px, 1fr) minmax(120px, 0.8fr) minmax(
-      120px,
-      0.8fr
-    ) auto;
+  grid-template-columns:
+    minmax(130px, 1fr) minmax(120px, 0.8fr) minmax(120px, 0.8fr)
+    auto;
   gap: 10px;
   align-items: end;
   min-width: 0;
@@ -409,6 +408,128 @@
   font-size: 12px;
 }
 
+.work-week-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 18px;
+}
+
+.work-week-stats article {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #e4dbd4;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.work-week-stats span,
+.work-week-stats strong,
+.work-week-stats small {
+  display: block;
+}
+
+.work-week-stats span {
+  color: #8c7f78;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.work-week-stats strong {
+  margin-top: 6px;
+  font:
+    600 20px Georgia,
+    'Times New Roman',
+    serif;
+}
+
+.work-week-stats small {
+  margin-top: 3px;
+  color: #92867f;
+  font-size: 9px;
+}
+
+.work-history {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #e6dcd5;
+}
+
+.work-history-head,
+.work-history-list article,
+.work-history-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.work-history-head h3 {
+  margin: 5px 0 0;
+  font:
+    600 20px Georgia,
+    'Times New Roman',
+    serif;
+}
+
+.work-history-head > strong {
+  font:
+    600 20px Georgia,
+    'Times New Roman',
+    serif;
+}
+
+.work-history-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 13px;
+}
+
+.work-history-list article {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #e5dcd5;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.work-history-list strong,
+.work-history-list span {
+  display: block;
+}
+
+.work-history-list strong {
+  font-size: 11px;
+}
+
+.work-history-list span {
+  margin-top: 3px;
+  color: #8b7f78;
+  font-size: 9px;
+}
+
+.work-history-duration {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.work-history-duration span {
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.work-history-error {
+  margin-top: 12px;
+  padding: 11px;
+  border-radius: 10px;
+  background: #fff2ed;
+  color: #993c2a;
+  font-size: 10px;
+}
+
 .schedule-state {
   margin: 28px clamp(18px, 3vw, 42px);
   padding: 26px;
@@ -428,6 +549,10 @@
 
   .schedule-block-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .work-week-stats {
+    grid-template-columns: 1fr;
   }
 }
 

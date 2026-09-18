@@ -99,6 +99,50 @@ describe('SchedulePage', () => {
       ) => {
         if (path === '/schedule/team')
           return Promise.resolve(teamResponse(null));
+        if (path === '/work-sessions/history') {
+          return Promise.resolve({
+            timezone: 'Asia/Manila',
+            weekStart: '2026-09-13T16:00:00.000Z',
+            weekEnd: '2026-09-20T16:00:00.000Z',
+            totalDurationSeconds: 18_000,
+            sessions: [
+              {
+                id: '55555555-5555-4555-8555-555555555555',
+                memberId: '11111111-1111-4111-8111-111111111111',
+                timeIn: '2026-09-18T00:00:00.000Z',
+                timeOut: '2026-09-18T05:00:00.000Z',
+                status: 'COMPLETED',
+                durationSeconds: 18_000,
+                createdAt: '2026-09-18T00:00:00.000Z',
+                updatedAt: '2026-09-18T05:00:00.000Z',
+              },
+            ],
+          });
+        }
+        if (path === '/team') {
+          return Promise.resolve({
+            timezone: 'Asia/Manila',
+            asOf: '2026-09-18T05:00:00.000Z',
+            weekStart: '2026-09-13T16:00:00.000Z',
+            weekEnd: '2026-09-20T16:00:00.000Z',
+            summary: {
+              memberCount: 2,
+              workingNowCount: 0,
+              scheduledMinutes: 960,
+              actualWorkedSeconds: 18_000,
+            },
+            members: teamResponse(null).members.map((item, index) => ({
+              id: item.id,
+              fullName: item.fullName,
+              position: item.position,
+              department: item.department,
+              workingNow: false,
+              scheduledMinutes: item.schedule?.targetWeeklyMinutes ?? 0,
+              actualWorkedSeconds: index === 0 ? 18_000 : 0,
+              todaySchedule: [],
+            })),
+          });
+        }
         if (path === '/schedule/me' && options?.method === 'PUT') {
           return Promise.resolve({
             ...savedSchedule,
@@ -112,7 +156,7 @@ describe('SchedulePage', () => {
             })),
           });
         }
-        if (path === '/schedule/me') return Promise.resolve(null);
+        if (path === '/schedule/me') return Promise.resolve({ schedule: null });
         throw new Error(`Unexpected request: ${path}`);
       },
     );
@@ -140,6 +184,8 @@ describe('SchedulePage', () => {
       'aria-selected',
       'true',
     );
+    expect(await screen.findByText('Weekly work history')).toBeInTheDocument();
+    expect(screen.getAllByText('5h').length).toBeGreaterThan(0);
 
     await user.click(
       screen.getByRole('button', { name: 'Configure My Schedule' }),
@@ -185,7 +231,7 @@ describe('SchedulePage', () => {
           return Promise.resolve(teamResponse(null));
         if (path === '/schedule/me' && options?.method === 'PUT')
           return Promise.reject(new Error('Schedule save failed.'));
-        if (path === '/schedule/me') return Promise.resolve(null);
+        if (path === '/schedule/me') return Promise.resolve({ schedule: null });
         throw new Error(`Unexpected request: ${path}`);
       },
     );
@@ -246,7 +292,7 @@ describe('SchedulePage', () => {
           ? Promise.reject(new Error('Team Schedule unavailable.'))
           : Promise.resolve(teamResponse(null));
       }
-      if (path === '/schedule/me') return Promise.resolve(null);
+      if (path === '/schedule/me') return Promise.resolve({ schedule: null });
       throw new Error(`Unexpected request: ${path}`);
     });
     renderPage();

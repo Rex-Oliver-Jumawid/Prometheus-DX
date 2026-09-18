@@ -347,7 +347,7 @@ test('Work area expands and remains responsive on mobile and desktop', async ({
   await expect
     .poll(async () =>
       page
-        .getByRole('complementary')
+        .locator('.app-sidebar')
         .evaluate((element) => element.getBoundingClientRect().right),
     )
     .toBeLessThanOrEqual(0);
@@ -365,7 +365,7 @@ test('Work area expands and remains responsive on mobile and desktop', async ({
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await expect
-    .poll(async () => (await page.getByRole('complementary').boundingBox())?.x)
+    .poll(async () => (await page.locator('.app-sidebar').boundingBox())?.x)
     .toBe(12);
   await page.screenshot({
     path: 'test-results/phase5-work-desktop.png',
