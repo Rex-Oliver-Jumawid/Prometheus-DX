@@ -125,6 +125,43 @@ const sampleProjects: Project[] = [
       progressPercentage: 100,
     },
   },
+  {
+    id: '44444444-4444-4444-8444-444444444444',
+    name: 'Customer Onboarding Launch',
+    description: 'Cross-functional launch project.',
+    status: 'IN_PROGRESS',
+    lead: {
+      id: 'member-2',
+      fullName: 'Lead Two',
+      email: 'two@example.com',
+    },
+    creator: {
+      id: 'member-2',
+      fullName: 'Lead Two',
+      email: 'two@example.com',
+    },
+    departments: [
+      { id: 'dept-5', name: 'Operations', shortLabel: 'Ops' },
+    ],
+    isParticipating: true,
+    currentMemberAccess: 'CAN_VIEW',
+    canChangeStatus: false,
+    doneAt: null,
+    archivedAt: null,
+    createdAt: '2026-09-17T00:00:00.000Z',
+    updatedAt: '2026-09-17T00:00:00.000Z',
+    metrics: {
+      totalOutcomes: 4,
+      openOutcomes: 3,
+      acceptedOutcomes: 1,
+      activeStagesCount: 2,
+      activeStages: [
+        { id: 'stage-3', name: 'Launch Readiness', openOutcomesCount: 1 },
+        { id: 'stage-4', name: 'Sales Enablement', openOutcomesCount: 1 },
+      ],
+      progressPercentage: 0,
+    },
+  },
 ];
 
 vi.mock('../../lib/api', () => ({
@@ -215,13 +252,68 @@ describe('ProjectsPage', () => {
     const myProjectsTab = screen.getByRole('tab', { name: 'My Projects' });
     await user.click(myProjectsTab);
 
-    // Rex is lead/participating in First 10 Customers, but NOT Client Management System
+    // Rex is lead in First 10 Customers, participating in Customer Onboarding Launch, but NOT Client Management System
     expect(screen.getByText('First 10 Customers')).toBeInTheDocument();
+    expect(screen.getByText('Customer Onboarding Launch')).toBeInTheDocument();
     expect(screen.queryByText('Client Management System')).not.toBeInTheDocument();
+    expect(screen.queryByText('Prometheus Brand Site v1')).not.toBeInTheDocument();
+
+    // Verify Leading and Participating group headers and icons
+    expect(screen.getByText('Leading')).toBeInTheDocument();
+    expect(screen.getByText('Participating')).toBeInTheDocument();
+    expect(screen.getByText('★')).toBeInTheDocument();
+    expect(screen.getByText('•')).toBeInTheDocument();
+
+    // Verify relation badges
+    expect(screen.getByText('Lead')).toBeInTheDocument();
+    expect(screen.getByText('Member')).toBeInTheDocument();
 
     const allProjectsTab = screen.getByRole('tab', { name: 'All Projects' });
     await user.click(allProjectsTab);
     expect(screen.getByText('Client Management System')).toBeInTheDocument();
+  });
+
+  it('collapses and expands Leading and Participating groups in My Projects', async () => {
+    const user = userEvent.setup();
+    renderProjectsPage();
+
+    expect(await screen.findByText('First 10 Customers')).toBeInTheDocument();
+    const myProjectsTab = screen.getByRole('tab', { name: 'My Projects' });
+    await user.click(myProjectsTab);
+
+    const leadingToggle = screen.getByRole('button', { name: /Leading/i });
+    expect(leadingToggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('First 10 Customers')).toBeInTheDocument();
+
+    // Collapse Leading
+    fireEvent.click(leadingToggle);
+    expect(leadingToggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText('First 10 Customers')).not.toBeInTheDocument();
+    // Participating remains visible
+    expect(screen.getByText('Customer Onboarding Launch')).toBeInTheDocument();
+
+    // Expand Leading
+    fireEvent.click(leadingToggle);
+    expect(leadingToggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('First 10 Customers')).toBeInTheDocument();
+  });
+
+  it('renders specific empty states for My Projects when search produces zero matches', async () => {
+    const user = userEvent.setup();
+    renderProjectsPage();
+
+    expect(await screen.findByText('First 10 Customers')).toBeInTheDocument();
+    const myProjectsTab = screen.getByRole('tab', { name: 'My Projects' });
+    await user.click(myProjectsTab);
+
+    const searchInput = screen.getByLabelText('Search projects');
+    await user.type(searchInput, 'First 10');
+
+    // Matches First 10 Customers (Leading), Participating should show empty message
+    expect(screen.getByText('First 10 Customers')).toBeInTheDocument();
+    expect(
+      screen.getByText('No matching projects in this section.'),
+    ).toBeInTheDocument();
   });
 
   it('switches to Archives tab and renders completed project rows', async () => {

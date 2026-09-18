@@ -233,6 +233,38 @@
   line-height: 1;
 }
 
+.vw-group-status-icon.status-leading,
+.vw-project-group[data-group="leading"] .vw-group-status-icon {
+  border: 2px solid #cb4d22;
+  background: #fff3ee;
+  color: #cb4d22;
+}
+
+.vw-group-star {
+  display: block;
+  font-family: Inter, sans-serif;
+  font-size: 7px;
+  font-weight: 900;
+  line-height: 1;
+  color: #cb4d22;
+}
+
+.vw-group-status-icon.status-participating,
+.vw-project-group[data-group="participating"] .vw-group-status-icon {
+  border: 2px solid #7f8a99;
+  background: #f7f8fa;
+  color: #667085;
+}
+
+.vw-group-dot {
+  display: block;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 8px;
+  color: #667085;
+}
+
 .vw-project-group-name {
   color: #403b38;
   font-family: Inter, sans-serif;
