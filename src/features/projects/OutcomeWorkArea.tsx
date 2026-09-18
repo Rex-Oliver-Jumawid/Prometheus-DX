@@ -404,7 +404,7 @@ export function OutcomeWorkArea({
       <header className="work-section-head">
         <div className="work-section-title-wrap">
           <h3 id="outcome-work-title">
-            {isJoined ? 'My Work Plan' : 'Member Work Plan'}
+            {isJoined ? 'My Work Plan' : 'Team Work Plan'}
           </h3>
           <p>
             {isJoined
@@ -416,6 +416,7 @@ export function OutcomeWorkArea({
           <button
             type="button"
             className="feature-add-button"
+            aria-label="Add a feature to this outcome"
             disabled={mutation.isPending}
             onClick={() => setComposer(true)}
           >
@@ -429,11 +430,6 @@ export function OutcomeWorkArea({
           tasks now, but task completion and output submission stay locked until
           the dependency is resolved.
         </div>
-      )}
-      {!isJoined && (
-        <p className="workflow-empty-note">
-          Join this outcome to contribute to its work plan.
-        </p>
       )}
       {mutation.isError && (
         <div role="alert" className="projects-save-error">
@@ -455,13 +451,24 @@ export function OutcomeWorkArea({
         />
       )}
       {!work.data.features.length && (
-        <div className="projects-state-card">
-          <strong>No features yet</strong>
-          <p>
+        <div className="outcome-features-empty-state">
+          <div className="outcome-features-empty-icon" aria-hidden="true">◉</div>
+          <strong className="outcome-features-empty-title">No features defined yet</strong>
+          <p className="outcome-features-empty-body">
             {work.data.canPlan
               ? 'Start by adding the main pieces of work needed to achieve this outcome.'
               : 'No features have been defined yet. Join this outcome to contribute to its work plan.'}
           </p>
+          {work.data.canPlan && !composer && (
+            <button
+              type="button"
+              className="feature-add-button outcome-features-empty-action"
+              disabled={mutation.isPending}
+              onClick={() => setComposer(true)}
+            >
+              ＋ Add feature
+            </button>
+          )}
         </div>
       )}
       <div className="feature-list">
@@ -476,7 +483,7 @@ export function OutcomeWorkArea({
           />
         ))}
       </div>
-      {work.data.canPlan && (
+      {work.data.canPlan && work.data.features.length > 0 && (
         <button
           type="button"
           className="add-feature-large"

@@ -1162,6 +1162,14 @@ export function ProjectWorkflow({
           </p>
         )}
 
+        {!selectedOutcome.isJoined && !isLead && (
+          <div className="pw-readonly-note">
+            {selectedOutcome.lifecycleStatus === 'ACCEPTED'
+              ? 'This outcome is accepted and closed. You can inspect its work and submission history, but joining and new contributions are disabled.'
+              : 'You can inspect this outcome. Join it to contribute features, tasks, and output submissions.'}
+          </div>
+        )}
+
         {/* Outcome Header Card */}
         <section
           className="outcome-workspace-header"
@@ -1173,11 +1181,8 @@ export function ProjectWorkflow({
                 <span className="workspace-accent-line" aria-hidden="true" />
                 <p className="kicker">
                   {selectedStage.name.toUpperCase()} /{' '}
-                  {selectedOutcome.departments.length > 0
-                    ? selectedOutcome.departments
-                        .map((d) => d.name.toUpperCase())
-                        .join(', ')
-                    : 'OUTCOME'}
+                  {selectedOutcome.departments[0]?.name.toUpperCase() ||
+                    'OUTCOME'}
                 </p>
               </div>
               <h2 id="outcome-details-title" className="workspace-title">
@@ -1185,7 +1190,11 @@ export function ProjectWorkflow({
               </h2>
               <p className="workspace-desc">
                 {selectedOutcome.description ||
-                  'You are participating in this outcome. Its workspace keeps features, tasks, outputs, and history together.'}
+                  (isLead
+                    ? `You are supervising this outcome. Review the combined work and all team submissions before making the final outcome decision.`
+                    : selectedOutcome.isJoined
+                      ? 'You are participating in this outcome. Its workspace keeps features, tasks, outputs, and history together.'
+                      : 'You can inspect this outcome workspace. Join it if you want to contribute to its features and tasks.')}
               </p>
             </div>
             <div className="pw-workspace-state-actions">
@@ -1199,35 +1208,20 @@ export function ProjectWorkflow({
                     ? 'For Review'
                     : lifecycleLabel(selectedOutcome.lifecycleStatus)}
               </span>
-              {workflow.data.canManageStructure && (
-                <>
-                  <button
-                    type="button"
-                    className="projects-secondary-button"
-                    onClick={() =>
-                      setEditor({
-                        type: 'edit-outcome',
-                        stage: selectedStage,
-                        outcome: selectedOutcome,
-                      })
-                    }
-                  >
-                    Edit Outcome
-                  </button>
-                  <button
-                    type="button"
-                    className="projects-secondary-button pw-outcome-detail-delete-btn"
-                    onClick={() =>
-                      setEditor({
-                        type: 'delete-outcome',
-                        stage: selectedStage,
-                        outcome: selectedOutcome,
-                      })
-                    }
-                  >
-                    Delete Outcome
-                  </button>
-                </>
+              {isLead && (
+                <button
+                  type="button"
+                  className="projects-secondary-button pw-outcome-detail-delete-btn"
+                  onClick={() =>
+                    setEditor({
+                      type: 'delete-outcome',
+                      stage: selectedStage,
+                      outcome: selectedOutcome,
+                    })
+                  }
+                >
+                  Delete Outcome
+                </button>
               )}
             </div>
           </div>

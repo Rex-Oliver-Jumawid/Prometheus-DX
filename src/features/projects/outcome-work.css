@@ -77,6 +77,17 @@
   font: 400 9px ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+.pw-readonly-note {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px solid #ece5e0;
+  border-radius: 9px;
+  background: #faf8f6;
+  color: #8a7e77;
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+
 /* Outcome Workspace Header Card */
 .outcome-workspace-header {
   background: rgba(255, 253, 250, 0.97);
@@ -524,6 +535,46 @@
   color: #cb4d22;
 }
 
+/* Empty Features State */
+.outcome-features-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 28px 20px 24px;
+  margin: 4px 0 6px;
+  background: #faf8f5;
+  border: 1px dashed #d4c8be;
+  border-radius: 14px;
+  gap: 8px;
+}
+
+.outcome-features-empty-icon {
+  font-size: 22px;
+  color: #d4b8ab;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.outcome-features-empty-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #3a3330;
+  display: block;
+}
+
+.outcome-features-empty-body {
+  margin: 0;
+  font-size: 10.5px;
+  color: #8b8079;
+  line-height: 1.5;
+  max-width: 340px;
+}
+
+.outcome-features-empty-action {
+  margin-top: 4px;
+}
+
 /* Outputs & Feedback Section */
 .output-section-title-row {
   display: flex;
@@ -706,13 +757,63 @@
 .output-actions-row {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .draft-saved-indicator {
   font-size: 10.5px;
   color: #4c7656;
+  margin-right: auto;
+}
+
+.pw-draft-btn {
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1px solid #d9cec6;
+  background: #ffffff;
+  color: #554b45;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pw-draft-btn:hover:not(:disabled) {
+  background: #faf7f4;
+  border-color: #c9b8ac;
+}
+
+.pw-submit-btn {
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1px solid #cb4d22;
+  background: #cb4d22;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(203, 77, 34, 0.2);
+  transition: all 0.15s ease;
+}
+
+.pw-submit-btn:hover:not(:disabled) {
+  background: #b5411b;
+  border-color: #b5411b;
+}
+
+.pw-draft-btn:disabled,
+.pw-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.field-error-msg {
+  display: block;
+  font-size: 10.5px;
+  color: #cb4d22;
+  margin-top: 4px;
 }
 
 /* Submission History */

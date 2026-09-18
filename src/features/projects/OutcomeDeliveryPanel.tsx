@@ -42,9 +42,12 @@ function OutputForm({
   const draftVersion = useRef(data.draft?.updatedAt ?? null);
   const inFlight = useRef(false);
   const [saved, setSaved] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
   const perform = (action: 'draft' | 'submissions') =>
     handleSubmit(async (values) => {
       if (inFlight.current) return;
+      setFormError(null);
       const body =
         action === 'draft'
           ? { ...values, updatedAt: draftVersion.current }
@@ -68,14 +71,17 @@ function OutputForm({
         if (action === 'submissions') {
           reset({ content: '', note: '' });
           requestId.current = null;
+          setSaved(false);
+        } else {
+          setSaved(true);
         }
-        setSaved(action === 'draft');
-      } catch {
-        /* Keep values and request ID for a safe retry. */
+      } catch (err) {
+        setFormError((err as Error).message || 'Failed to save delivery output.');
       } finally {
         inFlight.current = false;
       }
     });
+
   return (
     <div className="output-editor">
       <div className="pw-output-current">
@@ -106,13 +112,14 @@ function OutputForm({
               onChange: () => {
                 requestId.current = null;
                 setSaved(false);
+                setFormError(null);
               },
             })}
             disabled={!data.canSubmit || pending}
             aria-invalid={Boolean(errors.content)}
           />
           {errors.content && (
-            <small role="alert">{errors.content.message}</small>
+            <small role="alert" className="field-error-msg">{errors.content.message}</small>
           )}
         </div>
         <div className="field">
@@ -127,14 +134,21 @@ function OutputForm({
               onChange: () => {
                 requestId.current = null;
                 setSaved(false);
+                setFormError(null);
               },
             })}
             disabled={!data.canSubmit || pending}
           />
         </div>
+        {formError && (
+          <p role="alert" className="projects-save-error" style={{ margin: '6px 0 2px' }}>
+            {formError}
+          </p>
+        )}
         <div className="output-actions-row">
+          {saved && <span role="status" className="draft-saved-indicator">Draft saved</span>}
           <button
-            className="projects-secondary-button"
+            className="projects-secondary-button pw-draft-btn"
             type="button"
             disabled={!data.canSubmit || pending}
             onClick={() => void perform('draft')()}
@@ -142,16 +156,15 @@ function OutputForm({
             Save draft
           </button>
           <button
-            className="projects-primary-button"
+            className="projects-primary-button pw-submit-btn"
             type="submit"
             disabled={!data.canSubmit || pending}
           >
             {pending ? 'Saving...' : 'Submit for review'}
           </button>
-          {saved && <span role="status" className="draft-saved-indicator">Draft saved</span>}
         </div>
         {data.draft && (
-          <p className="workflow-empty-note">
+          <p className="workflow-empty-note" style={{ textAlign: 'right', marginTop: '4px' }}>
             Draft saved {new Date(data.draft.updatedAt).toLocaleString()}
           </p>
         )}
@@ -173,7 +186,6 @@ export function OutcomeDeliveryPanel({
 }) {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Submission | null>(null);
-  const [showActivity, setShowActivity] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reopenVersion, setReopenVersion] = useState<string | null>(null);
   const [overrideId, setOverrideId] = useState<string | null>(null);
@@ -240,6 +252,8 @@ export function OutcomeDeliveryPanel({
     );
   const data = delivery.data;
   const accepted = data.lifecycleStatus === 'ACCEPTED';
+  const isContributor = !data.isLead && isJoined;
+
   return (
     <section className="work-section output-work-section" aria-label="Outputs and feedback">
       <header className="work-section-head">
@@ -249,12 +263,16 @@ export function OutcomeDeliveryPanel({
           </div>
           <div>
             <h3 id="outcome-delivery-title">
-              {isJoined ? 'My Outputs & Feedback' : 'Submitted Outputs'}
+              {isContributor ? 'My Outputs & Feedback' : 'Submitted Outputs'}
             </h3>
             <p>
-              {isJoined
+              {isContributor
                 ? 'Every submission stays here with its review result and Project Lead feedback.'
-                : 'Open a submitted version to review the work and record verification.'}
+                : data.isLead
+                  ? (data.submissions.length > 0
+                      ? 'Review all team submissions together, verify the acceptance criteria, then make one decision for the outcome.'
+                      : 'No submitted work is available for Project Lead review yet.')
+                  : 'Every member submission is preserved and reviewed as part of the outcome.'}
             </p>
           </div>
         </div>
@@ -322,7 +340,7 @@ export function OutcomeDeliveryPanel({
           </button>
         </div>
       )}
-      {data.revisions.length > 0 && (
+      {Boolean(data.revisions?.length) && (
         <section
           className="outcome-revision-history"
           aria-label="Revision feedback"
@@ -349,7 +367,7 @@ export function OutcomeDeliveryPanel({
           {mutation.error.message}
         </p>
       )}
-      {isJoined && !accepted && (
+      {isContributor && !accepted && (
         <OutputForm
           key={outcomeId}
           data={data}
@@ -360,8 +378,8 @@ export function OutcomeDeliveryPanel({
       <section className="pw-submission-history">
         <div className="pw-submission-history-head">
           <div>
-            <h4>Submission history</h4>
-            <p>Previous versions and their feedback are never overwritten.</p>
+            <h4>Team submissions</h4>
+            <p>Every member submission is preserved and reviewed as part of the outcome.</p>
           </div>
           <span className="pw-submission-count">
             {data.submissions.length} submission
@@ -369,7 +387,11 @@ export function OutcomeDeliveryPanel({
           </span>
         </div>
         {!data.submissions.length && (
-          <div className="empty-submissions">No submissions yet.</div>
+          <div className="empty-submissions">
+            {data.isLead
+              ? 'No output has been submitted for Project Lead verification yet.'
+              : 'No submissions yet.'}
+          </div>
         )}
         <div className="outcome-submission-list">
           {data.submissions.map((submission, index) => (
@@ -443,7 +465,7 @@ export function OutcomeDeliveryPanel({
           ))}
         </section>
       )}
-      {data.dependencies.length > 0 && (
+      {data.isLead && data.dependencies.length > 0 && (
         <section
           className="outcome-dependency-list"
           aria-label="Dependency decisions"
@@ -476,30 +498,6 @@ export function OutcomeDeliveryPanel({
           ))}
         </section>
       )}
-      <section className="outcome-activity">
-        <div className="workflow-section-heading">
-          <h4>Recent activity</h4>
-          <button
-            className="workflow-icon-button"
-            type="button"
-            onClick={() => setShowActivity(!showActivity)}
-          >
-            {showActivity ? 'Show recent' : 'View all activity'}
-          </button>
-        </div>
-        {!data.activity.length && <p>No activity yet.</p>}
-        <ul>
-          {data.activity.slice(0, showActivity ? undefined : 6).map((item) => (
-            <li key={item.id}>
-              <span>
-                {item.action.toLowerCase().replaceAll('_', ' ')} ·{' '}
-                {item.actor ?? 'System'}
-              </span>
-              <time>{new Date(item.createdAt).toLocaleString()}</time>
-            </li>
-          ))}
-        </ul>
-      </section>
       {selected && (
         <ProjectDialog
           title="Submission record"
