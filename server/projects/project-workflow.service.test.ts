@@ -76,6 +76,9 @@ function stageRecord(overrides: Record<string, unknown> = {}) {
   };
 }
 
+const stageId2 = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+const outcomeId2 = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+
 function createDatabase(
   options: {
     leadMemberId?: string;
@@ -88,6 +91,16 @@ function createDatabase(
     membershipProjectId?: string | null;
     projectAccessLevel?: 'CAN_VIEW' | 'CAN_EDIT';
     projectMemberExists?: boolean;
+    // deletion-specific
+    outcomeMemberCount?: number;
+    outcomeSubmissionCount?: number;
+    outcomeAcceptanceCount?: number;
+    outcomeRevisionCount?: number;
+    outcomeDependentCount?: number;
+    outcomeFeatureCount?: number;
+    stageOutcomes?: Array<{ id: string; counts: { members: number; submissions: number; acceptances: number; revisionRequests: number; dependents: number; features: number } }>;
+    stageSiblings?: Array<{ id: string; position: number }>;
+    outcomeSiblings?: Array<{ id: string; position: number }>;
   } = {},
 ) {
   const projectExists = options.projectExists ?? true;
@@ -114,14 +127,25 @@ function createDatabase(
     stage: {
       findUnique: vi
         .fn()
-        .mockResolvedValue(
-          options.stageProjectId === null
-            ? null
-            : { projectId: options.stageProjectId ?? projectId },
-        ),
+        .mockImplementation(() => {
+          if (options.stageProjectId === null) return Promise.resolve(null);
+          const stageOutcomes = (options.stageOutcomes ?? []).map((o) => ({
+            id: o.id,
+            _count: o.counts,
+          }));
+          return Promise.resolve({
+            projectId: options.stageProjectId ?? projectId,
+            position: 1,
+            outcomes: stageOutcomes,
+          });
+        }),
+      findMany: vi
+        .fn()
+        .mockResolvedValue(options.stageSiblings ?? []),
       findFirst: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockResolvedValue(stageRecord()),
       update: vi.fn().mockResolvedValue(stageRecord({ name: 'Research' })),
+      delete: vi.fn().mockResolvedValue(undefined),
     },
     department: {
       findMany: vi
@@ -133,24 +157,37 @@ function createDatabase(
     outcome: {
       findMany: vi
         .fn()
-        .mockImplementation((query: { where: { id: { in: string[] } } }) =>
-          Promise.resolve(
-            query.where.id.in.map((id) => ({
-              id,
-              stage: { projectId: options.prerequisiteProjectId ?? projectId },
-            })),
-          ),
-        ),
+        .mockImplementation((query: { where?: { id?: { in?: string[] } } }) => {
+          if (query?.where?.id?.in) {
+            return Promise.resolve(
+              query.where.id.in.map((id) => ({
+                id,
+                stage: { projectId: options.prerequisiteProjectId ?? projectId },
+              })),
+            );
+          }
+          return Promise.resolve(options.outcomeSiblings ?? []);
+        }),
       findFirst: vi.fn().mockResolvedValue(null),
-      findUnique: vi.fn().mockResolvedValue(
-        options.outcomeProjectId === null
-          ? null
-          : {
-              ...outcomeRecord(),
-              lifecycleStatus: options.outcomeLifecycleStatus ?? 'OPEN',
-              stage: { projectId: options.outcomeProjectId ?? projectId },
-            },
-      ),
+      findUnique: vi.fn().mockImplementation(() => {
+        // For delete outcome: return full record with _count
+        if (options.outcomeProjectId === null) return Promise.resolve(null);
+        return Promise.resolve({
+          ...outcomeRecord(),
+          lifecycleStatus: options.outcomeLifecycleStatus ?? 'OPEN',
+          stageId,
+          position: 0,
+          stage: { projectId: options.outcomeProjectId ?? projectId },
+          _count: {
+            members: options.outcomeMemberCount ?? 0,
+            submissions: options.outcomeSubmissionCount ?? 0,
+            acceptances: options.outcomeAcceptanceCount ?? 0,
+            revisionRequests: options.outcomeRevisionCount ?? 0,
+            dependents: options.outcomeDependentCount ?? 0,
+            features: options.outcomeFeatureCount ?? 0,
+          },
+        });
+      }),
       findUniqueOrThrow: vi.fn().mockResolvedValue(
         outcomeRecord({
           lifecycleStatus: options.outcomeLifecycleStatus ?? 'OPEN',
@@ -171,6 +208,10 @@ function createDatabase(
       update: vi
         .fn()
         .mockResolvedValue(outcomeRecord({ title: 'Updated outcome' })),
+      delete: vi.fn().mockResolvedValue(undefined),
+      findManyForSiblings: vi
+        .fn()
+        .mockResolvedValue(options.outcomeSiblings ?? []),
     },
     outcomeDependency: {
       deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
@@ -642,5 +683,183 @@ describe('ProjectWorkflowService', () => {
         accessLevel: 'CAN_EDIT',
       }),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  // -----------------------------------------------------------------------
+  // Outcome deletion
+  // -----------------------------------------------------------------------
+
+  it('Lead deletes a safe Outcome with no history', async () => {
+    const database = createDatabase();
+    const service = new ProjectWorkflowService(database);
+
+    await expect(
+      service.deleteOutcome(lead, projectId, outcomeId),
+    ).resolves.toBeUndefined();
+    expect(database.outcome.delete).toHaveBeenCalledWith({
+      where: { id: outcomeId },
+    });
+  });
+
+  it('non-Lead cannot delete an Outcome', async () => {
+    const database = createDatabase();
+    const service = new ProjectWorkflowService(database);
+
+    await expect(
+      service.deleteOutcome(member, projectId, outcomeId),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(database.outcome.delete).not.toHaveBeenCalled();
+  });
+
+  it('rejects Outcome deletion when Outcome belongs to a different Project', async () => {
+    const database = createDatabase({ outcomeProjectId: otherProjectId });
+    const service = new ProjectWorkflowService(database);
+
+    await expect(
+      service.deleteOutcome(lead, projectId, outcomeId),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(database.outcome.delete).not.toHaveBeenCalled();
+  });
+
+  it('rejects Outcome deletion when Outcome has permanent Membership', async () => {
+    const database = createDatabase({ outcomeMemberCount: 1 });
+    const service = new ProjectWorkflowService(database);
+
+    await expect(
+      service.deleteOutcome(lead, projectId, outcomeId),
+    ).rejects.toThrow('permanent Membership records');
+    expect(database.outcome.delete).not.toHaveBeenCalled();
+  });
+
+  it('rejects Outcome deletion when Outcome has submission history', async () => {
+    const database = createDatabase({ outcomeSubmissionCount: 2 });
+    const service = new ProjectWorkflowService(database);
+
+    await expect(
+      service.deleteOutcome(lead, projectId, outcomeId),
+    ).rejects.toThrow('submission history');
+    expect(database.outcome.delete).not.toHaveBeenCalled();
+  });
+
+  it('rejects Outcome deletion when Outcome has acceptance history', async () => {
+    const database = createDatabase({ outcomeAcceptanceCount: 1 });
+    const service = new ProjectWorkflowService(database);
+
+    await expect(
+      service.deleteOutcome(lead, projectId, outcomeId),
+    ).rejects.toThrow('acceptance history');
+    expect(database.outcome.delete).not.toHaveBeenCalled();
+  });
+
+  it('rejects Outcome deletion when another Outcome depends on it', async () => {
+    const database = createDatabase({ outcomeDependentCount: 1 });
+    const service = new ProjectWorkflowService(database);
+
+    await expect(
+      service.deleteOutcome(lead, projectId, outcomeId),
+    ).rejects.toThrow('prerequisite for another Outcome');
+    expect(database.outcome.delete).not.toHaveBeenCalled();
+  });
+
+  it('rejects Outcome deletion when Outcome has work records (Features)', async () => {
+    const database = createDatabase({ outcomeFeatureCount: 1 });
+    const service = new ProjectWorkflowService(database);
+
+    await expect(
+      service.deleteOutcome(lead, projectId, outcomeId),
+    ).rejects.toThrow('work records');
+    expect(database.outcome.delete).not.toHaveBeenCalled();
+  });
+
+  it('compacts Outcome sibling positions after deletion', async () => {
+    const database = createDatabase({
+      outcomeSiblings: [
+        { id: outcomeId2, position: 1 },
+      ],
+    });
+    // Make outcome.findMany return siblings for position compaction
+    database.outcome.findMany = vi
+      .fn()
+      .mockImplementation((query: { where?: { stageId?: string; position?: { gt?: number } } }) => {
+        if (query.where?.stageId && query.where?.position?.gt !== undefined) {
+          return Promise.resolve([{ id: outcomeId2, position: 1 }]);
+        }
+        return Promise.resolve([]);
+      });
+    const service = new ProjectWorkflowService(database);
+
+    await service.deleteOutcome(lead, projectId, outcomeId);
+
+    // Expects at least two update calls for the two-pass compaction
+    expect(database.outcome.update).toHaveBeenCalledTimes(2);
+  });
+
+  // -----------------------------------------------------------------------
+  // Stage deletion
+  // -----------------------------------------------------------------------
+
+  it('Lead deletes a safe empty Stage', async () => {
+    const database = createDatabase({ stageOutcomes: [] });
+    const service = new ProjectWorkflowService(database);
+
+    await expect(
+      service.deleteStage(lead, projectId, stageId),
+    ).resolves.toBeUndefined();
+    expect(database.stage.delete).toHaveBeenCalledWith({
+      where: { id: stageId },
+    });
+  });
+
+  it('non-Lead cannot delete a Stage', async () => {
+    const database = createDatabase({ stageOutcomes: [] });
+    const service = new ProjectWorkflowService(database);
+
+    await expect(
+      service.deleteStage(member, projectId, stageId),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(database.stage.delete).not.toHaveBeenCalled();
+  });
+
+  it('rejects Stage deletion when Stage belongs to a different Project', async () => {
+    const database = createDatabase({ stageProjectId: otherProjectId, stageOutcomes: [] });
+    const service = new ProjectWorkflowService(database);
+
+    await expect(
+      service.deleteStage(lead, projectId, stageId),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(database.stage.delete).not.toHaveBeenCalled();
+  });
+
+  it('rejects Stage deletion when a child Outcome has protected history - no partial delete', async () => {
+    const database = createDatabase({
+      stageOutcomes: [
+        {
+          id: outcomeId,
+          counts: { members: 2, submissions: 0, acceptances: 0, revisionRequests: 0, dependents: 0, features: 0 },
+        },
+      ],
+    });
+    const service = new ProjectWorkflowService(database);
+
+    await expect(
+      service.deleteStage(lead, projectId, stageId),
+    ).rejects.toThrow('permanent Membership records');
+    expect(database.stage.delete).not.toHaveBeenCalled();
+    expect(database.outcome.delete).not.toHaveBeenCalled();
+  });
+
+  it('compacts Stage sibling positions after deletion', async () => {
+    const database = createDatabase({
+      stageOutcomes: [],
+      stageSiblings: [{ id: stageId2, position: 2 }],
+    });
+    database.stage.findMany = vi
+      .fn()
+      .mockResolvedValue([{ id: stageId2, position: 2 }]);
+    const service = new ProjectWorkflowService(database);
+
+    await service.deleteStage(lead, projectId, stageId);
+
+    expect(database.stage.update).toHaveBeenCalledTimes(2);
   });
 });

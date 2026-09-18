@@ -233,6 +233,38 @@
   line-height: 1;
 }
 
+.vw-group-status-icon.status-leading,
+.vw-project-group[data-group="leading"] .vw-group-status-icon {
+  border: 2px solid #cb4d22;
+  background: #fff3ee;
+  color: #cb4d22;
+}
+
+.vw-group-star {
+  display: block;
+  font-family: Inter, sans-serif;
+  font-size: 7px;
+  font-weight: 900;
+  line-height: 1;
+  color: #cb4d22;
+}
+
+.vw-group-status-icon.status-participating,
+.vw-project-group[data-group="participating"] .vw-group-status-icon {
+  border: 2px solid #7f8a99;
+  background: #f7f8fa;
+  color: #667085;
+}
+
+.vw-group-dot {
+  display: block;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 8px;
+  color: #667085;
+}
+
 .vw-project-group-name {
   color: #403b38;
   font-family: Inter, sans-serif;
@@ -966,15 +998,43 @@
 
 .pw-top-bar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
+  gap: 12px;
   width: 100%;
+  flex-wrap: wrap;
+}
+
+/* Back navigation link — lightweight, no button appearance */
+.pw-back-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  color: #7b7068;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 5px 0;
+  transition: color 0.15s ease;
+  white-space: nowrap;
+}
+
+.pw-back-nav:hover {
+  color: #24201d;
+}
+
+.pw-back-nav:focus-visible {
+  outline: 2px solid rgba(203, 77, 34, 0.45);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 .pw-breadcrumb-pill {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 6px 14px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.9);
@@ -982,12 +1042,19 @@
   box-shadow: 0 2px 8px rgba(47, 35, 29, 0.04);
   font-family: Inter, system-ui, -apple-system, sans-serif;
   font-size: 11px;
+  /* Responsive: pill never gets so wide it crowds out the back link */
+  max-width: min(640px, 55vw);
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .pw-breadcrumb-link {
   color: #7b7068;
   text-decoration: none;
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: color 0.15s ease;
 }
 
@@ -995,17 +1062,33 @@
   color: #24201d;
 }
 
+/* Intermediate non-current breadcrumb segment (Stage Name on outcome route) */
+.pw-breadcrumb-seg {
+  color: #7b7068;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex-shrink: 1;
+  max-width: 180px;
+}
+
 .pw-breadcrumb-sep {
   color: #b5aba3;
+  flex-shrink: 0;
 }
 
 .pw-breadcrumb-current {
   color: #201a16;
   font-weight: 700;
-  max-width: 280px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  flex-shrink: 1;
+  /* Removed the hard 280px max-width — the pill's own max-width and
+     overflow:hidden provides graceful constraint at any viewport width. */
 }
 
 .pw-project-meta {
@@ -1312,7 +1395,7 @@
 .board {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 315px;
+  grid-auto-columns: 340px;
   gap: 14px;
   width: max-content;
   min-width: 100%;
@@ -1360,14 +1443,21 @@
   margin: 0;
   color: #24201d;
   font-family: Inter, system-ui, -apple-system, sans-serif;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 750;
-  line-height: 1.25;
+  line-height: 1.3;
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
+  word-break: normal;
+  white-space: normal;
+}
+
+.stage-title-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .stage-desc {
@@ -1390,20 +1480,36 @@
   white-space: nowrap;
 }
 
-.pw-stage-edit {
+.pw-stage-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.pw-stage-edit,
+.pw-stage-delete {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   background: transparent;
-  color: #9c8e85;
+  color: #98a2b3;
   cursor: pointer;
-  padding: 2px 4px;
-  font-size: 12px;
-  border-radius: 4px;
+  border-radius: 7px;
   transition: all 0.15s ease;
 }
 
 .pw-stage-edit:hover {
   color: #24201d;
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.pw-stage-delete:hover {
+  color: #c2410c;
+  background: rgba(194, 65, 12, 0.08);
 }
 
 .stage-cards {
@@ -1507,20 +1613,36 @@
   background: #f5f0ec;
 }
 
-.pw-outcome-edit-btn {
+.pw-outcome-edit-btn,
+.pw-outcome-delete-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   background: transparent;
-  color: #a89a91;
+  color: #98a2b3;
   cursor: pointer;
-  padding: 1px 3px;
-  font-size: 11px;
-  border-radius: 3px;
+  border-radius: 6px;
   transition: all 0.15s ease;
 }
 
 .pw-outcome-edit-btn:hover {
   color: #24201d;
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.pw-outcome-delete-btn:hover {
+  color: #c2410c;
+  background: rgba(194, 65, 12, 0.08);
+}
+
+.pw-dep-mini-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 
 .outcome-desc {
@@ -3415,6 +3537,131 @@
   color: #9c9189;
   font-style: italic;
   margin: 2px 0 0;
+}
+
+/* Delete Confirmation Dialog */
+.pw-delete-dialog {
+  width: min(440px, calc(100vw - 32px));
+  background: rgba(255, 252, 249, 0.98);
+  backdrop-filter: blur(24px);
+  border: 1px solid #e7dfda;
+  border-radius: 12px;
+  box-shadow: 0 24px 64px rgba(44, 38, 34, 0.22);
+  overflow: hidden;
+}
+
+.pw-delete-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #efe8e3;
+}
+
+.pw-delete-icon-wrap {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #fff3ee;
+  color: #c2410c;
+  border: 1px solid rgba(194, 65, 12, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.pw-delete-dialog-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pw-delete-confirm-message {
+  font-size: 13px;
+  color: #4a4039;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.pw-delete-item-name {
+  color: #1e1916;
+  font-weight: 600;
+}
+
+.pw-delete-warning-box {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: #fffbf0;
+  border: 1px solid #f3e5b5;
+  border-radius: 8px;
+  font-size: 11px;
+  color: #7c5e10;
+  line-height: 1.45;
+}
+
+.pw-delete-warning-icon {
+  font-size: 14px;
+  line-height: 1;
+  color: #b45309;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.pw-delete-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px 18px;
+  background: #faf6f3;
+  border-top: 1px solid #efe8e3;
+}
+
+.pw-delete-confirm-btn {
+  border: 1px solid #b91c1c;
+  background: #dc2626;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 7px 16px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pw-delete-confirm-btn:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #991b1b;
+}
+
+.pw-delete-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pw-outcome-detail-delete-btn,
+.pw-delete-outcome-button {
+  padding: 4px 10px;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 7px;
+  border: 1px solid #fecaca;
+  background: #ffffff;
+  color: #b42318;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.3;
+}
+
+.pw-outcome-detail-delete-btn:hover:not(:disabled),
+.pw-delete-outcome-button:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #991b1b;
 }
 
 @media (max-width: 720px) {

@@ -6,7 +6,6 @@ import {
   ProjectSchema,
   type CreateProjectRequest,
   type Project,
-  type ProjectStatus,
 } from '../../../shared/contracts/project';
 import { useAuth } from '../auth/auth-context';
 import { apiFetch } from '../../lib/api';
@@ -33,27 +32,46 @@ function statusLabel(status: string) {
     .join(' ');
 }
 
-interface StatusGroupConfig {
-  key: ProjectStatus;
+interface GroupConfig {
+  key: string;
   label: string;
+  iconType: 'planning' | 'in_progress' | 'done' | 'leading' | 'participating';
   emptyText: string;
 }
 
-const STATUS_GROUPS: StatusGroupConfig[] = [
+const STATUS_GROUPS: GroupConfig[] = [
   {
     key: 'PLANNING',
     label: 'Planning',
+    iconType: 'planning',
     emptyText: 'No planning projects yet.',
   },
   {
     key: 'IN_PROGRESS',
     label: 'In Progress',
+    iconType: 'in_progress',
     emptyText: 'No in progress projects yet.',
   },
   {
     key: 'DONE',
     label: 'Done',
+    iconType: 'done',
     emptyText: 'No done projects yet.',
+  },
+];
+
+const MY_PROJECTS_GROUPS: GroupConfig[] = [
+  {
+    key: 'leading',
+    label: 'Leading',
+    iconType: 'leading',
+    emptyText: 'You are not leading any matching projects.',
+  },
+  {
+    key: 'participating',
+    label: 'Participating',
+    iconType: 'participating',
+    emptyText: 'You are not participating in any matching projects.',
   },
 ];
 
@@ -267,8 +285,10 @@ export function ProjectsPage() {
     const data = projects.data ?? [];
     const scoped = data.filter((project) => {
       if (scope === 'archives') return project.status === 'DONE';
-      if (scope === 'mine')
+      if (scope === 'mine') {
+        if (project.status === 'DONE') return false;
         return project.lead.id === member?.id || project.isParticipating;
+      }
       return true;
     });
 
@@ -445,15 +465,24 @@ export function ProjectsPage() {
         </section>
       ) : (
         <div className="vw-projects-board">
-          {STATUS_GROUPS.map((group) => {
-            const groupProjects = filteredProjects.filter(
-              (p) => p.status === group.key,
-            );
+          {(scope === 'mine' ? MY_PROJECTS_GROUPS : STATUS_GROUPS).map((group) => {
+            const groupProjects = filteredProjects.filter((p) => {
+              if (scope === 'mine') {
+                if (group.key === 'leading') {
+                  return p.lead.id === member?.id;
+                }
+                if (group.key === 'participating') {
+                  return p.lead.id !== member?.id && p.isParticipating;
+                }
+              }
+              return p.status === group.key;
+            });
             const isCollapsed = Boolean(collapsedGroups[group.key]);
 
             return (
               <section
                 key={group.key}
+                data-group={group.key}
                 className="vw-project-group"
                 aria-labelledby={`group-title-${group.key}`}
               >
@@ -472,11 +501,17 @@ export function ProjectsPage() {
                       ▶
                     </span>
                     <span
-                      className={`vw-group-status-icon status-${group.key.toLowerCase()}`}
+                      className={`vw-group-status-icon status-${group.iconType}`}
                       aria-hidden="true"
                     >
-                      {group.key === 'DONE' && (
+                      {group.iconType === 'done' && (
                         <span className="vw-group-check">✓</span>
+                      )}
+                      {group.iconType === 'leading' && (
+                        <span className="vw-group-star">★</span>
+                      )}
+                      {group.iconType === 'participating' && (
+                        <span className="vw-group-dot">•</span>
                       )}
                     </span>
                     <span

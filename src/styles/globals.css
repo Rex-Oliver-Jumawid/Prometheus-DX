@@ -34,6 +34,9 @@
 html {
   min-width: 320px;
   background: rgb(var(--page-background));
+  /* Prevent the document from scrolling on desktop; the content panel
+     scrolls internally. Mobile restores overflow via the media query below. */
+  overflow: hidden;
 }
 
 body {
@@ -41,6 +44,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background: rgb(var(--page-background));
+  overflow: hidden;
 }
 
 button,
@@ -512,11 +516,13 @@ button:disabled {
 
 .workspace-shell {
   --sidebar-width: 260px;
-  min-height: 100dvh;
+  /* Use a real bounded height so the grid never grows past the viewport. */
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
-  background: #eee7e1 url('/backgrounds/editorial-gradient.webp') center/cover
-    fixed;
+  background: #eee7e1 url('/backgrounds/editorial-gradient.webp') center/cover;
   color: #352e2a;
 }
 .app-sidebar {
@@ -753,7 +759,10 @@ button:disabled {
 .workspace-main {
   position: relative;
   min-width: 0;
-  min-height: 100dvh;
+  /* Match the shell height so this column never forces the grid to grow. */
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
 }
 .top-navigation {
   position: absolute;
@@ -812,9 +821,15 @@ button:disabled {
 .workspace-content {
   position: relative;
   isolation: isolate;
-  min-height: calc(100dvh - 36px);
+  /* Outer glass frame: fixed bounded height, clips to border-radius.
+     Presentation lives here; scrolling lives in the inner container.
+     Keeping overflow:hidden on this element prevents the backdrop-filter
+     compositing boundary from producing a seam along the scroll clip edge. */
+  height: calc(100dvh - 36px);
+  max-height: calc(100dvh - 36px);
+  min-height: 0;
   margin: 18px 18px 18px 10px;
-  padding: clamp(28px, 3.4vw, 42px);
+  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.76);
   border-radius: 36px;
   background:
@@ -834,8 +849,42 @@ button:disabled {
     inset 0 -1px rgba(110, 80, 65, 0.035),
     0 24px 70px rgba(73, 45, 34, 0.085),
     0 2px 8px rgba(73, 45, 34, 0.03);
-  backdrop-filter: blur(34px) saturate(1.22);
-  -webkit-backdrop-filter: blur(34px) saturate(1.22);
+  /* DIAGNOSTIC: backdrop-filter disabled to confirm root cause of vertical band artifact.
+     The background gradients, border, and shadows are sufficient to preserve the glass
+     appearance without a compositor seam. Do NOT re-enable without browser verification. */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+/* Inner transparent scroll container.
+   Owns padding, overflow, and scrollbar so the composited glass layer
+   above is never the scroll viewport. */
+.workspace-content-scroll {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(86, 72, 64, 0.26) transparent;
+}
+.workspace-content-inner {
+  min-width: 0;
+  min-height: 100%;
+  padding: clamp(28px, 3.4vw, 42px);
+}
+.workspace-content-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.workspace-content-scroll::-webkit-scrollbar-thumb {
+  background: rgba(86, 72, 64, 0.22);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+.workspace-content-scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
 .placeholder-page {
   max-width: 1040px;
@@ -1126,8 +1175,22 @@ button:disabled {
   }
 }
 @media (max-width: 700px) {
+  /* On mobile the sidebar overlays, so the shell becomes a normal block.
+     Restore document-level scrolling (the browser page scrolls on mobile). */
+  html,
+  body {
+    overflow: auto;
+  }
   .workspace-shell {
     display: block;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+  .workspace-main {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
   }
   .app-sidebar {
     position: fixed;
@@ -1168,10 +1231,25 @@ button:disabled {
     display: none;
   }
   .workspace-content {
+    /* On mobile, the outer frame returns to natural document flow.
+       height/overflow reset so the page scrolls as a normal document. */
+    height: auto;
+    max-height: none;
     min-height: calc(100dvh - 70px);
+    overflow: visible;
     margin: 8px;
-    padding: 24px 18px;
     border-radius: 24px;
+  }
+  .workspace-content-scroll {
+    /* Inner scroll container also returns to natural flow on mobile. */
+    height: auto;
+    overflow-y: visible;
+    overflow-x: hidden;
+    overscroll-behavior: auto;
+  }
+  .workspace-content-inner {
+    min-height: 0;
+    padding: 24px 18px;
   }
   .placeholder-page h1 {
     margin-bottom: 25px;

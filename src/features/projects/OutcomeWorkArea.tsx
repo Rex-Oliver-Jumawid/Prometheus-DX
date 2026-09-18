@@ -5,6 +5,7 @@ import {
   OutcomeWorkSchema,
   WorkItemInputSchema,
   type Feature,
+  type OutcomeWork,
   type Task,
   type WorkItemInput,
 } from '../../../shared/contracts/outcome-work';
@@ -120,6 +121,110 @@ function WorkItemForm({
   );
 }
 
+function FeatureComposer({
+  pending,
+  onSave,
+  onCancel,
+  initialTitle = '',
+  initialDescription = '',
+  submitLabel = 'Add feature',
+  autoFocus = true,
+}: {
+  pending: boolean;
+  onSave: (input: { title: string; description?: string }) => Promise<void>;
+  onCancel: () => void;
+  initialTitle?: string;
+  initialDescription?: string;
+  submitLabel?: string;
+  autoFocus?: boolean;
+}) {
+  const [title, setTitle] = useState(initialTitle);
+  const [description, setDescription] = useState(initialDescription);
+  const [error, setError] = useState<string | null>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (autoFocus) {
+      titleInputRef.current?.focus();
+    }
+  }, [autoFocus]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) {
+      setError('Feature title is required');
+      titleInputRef.current?.focus();
+      return;
+    }
+    setError(null);
+    try {
+      await onSave({
+        title: trimmedTitle,
+        description: description.trim() || undefined,
+      });
+      if (!initialTitle) {
+        setTitle('');
+        setDescription('');
+      }
+    } catch {
+      /* Shared mutation error preserves the inputs. */
+    }
+  };
+
+  return (
+    <form className="pw-feature-composer" onSubmit={handleSubmit} noValidate>
+      <div className="pw-feature-composer-grid">
+        <input
+          ref={titleInputRef}
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            if (error) setError(null);
+          }}
+          disabled={pending}
+          placeholder="Feature name"
+          aria-label="Feature title"
+          aria-invalid={Boolean(error)}
+        />
+        <input
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          disabled={pending}
+          placeholder="Short description (optional)"
+          aria-label="Feature description"
+        />
+      </div>
+      {error && (
+        <small role="alert" className="field-error-msg" style={{ marginTop: 4 }}>
+          {error}
+        </small>
+      )}
+      <div className="pw-feature-composer-actions">
+        <button
+          type="button"
+          className="projects-secondary-button pw-composer-cancel-btn"
+          disabled={pending}
+          onClick={onCancel}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="projects-primary-button pw-composer-submit-btn"
+          disabled={pending || !title.trim()}
+        >
+          {pending
+            ? submitLabel === 'Save feature'
+              ? 'Saving...'
+              : 'Adding...'
+            : submitLabel}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function FeatureCard({
   feature,
   canPlan,
@@ -135,11 +240,16 @@ function FeatureCard({
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
-  const [pendingTask, setPendingTask] = useState<{
-    id: string;
-    done: boolean;
-  } | null>(null);
+  const [savingTaskIds, setSavingTaskIds] = useState<Set<string>>(new Set());
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [taskSubmitting, setTaskSubmitting] = useState(false);
+  const [taskError, setTaskError] = useState<string | null>(null);
+
   const done = feature.tasks.filter((task) => task.status === 'DONE').length;
+  const donePercent = feature.tasks.length
+    ? Math.round((done / feature.tasks.length) * 100)
+    : 0;
+
   return (
     <article
       className="outcome-feature"
@@ -148,20 +258,59 @@ function FeatureCard({
       <header className="outcome-feature-header">
         <button
           type="button"
-          className="workflow-icon-button"
+          className="feature-toggle-btn"
           aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${feature.title}`}
           aria-expanded={!collapsed}
           onClick={() => setCollapsed(!collapsed)}
         >
-          {collapsed ? '›' : '⌄'}
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 10 10"
+            fill="none"
+            style={{
+              transform: collapsed ? 'rotate(0deg)' : 'rotate(90deg)',
+              transition: 'transform 0.15s ease',
+              display: 'block',
+            }}
+            aria-hidden="true"
+          >
+            <path
+              d="M3 1.5L6.5 5L3 8.5"
+              stroke="#c44d2d"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
+        <div className="feature-icon-badge" aria-hidden="true">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 16 16"
+            fill="none"
+            style={{ display: 'block' }}
+          >
+            <circle cx="8" cy="8" r="6" stroke="#ea580c" strokeWidth="1.8" />
+            <circle cx="8" cy="8" r="3.4" fill="#ea580c" />
+          </svg>
+        </div>
         <div className="outcome-feature-title">
           <h4>{feature.title}</h4>
-          <p>{feature.description}</p>
+          {feature.description && <p>{feature.description}</p>}
         </div>
-        <span className="outcome-task-count">
-          {done}/{feature.tasks.length} tasks
-        </span>
+        <div className="feature-progress-box">
+          <span className="outcome-task-count">
+            {done}/{feature.tasks.length} tasks
+          </span>
+          <div className="feature-mini-track" aria-hidden="true">
+            <span
+              className="feature-mini-fill"
+              style={{ width: `${donePercent}%` }}
+            />
+          </div>
+        </div>
         {canPlan && (
           <div className="outcome-work-actions">
             <button
@@ -169,11 +318,11 @@ function FeatureCard({
               className="workflow-icon-button"
               onClick={() => {
                 setCollapsed(false);
-                setEditing(feature.id);
+                setEditing(editing === feature.id ? null : feature.id);
               }}
               disabled={pending}
             >
-              Edit feature
+              {editing === feature.id ? 'Close' : 'Edit feature'}
             </button>
             <button
               type="button"
@@ -200,23 +349,23 @@ function FeatureCard({
       {!collapsed && (
         <div className="outcome-feature-body">
           {editing === feature.id && canPlan && (
-            <WorkItemForm
-              label="Feature"
-              item={feature}
-              pending={pending}
-              onCancel={() => setEditing(null)}
-              onSave={async (input, updatedAt) => {
-                await change({
-                  path: `/features/${feature.id}`,
-                  method: 'PATCH',
-                  body: { ...input, updatedAt },
-                });
-                setEditing(null);
-              }}
-            />
-          )}
-          {!feature.tasks.length && (
-            <p className="workflow-empty-note">No tasks yet.</p>
+            <div className="pw-feature-edit-wrap">
+              <FeatureComposer
+                initialTitle={feature.title}
+                initialDescription={feature.description ?? ''}
+                submitLabel="Save feature"
+                pending={pending}
+                onCancel={() => setEditing(null)}
+                onSave={async (input) => {
+                  await change({
+                    path: `/features/${feature.id}`,
+                    method: 'PATCH',
+                    body: { ...input, updatedAt: feature.updatedAt },
+                  });
+                  setEditing(null);
+                }}
+              />
+            </div>
           )}
           {feature.tasks.map((task) => (
             <div key={task.id} className="outcome-task">
@@ -224,15 +373,12 @@ function FeatureCard({
                 <input
                   type="checkbox"
                   aria-label={`Complete ${task.title}`}
-                  checked={
-                    pendingTask?.id === task.id
-                      ? pendingTask.done
-                      : task.status === 'DONE'
-                  }
-                  disabled={!canExecute || pending}
+                  checked={task.status === 'DONE'}
+                  disabled={!canExecute}
                   onChange={(event) => {
+                    if (savingTaskIds.has(task.id)) return;
                     const done = event.target.checked;
-                    setPendingTask({ id: task.id, done });
+                    setSavingTaskIds((prev) => new Set(prev).add(task.id));
                     void change({
                       path: `/tasks/${task.id}/state`,
                       method: 'PATCH',
@@ -242,7 +388,13 @@ function FeatureCard({
                       },
                     })
                       .catch(() => {})
-                      .finally(() => setPendingTask(null));
+                      .finally(() => {
+                        setSavingTaskIds((prev) => {
+                          const next = new Set(prev);
+                          next.delete(task.id);
+                          return next;
+                        });
+                      });
                   }}
                 />
                 <div
@@ -302,17 +454,57 @@ function FeatureCard({
             </div>
           ))}
           {canPlan && (
-            <WorkItemForm
-              label="Task"
-              pending={pending}
-              onSave={(input) =>
-                change({
-                  path: `/features/${feature.id}/tasks`,
-                  method: 'POST',
-                  body: input,
-                })
-              }
-            />
+            <form
+              className="pw-task-actions"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const trimmed = newTaskTitle.trim();
+                if (!trimmed || taskSubmitting) return;
+                setTaskSubmitting(true);
+                setTaskError(null);
+                try {
+                  await change({
+                    path: `/features/${feature.id}/tasks`,
+                    method: 'POST',
+                    body: { title: trimmed },
+                  });
+                  setNewTaskTitle('');
+                } catch (err) {
+                  setTaskError((err as Error).message || 'Failed to add task');
+                } finally {
+                  setTaskSubmitting(false);
+                }
+              }}
+            >
+              <input
+                value={newTaskTitle}
+                onChange={(e) => {
+                  setNewTaskTitle(e.target.value);
+                  if (taskError) setTaskError(null);
+                }}
+                disabled={pending || taskSubmitting}
+                placeholder={
+                  canExecute ? 'Add a task...' : 'Add a task to plan ahead...'
+                }
+                aria-label={`Add a task to ${feature.title}`}
+              />
+              <button
+                type="submit"
+                className="projects-secondary-button pw-task-add-button"
+                disabled={pending || taskSubmitting || !newTaskTitle.trim()}
+              >
+                {taskSubmitting ? 'Adding...' : 'Add task'}
+              </button>
+            </form>
+          )}
+          {taskError && (
+            <small
+              role="alert"
+              className="field-error-msg"
+              style={{ margin: '4px 0 0 2px' }}
+            >
+              {taskError}
+            </small>
           )}
         </div>
       )}
@@ -349,6 +541,59 @@ export function OutcomeWorkArea({
         method: input.method,
         body: input.body,
       }),
+    onMutate: async (input: Change) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previousWork = queryClient.getQueryData<OutcomeWork>(queryKey);
+
+      if (
+        previousWork &&
+        input.path.startsWith('/tasks/') &&
+        input.path.endsWith('/state')
+      ) {
+        const taskId = input.path.replace('/tasks/', '').replace('/state', '');
+        const newStatus = (input.body as { status: 'TODO' | 'DONE' }).status;
+
+        const updatedFeatures = previousWork.features.map((feature) => ({
+          ...feature,
+          tasks: feature.tasks.map((t) =>
+            t.id === taskId
+              ? {
+                  ...t,
+                  status: newStatus,
+                  completedAt:
+                    newStatus === 'DONE' ? new Date().toISOString() : null,
+                }
+              : t,
+          ),
+        }));
+
+        const totalTasks = updatedFeatures.reduce(
+          (sum, f) => sum + f.tasks.length,
+          0,
+        );
+        const completedTasks = updatedFeatures.reduce(
+          (sum, f) => sum + f.tasks.filter((t) => t.status === 'DONE').length,
+          0,
+        );
+        const progress =
+          totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : null;
+
+        queryClient.setQueryData<OutcomeWork>(queryKey, {
+          ...previousWork,
+          features: updatedFeatures,
+          totalTasks,
+          completedTasks,
+          progress,
+        });
+      }
+
+      return { previousWork };
+    },
+    onError: (_err, _input, context) => {
+      if (context?.previousWork) {
+        queryClient.setQueryData(queryKey, context.previousWork);
+      }
+    },
     onSuccess: (data) => {
       queryClient.setQueryData(queryKey, data);
       void queryClient.invalidateQueries({
@@ -357,20 +602,57 @@ export function OutcomeWorkArea({
     },
   });
   const change = async (input: Change) => {
-    if (inFlight.current)
-      throw new Error('A work change is already being saved.');
-    inFlight.current = true;
+    const isTaskState =
+      input.path.startsWith('/tasks/') && input.path.endsWith('/state');
+    if (!isTaskState) {
+      if (inFlight.current)
+        throw new Error('A work change is already being saved.');
+      inFlight.current = true;
+    }
     try {
       await mutation.mutateAsync(input);
     } finally {
-      inFlight.current = false;
+      if (!isTaskState) {
+        inFlight.current = false;
+      }
     }
   };
   if (work.isPending)
     return (
-      <section className="outcome-work-area" aria-label="Loading Outcome work">
-        <div className="projects-skeleton" />
-        <p>Loading Features and Tasks...</p>
+      <section
+        className="work-section work-plan-section outcome-skeleton-card"
+        aria-label="Loading Outcome work"
+        aria-busy="true"
+      >
+        <div className="work-section-head pw-sk-header-row">
+          <div className="work-section-title-wrap pw-sk-title-group">
+            <div className="pw-sk-line pw-sk-title" />
+            <div className="pw-sk-line pw-sk-desc" />
+          </div>
+          <div className="pw-sk-shimmer pw-sk-btn" />
+        </div>
+        <div className="pw-sk-feature-card">
+          <div className="pw-sk-feature-top">
+            <div className="pw-sk-shimmer pw-sk-checkbox" />
+            <div className="pw-sk-line" style={{ width: 140, height: 12 }} />
+            <div
+              className="pw-sk-shimmer pw-sk-line"
+              style={{ width: 48, height: 16, borderRadius: 999, marginLeft: 'auto' }}
+            />
+          </div>
+          <div className="pw-sk-task-list">
+            <div className="pw-sk-task-item">
+              <div className="pw-sk-shimmer pw-sk-checkbox" />
+              <div className="pw-sk-line" style={{ width: 180, height: 10 }} />
+              <div className="pw-sk-shimmer pw-sk-avatar" />
+            </div>
+            <div className="pw-sk-task-item">
+              <div className="pw-sk-shimmer pw-sk-checkbox" />
+              <div className="pw-sk-line" style={{ width: 120, height: 10 }} />
+              <div className="pw-sk-shimmer pw-sk-avatar" />
+            </div>
+          </div>
+        </div>
       </section>
     );
   if (work.isError)
@@ -384,51 +666,36 @@ export function OutcomeWorkArea({
       </section>
     );
   return (
-    <section className="outcome-work-area" aria-labelledby="outcome-work-title">
-      <header className="workflow-section-heading">
-        <div>
-          <p className="projects-kicker">OUTCOME WORKSPACE</p>
-          <h3 id="outcome-work-title">Features &amp; Tasks</h3>
-          <p>Break the expected outcome into features and actionable tasks.</p>
+    <section className="work-section work-plan-section" aria-labelledby="outcome-work-title">
+      <header className="work-section-head">
+        <div className="work-section-title-wrap">
+          <h3 id="outcome-work-title">
+            {isJoined ? 'My Work Plan' : 'Team Work Plan'}
+          </h3>
+          <p>
+            {isJoined
+              ? 'Break the outcome into features, then manage the tasks needed to produce the output.'
+              : 'Read-only view of how the work was organized behind this outcome.'}
+          </p>
         </div>
         {work.data.canPlan && (
           <button
             type="button"
-            className="projects-primary-button"
+            className="feature-add-button"
+            aria-label="Add a feature to this outcome"
             disabled={mutation.isPending}
             onClick={() => setComposer(true)}
           >
-            + Add Feature
+            ＋ Add feature
           </button>
         )}
       </header>
-      <div className="outcome-work-progress">
-        <span>
-          {work.data.completedTasks}/{work.data.totalTasks} tasks complete
-        </span>
-        <strong>
-          {work.data.progress === null
-            ? 'No work progress yet'
-            : `${work.data.progress}% work progress`}
-        </strong>
-        {work.data.progress !== null && (
-          <progress
-            aria-label="Outcome work progress"
-            max={100}
-            value={work.data.progress}
-          />
-        )}
-      </div>
       {work.data.canPlan && !work.data.canExecute && (
-        <p className="workflow-form-preview">
-          Planning is available. Resolve prerequisites before completing Tasks
-          or submitting Output.
-        </p>
-      )}
-      {!isJoined && (
-        <p className="workflow-empty-note">
-          Join this Outcome to contribute to its work plan.
-        </p>
+        <div className="locked-workspace-banner">
+          This outcome is waiting on a prerequisite. You may plan features and
+          tasks now, but task completion and output submission stay locked until
+          the dependency is resolved.
+        </div>
       )}
       {mutation.isError && (
         <div role="alert" className="projects-save-error">
@@ -438,46 +705,81 @@ export function OutcomeWorkArea({
           </button>
         </div>
       )}
-      {composer && work.data.canPlan && (
-        <WorkItemForm
-          label="Feature"
-          pending={mutation.isPending}
-          onCancel={() => setComposer(false)}
-          onSave={async (input) => {
-            await change({ path: '/features', method: 'POST', body: input });
-            setComposer(false);
-          }}
-        />
-      )}
       {!work.data.features.length && (
-        <div className="projects-state-card">
-          <strong>No features yet</strong>
-          <p>
+        <div className="outcome-features-empty-state">
+          <div className="outcome-features-empty-icon" aria-hidden="true">
+            ◉
+          </div>
+          <strong className="outcome-features-empty-title">
+            No features defined yet
+          </strong>
+          <p className="outcome-features-empty-body">
             {work.data.canPlan
-              ? 'Start by adding the main pieces of work needed to achieve this Outcome.'
-              : 'The Outcome Members have not defined a work plan yet.'}
+              ? 'Start by adding the main pieces of work needed to achieve this outcome.'
+              : 'No features have been defined yet. Join this outcome to contribute to its work plan.'}
           </p>
+          {work.data.canPlan && !composer && (
+            <button
+              type="button"
+              className="feature-add-button outcome-features-empty-action"
+              disabled={mutation.isPending}
+              onClick={() => setComposer(true)}
+            >
+              ＋ Add feature
+            </button>
+          )}
+          {work.data.canPlan && composer && (
+            <div style={{ width: '100%', marginTop: '12px' }}>
+              <FeatureComposer
+                pending={mutation.isPending}
+                onCancel={() => setComposer(false)}
+                onSave={async (input) => {
+                  await change({ path: '/features', method: 'POST', body: input });
+                  setComposer(false);
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
-      {work.data.features.map((feature) => (
-        <FeatureCard
-          key={feature.id}
-          feature={feature}
-          canPlan={work.data.canPlan}
-          canExecute={work.data.canExecute}
-          pending={mutation.isPending}
-          change={change}
-        />
-      ))}
+      {work.data.features.length > 0 && (
+        <div className="feature-list">
+          {work.data.features.map((feature) => (
+            <FeatureCard
+              key={feature.id}
+              feature={feature}
+              canPlan={work.data.canPlan}
+              canExecute={work.data.canExecute}
+              pending={mutation.isPending}
+              change={change}
+            />
+          ))}
+        </div>
+      )}
       {work.data.canPlan && work.data.features.length > 0 && (
-        <button
-          type="button"
-          className="workflow-add-outcome"
-          disabled={mutation.isPending}
-          onClick={() => setComposer(true)}
-        >
-          + Add another feature
-        </button>
+        <>
+          {composer ? (
+            <div style={{ marginTop: '10px' }}>
+              <FeatureComposer
+                pending={mutation.isPending}
+                onCancel={() => setComposer(false)}
+                onSave={async (input) => {
+                  await change({ path: '/features', method: 'POST', body: input });
+                  setComposer(false);
+                }}
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="add-feature-large"
+              disabled={mutation.isPending}
+              onClick={() => setComposer(true)}
+            >
+              ＋ Add another feature
+            </button>
+          )}
+        </>
       )}
     </section>
   );

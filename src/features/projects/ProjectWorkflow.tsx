@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { z } from 'zod';
 import {
   type ProjectDepartmentSummary,
   type ProjectMemberSummary,
@@ -23,6 +24,7 @@ import {
 import { apiFetch } from '../../lib/api';
 import { OutcomeWorkArea } from './OutcomeWorkArea';
 import { OutcomeDeliveryPanel } from './OutcomeDeliveryPanel';
+import { OutcomeContextRail } from './OutcomeContextRail';
 import {
   projectCreateOptionsQuery,
   projectKeys,
@@ -34,6 +36,8 @@ function errorMessage(error: unknown) {
     ? error.message
     : 'Something went wrong. Please try again.';
 }
+
+const DeleteMutationResponseSchema = z.object({ success: z.boolean() });
 
 function lifecycleLabel(status: Outcome['lifecycleStatus']) {
   return status
@@ -168,6 +172,142 @@ function useAccessibleDialog(
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [dialogRef, isSaving, onClose]);
+}
+
+function DeleteConfirmationDialog({
+  type,
+  name,
+  stageOutcomeCount,
+  isDeleting,
+  deleteError,
+  onClose,
+  onConfirm,
+}: {
+  type: 'stage' | 'outcome';
+  name: string;
+  stageOutcomeCount?: number;
+  isDeleting: boolean;
+  deleteError: unknown;
+  onClose: () => void;
+  onConfirm: () => Promise<unknown>;
+}) {
+  const dialogRef = useRef<HTMLElement>(null);
+  const submittingRef = useRef(false);
+  useAccessibleDialog(dialogRef, isDeleting, onClose, '#delete-confirm-cancel');
+
+  const handleConfirm = async () => {
+    if (submittingRef.current || isDeleting) return;
+    submittingRef.current = true;
+    try {
+      await onConfirm();
+    } catch {
+      submittingRef.current = false;
+    }
+  };
+
+  const isStage = type === 'stage';
+  const title = isStage ? 'Delete Stage' : 'Delete Outcome';
+
+  return createPortal(
+    <div
+      className="projects-dialog-backdrop"
+      role="presentation"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isDeleting) onClose();
+      }}
+    >
+      <section
+        ref={dialogRef}
+        className="projects-dialog pw-delete-dialog"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-desc"
+      >
+        <div className="projects-dialog-header pw-delete-dialog-header">
+          <div className="pw-delete-icon-wrap" aria-hidden="true">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="15" y1="9" x2="9" y2="15" />
+              <line x1="9" y1="9" x2="15" y2="15" />
+            </svg>
+          </div>
+          <div>
+            <h2 id="delete-dialog-title">{title}</h2>
+            <p className="vw-modal-subtitle">
+              This action permanently removes the record if it has no protected history.
+            </p>
+          </div>
+        </div>
+
+        <div
+          className="projects-dialog-body pw-delete-dialog-body"
+          id="delete-dialog-desc"
+        >
+          <p className="pw-delete-confirm-message">
+            Are you sure you want to delete {isStage ? 'stage' : 'outcome'}{' '}
+            <strong className="pw-delete-item-name">{name}</strong>?
+          </p>
+
+          {isStage &&
+            typeof stageOutcomeCount === 'number' &&
+            stageOutcomeCount > 0 && (
+              <div className="pw-delete-warning-box">
+                <span className="pw-delete-warning-icon" aria-hidden="true">
+                  ⚠
+                </span>
+                <span>
+                  This stage contains <strong>{stageOutcomeCount}</strong> outcome
+                  {stageOutcomeCount === 1 ? '' : 's'}. All child outcomes will
+                  also be deleted. If any outcome has permanent memberships,
+                  submissions, or dependents, deletion will be prevented.
+                </span>
+              </div>
+            )}
+
+          {deleteError ? (
+            <div className="projects-form-banner error" role="alert">
+              {errorMessage(deleteError)}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="projects-dialog-actions pw-delete-dialog-actions">
+          <button
+            id="delete-confirm-cancel"
+            type="button"
+            className="projects-secondary-button"
+            disabled={isDeleting}
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="pw-delete-confirm-btn"
+            disabled={isDeleting}
+            onClick={() => void handleConfirm()}
+          >
+            {isDeleting
+              ? 'Deleting...'
+              : isStage
+                ? 'Delete Stage'
+                : 'Delete Outcome'}
+          </button>
+        </div>
+      </section>
+    </div>,
+    document.body,
+  );
 }
 
 function StageDialog({
@@ -690,8 +830,10 @@ function OutcomeDialog({
 type EditorState =
   | { type: 'create-stage' }
   | { type: 'edit-stage'; stage: Stage }
+  | { type: 'delete-stage'; stage: Stage }
   | { type: 'create-outcome'; stage: Stage }
   | { type: 'edit-outcome'; stage: Stage; outcome: Outcome }
+  | { type: 'delete-outcome'; stage: Stage; outcome: Outcome }
   | null;
 
 export function ProjectWorkflow({
@@ -705,6 +847,7 @@ export function ProjectWorkflow({
   accessToken?: string;
   isLead?: boolean;
 }) {
+  const navigate = useNavigate();
   const [editor, setEditor] = useState<EditorState>(null);
   const [scope, setScope] = useState<'whole' | 'mine'>('whole');
   const queryClient = useQueryClient();
@@ -713,9 +856,8 @@ export function ProjectWorkflow({
   });
   const options = useQuery({
     ...projectCreateOptionsQuery(accessToken),
-    enabled: Boolean(
-      editor && 'stage' in editor && editor.type.includes('outcome'),
-    ),
+    enabled: Boolean(workflow.data?.canManageStructure || accessToken),
+    staleTime: 5 * 60 * 1000,
   });
 
   const closeEditor = () => setEditor(null);
@@ -857,6 +999,73 @@ export function ProjectWorkflow({
       ]);
     },
   });
+  const deleteStage = useMutation({
+    mutationFn: (stageId: string) =>
+      apiFetch(
+        `/projects/${projectId}/stages/${stageId}`,
+        DeleteMutationResponseSchema,
+        {
+          accessToken,
+          method: 'DELETE',
+        },
+      ),
+    onSuccess: (_, stageId) => {
+      updateWorkflowCache((current) => ({
+        ...current,
+        stages: current.stages
+          .filter((stage) => stage.id !== stageId)
+          .sort((first, second) => first.position - second.position),
+      }));
+      completeMutation();
+      void Promise.all([
+        queryClient.invalidateQueries({ queryKey: projectKeys.list }),
+        queryClient.invalidateQueries({
+          queryKey: projectKeys.detail(projectId),
+        }),
+      ]);
+    },
+  });
+  const deleteOutcome = useMutation({
+    mutationFn: ({
+      outcomeId: id,
+    }: {
+      stageId: string;
+      outcomeId: string;
+    }) =>
+      apiFetch(
+        `/projects/${projectId}/outcomes/${id}`,
+        DeleteMutationResponseSchema,
+        {
+          accessToken,
+          method: 'DELETE',
+        },
+      ),
+    onSuccess: (_, variables) => {
+      updateWorkflowCache((current) => ({
+        ...current,
+        stages: current.stages.map((stage) =>
+          stage.id === variables.stageId
+            ? {
+                ...stage,
+                outcomes: stage.outcomes
+                  .filter((item) => item.id !== variables.outcomeId)
+                  .sort((first, second) => first.position - second.position),
+              }
+            : stage,
+        ),
+      }));
+      completeMutation();
+      void Promise.all([
+        queryClient.invalidateQueries({ queryKey: projectKeys.list }),
+        queryClient.invalidateQueries({
+          queryKey: projectKeys.detail(projectId),
+        }),
+      ]);
+      if (outcomeId === variables.outcomeId) {
+        navigate(`/projects/${projectId}`);
+      }
+    },
+  });
 
   if (workflow.isPending) {
     return (
@@ -917,125 +1126,166 @@ export function ProjectWorkflow({
         className="project-workflow-section workflow-outcome-details"
         aria-labelledby="outcome-details-title"
       >
-        <div className="workflow-section-heading">
-          <div>
-            <Link className="project-back-link" to={`/projects/${projectId}`}>
-              Back to workflow
-            </Link>
-            <p className="projects-kicker">
-              STAGE {selectedStage.position + 1} / {selectedStage.name}
-            </p>
-            <h2 id="outcome-details-title">{selectedOutcome.title}</h2>
-            <p>{selectedOutcome.description || 'No description provided.'}</p>
-          </div>
-          <div className="workflow-heading-actions">
-            <span
-              className={`workflow-state ${selectedOutcome.lifecycleStatus.toLowerCase()}`}
-            >
-              {selectedOutcome.isLocked
-                ? 'Locked by prerequisite'
-                : selectedOutcome.lifecycleStatus === 'OPEN' &&
-                    selectedOutcome.hasForReview
-                  ? 'For Review'
-                  : lifecycleLabel(selectedOutcome.lifecycleStatus)}
-            </span>
+        {/* Navigation row above header card */}
+        <div className="pw-workspace-navigation">
+          <Link
+            to={`/projects/${projectId}`}
+            className="workspace-back-button"
+            aria-label="Back to Project Workspace"
+          >
+            <span>←</span>
+            <span>Back to Content</span>
+          </Link>
+          <div className="pw-workspace-nav-meta">
             {selectedOutcome.isJoined ? (
-              <span className="workflow-joined-badge">✓ Joined Outcome</span>
+              <span className="pw-joined-badge">✓ Joined outcome</span>
             ) : selectedOutcome.lifecycleStatus === 'ACCEPTED' ? (
               <span className="workflow-closed-note">Joining is closed</span>
             ) : (
               <button
                 type="button"
-                className="projects-primary-button"
+                className="pw-join-button"
                 disabled={joinOutcome.isPending}
                 onClick={() => void joinOutcome.mutateAsync(selectedOutcome.id)}
               >
-                {joinOutcome.isPending ? 'Joining...' : '+ Join Outcome'}
+                {joinOutcome.isPending ? 'Joining...' : '+ Join outcome'}
               </button>
             )}
-            {workflow.data.canManageStructure && (
-              <button
-                type="button"
-                className="projects-secondary-button"
-                onClick={() =>
-                  setEditor({
-                    type: 'edit-outcome',
-                    stage: selectedStage,
-                    outcome: selectedOutcome,
-                  })
-                }
-              >
-                Edit Outcome
-              </button>
-            )}
+            <span className="pw-workspace-tag">Outcome workspace</span>
           </div>
         </div>
+
         {joinOutcome.isError && (
           <p className="project-status-error" role="alert">
             {errorMessage(joinOutcome.error)}
           </p>
         )}
-        <div className="workflow-detail-grid">
-          <section className="workflow-detail-card">
-            <h3>Expected outcome</h3>
-            <p>{selectedOutcome.description || selectedOutcome.title}</p>
-          </section>
-          <section className="workflow-detail-card">
-            <h3>Responsible Departments</h3>
-            <div className="project-detail-departments">
-              {selectedOutcome.departments.map((department) => (
-                <span key={department.id}>{department.name}</span>
-              ))}
+
+        {!selectedOutcome.isJoined && !isLead && (
+          <div className="pw-readonly-note">
+            {selectedOutcome.lifecycleStatus === 'ACCEPTED'
+              ? 'This outcome is accepted and closed. You can inspect its work and submission history, but joining and new contributions are disabled.'
+              : 'You can inspect this outcome. Join it to contribute features, tasks, and output submissions.'}
+          </div>
+        )}
+
+        {/* Outcome Header Card */}
+        <section
+          className="outcome-workspace-header"
+          aria-labelledby="outcome-details-title"
+        >
+          <div className="workspace-header-main">
+            <div className="workspace-heading-copy">
+              <div className="workspace-kicker-row">
+                <span className="workspace-accent-line" aria-hidden="true" />
+                <p className="kicker">
+                  {selectedStage.name.toUpperCase()} /{' '}
+                  {selectedOutcome.departments[0]?.name.toUpperCase() ||
+                    'OUTCOME'}
+                </p>
+              </div>
+              <h2 id="outcome-details-title" className="workspace-title">
+                {selectedOutcome.title}
+              </h2>
+              <p className="workspace-desc">
+                {selectedOutcome.description ||
+                  (isLead
+                    ? `You are supervising this outcome. Review the combined work and all team submissions before making the final outcome decision.`
+                    : selectedOutcome.isJoined
+                      ? 'You are participating in this outcome. Its workspace keeps features, tasks, outputs, and history together.'
+                      : 'You can inspect this outcome workspace. Join it if you want to contribute to its features and tasks.')}
+              </p>
             </div>
-          </section>
-          <section className="workflow-detail-card workflow-detail-wide">
-            <h3>Acceptance criteria</h3>
-            <ol>
-              {selectedOutcome.acceptanceCriteria.map((criterion) => (
-                <li key={criterion.id}>{criterion.description}</li>
-              ))}
-            </ol>
-          </section>
-          <section className="workflow-detail-card">
-            <h3>Prerequisites</h3>
-            {selectedOutcome.prerequisites.length ? (
-              <ul>
-                {selectedOutcome.prerequisites.map((prerequisite) => (
-                  <li key={prerequisite.id}>
-                    {prerequisite.title} -{' '}
-                    {prerequisite.resolved ? 'Resolved' : 'Waiting'}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No prerequisite. This Outcome can proceed independently.</p>
-            )}
-          </section>
-          <section className="workflow-detail-card">
-            <h3>Outcome Members</h3>
-            <p>
-              {selectedOutcome.members.length
-                ? selectedOutcome.members
-                    .map(({ fullName }) => fullName)
-                    .join(', ')
-                : 'No one has joined this Outcome yet.'}
-            </p>
-          </section>
+            <div className="pw-workspace-state-actions">
+              <span
+                className={`workflow-state ${selectedOutcome.lifecycleStatus.toLowerCase()}`}
+              >
+                {selectedOutcome.isLocked
+                  ? 'Locked by prerequisite'
+                  : selectedOutcome.lifecycleStatus === 'OPEN' &&
+                      selectedOutcome.hasForReview
+                    ? 'For Review'
+                    : lifecycleLabel(selectedOutcome.lifecycleStatus)}
+              </span>
+              {isLead && (
+                <button
+                  type="button"
+                  className="projects-secondary-button pw-outcome-detail-delete-btn"
+                  onClick={() =>
+                    setEditor({
+                      type: 'delete-outcome',
+                      stage: selectedStage,
+                      outcome: selectedOutcome,
+                    })
+                  }
+                >
+                  Delete Outcome
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Expected Outcome callout */}
+          <div className="acceptance-block">
+            <div className="expected-icon" aria-hidden="true">
+              ◎
+            </div>
+            <div className="expected-content">
+              <div className="acceptance-label">Expected outcome</div>
+              <div className="acceptance-text">
+                {selectedOutcome.description || selectedOutcome.title}
+              </div>
+            </div>
+          </div>
+
+          {/* Acceptance Criteria Chips */}
+          <div className="acceptance-criteria-wrap">
+            <div className="acceptance-label">Acceptance criteria</div>
+            <div className="criteria-list">
+              {selectedOutcome.acceptanceCriteria.length > 0 ? (
+                selectedOutcome.acceptanceCriteria.map((criterion) => (
+                  <span key={criterion.id} className="criterion-pill">
+                    <span className="criterion-check" aria-hidden="true">
+                      ✓
+                    </span>
+                    <span>{criterion.description}</span>
+                  </span>
+                ))
+              ) : (
+                <span className="criterion-pill empty">
+                  No acceptance criteria specified.
+                </span>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* 2-Column Layout */}
+        <div className="workspace-layout">
+          <main className="workbench">
+            <OutcomeWorkArea
+              key={selectedOutcome.id}
+              projectId={projectId}
+              outcomeId={selectedOutcome.id}
+              accessToken={accessToken}
+              isJoined={selectedOutcome.isJoined}
+            />
+            <OutcomeDeliveryPanel
+              key={`delivery-${selectedOutcome.id}`}
+              projectId={projectId}
+              outcomeId={selectedOutcome.id}
+              accessToken={accessToken}
+              isJoined={selectedOutcome.isJoined}
+            />
+          </main>
+          <OutcomeContextRail
+            projectId={projectId}
+            outcomeId={selectedOutcome.id}
+            accessToken={accessToken}
+            isJoined={selectedOutcome.isJoined}
+            outcome={selectedOutcome}
+          />
         </div>
-        <OutcomeWorkArea
-          key={selectedOutcome.id}
-          projectId={projectId}
-          outcomeId={selectedOutcome.id}
-          accessToken={accessToken}
-          isJoined={selectedOutcome.isJoined}
-        />
-        <OutcomeDeliveryPanel
-          key={`delivery-${selectedOutcome.id}`}
-          projectId={projectId}
-          outcomeId={selectedOutcome.id}
-          accessToken={accessToken}
-          isJoined={selectedOutcome.isJoined}
-        />
         {editor?.type === 'edit-outcome' && options.isSuccess && (
           <OutcomeDialog
             stage={editor.stage}
@@ -1053,6 +1303,21 @@ export function ProjectWorkflow({
               updateOutcome.mutateAsync({
                 outcomeId: editor.outcome.id,
                 input,
+              })
+            }
+          />
+        )}
+        {editor?.type === 'delete-outcome' && (
+          <DeleteConfirmationDialog
+            type="outcome"
+            name={editor.outcome.title}
+            isDeleting={deleteOutcome.isPending}
+            deleteError={deleteOutcome.error}
+            onClose={closeEditor}
+            onConfirm={() =>
+              deleteOutcome.mutateAsync({
+                stageId: editor.stage.id,
+                outcomeId: editor.outcome.id,
               })
             }
           />
@@ -1203,23 +1468,61 @@ export function ProjectWorkflow({
                     </div>
                     <div className="stage-title-row">
                       <h3 className="stage-title">{stage.name}</h3>
-                      <span className="count">
-                        {stageOutcomes.length} outcome
-                        {stageOutcomes.length === 1 ? '' : 's'}
-                      </span>
-                      {workflow.data.canManageStructure && (
-                        <button
-                          type="button"
-                          className="pw-stage-edit"
-                          title="Rename stage"
-                          aria-label={`Edit Stage ${stage.name}`}
-                          onClick={() =>
-                            setEditor({ type: 'edit-stage', stage })
-                          }
-                        >
-                          ✎
-                        </button>
-                      )}
+                      <div className="stage-title-meta">
+                        <span className="count">
+                          {stageOutcomes.length} outcome
+                          {stageOutcomes.length === 1 ? '' : 's'}
+                        </span>
+                        {workflow.data.canManageStructure && (
+                          <div className="pw-stage-actions">
+                            <button
+                              type="button"
+                              className="pw-stage-edit"
+                              title="Rename stage"
+                              aria-label={`Edit Stage ${stage.name}`}
+                              onClick={() =>
+                                setEditor({ type: 'edit-stage', stage })
+                              }
+                            >
+                              <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 12 12"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.4"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                aria-hidden="true"
+                              >
+                                <path d="M8.5 1.5l2 2L3.5 10.5H1.5v-2L8.5 1.5z" />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              className="pw-stage-delete"
+                              title="Delete stage"
+                              aria-label={`Delete Stage ${stage.name}`}
+                              onClick={() =>
+                                setEditor({ type: 'delete-stage', stage })
+                              }
+                            >
+                              <svg
+                                width="11"
+                                height="11"
+                                viewBox="0 0 12 12"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                aria-hidden="true"
+                              >
+                                <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" />
+                              </svg>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     {stage.description && (
                       <p className="stage-desc">{stage.description}</p>
@@ -1300,21 +1603,63 @@ export function ProjectWorkflow({
                                       </h4>
                                       {prereqOutcome &&
                                         workflow.data.canManageStructure && (
-                                          <button
-                                            type="button"
-                                            className="pw-outcome-edit-btn"
-                                            aria-label={`Edit Outcome ${prereqOutcome.title}`}
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setEditor({
-                                                type: 'edit-outcome',
-                                                stage,
-                                                outcome: prereqOutcome,
-                                              });
-                                            }}
-                                          >
-                                            ✎
-                                          </button>
+                                          <div className="pw-dep-mini-actions">
+                                            <button
+                                              type="button"
+                                              className="pw-outcome-edit-btn"
+                                              title="Edit outcome"
+                                              aria-label={`Edit Outcome ${prereqOutcome.title}`}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditor({
+                                                  type: 'edit-outcome',
+                                                  stage,
+                                                  outcome: prereqOutcome,
+                                                });
+                                              }}
+                                            >
+                                              <svg
+                                                width="11"
+                                                height="11"
+                                                viewBox="0 0 12 12"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="1.4"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                aria-hidden="true"
+                                              >
+                                                <path d="M8.5 1.5l2 2L3.5 10.5H1.5v-2L8.5 1.5z" />
+                                              </svg>
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className="pw-outcome-delete-btn"
+                                              title="Delete outcome"
+                                              aria-label={`Delete Outcome ${prereqOutcome.title}`}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditor({
+                                                  type: 'delete-outcome',
+                                                  stage,
+                                                  outcome: prereqOutcome,
+                                                });
+                                              }}
+                                            >
+                                              <svg
+                                                width="10"
+                                                height="10"
+                                                viewBox="0 0 12 12"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="1.5"
+                                                strokeLinecap="round"
+                                                aria-hidden="true"
+                                              >
+                                                <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" />
+                                              </svg>
+                                            </button>
+                                          </div>
                                         )}
                                     </div>
                                     <div className="dep-mini-meta">
@@ -1339,21 +1684,63 @@ export function ProjectWorkflow({
                                         </Link>
                                       </h4>
                                       {workflow.data.canManageStructure && (
-                                        <button
-                                          type="button"
-                                          className="pw-outcome-edit-btn"
-                                          aria-label={`Edit Outcome ${outcome.title}`}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setEditor({
-                                              type: 'edit-outcome',
-                                              stage,
-                                              outcome,
-                                            });
-                                          }}
-                                        >
-                                          ✎
-                                        </button>
+                                        <div className="pw-dep-mini-actions">
+                                          <button
+                                            type="button"
+                                            className="pw-outcome-edit-btn"
+                                            title="Edit outcome"
+                                            aria-label={`Edit Outcome ${outcome.title}`}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setEditor({
+                                                type: 'edit-outcome',
+                                                stage,
+                                                outcome,
+                                              });
+                                            }}
+                                          >
+                                            <svg
+                                              width="11"
+                                              height="11"
+                                              viewBox="0 0 12 12"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              strokeWidth="1.4"
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              aria-hidden="true"
+                                            >
+                                              <path d="M8.5 1.5l2 2L3.5 10.5H1.5v-2L8.5 1.5z" />
+                                            </svg>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="pw-outcome-delete-btn"
+                                            title="Delete outcome"
+                                            aria-label={`Delete Outcome ${outcome.title}`}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setEditor({
+                                                type: 'delete-outcome',
+                                                stage,
+                                                outcome,
+                                              });
+                                            }}
+                                          >
+                                            <svg
+                                              width="10"
+                                              height="10"
+                                              viewBox="0 0 12 12"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              strokeWidth="1.5"
+                                              strokeLinecap="round"
+                                              aria-hidden="true"
+                                            >
+                                              <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" />
+                                            </svg>
+                                          </button>
+                                        </div>
                                       )}
                                     </div>
                                     <div className="dep-mini-meta">
@@ -1419,21 +1806,63 @@ export function ProjectWorkflow({
                                   {stateBadge.label}
                                 </span>
                                 {workflow.data.canManageStructure && (
-                                  <button
-                                    type="button"
-                                    className="pw-outcome-edit-btn"
-                                    aria-label={`Edit Outcome ${outcome.title}`}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setEditor({
-                                        type: 'edit-outcome',
-                                        stage,
-                                        outcome,
-                                      });
-                                    }}
-                                  >
-                                    ✎
-                                  </button>
+                                  <>
+                                    <button
+                                      type="button"
+                                      className="pw-outcome-edit-btn"
+                                      title="Edit outcome"
+                                      aria-label={`Edit Outcome ${outcome.title}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditor({
+                                          type: 'edit-outcome',
+                                          stage,
+                                          outcome,
+                                        });
+                                      }}
+                                    >
+                                      <svg
+                                        width="11"
+                                        height="11"
+                                        viewBox="0 0 12 12"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="1.4"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        aria-hidden="true"
+                                      >
+                                        <path d="M8.5 1.5l2 2L3.5 10.5H1.5v-2L8.5 1.5z" />
+                                      </svg>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="pw-outcome-delete-btn"
+                                      title="Delete outcome"
+                                      aria-label={`Delete Outcome ${outcome.title}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditor({
+                                          type: 'delete-outcome',
+                                          stage,
+                                          outcome,
+                                        });
+                                      }}
+                                    >
+                                      <svg
+                                        width="10"
+                                        height="10"
+                                        viewBox="0 0 12 12"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="1.5"
+                                        strokeLinecap="round"
+                                        aria-hidden="true"
+                                      >
+                                        <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" />
+                                      </svg>
+                                    </button>
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -1536,23 +1965,33 @@ export function ProjectWorkflow({
           }
         />
       )}
-      {outcomeEditor && options.isPending && (
-        <div className="workflow-editor-loading" role="status">
-          Loading Outcome options...
-        </div>
+      {editor?.type === 'delete-stage' && (
+        <DeleteConfirmationDialog
+          type="stage"
+          name={editor.stage.name}
+          stageOutcomeCount={editor.stage.outcomes.length}
+          isDeleting={deleteStage.isPending}
+          deleteError={deleteStage.error}
+          onClose={closeEditor}
+          onConfirm={() => deleteStage.mutateAsync(editor.stage.id)}
+        />
       )}
-      {outcomeEditor && options.isError && (
-        <div className="workflow-editor-loading" role="alert">
-          Outcome options could not be loaded.
-          <button type="button" onClick={() => void options.refetch()}>
-            Retry
-          </button>
-          <button type="button" onClick={closeEditor}>
-            Cancel
-          </button>
-        </div>
+      {editor?.type === 'delete-outcome' && (
+        <DeleteConfirmationDialog
+          type="outcome"
+          name={editor.outcome.title}
+          isDeleting={deleteOutcome.isPending}
+          deleteError={deleteOutcome.error}
+          onClose={closeEditor}
+          onConfirm={() =>
+            deleteOutcome.mutateAsync({
+              stageId: editor.stage.id,
+              outcomeId: editor.outcome.id,
+            })
+          }
+        />
       )}
-      {outcomeEditor && options.isSuccess && (
+      {outcomeEditor && (
         <OutcomeDialog
           stage={outcomeEditor.stage}
           stages={workflow.data.stages}
@@ -1561,8 +2000,8 @@ export function ProjectWorkflow({
               ? outcomeEditor.outcome
               : undefined
           }
-          departments={options.data.departments}
-          members={options.data.leads}
+          departments={options.data?.departments ?? []}
+          members={options.data?.leads ?? []}
           availablePrerequisites={allOutcomes.filter(
             (item) =>
               outcomeEditor.type !== 'edit-outcome' ||
