@@ -1055,6 +1055,15 @@ button:disabled {
   display: none;
 }
 
+.route-loading {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  color: #746a64;
+  font-size: 12px;
+  font-weight: 750;
+}
+
 @media (max-width: 900px) {
   .login-page {
     grid-template-columns: 1fr;

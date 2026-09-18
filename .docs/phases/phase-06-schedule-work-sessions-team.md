@@ -2,10 +2,10 @@
 
 ## Status
 
-In progress in parallel with the formal Phase 5 acceptance and regression work.
-Schedule Slice 1 implements F6-01 through F6-09.
-Work Sessions and Team Slice 2 implements F6-10 through F6-26.
-Phase 6 is not complete until the remaining manual acceptance checks are finalized and the pre-existing Project Members regression is resolved on its owning branch.
+Complete on 2026-09-18.
+Schedule Slice 1 implements and verifies F6-01 through F6-09.
+Work Sessions and Team Slice 2 implements and verifies F6-10 through F6-26.
+The pre-existing Project Members regression remains assigned to its owning Project UI branch and does not block Phase 6 acceptance.
 
 ## Objective
 
@@ -139,6 +139,36 @@ Slice 2 verification performed on 2026-09-18:
 - Project UI was intentionally not changed to make Phase 6 pass, as required by the Phase 6 scope boundary.
 - The attendance panel initially made a Phase 5 test's generic complementary-role selector ambiguous; scoping the assertion to `.app-sidebar` restored all 15 Outcome Work Chromium tests.
 - Full Registry Chromium acceptance passes after correcting an existing delayed-blur and keyboard-suggestion race in the member dialog.
+
+Closure verification performed on 2026-09-18:
+
+- Manual visual review used authenticated Chromium screenshots at 1440x1000 desktop, 900x900 tablet/narrow desktop, and 390x844 mobile viewports.
+- `/schedule` was reviewed in empty, populated, multiple-block, long-name, configuration, validation-error, save-pending, loading, handled error/retry, Team Schedule, and Shifts/history states.
+- `/team` was reviewed with real zero-value records and controlled nine-member, long-name, long-position, Working Now, Timed Out, planned-hours, actual-hours, and multiple-today-block states.
+- Work attendance was reviewed in Time In, active Time Out with advancing elapsed timer, mutation-pending disabled state, handled mutation-error, correction-required, and expanded correction-form states.
+- Keyboard traversal reached the native correction Time Out field from the Time In field, and focus remained visible.
+- Direct `/schedule` and `/team`, refresh, sidebar navigation, browser Back, and browser Forward passed.
+- The focused persisted browser journey separately verified Time In, refresh persistence, Team Working Now, navigation, Time Out, weekly history, and distinct planned-versus-actual values.
+- Page-level horizontal overflow was absent at all three viewport sizes.
+- Team cards collapsed from three columns to two and then one without clipping.
+- The seven-day Schedule intentionally uses contained horizontal scrolling inside the weekly card, matching the prototype's schedule-scroll treatment.
+- The fixed attendance panel stayed inside the viewport and is now hidden while the mobile navigation drawer is open so it cannot cover sidebar actions.
+- The main Phase 6 journey produced no browser console warnings or errors, failed requests, unexpected 4xx/5xx responses, or duplicate mutations.
+- Controlled 503 and 409 responses were used only to inspect the intentional Schedule retry and attendance mutation-error states.
+- A missing React Router hydration fallback caused repeated direct-route development warnings and was fixed with an authenticated-route loading fallback.
+- The focused Schedule test previously reloaded immediately after its second save click and could abort the in-flight request.
+- Waiting for the configuration panel to close now synchronizes the test with the successful mutation before refresh.
+- `pnpm lint`: passed with zero errors and the pre-existing `RegistryPage.tsx` hook dependency warning.
+- `pnpm typecheck`: passed.
+- `pnpm test`: 139 passed and 17 configured database integration tests skipped.
+- `pnpm test:ui`: 22/22 passed.
+- `pnpm build`: web and API production builds passed with the existing main-chunk size warning.
+- `pnpm exec playwright test tests/e2e/schedule.spec.ts --project=chromium`: 2/2 passed after the final fixes.
+- `pnpm exec playwright test tests/e2e/phase6-acceptance.audit.spec.ts --project=chromium`: 2/2 passed.
+- Final full `pnpm test:e2e`: 92 passed, 1 failed, and 3 did not run in 17.2 minutes.
+- The two additional passes over the previous 90-test result are the new Phase 6 visual/state audit cases.
+- The sole full-suite failure remains the existing Phase 4 Project Members wait for `GET /api/projects/:projectId/members`; its three serial dependents did not run.
+- Phase 6 code does not change `ProjectOverviewPage`, `ProjectMembersPanel`, Project authorization, or the Project Members acceptance file relative to `main`.
 
 A raw `pnpm test` without environment values reached 116 passing tests and failed the 11 existing AuthService tests because `SUPABASE_URL` was unset.
 The same suite passed 127/127 enabled tests when rerun with non-secret local Auth placeholders.
@@ -479,8 +509,7 @@ Date-specific schedule overrides are not implemented.
 The exact product-owned maximum WorkSession duration remains deferred; the current operational default is configurable at 16 hours.
 Stale detection runs at WorkSession and Team access boundaries rather than through a background scheduler.
 WorkSession corrections have their dedicated immutable correction records, but the existing project-scoped `ActivityLog` cannot represent organization-level work-session events without a future canonical ActivityLog scope change.
-Manual visual and console acceptance across all Phase 6 states remains pending.
-The full Chromium repository regression is complete with 90 passing tests and one known pre-existing Project Members failure whose three serial dependents did not run.
+The full Chromium repository regression is complete with 92 passing tests and one known pre-existing Project Members failure whose three serial dependents did not run.
 
 ## Technical Debt
 
@@ -496,14 +525,14 @@ Authenticated browser execution exposed transport and selector defects that lowe
 
 ## Recommendations and Next Approach
 
-Complete intentional manual visual and console checks for desktop and small viewports.
 Resolve the pre-existing Project Members panel wiring on its owning Project UI branch, then rerun its four-test serial acceptance file.
 Do not add ScheduleOverride or realtime presence during Phase 6 closure unless a concrete acceptance requirement changes.
 
 ## Phase Exit Result
 
-Phase 6 remains in progress.
-Schedule Slice 1 and the integrated Work Sessions plus Team Slice 2 are implemented.
-Live migration, database integration, and focused authenticated Chromium acceptance pass.
-The broad non-browser gate passes and both Phase 6 journeys pass inside the full Chromium run.
-Full Phase 6 closure still requires remaining manual acceptance evidence and a clean rerun of the pre-existing Project Members acceptance file after its owning UI work is integrated.
+Phase 6 is complete.
+F6-01 through F6-26 are implemented and verified at the appropriate contract, service, database integration, component, browser, and manual visual layers.
+Planned Schedule values and actual WorkSessions remain separate, self-owned writes remain backend-authorized, and PostgreSQL prevents duplicate unresolved WorkSessions.
+The authenticated Schedule, Time In, refresh, Team Working Now, Time Out, weekly-history, responsive, console, and network acceptance paths pass.
+The known Project Members regression is unrelated to Phase 6 and remains documented for its owning Project UI branch.
+Phase 6 is safe to merge into `main` without starting Phase 7 automatically.

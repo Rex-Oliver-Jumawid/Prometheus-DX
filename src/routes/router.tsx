@@ -25,6 +25,11 @@ export const router = createBrowserRouter([
   },
   {
     element: <AuthGate />,
+    hydrateFallbackElement: (
+      <main className="route-loading" role="status">
+        Loading Prometheus...
+      </main>
+    ),
     children: [
       {
         element: <AppShell />,

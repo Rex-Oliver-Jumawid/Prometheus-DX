@@ -10,7 +10,7 @@ Canonical requirements belong in `.context/`.
 
 Phase 6 - Schedule, Work Sessions, and Team
 
-Status: In progress.
+Status: Complete.
 
 Formal implementation record:
 
@@ -79,26 +79,26 @@ The normal broad gates are `pnpm verify`, `pnpm verify:e2e`, and `pnpm verify:re
 
 ## Next Action
 
-Phase 6 Schedule Slice 1 and the integrated Work Sessions plus Team Slice 2 are implemented.
+Phase 6 is complete and may be merged into `main` when desired.
+
+F6-01 through F6-26 pass their layered acceptance evidence.
 
 Migration `20260918010000_phase_06_work_sessions` is deployed and all 15 migrations are applied.
 
 Live database integration passes 4 Schedule tests, 5 WorkSession tests, and 2 Team tests.
 
-Focused component coverage passes 10 tests across Schedule, attendance, and Team.
+The final required non-browser gates pass with 139 enabled Node tests, 22 component tests, and both production builds.
 
-The authenticated Phase 6 Chromium file passes both the Schedule Slice 1 journey and the integrated Schedule, Time In, refresh, Team Working Now, Time Out, and weekly-history journey.
+The focused Phase 6 Chromium journeys pass 2/2, and the visual/responsive/state audits pass 2/2 at 1440x1000, 900x900, and 390x844.
 
-The broad `pnpm verify` gate passes with 139 enabled Node tests, 22 component tests, and both production builds.
+The final full Chromium run passed 92 tests.
+One pre-existing Phase 4 Project Members test still fails because the current Project page does not mount the existing `ProjectMembersPanel`, and its three serial dependents do not run.
+Phase 6 did not change Project UI relative to `main`.
 
-The final full Chromium run passed 90 tests, including both Phase 6 journeys.
-One pre-existing Phase 4 Project Members test failed because the current Project page does not mount the existing `ProjectMembersPanel`, and its three serial dependents did not run.
-Project UI was not changed from this branch.
-
-Manual visual, responsive, and console acceptance must still be recorded before Phase 6 is marked complete.
-The Project Members acceptance file should be rerun after its owning Project UI work is integrated.
+Resolve the Project Members regression on its owning Project UI branch and rerun that serial acceptance file there.
 
 Do not mark Phase 5 complete from this branch.
+Do not begin Phase 7 automatically.
 Do not add ScheduleOverride or realtime presence without a concrete acceptance requirement.
 
 ## Handoff Maintenance Rule

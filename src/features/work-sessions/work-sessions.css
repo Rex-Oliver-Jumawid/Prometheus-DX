@@ -152,4 +152,8 @@
     right: 14px;
     bottom: 14px;
   }
+
+  .mobile-nav-open .attendance-control {
+    visibility: hidden;
+  }
 }

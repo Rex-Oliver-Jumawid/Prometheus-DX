@@ -188,6 +188,9 @@ test('member configures, refreshes, edits, removes, and returns from Shifts to T
 
   await page.getByLabel('End', { exact: true }).fill('13:00');
   await page.getByRole('button', { name: 'Save Schedule' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Configure My Schedule' }),
+  ).toHaveCount(0);
   await page.reload();
   await expect(page.getByText('8:00 AM - 1:00 PM')).toBeVisible();
 
@@ -252,7 +255,9 @@ test('planned Schedule flows through persisted Time In, Team Working Now, Time O
   await signIn(page);
   const attendance = page.getByLabel('Time attendance');
   await attendance.getByRole('button', { name: /Time In/ }).click();
-  await expect(attendance.getByRole('button', { name: /Time Out/ })).toBeVisible();
+  await expect(
+    attendance.getByRole('button', { name: /Time Out/ }),
+  ).toBeVisible();
 
   const openSession = await prisma.workSession.findFirstOrThrow({
     where: { memberId: currentMemberId, timeOut: null, status: 'OPEN' },
@@ -264,10 +269,14 @@ test('planned Schedule flows through persisted Time In, Team Working Now, Time O
   });
 
   await page.reload();
-  await expect(attendance.getByRole('button', { name: /Time Out/ })).toBeVisible();
+  await expect(
+    attendance.getByRole('button', { name: /Time Out/ }),
+  ).toBeVisible();
 
   await page.goto('/team');
-  const memberCard = page.locator('.team-card').filter({ hasText: currentMemberName });
+  const memberCard = page
+    .locator('.team-card')
+    .filter({ hasText: currentMemberName });
   await expect(memberCard.getByText('Working Now')).toBeVisible();
   await expect(memberCard.getByText('6h')).toBeVisible();
 
