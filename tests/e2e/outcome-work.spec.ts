@@ -143,8 +143,9 @@ test('F5-02: viewer cannot create Feature work', async ({
 }) => {
   await signIn(page);
   await openWork(page);
+  const workPlan = page.getByRole('region', { name: 'Team Work Plan' });
   await expect(
-    page.getByText('No features yet', { exact: true }),
+    workPlan.getByText('No features defined yet', { exact: true }),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: '+ Add Feature' })).toHaveCount(
     0,
@@ -208,9 +209,12 @@ test('F5-01 F5-08: joined member creates a persisted Feature', async ({
   await signIn(page);
   await openWork(page);
   await expect(page.getByText('✓ Joined Outcome')).toBeVisible();
-  await page.getByRole('button', { name: '+ Add Feature' }).click();
-  await page.getByRole('button', { name: 'Add feature', exact: true }).click();
-  await expect(page.getByText('Enter a title.')).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Add a feature to this outcome', exact: true })
+    .click();
+  await expect(
+    page.getByRole('button', { name: 'Add feature', exact: true }),
+  ).toBeDisabled();
   await page
     .getByLabel('Feature title', { exact: true })
     .fill('Authentication');
@@ -235,9 +239,13 @@ test('F5-03 F5-08: joined member creates a persisted Task', async ({ page }) => 
   page.on('pageerror', (error) => errors.push(error.message));
   await signIn(page);
   await openWork(page);
-  await page.getByRole('button', { name: 'Add task', exact: true }).click();
-  await expect(page.getByText('Enter a title.')).toBeVisible();
-  await page.getByLabel('Task title', { exact: true }).fill('Implement login');
+  await expect(
+    page.getByRole('button', { name: 'Add task', exact: true }),
+  ).toBeDisabled();
+  await page
+    .getByRole('article', { name: 'Feature Authentication' })
+    .getByLabel('Add a task to Authentication', { exact: true })
+    .fill('Implement login');
   const created = page.waitForResponse(
     (response) =>
       response.url().includes('/work/features/') &&
@@ -261,11 +269,15 @@ test('F5-05: completing a Task persists and updates progress', async ({ page }) 
       response.url().endsWith('/state') &&
       response.request().method() === 'PATCH',
   );
-  await page
-    .getByRole('checkbox', { name: 'Complete Implement login' })
-    .check();
+  const taskCheckbox = page.getByRole('checkbox', {
+    name: 'Complete Implement login',
+  });
+  await taskCheckbox.click();
   expect((await completed).status()).toBe(200);
-  await expect(page.getByText('100% work progress')).toBeVisible();
+  await expect(taskCheckbox).toBeChecked();
+  await expect(
+    page.getByRole('progressbar', { name: 'Work progress' }),
+  ).toHaveAttribute('aria-valuenow', '100');
   await expect
     .poll(async () =>
       prisma.task.findFirstOrThrow({
@@ -290,11 +302,15 @@ test('F5-06: reopening a completed Task persists and recalculates progress', asy
       response.url().endsWith('/state') &&
       response.request().method() === 'PATCH',
   );
-  await page
-    .getByRole('checkbox', { name: 'Complete Implement login' })
-    .uncheck();
+  const taskCheckbox = page.getByRole('checkbox', {
+    name: 'Complete Implement login',
+  });
+  await taskCheckbox.click();
   expect((await reopened).status()).toBe(200);
-  await expect(page.getByText('0% work progress')).toBeVisible();
+  await expect(taskCheckbox).not.toBeChecked();
+  await expect(
+    page.getByRole('progressbar', { name: 'Work progress' }),
+  ).toHaveAttribute('aria-valuenow', '0');
   await expect
     .poll(async () =>
       prisma.task.findFirstOrThrow({
@@ -352,7 +368,7 @@ test('Work area expands and remains responsive on mobile and desktop', async ({
     )
     .toBeLessThanOrEqual(0);
   await page
-    .getByRole('heading', { name: 'Features & Tasks' })
+    .getByRole('region', { name: 'My Work Plan' })
     .scrollIntoViewIfNeeded();
   expect(
     await page.evaluate(
@@ -533,7 +549,9 @@ test('F5-35 F5-37: dependencies allow planning but block execution; accepted wor
   await expect(page.getByRole('button', { name: '+ Add Feature' })).toHaveCount(
     0,
   );
-  await expect(page.getByText('100% work progress')).toBeVisible();
+  await expect(
+    page.getByRole('progressbar', { name: 'Work progress' }),
+  ).toHaveAttribute('aria-valuenow', '100');
 });
 
 test('Work area loading, error, and retry use the same protected direct route', async ({
@@ -569,7 +587,7 @@ test('Work area loading, error, and retry use the same protected direct route', 
   await page.unroute(endpoint);
   await page.getByRole('button', { name: 'Retry work area' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Features & Tasks' }),
+    page.getByRole('region', { name: 'My Work Plan' }),
   ).toBeVisible();
 });
 
