@@ -263,7 +263,7 @@ export function ProjectOverviewPage() {
                 </Link>
                 {breadcrumbStage && (
                   <>
-                    <span className="pw-breadcrumb-sep" aria-hidden="true">/</span>
+                    <span className="pw-breadcrumb-sep" aria-hidden="true">&gt;</span>
                     <span className="pw-breadcrumb-seg" title={breadcrumbStage.name}>
                       {breadcrumbStage.name}
                     </span>
@@ -271,7 +271,7 @@ export function ProjectOverviewPage() {
                 )}
                 {breadcrumbOutcome && (
                   <>
-                    <span className="pw-breadcrumb-sep" aria-hidden="true">/</span>
+                    <span className="pw-breadcrumb-sep" aria-hidden="true">&gt;</span>
                     <strong
                       className="pw-breadcrumb-current"
                       title={breadcrumbOutcome.title}

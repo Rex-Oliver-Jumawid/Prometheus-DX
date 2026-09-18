@@ -56,14 +56,18 @@ vi.mock('../../lib/api', async (importOriginal) => ({
   apiFetch: vi.fn(),
 }));
 
-function renderWorkflow() {
+function renderWorkflow(selectedOutcomeId?: string) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[`/projects/${projectId}`]}>
-        <ProjectWorkflow projectId={projectId} isLead={true} />
+        <ProjectWorkflow
+          projectId={projectId}
+          outcomeId={selectedOutcomeId}
+          isLead={true}
+        />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -142,4 +146,60 @@ describe('ProjectWorkflow Stage & Outcome Deletion', () => {
       );
     });
   });
+
+  it('renders the redesigned outcome workspace layout with header, navigation, and context rail', async () => {
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path === `/projects/${projectId}/workflow`) {
+        return Promise.resolve(workflowFixture);
+      }
+      if (path === `/projects/${projectId}/outcomes/${outcomeId}/work`) {
+        return Promise.resolve({
+          features: [],
+          completedTasks: 0,
+          totalTasks: 0,
+          progress: 0,
+          canPlan: true,
+          canExecute: true,
+        });
+      }
+      if (path === `/projects/${projectId}/outcomes/${outcomeId}/delivery`) {
+        return Promise.resolve({
+          submissions: [],
+          revisions: [],
+          acceptances: [],
+          dependencies: [],
+          activity: [],
+          canSubmit: true,
+          isLead: true,
+          hasForReview: false,
+          lifecycleStatus: 'OPEN',
+          outcomeUpdatedAt: '2026-09-18T00:00:00.000Z',
+        });
+      }
+      return Promise.resolve({ success: true });
+    });
+
+    renderWorkflow(outcomeId);
+
+    // Navigation row
+    expect(
+      await screen.findByRole('link', { name: /back to project workspace/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Back to Content')).toBeInTheDocument();
+    expect(screen.getByText('Outcome workspace')).toBeInTheDocument();
+
+    // Outcome Header Card
+    expect(
+      screen.getByRole('heading', { name: 'User Interviews' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Expected outcome')).toBeInTheDocument();
+    expect(screen.getByText('Acceptance criteria')).toBeInTheDocument();
+
+    // Context Rail
+    expect(screen.getByText('Outcome Status')).toBeInTheDocument();
+    expect(screen.getByText('Ownership')).toBeInTheDocument();
+    expect(screen.getByText('Prerequisite')).toBeInTheDocument();
+    expect(screen.getByText('Recent Activity')).toBeInTheDocument();
+  });
 });
+

@@ -24,6 +24,7 @@ import {
 import { apiFetch } from '../../lib/api';
 import { OutcomeWorkArea } from './OutcomeWorkArea';
 import { OutcomeDeliveryPanel } from './OutcomeDeliveryPanel';
+import { OutcomeContextRail } from './OutcomeContextRail';
 import {
   projectCreateOptionsQuery,
   projectKeys,
@@ -1126,137 +1127,172 @@ export function ProjectWorkflow({
         className="project-workflow-section workflow-outcome-details"
         aria-labelledby="outcome-details-title"
       >
-        <div className="workflow-section-heading">
-          <div>
-            <p className="projects-kicker">
-              STAGE {selectedStage.position + 1} / {selectedStage.name}
-            </p>
-            <h2 id="outcome-details-title">{selectedOutcome.title}</h2>
-            <p>{selectedOutcome.description || 'No description provided.'}</p>
-          </div>
-          <div className="workflow-heading-actions">
-            <span
-              className={`workflow-state ${selectedOutcome.lifecycleStatus.toLowerCase()}`}
-            >
-              {selectedOutcome.isLocked
-                ? 'Locked by prerequisite'
-                : selectedOutcome.lifecycleStatus === 'OPEN' &&
-                    selectedOutcome.hasForReview
-                  ? 'For Review'
-                  : lifecycleLabel(selectedOutcome.lifecycleStatus)}
-            </span>
+        {/* Navigation row above header card */}
+        <div className="pw-workspace-navigation">
+          <Link
+            to={`/projects/${projectId}`}
+            className="workspace-back-button"
+            aria-label="Back to Project Workspace"
+          >
+            <span>←</span>
+            <span>Back to Content</span>
+          </Link>
+          <div className="pw-workspace-nav-meta">
             {selectedOutcome.isJoined ? (
-              <span className="workflow-joined-badge">✓ Joined Outcome</span>
+              <span className="pw-joined-badge">✓ Joined outcome</span>
             ) : selectedOutcome.lifecycleStatus === 'ACCEPTED' ? (
               <span className="workflow-closed-note">Joining is closed</span>
             ) : (
               <button
                 type="button"
-                className="projects-primary-button"
+                className="pw-join-button"
                 disabled={joinOutcome.isPending}
                 onClick={() => void joinOutcome.mutateAsync(selectedOutcome.id)}
               >
-                {joinOutcome.isPending ? 'Joining...' : '+ Join Outcome'}
+                {joinOutcome.isPending ? 'Joining...' : '+ Join outcome'}
               </button>
             )}
-            {workflow.data.canManageStructure && (
-              <>
-                <button
-                  type="button"
-                  className="projects-secondary-button"
-                  onClick={() =>
-                    setEditor({
-                      type: 'edit-outcome',
-                      stage: selectedStage,
-                      outcome: selectedOutcome,
-                    })
-                  }
-                >
-                  Edit Outcome
-                </button>
-                <button
-                  type="button"
-                  className="projects-secondary-button pw-outcome-detail-delete-btn"
-                  onClick={() =>
-                    setEditor({
-                      type: 'delete-outcome',
-                      stage: selectedStage,
-                      outcome: selectedOutcome,
-                    })
-                  }
-                >
-                  Delete Outcome
-                </button>
-              </>
-            )}
+            <span className="pw-workspace-tag">Outcome workspace</span>
           </div>
         </div>
+
         {joinOutcome.isError && (
           <p className="project-status-error" role="alert">
             {errorMessage(joinOutcome.error)}
           </p>
         )}
-        <div className="workflow-detail-grid">
-          <section className="workflow-detail-card">
-            <h3>Expected outcome</h3>
-            <p>{selectedOutcome.description || selectedOutcome.title}</p>
-          </section>
-          <section className="workflow-detail-card">
-            <h3>Responsible Departments</h3>
-            <div className="project-detail-departments">
-              {selectedOutcome.departments.map((department) => (
-                <span key={department.id}>{department.name}</span>
-              ))}
+
+        {/* Outcome Header Card */}
+        <section
+          className="outcome-workspace-header"
+          aria-labelledby="outcome-details-title"
+        >
+          <div className="workspace-header-main">
+            <div className="workspace-heading-copy">
+              <div className="workspace-kicker-row">
+                <span className="workspace-accent-line" aria-hidden="true" />
+                <p className="kicker">
+                  {selectedStage.name.toUpperCase()} /{' '}
+                  {selectedOutcome.departments.length > 0
+                    ? selectedOutcome.departments
+                        .map((d) => d.name.toUpperCase())
+                        .join(', ')
+                    : 'OUTCOME'}
+                </p>
+              </div>
+              <h2 id="outcome-details-title" className="workspace-title">
+                {selectedOutcome.title}
+              </h2>
+              <p className="workspace-desc">
+                {selectedOutcome.description ||
+                  'You are participating in this outcome. Its workspace keeps features, tasks, outputs, and history together.'}
+              </p>
             </div>
-          </section>
-          <section className="workflow-detail-card workflow-detail-wide">
-            <h3>Acceptance criteria</h3>
-            <ol>
-              {selectedOutcome.acceptanceCriteria.map((criterion) => (
-                <li key={criterion.id}>{criterion.description}</li>
-              ))}
-            </ol>
-          </section>
-          <section className="workflow-detail-card">
-            <h3>Prerequisites</h3>
-            {selectedOutcome.prerequisites.length ? (
-              <ul>
-                {selectedOutcome.prerequisites.map((prerequisite) => (
-                  <li key={prerequisite.id}>
-                    {prerequisite.title} -{' '}
-                    {prerequisite.resolved ? 'Resolved' : 'Waiting'}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No prerequisite. This Outcome can proceed independently.</p>
-            )}
-          </section>
-          <section className="workflow-detail-card">
-            <h3>Outcome Members</h3>
-            <p>
-              {selectedOutcome.members.length
-                ? selectedOutcome.members
-                    .map(({ fullName }) => fullName)
-                    .join(', ')
-                : 'No one has joined this Outcome yet.'}
-            </p>
-          </section>
+            <div className="pw-workspace-state-actions">
+              <span
+                className={`workflow-state ${selectedOutcome.lifecycleStatus.toLowerCase()}`}
+              >
+                {selectedOutcome.isLocked
+                  ? 'Locked by prerequisite'
+                  : selectedOutcome.lifecycleStatus === 'OPEN' &&
+                      selectedOutcome.hasForReview
+                    ? 'For Review'
+                    : lifecycleLabel(selectedOutcome.lifecycleStatus)}
+              </span>
+              {workflow.data.canManageStructure && (
+                <>
+                  <button
+                    type="button"
+                    className="projects-secondary-button"
+                    onClick={() =>
+                      setEditor({
+                        type: 'edit-outcome',
+                        stage: selectedStage,
+                        outcome: selectedOutcome,
+                      })
+                    }
+                  >
+                    Edit Outcome
+                  </button>
+                  <button
+                    type="button"
+                    className="projects-secondary-button pw-outcome-detail-delete-btn"
+                    onClick={() =>
+                      setEditor({
+                        type: 'delete-outcome',
+                        stage: selectedStage,
+                        outcome: selectedOutcome,
+                      })
+                    }
+                  >
+                    Delete Outcome
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Expected Outcome callout */}
+          <div className="acceptance-block">
+            <div className="expected-icon" aria-hidden="true">
+              ◎
+            </div>
+            <div className="expected-content">
+              <div className="acceptance-label">Expected outcome</div>
+              <div className="acceptance-text">
+                {selectedOutcome.description || selectedOutcome.title}
+              </div>
+            </div>
+          </div>
+
+          {/* Acceptance Criteria Chips */}
+          <div className="acceptance-criteria-wrap">
+            <div className="acceptance-label">Acceptance criteria</div>
+            <div className="criteria-list">
+              {selectedOutcome.acceptanceCriteria.length > 0 ? (
+                selectedOutcome.acceptanceCriteria.map((criterion) => (
+                  <span key={criterion.id} className="criterion-pill">
+                    <span className="criterion-check" aria-hidden="true">
+                      ✓
+                    </span>
+                    <span>{criterion.description}</span>
+                  </span>
+                ))
+              ) : (
+                <span className="criterion-pill empty">
+                  No acceptance criteria specified.
+                </span>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* 2-Column Layout */}
+        <div className="workspace-layout">
+          <main className="workbench">
+            <OutcomeWorkArea
+              key={selectedOutcome.id}
+              projectId={projectId}
+              outcomeId={selectedOutcome.id}
+              accessToken={accessToken}
+              isJoined={selectedOutcome.isJoined}
+            />
+            <OutcomeDeliveryPanel
+              key={`delivery-${selectedOutcome.id}`}
+              projectId={projectId}
+              outcomeId={selectedOutcome.id}
+              accessToken={accessToken}
+              isJoined={selectedOutcome.isJoined}
+            />
+          </main>
+          <OutcomeContextRail
+            projectId={projectId}
+            outcomeId={selectedOutcome.id}
+            accessToken={accessToken}
+            isJoined={selectedOutcome.isJoined}
+            outcome={selectedOutcome}
+          />
         </div>
-        <OutcomeWorkArea
-          key={selectedOutcome.id}
-          projectId={projectId}
-          outcomeId={selectedOutcome.id}
-          accessToken={accessToken}
-          isJoined={selectedOutcome.isJoined}
-        />
-        <OutcomeDeliveryPanel
-          key={`delivery-${selectedOutcome.id}`}
-          projectId={projectId}
-          outcomeId={selectedOutcome.id}
-          accessToken={accessToken}
-          isJoined={selectedOutcome.isJoined}
-        />
         {editor?.type === 'edit-outcome' && options.isSuccess && (
           <OutcomeDialog
             stage={editor.stage}

@@ -77,65 +77,86 @@ function OutputForm({
       }
     });
   return (
-    <form
-      className="outcome-work-form"
-      onSubmit={perform('submissions')}
-      noValidate
-    >
-      <label className="projects-field">
-        <span>Output name, text, or link</span>
-        <textarea
-          aria-label="Output content"
-          {...register('content', {
-            onChange: () => {
-              requestId.current = null;
-              setSaved(false);
-            },
-          })}
-          disabled={!data.canSubmit || pending}
-          aria-invalid={Boolean(errors.content)}
-        />
-        {errors.content && <small role="alert">{errors.content.message}</small>}
-      </label>
-      <label className="projects-field">
-        <span>
-          Submission notes <small>Optional</small>
-        </span>
-        <textarea
-          aria-label="Submission notes"
-          {...register('note', {
-            onChange: () => {
-              requestId.current = null;
-              setSaved(false);
-            },
-          })}
-          disabled={!data.canSubmit || pending}
-        />
-      </label>
-      <div className="outcome-work-actions">
-        <button
-          className="projects-secondary-button"
-          type="button"
-          disabled={!data.canSubmit || pending}
-          onClick={() => void perform('draft')()}
-        >
-          Save draft
-        </button>
-        <button
-          className="projects-primary-button"
-          type="submit"
-          disabled={!data.canSubmit || pending}
-        >
-          {pending ? 'Saving...' : 'Submit for review'}
-        </button>
-        {saved && <span role="status">Draft saved</span>}
+    <div className="output-editor">
+      <div className="pw-output-current">
+        <div className="pw-output-current-copy">
+          <span className="pw-output-current-label">Working submission</span>
+          <strong className="pw-output-current-version">
+            {data.submissions.length === 0
+              ? 'First submission'
+              : `Version ${data.submissions.length + 1}`}
+          </strong>
+        </div>
+        <small className="pw-output-current-help">
+          Prepare the output you want the Project Lead to verify.
+        </small>
       </div>
-      {data.draft && (
-        <p className="workflow-empty-note">
-          Draft saved {new Date(data.draft.updatedAt).toLocaleString()}
-        </p>
-      )}
-    </form>
+      <form
+        className="outcome-work-form"
+        onSubmit={perform('submissions')}
+        noValidate
+      >
+        <div className="field">
+          <label className="field-label">Output name or link</label>
+          <input
+            className="field-input"
+            aria-label="Output content"
+            placeholder="Build URL, GitHub PR, Figma link, document, client approval..."
+            {...register('content', {
+              onChange: () => {
+                requestId.current = null;
+                setSaved(false);
+              },
+            })}
+            disabled={!data.canSubmit || pending}
+            aria-invalid={Boolean(errors.content)}
+          />
+          {errors.content && (
+            <small role="alert">{errors.content.message}</small>
+          )}
+        </div>
+        <div className="field">
+          <label className="field-label">
+            What changed / submission notes
+          </label>
+          <textarea
+            className="field-textarea"
+            aria-label="Submission notes"
+            placeholder="Explain what you produced, what changed since the previous version, and what the Project Lead should verify."
+            {...register('note', {
+              onChange: () => {
+                requestId.current = null;
+                setSaved(false);
+              },
+            })}
+            disabled={!data.canSubmit || pending}
+          />
+        </div>
+        <div className="output-actions-row">
+          <button
+            className="projects-secondary-button"
+            type="button"
+            disabled={!data.canSubmit || pending}
+            onClick={() => void perform('draft')()}
+          >
+            Save draft
+          </button>
+          <button
+            className="projects-primary-button"
+            type="submit"
+            disabled={!data.canSubmit || pending}
+          >
+            {pending ? 'Saving...' : 'Submit for review'}
+          </button>
+          {saved && <span role="status" className="draft-saved-indicator">Draft saved</span>}
+        </div>
+        {data.draft && (
+          <p className="workflow-empty-note">
+            Draft saved {new Date(data.draft.updatedAt).toLocaleString()}
+          </p>
+        )}
+      </form>
+    </div>
   );
 }
 
@@ -220,66 +241,85 @@ export function OutcomeDeliveryPanel({
   const data = delivery.data;
   const accepted = data.lifecycleStatus === 'ACCEPTED';
   return (
-    <section className="outcome-work-area" aria-label="Outputs and feedback">
-      <header className="workflow-section-heading">
-        <div>
-          <p className="projects-kicker">SHARED OUTCOME RECORD</p>
-          <h3>
-            {accepted
-              ? 'Accepted Outcome'
-              : data.isLead
-                ? 'Outcome Submissions'
-                : 'My Outputs & Feedback'}
-          </h3>
-          <p>Every team contribution stays in one shared history.</p>
+    <section className="work-section output-work-section" aria-label="Outputs and feedback">
+      <header className="work-section-head">
+        <div className="output-section-title-row">
+          <div className="output-section-icon" aria-hidden="true">
+            ▱
+          </div>
+          <div>
+            <h3 id="outcome-delivery-title">
+              {isJoined ? 'My Outputs & Feedback' : 'Submitted Outputs'}
+            </h3>
+            <p>
+              {isJoined
+                ? 'Every submission stays here with its review result and Project Lead feedback.'
+                : 'Open a submitted version to review the work and record verification.'}
+            </p>
+          </div>
         </div>
-        {data.hasForReview && (
-          <span className="workflow-state">For Review</span>
-        )}
-      </header>
-      {accepted && (
-        <p className="workflow-form-preview">
-          The Project Lead accepted the combined work. Membership and submission
-          history are preserved.
-        </p>
-      )}
-      {data.isLead && (
-        <div className="outcome-work-actions">
-          {!accepted && data.submissions.length > 0 && (
+        <div className="pw-output-head-actions">
+          {data.isLead && !accepted && data.submissions.length > 0 && (
             <button
-              className="projects-primary-button"
+              className="projects-primary-button pw-review-outcome-jump"
               type="button"
               onClick={() => {
                 mutation.reset();
                 setReviewOpen(true);
               }}
             >
-              Review Outcome
+              Review outcome
             </button>
           )}
-          {accepted && (
+          {data.isLead && accepted && (
             <button
-              className="projects-secondary-button"
+              className="projects-secondary-button pw-review-outcome-jump"
               type="button"
               onClick={() => setReopenVersion(data.outcomeUpdatedAt)}
             >
-              Reopen Outcome
+              Reopen outcome
             </button>
           )}
-          {data.lifecycleStatus === 'NEEDS_REVISION' && (
-            <button
-              className="projects-secondary-button"
-              type="button"
-              disabled={mutation.isPending}
-              onClick={() =>
-                void act('resolve-revision', {
-                  outcomeUpdatedAt: data.outcomeUpdatedAt,
-                }).catch(() => {})
-              }
-            >
-              Mark revision addressed
-            </button>
-          )}
+          <span
+            className={`output-status ${accepted ? 'accepted' : data.hasForReview ? 'review' : 'draft'}`}
+          >
+            {accepted
+              ? 'Accepted'
+              : data.hasForReview
+                ? 'For review'
+                : 'Draft'}
+          </span>
+        </div>
+      </header>
+      {accepted && (
+        <div className="pw-outcome-accepted-banner">
+          <div className="pw-outcome-accepted-icon" aria-hidden="true">
+            ✓
+          </div>
+          <div>
+            <strong>Outcome accepted - submissions are closed</strong>
+            <p>
+              The Project Lead accepted the combined work for this outcome.
+              Members can still view the work and submission history, but no new
+              drafts or submissions can be added.
+            </p>
+          </div>
+        </div>
+      )}
+      {data.isLead && data.lifecycleStatus === 'NEEDS_REVISION' && (
+        <div className="outcome-work-actions">
+          <button
+            className="projects-secondary-button"
+            type="button"
+            disabled={mutation.isPending}
+            onClick={() =>
+              void act('resolve-revision', {
+                outcomeUpdatedAt: data.outcomeUpdatedAt,
+              }).catch(() => {})
+            }
+          >
+            Mark revision addressed
+          </button>
         </div>
       )}
       {data.revisions.length > 0 && (
@@ -317,41 +357,55 @@ export function OutcomeDeliveryPanel({
           save={act}
         />
       )}
-      <h4>
-        Shared submission history{' '}
-        <span className="outcome-task-count">
-          {data.submissions.length} submissions
-        </span>
-      </h4>
-      {!data.submissions.length && (
-        <div className="projects-state-card">No submissions yet.</div>
-      )}
-      <div className="outcome-submission-list">
-        {data.submissions.map((submission, index) => (
-          <button
-            className="outcome-submission-card"
-            type="button"
-            key={submission.id}
-            onClick={() => setSelected(submission)}
-          >
-            <span className="outcome-submission-version">
-              v{data.submissions.length - index}
-              {index === 0 ? ' · Latest' : ''}
-            </span>
-            <strong>{submission.content}</strong>
-            <span>
-              Submitted by {submission.submitter.fullName} ·{' '}
-              {new Date(submission.createdAt).toLocaleString()}
-            </span>
-            <span>
-              {submission.reviewStatus === 'FOR_REVIEW'
-                ? 'For Review'
-                : 'Reviewed'}
-            </span>
-            <span>View submission →</span>
-          </button>
-        ))}
-      </div>
+      <section className="pw-submission-history">
+        <div className="pw-submission-history-head">
+          <div>
+            <h4>Submission history</h4>
+            <p>Previous versions and their feedback are never overwritten.</p>
+          </div>
+          <span className="pw-submission-count">
+            {data.submissions.length} submission
+            {data.submissions.length === 1 ? '' : 's'}
+          </span>
+        </div>
+        {!data.submissions.length && (
+          <div className="empty-submissions">No submissions yet.</div>
+        )}
+        <div className="outcome-submission-list">
+          {data.submissions.map((submission, index) => (
+            <button
+              className="outcome-submission-card"
+              type="button"
+              key={submission.id}
+              onClick={() => setSelected(submission)}
+            >
+              <div className="outcome-sub-card-content">
+                <div className="outcome-sub-card-top">
+                  <span className="outcome-sub-version-badge">
+                    v{data.submissions.length - index}
+                    {index === 0 ? ' · Latest' : ''}
+                  </span>
+                  <span
+                    className={`outcome-sub-status-badge ${submission.reviewStatus.toLowerCase()}`}
+                  >
+                    {submission.reviewStatus === 'FOR_REVIEW'
+                      ? 'For review'
+                      : 'Reviewed'}
+                  </span>
+                </div>
+                <strong className="outcome-sub-title">
+                  {submission.content}
+                </strong>
+                <span className="outcome-sub-meta">
+                  Submitted by {submission.submitter.fullName} ·{' '}
+                  {new Date(submission.createdAt).toLocaleString()}
+                </span>
+                <span className="outcome-sub-link">View submission →</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
       {data.acceptances.length > 0 && (
         <section
           className="outcome-acceptance-history"

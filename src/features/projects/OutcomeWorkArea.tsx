@@ -140,6 +140,10 @@ function FeatureCard({
     done: boolean;
   } | null>(null);
   const done = feature.tasks.filter((task) => task.status === 'DONE').length;
+  const donePercent = feature.tasks.length
+    ? Math.round((done / feature.tasks.length) * 100)
+    : 0;
+
   return (
     <article
       className="outcome-feature"
@@ -148,20 +152,31 @@ function FeatureCard({
       <header className="outcome-feature-header">
         <button
           type="button"
-          className="workflow-icon-button"
+          className="feature-toggle-btn"
           aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${feature.title}`}
           aria-expanded={!collapsed}
           onClick={() => setCollapsed(!collapsed)}
         >
           {collapsed ? '›' : '⌄'}
         </button>
+        <div className="feature-icon-badge" aria-hidden="true">
+          ◉
+        </div>
         <div className="outcome-feature-title">
           <h4>{feature.title}</h4>
-          <p>{feature.description}</p>
+          {feature.description && <p>{feature.description}</p>}
         </div>
-        <span className="outcome-task-count">
-          {done}/{feature.tasks.length} tasks
-        </span>
+        <div className="feature-progress-box">
+          <span className="outcome-task-count">
+            {done}/{feature.tasks.length} tasks
+          </span>
+          <div className="feature-mini-track" aria-hidden="true">
+            <span
+              className="feature-mini-fill"
+              style={{ width: `${donePercent}%` }}
+            />
+          </div>
+        </div>
         {canPlan && (
           <div className="outcome-work-actions">
             <button
@@ -385,50 +400,39 @@ export function OutcomeWorkArea({
       </section>
     );
   return (
-    <section className="outcome-work-area" aria-labelledby="outcome-work-title">
-      <header className="workflow-section-heading">
-        <div>
-          <p className="projects-kicker">OUTCOME WORKSPACE</p>
-          <h3 id="outcome-work-title">Features &amp; Tasks</h3>
-          <p>Break the expected outcome into features and actionable tasks.</p>
+    <section className="work-section work-plan-section" aria-labelledby="outcome-work-title">
+      <header className="work-section-head">
+        <div className="work-section-title-wrap">
+          <h3 id="outcome-work-title">
+            {isJoined ? 'My Work Plan' : 'Member Work Plan'}
+          </h3>
+          <p>
+            {isJoined
+              ? 'Break the outcome into features, then manage the tasks needed to produce the output.'
+              : 'Read-only view of how the work was organized behind this outcome.'}
+          </p>
         </div>
         {work.data.canPlan && (
           <button
             type="button"
-            className="projects-primary-button"
+            className="feature-add-button"
             disabled={mutation.isPending}
             onClick={() => setComposer(true)}
           >
-            + Add Feature
+            ＋ Add feature
           </button>
         )}
       </header>
-      <div className="outcome-work-progress">
-        <span>
-          {work.data.completedTasks}/{work.data.totalTasks} tasks complete
-        </span>
-        <strong>
-          {work.data.progress === null
-            ? 'No work progress yet'
-            : `${work.data.progress}% work progress`}
-        </strong>
-        {work.data.progress !== null && (
-          <progress
-            aria-label="Outcome work progress"
-            max={100}
-            value={work.data.progress}
-          />
-        )}
-      </div>
       {work.data.canPlan && !work.data.canExecute && (
-        <p className="workflow-form-preview">
-          Planning is available. Resolve prerequisites before completing Tasks
-          or submitting Output.
-        </p>
+        <div className="locked-workspace-banner">
+          This outcome is waiting on a prerequisite. You may plan features and
+          tasks now, but task completion and output submission stay locked until
+          the dependency is resolved.
+        </div>
       )}
       {!isJoined && (
         <p className="workflow-empty-note">
-          Join this Outcome to contribute to its work plan.
+          Join this outcome to contribute to its work plan.
         </p>
       )}
       {mutation.isError && (
@@ -455,29 +459,31 @@ export function OutcomeWorkArea({
           <strong>No features yet</strong>
           <p>
             {work.data.canPlan
-              ? 'Start by adding the main pieces of work needed to achieve this Outcome.'
-              : 'The Outcome Members have not defined a work plan yet.'}
+              ? 'Start by adding the main pieces of work needed to achieve this outcome.'
+              : 'No features have been defined yet. Join this outcome to contribute to its work plan.'}
           </p>
         </div>
       )}
-      {work.data.features.map((feature) => (
-        <FeatureCard
-          key={feature.id}
-          feature={feature}
-          canPlan={work.data.canPlan}
-          canExecute={work.data.canExecute}
-          pending={mutation.isPending}
-          change={change}
-        />
-      ))}
-      {work.data.canPlan && work.data.features.length > 0 && (
+      <div className="feature-list">
+        {work.data.features.map((feature) => (
+          <FeatureCard
+            key={feature.id}
+            feature={feature}
+            canPlan={work.data.canPlan}
+            canExecute={work.data.canExecute}
+            pending={mutation.isPending}
+            change={change}
+          />
+        ))}
+      </div>
+      {work.data.canPlan && (
         <button
           type="button"
-          className="workflow-add-outcome"
+          className="add-feature-large"
           disabled={mutation.isPending}
           onClick={() => setComposer(true)}
         >
-          + Add another feature
+          ＋ Add another feature
         </button>
       )}
     </section>
