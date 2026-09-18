@@ -78,14 +78,18 @@ function renderWorkspace(
   options: {
     outcomeOverride?: Record<string, unknown>;
     workData?: unknown;
+    workPromise?: Promise<unknown>;
     deliveryData?: unknown;
+    deliveryPromise?: Promise<unknown>;
     isLead?: boolean;
   } = {},
 ) {
   const {
     outcomeOverride = {},
     workData = emptyWorkData,
+    workPromise,
     deliveryData = emptyDeliveryData,
+    deliveryPromise,
     isLead = false,
   } = options;
 
@@ -104,16 +108,19 @@ function renderWorkspace(
       return Promise.resolve(fixture);
     }
     if (path === `/projects/${projectId}/outcomes/${outcomeId}/work`) {
-      return Promise.resolve(workData);
+      return workPromise ?? Promise.resolve(workData);
     }
     if (path.startsWith(`/projects/${projectId}/outcomes/${outcomeId}/delivery`)) {
-      return Promise.resolve(deliveryData);
+      return deliveryPromise ?? Promise.resolve(deliveryData);
     }
     return Promise.resolve({ success: true });
   });
 
   const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0 },
+      mutations: { retry: false },
+    },
   });
 
   render(
@@ -324,6 +331,7 @@ describe('Outcome Workspace - Empty State', () => {
     renderWorkspace({ isLead: false, outcomeOverride: { isJoined: true } });
     await screen.findByText('Working submission');
 
+    expect(screen.getByRole('heading', { name: 'My Outputs & Feedback' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save draft' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Submit for review' })).toBeInTheDocument();
 
@@ -379,6 +387,49 @@ describe('Outcome Workspace - Empty State', () => {
     expect(screen.queryByRole('button', { name: 'Submit for review' })).not.toBeInTheDocument();
 
     // Team submissions section is still visible
+    expect(screen.getByRole('heading', { name: 'Submitted Outputs' })).toBeInTheDocument();
     await screen.findByRole('heading', { name: 'Team submissions' });
   });
+
+  it('renders structured skeleton for Work Plan while loading', async () => {
+    let resolveWork: (value: unknown) => void = () => {};
+    const workPromise = new Promise((resolve) => {
+      resolveWork = resolve;
+    });
+    renderWorkspace({ workPromise });
+
+    const skeleton = await screen.findByLabelText('Loading Outcome work');
+    expect(skeleton).toHaveClass('outcome-skeleton-card');
+    expect(skeleton).toHaveAttribute('aria-busy', 'true');
+
+    resolveWork(emptyWorkData);
+  });
+
+  it('renders structured skeleton for Delivery Panel while loading', async () => {
+    let resolveDelivery: (value: unknown) => void = () => {};
+    const deliveryPromise = new Promise((resolve) => {
+      resolveDelivery = resolve;
+    });
+    renderWorkspace({ deliveryPromise });
+
+    const skeleton = await screen.findByLabelText('Loading submissions');
+    expect(skeleton).toHaveClass('outcome-skeleton-card');
+    expect(skeleton).toHaveAttribute('aria-busy', 'true');
+
+    resolveDelivery(emptyDeliveryData);
+  });
+
+  it('renders status badge and Delete Outcome stacked in pw-workspace-state-actions for Project Lead', async () => {
+    renderWorkspace({ isLead: true });
+    await screen.findByRole('heading', { name: 'Launch MVP' });
+
+    const deleteBtn = screen.getByRole('button', { name: 'Delete Outcome' });
+    const stateActionsContainer = deleteBtn.closest('.pw-workspace-state-actions');
+    expect(stateActionsContainer).not.toBeNull();
+
+    // The container should hold both the status badge and the delete button
+    expect(stateActionsContainer?.querySelector('.workflow-state')).not.toBeNull();
+    expect(stateActionsContainer?.contains(deleteBtn)).toBe(true);
+  });
 });
+

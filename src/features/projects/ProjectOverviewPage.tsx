@@ -216,15 +216,7 @@ export function ProjectOverviewPage() {
       aria-labelledby="pwProjectTitle"
     >
       <div className="pw-top-bar">
-        {outcomeId ? (
-          <Link
-            to={`/projects/${projectId}`}
-            className="pw-back-nav"
-            aria-label="Back to Project Workspace"
-          >
-            ← Back to Workspace
-          </Link>
-        ) : (
+        {!outcomeId && (
           <Link
             to="/projects"
             className="pw-back-nav"

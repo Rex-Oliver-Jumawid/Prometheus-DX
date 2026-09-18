@@ -235,9 +235,44 @@ export function OutcomeDeliveryPanel({
   };
   if (delivery.isPending)
     return (
-      <section className="outcome-work-area" aria-label="Loading submissions">
-        <div className="projects-skeleton" />
-        <p>Loading shared submission history...</p>
+      <section
+        className="work-section output-work-section outcome-skeleton-card"
+        aria-label="Loading submissions"
+        aria-busy="true"
+      >
+        <div className="work-section-head pw-sk-header-row">
+          <div className="output-section-title-row pw-sk-icon-title-group">
+            <div className="pw-sk-shimmer pw-sk-icon" />
+            <div className="pw-sk-title-group">
+              <div className="pw-sk-line pw-sk-title" />
+              <div className="pw-sk-line pw-sk-desc" />
+            </div>
+          </div>
+        </div>
+        <div className="pw-sk-output-form">
+          <div className="pw-sk-line" style={{ width: 90, height: 10 }} />
+          <div className="pw-sk-shimmer pw-sk-textarea" />
+          <div className="pw-sk-actions-row">
+            <div className="pw-sk-shimmer" style={{ width: 75, height: 26, borderRadius: 8 }} />
+            <div className="pw-sk-shimmer" style={{ width: 110, height: 26, borderRadius: 8 }} />
+          </div>
+        </div>
+        <div className="pw-sk-submissions-block">
+          <div className="pw-sk-header-row" style={{ marginBottom: 4 }}>
+            <div className="pw-sk-line" style={{ width: 110, height: 12 }} />
+            <div
+              className="pw-sk-shimmer"
+              style={{ width: 68, height: 15, borderRadius: 999 }}
+            />
+          </div>
+          <div className="pw-sk-submission-item">
+            <div className="pw-sk-shimmer" style={{ width: 22, height: 22, borderRadius: '50%' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+              <div className="pw-sk-line" style={{ width: 130, height: 10 }} />
+              <div className="pw-sk-line" style={{ width: 210, height: 9 }} />
+            </div>
+          </div>
+        </div>
       </section>
     );
   if (delivery.isError)
@@ -252,7 +287,7 @@ export function OutcomeDeliveryPanel({
     );
   const data = delivery.data;
   const accepted = data.lifecycleStatus === 'ACCEPTED';
-  const isContributor = !data.isLead && isJoined;
+  const isContributor = isJoined;
 
   return (
     <section className="work-section output-work-section" aria-label="Outputs and feedback">
@@ -263,16 +298,24 @@ export function OutcomeDeliveryPanel({
           </div>
           <div>
             <h3 id="outcome-delivery-title">
-              {isContributor ? 'My Outputs & Feedback' : 'Submitted Outputs'}
+              {accepted
+                ? 'Accepted Outcome'
+                : isContributor
+                  ? 'My Outputs & Feedback'
+                  : data.isLead
+                    ? 'Outcome Submissions'
+                    : 'Submitted Outputs'}
             </h3>
             <p>
-              {isContributor
-                ? 'Every submission stays here with its review result and Project Lead feedback.'
-                : data.isLead
-                  ? (data.submissions.length > 0
-                      ? 'Review all team submissions together, verify the acceptance criteria, then make one decision for the outcome.'
-                      : 'No submitted work is available for Project Lead review yet.')
-                  : 'Every member submission is preserved and reviewed as part of the outcome.'}
+              {accepted
+                ? 'The Project Lead accepted the combined work. Submission history remains available as a permanent record.'
+                : isContributor
+                  ? 'Your submission is added to the shared outcome record. The Project Lead reviews all team submissions together.'
+                  : data.isLead
+                    ? (data.submissions.length > 0
+                        ? 'Review all team submissions together, verify the acceptance criteria, then make one decision for the outcome.'
+                        : 'No submitted work is available for Project Lead review yet.')
+                    : 'Every member submission is preserved and reviewed as part of the outcome.'}
             </p>
           </div>
         </div>

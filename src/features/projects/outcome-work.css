@@ -150,10 +150,39 @@
 
 .pw-workspace-state-actions {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 7px;
+  flex-shrink: 0;
 }
+
+.pw-outcome-detail-delete-btn,
+.pw-delete-outcome-button {
+  padding: 4px 10px;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 7px;
+  border: 1px solid #fecaca;
+  background: #ffffff;
+  color: #b42318;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.3;
+}
+
+.pw-outcome-detail-delete-btn:hover:not(:disabled),
+.pw-delete-outcome-button:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+.pw-outcome-detail-delete-btn:disabled,
+.pw-delete-outcome-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 
 /* Status badge styles */
 .workflow-state {
@@ -1167,6 +1196,159 @@
   font: 400 8.5px ui-monospace, SFMono-Regular, Menlo, monospace;
   color: #98a2b3;
   margin-top: 2px;
+}
+
+/* ==========================================================================
+   Outcome Work Section Skeletons
+   ========================================================================== */
+.outcome-skeleton-card {
+  pointer-events: none;
+  user-select: none;
+}
+
+.pw-sk-shimmer {
+  background: linear-gradient(90deg, #f0eae4 25%, #faf7f4 50%, #f0eae4 75%);
+  background-size: 200% 100%;
+  animation: projects-shimmer 1.5s ease-in-out infinite;
+}
+
+.pw-sk-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pw-sk-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.pw-sk-icon-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.pw-sk-line {
+  background: linear-gradient(90deg, #ede6df 25%, #f7f3ef 50%, #ede6df 75%);
+  background-size: 200% 100%;
+  animation: projects-shimmer 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+.pw-sk-title {
+  width: 125px;
+  height: 15px;
+}
+
+.pw-sk-desc {
+  width: min(320px, 80%);
+  height: 10px;
+}
+
+.pw-sk-btn {
+  width: 85px;
+  height: 26px;
+  border-radius: 10px;
+}
+
+.pw-sk-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+
+/* Feature card skeleton */
+.pw-sk-feature-card {
+  margin-top: 10px;
+  padding: 12px;
+  background: #faf7f4;
+  border: 1px solid #ebe4dc;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.pw-sk-feature-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pw-sk-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-left: 20px;
+}
+
+.pw-sk-task-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pw-sk-checkbox {
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.pw-sk-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Output form skeleton */
+.pw-sk-output-form {
+  margin-top: 10px;
+  padding: 12px;
+  background: #faf7f4;
+  border: 1px solid #ebe4dc;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.pw-sk-textarea {
+  width: 100%;
+  height: 52px;
+  border-radius: 8px;
+}
+
+.pw-sk-actions-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.pw-sk-submissions-block {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.pw-sk-submission-item {
+  padding: 8px 10px;
+  background: #fdfbf9;
+  border: 1px solid #eee8e2;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 /* ==========================================================================

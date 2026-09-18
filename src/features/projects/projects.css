@@ -3604,14 +3604,25 @@
   cursor: not-allowed;
 }
 
-.pw-outcome-detail-delete-btn {
-  color: #c2410c;
-  border-color: rgba(194, 65, 12, 0.3);
+.pw-outcome-detail-delete-btn,
+.pw-delete-outcome-button {
+  padding: 4px 10px;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 7px;
+  border: 1px solid #fecaca;
+  background: #ffffff;
+  color: #b42318;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.3;
 }
 
-.pw-outcome-detail-delete-btn:hover:not(:disabled) {
-  background: rgba(194, 65, 12, 0.08);
-  border-color: #c2410c;
+.pw-outcome-detail-delete-btn:hover:not(:disabled),
+.pw-delete-outcome-button:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #991b1b;
 }
 
 @media (max-width: 720px) {

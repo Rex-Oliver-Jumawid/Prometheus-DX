@@ -384,9 +384,40 @@ export function OutcomeWorkArea({
   };
   if (work.isPending)
     return (
-      <section className="outcome-work-area" aria-label="Loading Outcome work">
-        <div className="projects-skeleton" />
-        <p>Loading Features and Tasks...</p>
+      <section
+        className="work-section work-plan-section outcome-skeleton-card"
+        aria-label="Loading Outcome work"
+        aria-busy="true"
+      >
+        <div className="work-section-head pw-sk-header-row">
+          <div className="work-section-title-wrap pw-sk-title-group">
+            <div className="pw-sk-line pw-sk-title" />
+            <div className="pw-sk-line pw-sk-desc" />
+          </div>
+          <div className="pw-sk-shimmer pw-sk-btn" />
+        </div>
+        <div className="pw-sk-feature-card">
+          <div className="pw-sk-feature-top">
+            <div className="pw-sk-shimmer pw-sk-checkbox" />
+            <div className="pw-sk-line" style={{ width: 140, height: 12 }} />
+            <div
+              className="pw-sk-shimmer pw-sk-line"
+              style={{ width: 48, height: 16, borderRadius: 999, marginLeft: 'auto' }}
+            />
+          </div>
+          <div className="pw-sk-task-list">
+            <div className="pw-sk-task-item">
+              <div className="pw-sk-shimmer pw-sk-checkbox" />
+              <div className="pw-sk-line" style={{ width: 180, height: 10 }} />
+              <div className="pw-sk-shimmer pw-sk-avatar" />
+            </div>
+            <div className="pw-sk-task-item">
+              <div className="pw-sk-shimmer pw-sk-checkbox" />
+              <div className="pw-sk-line" style={{ width: 120, height: 10 }} />
+              <div className="pw-sk-shimmer pw-sk-avatar" />
+            </div>
+          </div>
+        </div>
       </section>
     );
   if (work.isError)
