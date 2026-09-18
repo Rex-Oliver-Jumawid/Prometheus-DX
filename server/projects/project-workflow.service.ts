@@ -20,6 +20,7 @@ import type {
   UpdateProjectMemberAccessRequest,
 } from '../../shared/contracts/project-workflow';
 import { PrismaService } from '../database/prisma.service';
+import { createNotificationEvent } from '../notifications/notifications.service';
 
 const outcomeInclude = {
   _count: {
@@ -383,7 +384,12 @@ export class ProjectWorkflowService {
         where: { id: outcomeId },
         select: {
           lifecycleStatus: true,
-          stage: { select: { projectId: true } },
+          stage: {
+            select: {
+              projectId: true,
+              project: { select: { leadMemberId: true } },
+            },
+          },
         },
       });
       if (!existing || existing.stage.projectId !== projectId) {
@@ -411,6 +417,14 @@ export class ProjectWorkflowService {
           memberId: currentMember.id,
           accessLevel: 'CAN_VIEW',
         },
+      });
+      await createNotificationEvent(transaction, {
+        type: 'OUTCOME_JOINED',
+        sourceEventId: `${outcomeId}:${currentMember.id}`,
+        recipientMemberIds: [existing.stage.project.leadMemberId],
+        actorMemberId: currentMember.id,
+        projectId,
+        outcomeId,
       });
     });
     const outcome = await this.prisma.outcome.findUniqueOrThrow({

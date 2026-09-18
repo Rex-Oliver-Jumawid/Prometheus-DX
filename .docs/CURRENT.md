@@ -8,13 +8,16 @@ Canonical requirements belong in `.context/`.
 
 ## Current Phase
 
-Phase 6 - Schedule, Work Sessions, and Team
+Phase 7 - Notifications and Home
 
-Status: Complete.
+Status: In progress.
+
+The notification backend and persistence foundation is delivered.
+Phase 7 is not complete.
 
 Formal implementation record:
 
-`.docs/phases/phase-06-schedule-work-sessions-team.md`
+`.docs/phases/phase-07-notifications-home.md`
 
 ## Previous Phase
 
@@ -79,27 +82,14 @@ The normal broad gates are `pnpm verify`, `pnpm verify:e2e`, and `pnpm verify:re
 
 ## Next Action
 
-Phase 6 is complete and may be merged into `main` when desired.
+Implement the Notifications UI and shell bell/unread integration as the next bounded Phase 7 slice.
 
-F6-01 through F6-26 pass their layered acceptance evidence.
+Migration `20260918020000_phase_07_notifications` is deployed and all 16 migrations are applied.
+The four required notification events, authenticated inbox APIs, idempotency constraint, and live PostgreSQL integration test pass.
 
-Migration `20260918010000_phase_06_work_sessions` is deployed and all 15 migrations are applied.
-
-Live database integration passes 4 Schedule tests, 5 WorkSession tests, and 2 Team tests.
-
-The final required non-browser gates pass with 139 enabled Node tests, 22 component tests, and both production builds.
-
-The focused Phase 6 Chromium journeys pass 2/2, and the visual/responsive/state audits pass 2/2 at 1440x1000, 900x900, and 390x844.
-
-The final full Chromium run passed 92 tests.
-One pre-existing Phase 4 Project Members test still fails because the current Project page does not mount the existing `ProjectMembersPanel`, and its three serial dependents do not run.
-Phase 6 did not change Project UI relative to `main`.
-
-Resolve the Project Members regression on its owning Project UI branch and rerun that serial acceptance file there.
-
+Do not start Home aggregation or Home UI in the notification UI slice.
 Do not mark Phase 5 complete from this branch.
-Do not begin Phase 7 automatically.
-Do not add ScheduleOverride or realtime presence without a concrete acceptance requirement.
+Do not add Chat, realtime messaging, presence, attachments, announcements, or Phase 9 behavior.
 
 ## Handoff Maintenance Rule
 

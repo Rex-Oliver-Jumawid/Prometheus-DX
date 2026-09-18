@@ -69,6 +69,13 @@ enum WorkSessionStatus {
   NEEDS_CORRECTION
 }
 
+enum NotificationType {
+  OUTCOME_JOINED
+  SUBMISSION_CREATED
+  REVISION_REQUESTED
+  OUTCOME_ACCEPTED
+}
+
 model Department {
   id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
@@ -124,6 +131,8 @@ model Member {
   schedule                    MemberSchedule?
   workSessions                WorkSession[]
   workSessionCorrections      WorkSessionCorrection[]
+  receivedNotifications       Notification[]               @relation("NotificationRecipient")
+  actedNotifications          Notification[]               @relation("NotificationActor")
 
   @@index([departmentId])
   @@index([status])
@@ -210,6 +219,7 @@ model Project {
   members             ProjectMember[]
   memberAccessHistory ProjectMemberAccessHistory[]
   activity            ActivityLog[]
+  notifications       Notification[]
 
   @@index([createdByMemberId])
   @@index([leadMemberId])
@@ -317,6 +327,7 @@ model Outcome {
   reviewDrafts       OutcomeReviewDraft[]
   revisionRequests   OutcomeRevisionRequest[]
   acceptances        OutcomeAcceptance[]
+  notifications      Notification[]
 
   @@unique([stageId, position])
   @@index([stageId])
@@ -552,4 +563,28 @@ model OutcomeAcceptanceMember {
   @@id([acceptanceId, memberId])
   @@index([memberId])
   @@map("outcome_acceptance_members")
+}
+
+model Notification {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipientMemberId String           @map("recipient_member_id") @db.Uuid
+  type              NotificationType
+  eventKey          String           @map("event_key") @db.VarChar(200)
+  projectId         String           @map("project_id") @db.Uuid
+  outcomeId         String?          @map("outcome_id") @db.Uuid
+  actorMemberId     String?          @map("actor_member_id") @db.Uuid
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  readAt            DateTime?        @map("read_at") @db.Timestamptz(6)
+  recipientMember   Member           @relation("NotificationRecipient", fields: [recipientMemberId], references: [id], onDelete: Restrict)
+  actorMember       Member?          @relation("NotificationActor", fields: [actorMemberId], references: [id], onDelete: Restrict)
+  project           Project          @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  outcome           Outcome?         @relation(fields: [outcomeId], references: [id], onDelete: Restrict)
+
+  @@unique([recipientMemberId, eventKey])
+  @@index([recipientMemberId, createdAt(sort: Desc)])
+  @@index([recipientMemberId, readAt, createdAt(sort: Desc)])
+  @@index([projectId])
+  @@index([outcomeId])
+  @@index([actorMemberId])
+  @@map("notifications")
 }

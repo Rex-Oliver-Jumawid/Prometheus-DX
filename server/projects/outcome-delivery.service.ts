@@ -15,6 +15,7 @@ import type {
 } from '../../shared/contracts/outcome-delivery';
 import { CriteriaSnapshotSchema } from '../../shared/contracts/outcome-delivery';
 import { PrismaService } from '../database/prisma.service';
+import { createNotificationEvent } from '../notifications/notifications.service';
 
 const contextInclude = {
   stage: {
@@ -298,6 +299,14 @@ export class OutcomeDeliveryService {
           metadata: { content: input.content },
         },
       });
+      await createNotificationEvent(db, {
+        type: 'SUBMISSION_CREATED',
+        sourceEventId: submission.id,
+        recipientMemberIds: [outcome.stage.project.leadMemberId],
+        actorMemberId: member.id,
+        projectId,
+        outcomeId,
+      });
     });
   }
 
@@ -486,7 +495,7 @@ export class OutcomeDeliveryService {
         outcomeId,
         input.submissionIds,
       );
-      await db.outcomeRevisionRequest.create({
+      const revision = await db.outcomeRevisionRequest.create({
         data: {
           outcomeId,
           requestedByMemberId: member.id,
@@ -514,6 +523,14 @@ export class OutcomeDeliveryService {
         'REVISION_REQUESTED',
         { message: input.note },
       );
+      await createNotificationEvent(db, {
+        type: 'REVISION_REQUESTED',
+        sourceEventId: revision.id,
+        recipientMemberIds: outcome.members.map((item) => item.memberId),
+        actorMemberId: member.id,
+        projectId,
+        outcomeId,
+      });
     });
   }
 
@@ -599,6 +616,14 @@ export class OutcomeDeliveryService {
       await this.record(db, member, projectId, outcomeId, 'OUTCOME_ACCEPTED', {
         acceptanceId: acceptance.id,
         creditedMembers: outcome.members.map((item) => item.memberId),
+      });
+      await createNotificationEvent(db, {
+        type: 'OUTCOME_ACCEPTED',
+        sourceEventId: acceptance.id,
+        recipientMemberIds: outcome.members.map((item) => item.memberId),
+        actorMemberId: member.id,
+        projectId,
+        outcomeId,
       });
     });
   }

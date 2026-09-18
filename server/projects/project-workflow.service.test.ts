@@ -148,7 +148,10 @@ function createDatabase(
           : {
               ...outcomeRecord(),
               lifecycleStatus: options.outcomeLifecycleStatus ?? 'OPEN',
-              stage: { projectId: options.outcomeProjectId ?? projectId },
+              stage: {
+                projectId: options.outcomeProjectId ?? projectId,
+                project: { leadMemberId: options.leadMemberId ?? lead.id },
+              },
             },
       ),
       findUniqueOrThrow: vi.fn().mockResolvedValue(
@@ -252,6 +255,9 @@ function createDatabase(
       create: vi
         .fn()
         .mockResolvedValue({ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }),
+    },
+    notification: {
+      createMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
   };
   const transaction = vi.fn(
@@ -528,6 +534,17 @@ describe('ProjectWorkflowService', () => {
 
     expect(database.outcomeMember.upsert).toHaveBeenCalledTimes(2);
     expect(database.projectMember.upsert).toHaveBeenCalledTimes(2);
+    expect(database.notification.createMany).toHaveBeenCalledTimes(2);
+    expect(database.notification.createMany).toHaveBeenLastCalledWith({
+      data: [
+        expect.objectContaining({
+          recipientMemberId: lead.id,
+          type: 'OUTCOME_JOINED',
+          eventKey: `OUTCOME_JOINED:${outcomeId}:${member.id}`,
+        }),
+      ],
+      skipDuplicates: true,
+    });
   });
 
   it('denies joining an accepted Outcome before writing membership', async () => {
