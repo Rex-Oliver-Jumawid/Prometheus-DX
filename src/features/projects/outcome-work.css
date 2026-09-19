@@ -77,6 +77,24 @@
   font: 400 9px ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+.pw-outcome-details-trigger {
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.pw-outcome-details-trigger:hover,
+.pw-outcome-details-trigger:focus-visible {
+  border-color: #cbbcb2;
+  background: #fffdfa;
+  color: #4e433d;
+  box-shadow: 0 2px 7px rgba(55, 39, 31, 0.05);
+  outline: 0;
+}
+
 .pw-readonly-note {
   margin: 0 0 12px;
   padding: 8px 12px;
