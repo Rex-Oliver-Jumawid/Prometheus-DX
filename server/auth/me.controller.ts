@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Patch,
   UseGuards,
 } from '@nestjs/common';
@@ -19,7 +20,7 @@ import { SupabaseAuthGuard } from './supabase-auth.guard';
 @Controller('me')
 @UseGuards(SupabaseAuthGuard)
 export class MeController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   private async toResponse(member: Member): Promise<CurrentMemberResponse> {
     const department = await this.prisma.department.findUnique({
