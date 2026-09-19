@@ -2222,12 +2222,14 @@
 .projects-dialog-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 20;
+  z-index: 120;
   display: grid;
   place-items: center;
   overflow: auto;
   padding: 20px;
-  background: rgba(16, 24, 40, 0.42);
+  background: rgba(54, 42, 36, 0.24);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
 }
 .projects-dialog {
   width: min(620px, 100%);
