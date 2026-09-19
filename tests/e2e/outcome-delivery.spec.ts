@@ -377,8 +377,24 @@ test('F5-17 F5-20: Lead reviews combined history and requests revision with requ
 }) => {
   await signIn(page);
   await openDelivery(page);
-  await page
-    .getByRole('button', { name: 'Review Outcome', exact: true })
+  const teamSubmissionsHeader = page.locator(
+    '.pw-submission-history-head',
+  );
+  await expect(
+    teamSubmissionsHeader.getByRole('button', {
+      name: 'Review outcome',
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.locator('.work-section-head').getByRole('button', {
+      name: 'Review outcome',
+      exact: true,
+    }),
+  ).toHaveCount(0);
+
+  await teamSubmissionsHeader
+    .getByRole('button', { name: 'Review outcome', exact: true })
     .click();
   const dialog = page.getByRole('dialog', { name: 'Review Outcome' });
   await expect(
