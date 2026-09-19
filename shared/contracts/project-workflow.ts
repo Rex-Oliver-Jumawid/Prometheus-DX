@@ -44,6 +44,7 @@ export const OutcomePrerequisiteSchema = z.object({
   title: z.string().min(1),
   lifecycleStatus: OutcomeLifecycleStatusSchema,
   resolved: z.boolean(),
+  resolution: z.enum(['WAITING', 'ACCEPTED', 'OVERRIDDEN']).optional(),
 });
 
 export const OutcomeSchema = z.object({
