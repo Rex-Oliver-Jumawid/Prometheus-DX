@@ -9,5 +9,10 @@
     "emitDecoratorMetadata": true,
     "noEmit": true
   },
-  "include": ["server/**/*.ts", "shared/**/*.ts", "prisma/seed.ts"]
+  "include": [
+    "api/**/*.ts",
+    "server/**/*.ts",
+    "shared/**/*.ts",
+    "prisma/seed.ts"
+  ]
 }

@@ -294,6 +294,39 @@ Each phase should extend automated coverage for its critical rules while still r
 - The Phase 0 migration intentionally contained no business tables.
 - Later feature phases still needed to prove their own empty, loading, error, permission, and persistence states.
 
+## Production Deployment Correction
+
+The initial Vercel deployment built and served the Vite frontend but did not expose the existing NestJS application as a Vercel Function.
+As a result, same-origin frontend calls such as `GET /api/me` were handled as static deployment paths and returned `404` after successful Supabase authentication.
+
+The correction adds a single cached Vercel Function adapter for the existing Nest application and moves Nest creation and configuration into a shared bootstrap module.
+Both the local listener and the serverless adapter now use the same `AppModule`, `/api` global prefix, CORS policy, and `AllExceptionsFilter`.
+Vercel dispatches nested `/api/*` requests through an unnamed `/api/(.*)` rewrite to the `/api` function before applying the Vite SPA fallback.
+The unnamed wildcard avoids adding a captured path value to the query string, and Vercel preserves the incoming pathname and query string when it invokes the function.
+Local development continues to use `server/main.ts` and `app.listen()`.
+
+The deployment keeps the Prisma 6 connection model already established by the repository: `DATABASE_URL` uses the Supabase transaction pooler for runtime queries and `DIRECT_URL` uses a direct or session connection for Prisma CLI operations.
+The Vercel build command remains `pnpm prisma:generate && pnpm build` so the serverless bundle has a generated Prisma Client.
+
+Verification on 2026-09-19 confirmed the existing production `/api/health` path returned `404` before redeployment.
+`pnpm prisma:generate`, `pnpm typecheck`, `pnpm test`, `pnpm build`, and the broader `pnpm verify` gate passed after the correction.
+The compiled serverless adapter returned `200` for `/api/health` and authentication-controlled `401` responses for unauthenticated `/api/me` and `/api/projects`, proving those paths reached Nest instead of a static `404`.
+The local `server/main.ts` listener also returned `200` for `/api/health` on an alternate port while the normal development port was already occupied.
+Vercel CLI 59.23.2 local emulation returned `200` for `/api/health?probe=one%20two`, authentication-controlled `401` responses for `/api/me?probe=one%20two` and a nested `PATCH /api/projects/123/status?probe=one%20two`, and `200` HTML for a direct SPA route.
+The CLI debug trace retained each original API pathname and query string without adding a wildcard capture parameter.
+The local CLI required `TSX_TSCONFIG_PATH=tsconfig.server.json` so its development TypeScript loader used the repository's Nest decorator settings.
+`vercel build` could not proceed because the checkout has no local Vercel project settings, so an actual Vercel build and post-deployment production checks remain pending.
+
+Related changes:
+
+- `server/bootstrap.ts`
+- `server/main.ts`
+- `api/index.ts`
+- `vercel.json`
+- `server/bootstrap.test.ts`
+- `server/vercel-handler.test.ts`
+- `server/vercel-config.test.ts`
+
 ## Technical Debt at Phase Exit
 
 No Phase 0 technical debt blocks Phase 1. Any warnings from underlying build tooling should continue to be monitored but should not be confused with application correctness failures.
