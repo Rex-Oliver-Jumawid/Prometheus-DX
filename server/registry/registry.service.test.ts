@@ -41,6 +41,44 @@ function delivery(send = vi.fn().mockResolvedValue(undefined)) {
 }
 
 describe('RegistryService invitation behavior', () => {
+  it('deletes an unreferenced department', async () => {
+    const database = {
+      department: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: department.id,
+          _count: { members: 0, projects: 0, outcomes: 0 },
+        }),
+        delete: vi.fn().mockResolvedValue(department),
+      },
+    } as unknown as PrismaService;
+    const service = new RegistryService(database, delivery());
+
+    await expect(service.deleteDepartment(department.id)).resolves.toEqual({
+      id: department.id,
+    });
+    expect(database.department.delete).toHaveBeenCalledWith({
+      where: { id: department.id },
+    });
+  });
+
+  it('rejects deleting a department that is still referenced', async () => {
+    const database = {
+      department: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: department.id,
+          _count: { members: 1, projects: 0, outcomes: 0 },
+        }),
+        delete: vi.fn(),
+      },
+    } as unknown as PrismaService;
+    const service = new RegistryService(database, delivery());
+
+    await expect(service.deleteDepartment(department.id)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(database.department.delete).not.toHaveBeenCalled();
+  });
+
   it('loads Registry departments and members in one overview operation', async () => {
     const database = {
       department: {
