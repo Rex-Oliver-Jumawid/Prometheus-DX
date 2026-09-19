@@ -1637,18 +1637,29 @@ export function ProjectWorkflow({
                               outcome.departments[0]?.shortLabel ??
                               outcome.departments[0]?.name ??
                               'General';
+                            const dependencyResolution =
+                              prereq.resolution ??
+                              (prereqOutcome?.lifecycleStatus === 'ACCEPTED'
+                                ? 'ACCEPTED'
+                                : prereq.resolved
+                                  ? 'OVERRIDDEN'
+                                  : 'WAITING');
                             const dependencyResolved =
-                              prereq.resolved ||
-                              prereqOutcome?.lifecycleStatus === 'ACCEPTED';
-                            const prereqStatusLabel = dependencyResolved
-                              ? 'Resolved'
-                              : prereqOutcome?.hasForReview
-                                ? 'For Review'
-                                : prereqOutcome
-                                  ? lifecycleLabel(
-                                      prereqOutcome.lifecycleStatus,
-                                    )
-                                  : 'Waiting';
+                              dependencyResolution !== 'WAITING';
+                            const dependencySkipped =
+                              dependencyResolution === 'OVERRIDDEN';
+                            const prereqStatusLabel =
+                              dependencyResolution === 'ACCEPTED'
+                                ? 'Accepted'
+                                : dependencySkipped
+                                  ? 'Skipped by Project Lead'
+                                  : prereqOutcome?.hasForReview
+                                    ? 'For Review'
+                                    : prereqOutcome
+                                      ? lifecycleLabel(
+                                          prereqOutcome.lifecycleStatus,
+                                        )
+                                      : 'Waiting';
                             const depStatusLabel = dependencyResolved
                               ? lifecycleLabel(outcome.lifecycleStatus)
                               : 'Locked';
@@ -1656,23 +1667,43 @@ export function ProjectWorkflow({
                             return (
                               <article
                                 key={`dependency-${prereq.id}-${outcome.id}`}
-                                className={`dependency-group${dependencyResolved ? ' resolved' : ''}`}
+                                className={`dependency-group${
+                                  dependencySkipped
+                                    ? ' skipped'
+                                    : dependencyResolved
+                                      ? ' resolved'
+                                      : ''
+                                }`}
                               >
                                 <div className="dep-head">
                                   <span className="dep-title">DEPENDENCY</span>
                                   <span
                                     className={`dep-state ${
-                                      dependencyResolved ? 'resolved' : 'waiting'
+                                      dependencySkipped
+                                        ? 'skipped'
+                                        : dependencyResolved
+                                          ? 'resolved'
+                                          : 'waiting'
                                     }`}
                                   >
-                                    {dependencyResolved ? 'RESOLVED' : 'WAITING'}
+                                    {dependencySkipped
+                                      ? 'SKIPPED'
+                                      : dependencyResolved
+                                        ? 'RESOLVED'
+                                        : 'WAITING'}
                                   </span>
                                 </div>
 
                                 <div className="dep-flow">
                                   <Link
                                     to={`/projects/${projectId}/outcomes/${prereq.id}`}
-                                    className={`dep-mini${dependencyResolved ? ' completed' : ''}`}
+                                    className={`dep-mini${
+                                      dependencySkipped
+                                        ? ' skipped'
+                                        : dependencyResolved
+                                          ? ' completed'
+                                          : ''
+                                    }`}
                                     aria-label={prereqOutcome?.title ?? prereq.title}
                                   >
                                     <div className="dep-mini-top">
@@ -1713,30 +1744,7 @@ export function ProjectWorkflow({
                                   </Link>
                                 </div>
 
-                                {dependencyResolved ? (
-                                  <div className="dep-resolved-guide">
-                                    <div className="dep-resolved-copy">
-                                      <span
-                                        className="dep-resolved-check"
-                                        aria-hidden="true"
-                                      >
-                                        ✓
-                                      </span>
-                                      <div>
-                                        <strong>Prerequisite complete</strong>
-                                        <span>
-                                          Continue with {outcome.title}.
-                                        </span>
-                                      </div>
-                                    </div>
-                                    <Link
-                                      to={`/projects/${projectId}/outcomes/${outcome.id}`}
-                                      className="dep-continue-btn"
-                                    >
-                                      Continue to next outcome →
-                                    </Link>
-                                  </div>
-                                ) : (
+                                {!dependencyResolved && (
                                   <div className="dep-actions-row">
                                     <Link
                                       to={`/projects/${projectId}/outcomes/${prereq.id}`}
