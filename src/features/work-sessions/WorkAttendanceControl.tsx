@@ -133,7 +133,7 @@ export function WorkAttendanceControl() {
 
   const handleAttendanceAction = () => {
     const finePointer =
-      typeof window.matchMedia === 'function' &&
+      typeof window.matchMedia !== 'function' ||
       window.matchMedia('(hover:hover) and (pointer:fine)').matches;
 
     if (!finePointer && !edgeOpen) {
