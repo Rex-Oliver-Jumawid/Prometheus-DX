@@ -15,6 +15,10 @@ export const RegistryDepartmentsResponseSchema = z.array(
   RegistryDepartmentSchema,
 );
 
+export const DeleteDepartmentResponseSchema = z.object({
+  id: z.string().uuid(),
+});
+
 const DepartmentDetailsRequestSchema = z.object({
   name: z.string().trim().min(1, 'Enter a department name.'),
   shortLabel: z
@@ -35,6 +39,9 @@ export const CreateDepartmentRequestSchema = DepartmentDetailsRequestSchema;
 export const UpdateDepartmentRequestSchema = DepartmentDetailsRequestSchema;
 
 export type RegistryDepartment = z.infer<typeof RegistryDepartmentSchema>;
+export type DeleteDepartmentResponse = z.infer<
+  typeof DeleteDepartmentResponseSchema
+>;
 export type CreateDepartmentRequest = z.infer<
   typeof CreateDepartmentRequestSchema
 >;
