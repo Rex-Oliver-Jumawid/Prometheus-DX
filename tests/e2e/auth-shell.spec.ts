@@ -43,6 +43,26 @@ test('login validates required credentials without submitting twice', async ({
   await expect(page.getByText('Enter your password.')).toBeVisible();
 });
 
+test('password visibility control matches the icon design and toggles the input type', async ({
+  page,
+}) => {
+  await page.goto('/login');
+
+  const password = page.getByLabel('Password', { exact: true });
+  const showPassword = page.getByRole('button', { name: 'Show password' });
+
+  await expect(showPassword.locator('svg')).toBeVisible();
+  await expect(showPassword).toHaveText('');
+  await expect(password).toHaveAttribute('type', 'password');
+
+  await showPassword.click();
+
+  await expect(password).toHaveAttribute('type', 'text');
+  const hidePassword = page.getByRole('button', { name: 'Hide password' });
+  await expect(hidePassword.locator('svg')).toBeVisible();
+  await expect(hidePassword).toHaveText('');
+});
+
 test('non-Gmail invited member account setup preserves the invited email and requires a password', async ({
   page,
 }) => {
