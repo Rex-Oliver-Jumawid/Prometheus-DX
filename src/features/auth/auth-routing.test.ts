@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { ApiRequestError } from '../../lib/api';
-import { resolveProtectedState, safeReturnPath } from './auth-routing';
+import {
+  resolveProtectedState,
+  safeReturnPath,
+  storedSessionIsInvalid,
+} from './auth-routing';
 
 describe('protected auth resolution', () => {
   it('never treats an authorization API failure as authorized', () => {
@@ -43,6 +47,42 @@ describe('protected auth resolution', () => {
         error: null,
       }),
     ).toBe('loading');
+  });
+
+  it('discards only definitively invalid stored sessions', () => {
+    expect(
+      storedSessionIsInvalid({
+        hasUser: false,
+        hasError: false,
+      }),
+    ).toBe(true);
+    expect(
+      storedSessionIsInvalid({
+        hasUser: false,
+        hasError: true,
+        errorStatus: 401,
+      }),
+    ).toBe(true);
+    expect(
+      storedSessionIsInvalid({
+        hasUser: false,
+        hasError: true,
+        errorStatus: 403,
+      }),
+    ).toBe(true);
+    expect(
+      storedSessionIsInvalid({
+        hasUser: false,
+        hasError: true,
+      }),
+    ).toBe(false);
+    expect(
+      storedSessionIsInvalid({
+        hasUser: true,
+        hasError: true,
+        errorStatus: 500,
+      }),
+    ).toBe(false);
   });
 
   it('rejects external return destinations', () => {

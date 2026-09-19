@@ -20,6 +20,20 @@ export function resolveProtectedState(input: {
   return 'error';
 }
 
+export function storedSessionIsInvalid(input: {
+  hasUser: boolean;
+  hasError: boolean;
+  errorStatus?: number;
+}): boolean {
+  if (input.hasUser) return false;
+  if (!input.hasError) return true;
+  return (
+    input.errorStatus === 400 ||
+    input.errorStatus === 401 ||
+    input.errorStatus === 403
+  );
+}
+
 export function safeReturnPath(value: unknown): string {
   return typeof value === 'string' &&
     value.startsWith('/') &&
