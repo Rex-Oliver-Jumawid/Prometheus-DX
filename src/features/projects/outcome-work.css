@@ -1487,6 +1487,20 @@
   color: #9b9089;
 }
 
+.pw-submission-history-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.pw-submission-history-actions .pw-review-outcome-jump {
+  min-height: 30px;
+  padding: 6px 11px;
+  border-radius: 8px;
+  font-size: 10px;
+}
+
 .pw-submission-count {
   display: inline-flex;
   align-items: center;
