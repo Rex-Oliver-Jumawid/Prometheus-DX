@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
@@ -12,6 +12,7 @@ import { apiFetch } from '../../lib/api';
 import { CreateProjectDialog } from './CreateProjectDialog';
 import { loadProjectOverviewRoute } from '../../routes/route-modules';
 import {
+  projectCreateOptionsQuery,
   projectDetailQuery,
   projectKeys,
   projectsListQuery,
@@ -229,6 +230,16 @@ export function ProjectsPage() {
     enabled: Boolean(accessToken),
   });
 
+  useEffect(() => {
+    if (!accessToken) return;
+    void queryClient.prefetchQuery(projectCreateOptionsQuery(accessToken));
+  }, [accessToken, queryClient]);
+
+  const prefetchCreateOptions = () => {
+    if (!accessToken) return;
+    void queryClient.prefetchQuery(projectCreateOptionsQuery(accessToken));
+  };
+
   const createProject = useMutation({
     mutationFn: (request: CreateProjectRequest) =>
       apiFetch('/projects', ProjectSchema, {
@@ -372,6 +383,9 @@ export function ProjectsPage() {
             type="button"
             className="vw-add-project-button"
             onClick={openCreate}
+            onMouseEnter={prefetchCreateOptions}
+            onFocus={prefetchCreateOptions}
+            onPointerDown={prefetchCreateOptions}
           >
             + Add Project
           </button>
