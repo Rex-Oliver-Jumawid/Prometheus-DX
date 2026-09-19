@@ -1092,7 +1092,11 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
 
   const confirmRemoveDepartment = async () => {
     if (!departmentToRemove) return;
-    await deleteDepartment.mutateAsync(departmentToRemove.id);
+    try {
+      await deleteDepartment.mutateAsync(departmentToRemove.id);
+    } catch {
+      // The mutation error remains visible inside the confirmation dialog.
+    }
   };
 
   const save = async (request: CreateDepartmentRequest) => {
