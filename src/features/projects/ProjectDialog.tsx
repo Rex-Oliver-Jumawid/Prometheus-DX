@@ -6,14 +6,25 @@ export function ProjectDialog({
   children,
   onClose,
   pending = false,
+  className = '',
+  bodyClassName = '',
+  eyebrow,
+  subtitle,
+  tag,
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
   pending?: boolean;
+  className?: string;
+  bodyClassName?: string;
+  eyebrow?: string;
+  subtitle?: string;
+  tag?: string;
 }) {
   const dialog = useRef<HTMLElement>(null);
   const previousFocus = useRef(document.activeElement as HTMLElement | null);
+
   useEffect(() => {
     const overflow = document.body.style.overflow;
     const restore = previousFocus.current;
@@ -24,6 +35,7 @@ export function ProjectDialog({
       restore?.focus();
     };
   }, []);
+
   useEffect(() => {
     const handle = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !pending) {
@@ -54,6 +66,7 @@ export function ProjectDialog({
     document.addEventListener('keydown', handle);
     return () => document.removeEventListener('keydown', handle);
   }, [onClose, pending]);
+
   return createPortal(
     <div
       className="projects-dialog-backdrop"
@@ -63,25 +76,36 @@ export function ProjectDialog({
     >
       <section
         ref={dialog}
-        className="projects-dialog outcome-review-dialog"
+        className={`projects-dialog ${className}`.trim()}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
       >
         <header className="projects-dialog-header">
-          <h2>{title}</h2>
-          <button
-            type="button"
-            className="projects-icon-button"
-            aria-label={`Close ${title}`}
-            disabled={pending}
-            onClick={onClose}
-          >
-            ×
-          </button>
+          <div className="projects-dialog-heading">
+            {eyebrow && (
+              <span className="projects-dialog-eyebrow">{eyebrow}</span>
+            )}
+            <h2>{title}</h2>
+            {subtitle && <p>{subtitle}</p>}
+          </div>
+          <div className="projects-dialog-header-actions">
+            {tag && <span className="projects-dialog-tag">{tag}</span>}
+            <button
+              type="button"
+              className="projects-icon-button"
+              aria-label={`Close ${title}`}
+              disabled={pending}
+              onClick={onClose}
+            >
+              ×
+            </button>
+          </div>
         </header>
-        <div className="projects-dialog-body">{children}</div>
+        <div className={`projects-dialog-body ${bodyClassName}`.trim()}>
+          {children}
+        </div>
       </section>
     </div>,
     document.body,
