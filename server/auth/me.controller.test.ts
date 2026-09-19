@@ -13,6 +13,9 @@ const member = {
   workspaceRole: 'MEMBER',
   status: 'ACTIVE',
   position: 'Engineer',
+  nickname: null,
+  phoneNumber: null,
+  about: null,
   profileImagePath: null,
   invitationSentAt: null,
   deactivatedAt: null,
@@ -47,6 +50,9 @@ describe('MeController', () => {
       ...member,
       fullName: 'Updated Member',
       position: 'Software Engineer',
+      nickname: 'Oli',
+      phoneNumber: '+63 917 123 4567',
+      about: 'Building useful software.',
     });
     const prisma = {
       member: { update },
@@ -60,11 +66,17 @@ describe('MeController', () => {
       controller.updateMe(member, {
         fullName: ' Updated Member ',
         position: ' Software Engineer ',
+        nickname: ' Oli ',
+        phoneNumber: ' +63 917 123 4567 ',
+        about: ' Building useful software. ',
         profileImagePath: null,
       }),
     ).resolves.toMatchObject({
       fullName: 'Updated Member',
       position: 'Software Engineer',
+      nickname: 'Oli',
+      phoneNumber: '+63 917 123 4567',
+      about: 'Building useful software.',
       department,
     });
 
@@ -73,6 +85,9 @@ describe('MeController', () => {
       data: {
         fullName: 'Updated Member',
         position: 'Software Engineer',
+        nickname: 'Oli',
+        phoneNumber: '+63 917 123 4567',
+        about: 'Building useful software.',
         profileImagePath: null,
       },
     });
@@ -89,6 +104,9 @@ describe('MeController', () => {
       controller.updateMe(member, {
         fullName: 'Member Example',
         position: 'Engineer',
+        nickname: null,
+        phoneNumber: null,
+        about: null,
         workspaceRole: 'ADMINISTRATOR',
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
