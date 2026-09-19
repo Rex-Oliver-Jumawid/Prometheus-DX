@@ -954,6 +954,18 @@
 .pw-review-outcome-jump {
   font-size: 11px;
   padding: 5px 11px;
+  background: #d24b21 !important;
+  border-color: #d24b21 !important;
+  color: #ffffff !important;
+  box-shadow: 0 5px 14px rgba(210, 75, 33, 0.14);
+}
+
+.pw-review-outcome-jump:hover:not(:disabled),
+.pw-review-outcome-jump:focus-visible {
+  background: #bd4019 !important;
+  border-color: #bd4019 !important;
+  color: #ffffff !important;
+  outline: 0;
 }
 
 .pw-outcome-accepted-banner {
@@ -2242,23 +2254,19 @@
 .submission-record-actions .projects-primary-button {
   min-height: 34px;
   padding: 7px 12px;
+  border: 1px solid #d24b21;
   border-radius: 9px;
+  background: #d24b21;
+  color: #ffffff;
   font-size: 10px;
+  box-shadow: 0 5px 14px rgba(210, 75, 33, 0.12);
 }
 
-.submission-record-review-mark {
-  border: 0;
-  background: transparent;
-  color: #81766f;
-  font-size: 9px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.submission-record-review-mark:hover:not(:disabled),
-.submission-record-review-mark:focus-visible {
-  color: #cb4d22;
-  text-decoration: underline;
+.submission-record-actions .projects-primary-button:hover:not(:disabled),
+.submission-record-actions .projects-primary-button:focus-visible {
+  border-color: #bd4019;
+  background: #bd4019;
+  color: #ffffff;
   outline: 0;
 }
 
