@@ -34,6 +34,12 @@ test.afterAll(async () => {
   await prisma.$disconnect();
 });
 
+function memberRow(page: Page, name: string) {
+  return page
+    .locator('.registry-members-table tbody tr')
+    .filter({ hasText: name });
+}
+
 async function signIn(page: Page) {
   await page.goto('/login');
   await page
@@ -115,9 +121,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await signIn(page);
   await page.goto('/registry');
   const addMemberButton = page.getByRole('button', { name: /Add member/ });
-  await expect(
-    page.getByRole('button', { name: `Edit ${existingSuggestionName}` }),
-  ).toBeVisible();
+  await expect(memberRow(page, existingSuggestionName)).toBeVisible();
   await addMemberButton.click();
   await expect(page.getByRole('dialog', { name: 'Add member' })).toBeVisible();
   const fullNameInput = page.getByLabel('Full name');
@@ -291,9 +295,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
   });
   expect((await createMemberResponse).status()).toBe(201);
 
-  await expect(
-    page.getByRole('button', { name: 'Edit Registry Test Member' }),
-  ).toBeVisible();
+  await expect(memberRow(page, 'Registry Test Member')).toBeVisible();
   await expect(page.getByText('Setup pending').first()).toBeVisible();
   await expect(
     page
@@ -308,9 +310,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
   ).toContainText('2 members');
 
   await page.reload();
-  await expect(
-    page.getByRole('button', { name: 'Edit Registry Test Member' }),
-  ).toBeVisible();
+  await expect(memberRow(page, 'Registry Test Member')).toBeVisible();
 
   await page.getByRole('button', { name: /Add member/ }).click();
   await page.getByLabel('Full name').fill('Duplicate Member');
@@ -327,7 +327,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
   browserErrors.length = 0;
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
 
-  await page.getByRole('button', { name: 'Edit Registry Test Member' }).click();
+  await memberRow(page, 'Registry Test Member').click();
   await page.getByLabel('Full name').fill(updatedFullName);
   await page.getByLabel('Position').fill(updatedPosition);
   await page
@@ -342,11 +342,31 @@ test('administrator adds and edits a member with duplicate-email protection', as
   ).not.toBeVisible();
 
   await page.reload();
-  await expect(
-    page.getByRole('button', { name: `Edit ${updatedFullName}` }),
-  ).toBeVisible();
-  await expect(page.getByText(updatedPosition)).toBeVisible();
-  await expect(page.getByText('Administrator').last()).toBeVisible();
+  await expect(memberRow(page, updatedFullName)).toBeVisible();
+  await expect(memberRow(page, updatedFullName).locator('td').nth(1)).toHaveText(
+    reassignedDepartment.shortLabel,
+  );
+
+  await page.getByLabel('Search members').fill(updatedFullName.slice(0, 18));
+  await expect(memberRow(page, updatedFullName)).toBeVisible();
+  await page.getByLabel('Search members').fill('no matching registry member');
+  await expect(memberRow(page, updatedFullName)).toHaveCount(0);
+  await expect(page.getByText('No matching members')).toBeVisible();
+  await page.getByLabel('Search members').fill('');
+
+  await page
+    .getByLabel('Filter members by role')
+    .selectOption('ADMINISTRATOR');
+  await expect(memberRow(page, updatedFullName)).toBeVisible();
+  await page.getByLabel('Filter members by role').selectOption('MEMBER');
+  await expect(memberRow(page, updatedFullName)).toHaveCount(0);
+  await page.getByLabel('Filter members by role').selectOption('ALL');
+
+  await memberRow(page, updatedFullName).click();
+  await expect(page.getByRole('dialog', { name: 'Edit member' })).toBeVisible();
+  await expect(page.getByLabel('Position')).toHaveValue(updatedPosition);
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+
   await expect(
     page.locator('.registry-department-card').filter({
       hasText: department.name,
