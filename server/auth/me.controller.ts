@@ -41,6 +41,9 @@ export class MeController {
       workspaceRole: member.workspaceRole,
       status: member.status,
       position: member.position,
+      nickname: member.nickname,
+      phoneNumber: member.phoneNumber,
+      about: member.about,
       profileImagePath: member.profileImagePath,
       department,
       createdAt: member.createdAt.toISOString(),
@@ -68,6 +71,9 @@ export class MeController {
       data: {
         fullName: parsed.data.fullName,
         position: parsed.data.position,
+        nickname: parsed.data.nickname,
+        phoneNumber: parsed.data.phoneNumber,
+        about: parsed.data.about,
         ...(parsed.data.profileImagePath !== undefined
           ? { profileImagePath: parsed.data.profileImagePath }
           : {}),
