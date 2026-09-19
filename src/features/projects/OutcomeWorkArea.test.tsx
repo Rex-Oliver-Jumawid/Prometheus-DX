@@ -145,22 +145,27 @@ describe('Outcome Workspace - Empty State', () => {
 
   it('renders the empty features state when zero features exist', async () => {
     renderWorkspace();
-    expect(await screen.findByText('No features defined yet')).toBeInTheDocument();
     expect(
-      screen.getByText('Start by adding the main pieces of work needed to achieve this outcome.'),
+      await screen.findByText(
+        'No features have been defined yet. Start by adding the main pieces of work needed to achieve this outcome.',
+      ),
     ).toBeInTheDocument();
   });
 
   it('shows Add Feature button in empty state when user can plan', async () => {
     renderWorkspace({ workData: { ...emptyWorkData, canPlan: true } });
-    await screen.findByText('No features defined yet');
+    await screen.findByText(
+      /No features have been defined yet\./,
+    );
     const addButtons = screen.getAllByRole('button', { name: /add.*feature/i });
     expect(addButtons.length).toBeGreaterThanOrEqual(1);
   });
 
   it('clicking Add Feature in empty state opens the feature creation form', async () => {
     renderWorkspace({ workData: { ...emptyWorkData, canPlan: true } });
-    await screen.findByText('No features defined yet');
+    await screen.findByText(
+      /No features have been defined yet\./,
+    );
     const addButtons = screen.getAllByRole('button', { name: /add.*feature/i });
     fireEvent.click(addButtons[0]);
     expect(screen.getByRole('textbox', { name: /feature title/i })).toBeInTheDocument();
@@ -171,14 +176,20 @@ describe('Outcome Workspace - Empty State', () => {
       workData: { ...emptyWorkData, canPlan: false },
       outcomeOverride: { isJoined: false },
     });
-    await screen.findByText('No features defined yet');
+    await screen.findByText(
+      /No features have been defined yet\./,
+    );
     expect(screen.queryAllByRole('button', { name: /add.*feature/i })).toHaveLength(0);
   });
 
-  it('does not show "Add another feature" bottom button when feature list is empty', async () => {
+  it('shows the Figma Add another feature action when the feature list is empty', async () => {
     renderWorkspace({ workData: { ...emptyWorkData, canPlan: true } });
-    await screen.findByText('No features defined yet');
-    expect(screen.queryByRole('button', { name: /add another feature/i })).not.toBeInTheDocument();
+    await screen.findByText(
+      /No features have been defined yet\./,
+    );
+    expect(
+      screen.getByRole('button', { name: /add another feature/i }),
+    ).toBeInTheDocument();
   });
 
   it('shows "Add another feature" at bottom when features exist', async () => {
@@ -434,7 +445,9 @@ describe('Outcome Workspace - Empty State', () => {
 
   it('renders FeatureComposer with name, description, Cancel, and Add feature buttons and handles submission', async () => {
     renderWorkspace({ workData: { ...emptyWorkData, canPlan: true } });
-    await screen.findByText('No features defined yet');
+    await screen.findByText(
+      /No features have been defined yet\./,
+    );
 
     const addFeatureBtn = screen.getByRole('button', { name: '＋ Add feature' });
     fireEvent.click(addFeatureBtn);
