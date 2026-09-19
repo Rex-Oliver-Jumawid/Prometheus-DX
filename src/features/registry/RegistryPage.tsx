@@ -1230,38 +1230,41 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
                   className="registry-department-card"
                   key={department.id}
                 >
-                  <div className="registry-department-icon" aria-hidden="true">
-                    ⌁
-                  </div>
-                  <div className="registry-department-copy">
-                    <strong>
-                      {department.name}
-                      <span>{department.shortLabel}</span>
-                    </strong>
-                    <p>{department.description || 'No description yet.'}</p>
-                  </div>
-                  <span className="registry-member-count">
-                    {department.memberCount}{' '}
-                    {department.memberCount === 1 ? 'member' : 'members'}
-                  </span>
-                  <div className="registry-department-actions">
-                    <button
-                      type="button"
-                      className="registry-edit-button"
-                      onClick={() => openEdit(department)}
-                      aria-label={`Edit ${department.name}`}
+                  <button
+                    type="button"
+                    className="registry-department-main"
+                    onClick={() => openEdit(department)}
+                    aria-label={`Edit ${department.name}`}
+                  >
+                    <span
+                      className="registry-department-icon"
+                      aria-hidden="true"
                     >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="registry-remove-button"
-                      onClick={() => openRemoveDepartment(department)}
-                      aria-label={`Remove ${department.name}`}
-                    >
-                      Remove
-                    </button>
-                  </div>
+                      ⌁
+                    </span>
+                    <span className="registry-department-copy">
+                      <strong>
+                        {department.name}
+                        <span>{department.shortLabel}</span>
+                      </strong>
+                      <span className="registry-department-description">
+                        {department.description || 'No description yet.'}
+                      </span>
+                    </span>
+                    <span className="registry-member-count">
+                      {department.memberCount}{' '}
+                      {department.memberCount === 1 ? 'member' : 'members'}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="registry-remove-button"
+                    onClick={() => openRemoveDepartment(department)}
+                    aria-label={`Remove ${department.name}`}
+                    title={`Remove ${department.name}`}
+                  >
+                    ×
+                  </button>
                 </article>
               ))}
             </div>
