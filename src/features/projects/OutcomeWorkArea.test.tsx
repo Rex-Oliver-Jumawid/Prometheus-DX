@@ -514,6 +514,46 @@ describe('Outcome Workspace - Empty State', () => {
     });
   });
 
+  it('keeps a zero-task feature informative after acceptance without exposing Add task', async () => {
+    const acceptedWork = {
+      ...emptyWorkData,
+      canPlan: false,
+      canExecute: false,
+      features: [
+        {
+          id: 'feat-accepted-empty',
+          title: 'Accepted Empty Feature',
+          description: 'Locked after acceptance',
+          status: 'TODO' as const,
+          tasks: [],
+          createdAt: '2026-09-18T00:00:00.000Z',
+          updatedAt: '2026-09-18T00:00:00.000Z',
+        },
+      ],
+    };
+
+    renderWorkspace({ workData: acceptedWork });
+
+    await screen.findByText('Accepted Empty Feature');
+    expect(screen.getByText('No tasks yet')).toBeInTheDocument();
+    expect(
+      screen.getByText('No tasks were added before this outcome was accepted.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText('Add a task to Accepted Empty Feature'),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Collapse Accepted Empty Feature' }),
+    );
+    expect(screen.queryByText('No tasks yet')).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Expand Accepted Empty Feature' }),
+    );
+    expect(screen.getByText('No tasks yet')).toBeInTheDocument();
+  });
+
   it('renders FeatureComposer at the bottom when adding another feature', async () => {
     const workWithFeatures = {
       ...emptyWorkData,
@@ -552,7 +592,7 @@ describe('Outcome Workspace - Empty State', () => {
     ).toBe(true);
   });
 
-  it('renders sleek FeatureComposer on Edit feature and does not render No tasks yet note', async () => {
+  it('renders an empty task state and FeatureComposer on Edit feature', async () => {
     const workWithFeatures = {
       ...emptyWorkData,
       canPlan: true,
@@ -572,8 +612,13 @@ describe('Outcome Workspace - Empty State', () => {
     renderWorkspace({ workData: workWithFeatures });
     await screen.findByText('Make a Prototype');
 
-    // Verify "No tasks yet." is not rendered
-    expect(screen.queryByText('No tasks yet.')).toBeNull();
+    expect(screen.getByText('No tasks yet')).toBeInTheDocument();
+    expect(
+      screen.getByText('Add the first task for this feature below.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Add a task to Make a Prototype'),
+    ).toBeInTheDocument();
 
     const editBtn = screen.getByRole('button', { name: 'Edit feature' });
     fireEvent.click(editBtn);
