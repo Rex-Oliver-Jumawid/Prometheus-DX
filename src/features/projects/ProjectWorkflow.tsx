@@ -1656,7 +1656,7 @@ export function ProjectWorkflow({
                             return (
                               <article
                                 key={`dependency-${prereq.id}-${outcome.id}`}
-                                className="dependency-group"
+                                className={`dependency-group${dependencyResolved ? ' resolved' : ''}`}
                               >
                                 <div className="dep-head">
                                   <span className="dep-title">DEPENDENCY</span>
@@ -1672,7 +1672,7 @@ export function ProjectWorkflow({
                                 <div className="dep-flow">
                                   <Link
                                     to={`/projects/${projectId}/outcomes/${prereq.id}`}
-                                    className="dep-mini"
+                                    className={`dep-mini${dependencyResolved ? ' completed' : ''}`}
                                     aria-label={prereqOutcome?.title ?? prereq.title}
                                   >
                                     <div className="dep-mini-top">
@@ -1694,10 +1694,15 @@ export function ProjectWorkflow({
 
                                   <Link
                                     to={`/projects/${projectId}/outcomes/${outcome.id}`}
-                                    className="dep-mini"
+                                    className={`dep-mini${dependencyResolved ? ' next' : ''}`}
                                     aria-label={outcome.title}
                                   >
                                     <div className="dep-mini-top">
+                                      {dependencyResolved && (
+                                        <span className="dep-next-label">
+                                          NEXT OUTCOME
+                                        </span>
+                                      )}
                                       <h4 className="dep-mini-title">
                                         {outcome.title}
                                       </h4>
@@ -1708,7 +1713,30 @@ export function ProjectWorkflow({
                                   </Link>
                                 </div>
 
-                                {!dependencyResolved && (
+                                {dependencyResolved ? (
+                                  <div className="dep-resolved-guide">
+                                    <div className="dep-resolved-copy">
+                                      <span
+                                        className="dep-resolved-check"
+                                        aria-hidden="true"
+                                      >
+                                        ✓
+                                      </span>
+                                      <div>
+                                        <strong>Prerequisite complete</strong>
+                                        <span>
+                                          Continue with {outcome.title}.
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <Link
+                                      to={`/projects/${projectId}/outcomes/${outcome.id}`}
+                                      className="dep-continue-btn"
+                                    >
+                                      Continue to next outcome →
+                                    </Link>
+                                  </div>
+                                ) : (
                                   <div className="dep-actions-row">
                                     <Link
                                       to={`/projects/${projectId}/outcomes/${prereq.id}`}
@@ -1716,12 +1744,27 @@ export function ProjectWorkflow({
                                     >
                                       Verify prerequisite
                                     </Link>
-                                    <Link
-                                      to={`/projects/${projectId}/outcomes/${outcome.id}`}
-                                      className="dep-skip-btn"
-                                    >
-                                      Skip dependency
-                                    </Link>
+                                    {prereq.dependencyId &&
+                                      workflow.data.canManageStructure && (
+                                        <button
+                                          type="button"
+                                          className="dep-skip-btn"
+                                          onClick={() => {
+                                            dependencyOverrideForm.reset();
+                                            setDependencyOverride({
+                                              dependencyId:
+                                                prereq.dependencyId!,
+                                              outcomeId: outcome.id,
+                                              prerequisiteTitle:
+                                                prereqOutcome?.title ??
+                                                prereq.title,
+                                              outcomeTitle: outcome.title,
+                                            });
+                                          }}
+                                        >
+                                          Skip dependency
+                                        </button>
+                                      )}
                                   </div>
                                 )}
 
