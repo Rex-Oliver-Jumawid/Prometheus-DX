@@ -6,12 +6,47 @@ import {
   type CurrentMember,
 } from '../../../shared/contracts/member';
 import { apiFetch } from '../../lib/api';
+import { getSupabaseClient } from '../../lib/supabase';
 import { useAuth } from '../auth/auth-context';
 import { initialsFor } from './member-display';
 import { useShellStore } from './shell-store';
 
+const PROFILE_IMAGE_BUCKET = 'profile-images';
+const MAX_PROFILE_IMAGE_BYTES = 5 * 1024 * 1024;
+const PROFILE_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
 function roleLabel(member: CurrentMember) {
   return member.workspaceRole === 'ADMINISTRATOR' ? 'Administrator' : 'Member';
+}
+
+function profileImageExtension(file: File) {
+  if (file.type === 'image/png') return 'png';
+  if (file.type === 'image/webp') return 'webp';
+  return 'jpg';
+}
+
+function profileImageObjectPath(value: string | null) {
+  if (!value) return null;
+  const marker = `/storage/v1/object/public/${PROFILE_IMAGE_BUCKET}/`;
+  const markerIndex = value.indexOf(marker);
+  if (markerIndex < 0) return null;
+
+  const encodedPath = value.slice(markerIndex + marker.length).split('?')[0];
+  try {
+    return decodeURIComponent(encodedPath);
+  } catch {
+    return encodedPath;
+  }
+}
+
+function validateProfilePhoto(file: File) {
+  if (!PROFILE_IMAGE_TYPES.has(file.type)) {
+    return 'Choose a JPG, PNG, or WebP image.';
+  }
+  if (file.size > MAX_PROFILE_IMAGE_BYTES) {
+    return 'Profile pictures must be 5 MB or smaller.';
+  }
+  return null;
 }
 
 export function ProfileDrawer({ member }: { member: CurrentMember }) {
@@ -20,17 +55,30 @@ export function ProfileDrawer({ member }: { member: CurrentMember }) {
   const auth = useAuth();
   const queryClient = useQueryClient();
   const closeRef = useRef<HTMLButtonElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const [fullName, setFullName] = useState(member.fullName);
+  const [nickname, setNickname] = useState(member.nickname ?? '');
   const [position, setPosition] = useState(member.position ?? '');
+  const [phoneNumber, setPhoneNumber] = useState(member.phoneNumber ?? '');
+  const [about, setAbout] = useState(member.about ?? '');
   const [photoPath, setPhotoPath] = useState<string | null>(
     member.profileImagePath,
   );
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState('');
 
   useEffect(() => {
     if (!open) return;
     setFullName(member.fullName);
+    setNickname(member.nickname ?? '');
     setPosition(member.position ?? '');
+    setPhoneNumber(member.phoneNumber ?? '');
+    setAbout(member.about ?? '');
     setPhotoPath(member.profileImagePath);
+    setPendingPhoto(null);
+    setPhotoPreviewUrl(null);
+    setPhotoError('');
     closeRef.current?.focus();
 
     const close = (event: KeyboardEvent) => {
@@ -45,19 +93,87 @@ export function ProfileDrawer({ member }: { member: CurrentMember }) {
     };
   }, [member, open, setOpen]);
 
-  const updateProfile = useMutation({
-    mutationFn: () => {
-      const request = UpdateCurrentMemberRequestSchema.parse({
-        fullName,
-        position: position.trim() || null,
-        profileImagePath: photoPath,
-      });
+  useEffect(
+    () => () => {
+      if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+    },
+    [photoPreviewUrl],
+  );
 
-      return apiFetch('/me', CurrentMemberSchema, {
-        accessToken: auth.session?.access_token,
-        method: 'PATCH',
-        body: request,
-      });
+  const updateProfile = useMutation({
+    mutationFn: async () => {
+      const client = getSupabaseClient();
+      const userId = auth.session?.user.id;
+      let uploadedObjectPath: string | null = null;
+      let nextPhotoPath = photoPath;
+
+      try {
+        if (pendingPhoto) {
+          if (!client || !userId) {
+            throw new Error('Profile photo upload is not configured.');
+          }
+
+          const uploadId =
+            globalThis.crypto?.randomUUID?.() ?? Date.now().toString(36);
+          uploadedObjectPath = `${userId}/${uploadId}.${profileImageExtension(
+            pendingPhoto,
+          )}`;
+
+          const { error: uploadError } = await client.storage
+            .from(PROFILE_IMAGE_BUCKET)
+            .upload(uploadedObjectPath, pendingPhoto, {
+              cacheControl: '3600',
+              contentType: pendingPhoto.type,
+              upsert: false,
+            });
+
+          if (uploadError) {
+            throw new Error(`Profile photo upload failed: ${uploadError.message}`);
+          }
+
+          const { data } = client.storage
+            .from(PROFILE_IMAGE_BUCKET)
+            .getPublicUrl(uploadedObjectPath);
+          nextPhotoPath = data.publicUrl;
+        }
+
+        const request = UpdateCurrentMemberRequestSchema.parse({
+          fullName,
+          nickname: nickname.trim() || null,
+          position: position.trim() || null,
+          phoneNumber: phoneNumber.trim() || null,
+          about: about.trim() || null,
+          profileImagePath: nextPhotoPath,
+        });
+
+        const updated = await apiFetch('/me', CurrentMemberSchema, {
+          accessToken: auth.session?.access_token,
+          method: 'PATCH',
+          body: request,
+        });
+
+        const previousObjectPath = profileImageObjectPath(
+          member.profileImagePath,
+        );
+        if (
+          client &&
+          previousObjectPath &&
+          updated.profileImagePath !== member.profileImagePath
+        ) {
+          await client.storage
+            .from(PROFILE_IMAGE_BUCKET)
+            .remove([previousObjectPath]);
+        }
+
+        return updated;
+      } catch (error) {
+        if (client && uploadedObjectPath) {
+          await client.storage
+            .from(PROFILE_IMAGE_BUCKET)
+            .remove([uploadedObjectPath]);
+        }
+        throw error;
+      }
     },
     onSuccess: (updated) => {
       queryClient.setQueryData(
@@ -71,16 +187,26 @@ export function ProfileDrawer({ member }: { member: CurrentMember }) {
   if (!open) return null;
 
   const normalizedName = fullName.trim();
+  const normalizedNickname = nickname.trim();
   const normalizedPosition = position.trim();
+  const normalizedPhoneNumber = phoneNumber.trim();
+  const normalizedAbout = about.trim();
   const hasChanges =
     normalizedName !== member.fullName ||
+    normalizedNickname !== (member.nickname ?? '') ||
     normalizedPosition !== (member.position ?? '') ||
+    normalizedPhoneNumber !== (member.phoneNumber ?? '') ||
+    normalizedAbout !== (member.about ?? '') ||
+    Boolean(pendingPhoto) ||
     photoPath !== member.profileImagePath;
   const previewMember: CurrentMember = {
     ...member,
     fullName: normalizedName || member.fullName,
+    nickname: normalizedNickname || null,
     position: normalizedPosition || null,
-    profileImagePath: photoPath,
+    phoneNumber: normalizedPhoneNumber || null,
+    about: normalizedAbout || null,
+    profileImagePath: photoPreviewUrl ?? photoPath,
   };
 
   return (
@@ -130,24 +256,62 @@ export function ProfileDrawer({ member }: { member: CurrentMember }) {
               <div className="profile-photo-copy">
                 <strong>Profile picture</strong>
                 <p>JPG, PNG, or WebP. The image is cropped to a square.</p>
+                <input
+                  ref={photoInputRef}
+                  className="profile-photo-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  aria-label="Profile picture upload"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = '';
+                    if (!file) return;
+
+                    const validationError = validateProfilePhoto(file);
+                    if (validationError) {
+                      setPhotoError(validationError);
+                      return;
+                    }
+
+                    setPhotoError('');
+                    setPendingPhoto(file);
+                    setPhotoPreviewUrl(URL.createObjectURL(file));
+                  }}
+                />
                 <div className="profile-photo-actions">
                   <button
                     type="button"
                     className="profile-photo-change"
-                    disabled
-                    title="Profile photo uploads are not connected yet."
+                    disabled={updateProfile.isPending}
+                    onClick={() => photoInputRef.current?.click()}
                   >
                     Change photo
                   </button>
                   <button
                     type="button"
                     className="profile-photo-remove"
-                    disabled={!photoPath || updateProfile.isPending}
-                    onClick={() => setPhotoPath(null)}
+                    disabled={
+                      (!photoPath && !pendingPhoto) || updateProfile.isPending
+                    }
+                    onClick={() => {
+                      setPendingPhoto(null);
+                      setPhotoPreviewUrl(null);
+                      setPhotoPath(null);
+                      setPhotoError('');
+                    }}
                   >
                     Remove
                   </button>
                 </div>
+                {photoError ? (
+                  <p className="profile-photo-message error" role="alert">
+                    {photoError}
+                  </p>
+                ) : pendingPhoto ? (
+                  <p className="profile-photo-message">
+                    New photo selected. Save changes to apply it.
+                  </p>
+                ) : null}
               </div>
             </section>
 
@@ -162,6 +326,19 @@ export function ProfileDrawer({ member }: { member: CurrentMember }) {
                   maxLength={120}
                   onChange={(event) => setFullName(event.target.value)}
                   aria-invalid={!normalizedName}
+                />
+              </label>
+
+              <label className="profile-settings-field profile-field-wide">
+                <span>
+                  Nickname
+                  <small>Optional shortcut for future references</small>
+                </span>
+                <input
+                  value={nickname}
+                  maxLength={40}
+                  placeholder="e.g. Oli"
+                  onChange={(event) => setNickname(event.target.value)}
                 />
               </label>
 
@@ -192,11 +369,12 @@ export function ProfileDrawer({ member }: { member: CurrentMember }) {
               <label className="profile-settings-field">
                 <span>Phone number</span>
                 <input
-                  value=""
+                  type="tel"
+                  autoComplete="tel"
+                  value={phoneNumber}
+                  maxLength={32}
                   placeholder="Optional"
-                  readOnly
-                  aria-readonly="true"
-                  title="Phone numbers are not stored by Prometheus yet."
+                  onChange={(event) => setPhoneNumber(event.target.value)}
                 />
               </label>
 
@@ -234,14 +412,14 @@ export function ProfileDrawer({ member }: { member: CurrentMember }) {
               <label className="profile-settings-field profile-field-wide profile-about-field">
                 <span>About</span>
                 <textarea
-                  value=""
+                  value={about}
                   placeholder="A short description about you"
-                  readOnly
-                  aria-readonly="true"
                   maxLength={240}
-                  title="Profile biographies are not stored by Prometheus yet."
+                  onChange={(event) => setAbout(event.target.value)}
                 />
-                <small className="profile-character-count">0/240</small>
+                <small className="profile-character-count">
+                  {about.length}/240
+                </small>
               </label>
             </div>
 
@@ -288,10 +466,17 @@ export function ProfileDrawer({ member }: { member: CurrentMember }) {
               type="submit"
               className="profile-save-button"
               disabled={
-                updateProfile.isPending || !hasChanges || !normalizedName
+                updateProfile.isPending ||
+                !hasChanges ||
+                !normalizedName ||
+                Boolean(photoError)
               }
             >
-              {updateProfile.isPending ? 'Saving...' : 'Save changes'}
+              {updateProfile.isPending
+                ? pendingPhoto
+                  ? 'Uploading...'
+                  : 'Saving...'
+                : 'Save changes'}
             </button>
           </footer>
         </form>
