@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CurrentMemberSchema,
   MemberStatusSchema,
+  UpdateCurrentMemberRequestSchema,
   WorkspaceRoleSchema,
 } from './member';
 
@@ -24,11 +25,38 @@ describe('member contracts', () => {
       status: 'ACTIVE',
       position: null,
       profileImagePath: null,
+      department: {
+        id: '66666666-6666-4666-8666-666666666666',
+        name: 'Research and Development',
+        shortLabel: 'R&D',
+      },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       authUserId: '55555555-5555-4555-8555-555555555555',
     });
 
     expect(parsed).not.toHaveProperty('authUserId');
+  });
+
+  it('accepts self-service profile fields without organization-managed access fields', () => {
+    expect(
+      UpdateCurrentMemberRequestSchema.parse({
+        fullName: '  Member Example  ',
+        position: ' Software Engineer ',
+        profileImagePath: null,
+      }),
+    ).toEqual({
+      fullName: 'Member Example',
+      position: 'Software Engineer',
+      profileImagePath: null,
+    });
+
+    expect(
+      UpdateCurrentMemberRequestSchema.safeParse({
+        fullName: '',
+        position: null,
+        workspaceRole: 'ADMINISTRATOR',
+      }).success,
+    ).toBe(false);
   });
 });
