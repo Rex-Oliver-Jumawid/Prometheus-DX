@@ -733,6 +733,12 @@ export class ProjectWorkflowService {
       resolved:
         dependency.prerequisiteOutcome.lifecycleStatus === 'ACCEPTED' ||
         dependency.overrideResolvedAt !== null,
+      resolution:
+        dependency.prerequisiteOutcome.lifecycleStatus === 'ACCEPTED'
+          ? ('ACCEPTED' as const)
+          : dependency.overrideResolvedAt !== null
+            ? ('OVERRIDDEN' as const)
+            : ('WAITING' as const),
     }));
     return {
       id: outcome.id,
