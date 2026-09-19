@@ -347,6 +347,7 @@ export function OutcomeDeliveryPanel({
           </span>
         </div>
       </header>
+      <div className={accepted ? 'pw-accepted-outcome-body' : undefined}>
       {accepted && (
         <div className="pw-outcome-accepted-banner">
           <div className="pw-outcome-accepted-icon" aria-hidden="true">
@@ -474,6 +475,7 @@ export function OutcomeDeliveryPanel({
           ))}
         </div>
       </section>
+      </div>
       {data.acceptances.length > 0 && (
         <section
           className="outcome-acceptance-history"
