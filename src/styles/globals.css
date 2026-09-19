@@ -1472,8 +1472,7 @@ button:disabled {
   .shell-brand div,
   .nav-label,
   .utility-label,
-  .account-copy,
-  .account-more {
+  .account-copy {
     display: none;
   }
   .shell-nav-item {
@@ -1488,12 +1487,22 @@ button:disabled {
     margin-inline: auto;
   }
   .account-card {
-    width: 48px;
+    width: 72px;
     min-height: 48px;
     margin: auto;
-    grid-template-columns: 1fr;
-    padding: 6px;
-    place-items: center;
+    grid-template-columns: 46px 24px;
+  }
+  .account-profile-button {
+    grid-template-columns: 36px;
+    gap: 0;
+    justify-content: center;
+    padding: 5px;
+  }
+  .account-menu-trigger {
+    width: 24px;
+  }
+  .account-menu {
+    right: -4px;
   }
 }
 @media (max-width: 700px) {
@@ -1602,10 +1611,6 @@ button:disabled {
   }
   .profile-settings-footer {
     padding: 14px 18px 16px;
-  }
-  .signout-panel {
-    align-items: flex-start;
-    flex-direction: column;
   }
 }
 @media (max-width: 520px) {
