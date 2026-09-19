@@ -141,4 +141,30 @@ test('administrator creates and edits a department with persistence', async ({
     page.getByRole('button', { name: `Edit ${updatedName}` }),
   ).toBeVisible();
   await expect(page.getByText(updatedDescription)).toBeVisible();
+
+  await page.getByRole('button', { name: `Remove ${updatedName}` }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'Remove department' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: `Edit ${updatedName}` }),
+  ).toBeVisible();
+
+  await page.getByRole('button', { name: `Remove ${updatedName}` }).click();
+  const deleteResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/registry/departments/') &&
+      response.request().method() === 'DELETE',
+  );
+  await page
+    .getByRole('button', { name: 'Remove department', exact: true })
+    .click();
+  expect((await deleteResponse).status()).toBe(200);
+  await expect(
+    page.getByRole('button', { name: `Edit ${updatedName}` }),
+  ).toHaveCount(0);
+  await expect(
+    prisma.department.count({ where: { name: updatedName } }),
+  ).resolves.toBe(0);
 });
