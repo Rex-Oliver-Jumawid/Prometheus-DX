@@ -483,10 +483,10 @@ export function OutcomeDeliveryPanel({
       {data.acceptances.length > 0 && (
         <section
           className="outcome-acceptance-history"
-          aria-label="Acceptance history"
+          aria-label="Review history"
         >
           <div className="outcome-acceptance-history-head">
-            <h4>Acceptance history</h4>
+            <h4>Review history</h4>
             {data.isLead && accepted && (
               <button
                 className="projects-secondary-button outcome-reopen-button"
