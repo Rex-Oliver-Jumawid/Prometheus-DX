@@ -198,7 +198,8 @@ describe('ProjectWorkflow Stage & Outcome Deletion', () => {
                   id: outcomeId,
                   title: acceptedPrerequisiteTitle,
                   lifecycleStatus: 'ACCEPTED',
-                  resolved: false,
+                  resolved: true,
+                  resolution: 'ACCEPTED',
                 },
               ],
             },
@@ -227,15 +228,70 @@ describe('ProjectWorkflow Stage & Outcome Deletion', () => {
     expect(
       screen.queryByRole('button', { name: 'Skip dependency' }),
     ).not.toBeInTheDocument();
+    expect(screen.getByText('NEXT OUTCOME')).toBeInTheDocument();
+    expect(screen.getByText(/Accepted$/)).toBeInTheDocument();
+    expect(screen.queryByText('Prerequisite complete')).not.toBeInTheDocument();
     expect(
-      screen.getByText('Prerequisite complete'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { name: 'Continue to next outcome →' }),
-    ).toHaveAttribute(
-      'href',
-      `/projects/${projectId}/outcomes/99999999-9999-4999-8999-999999999999`,
-    );
+      screen.queryByRole('link', { name: 'Continue to next outcome →' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders an overridden dependency as skipped instead of accepted', async () => {
+    const prerequisiteTitle = 'Optional research spike';
+    const dependentTitle = 'Production rollout';
+
+    const dependencyWorkflow: ProjectWorkflowResponse = {
+      ...workflowFixture,
+      stages: [
+        {
+          ...workflowFixture.stages[0],
+          outcomes: [
+            {
+              ...workflowFixture.stages[0].outcomes[0],
+              title: prerequisiteTitle,
+              lifecycleStatus: 'OPEN',
+            },
+            {
+              ...workflowFixture.stages[0].outcomes[0],
+              id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+              title: dependentTitle,
+              position: 1,
+              prerequisites: [
+                {
+                  id: outcomeId,
+                  dependencyId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+                  title: prerequisiteTitle,
+                  lifecycleStatus: 'OPEN',
+                  resolved: true,
+                  resolution: 'OVERRIDDEN',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path === `/projects/${projectId}/workflow`) {
+        return Promise.resolve(dependencyWorkflow);
+      }
+      return Promise.resolve({ success: true });
+    });
+
+    renderWorkflow();
+
+    expect(await screen.findByText('SKIPPED')).toBeInTheDocument();
+    expect(screen.queryByText('RESOLVED')).not.toBeInTheDocument();
+    expect(screen.getByText(/Skipped by Project Lead/)).toBeInTheDocument();
+
+    const prerequisiteCard = screen.getByRole('link', {
+      name: prerequisiteTitle,
+    });
+    expect(prerequisiteCard).toHaveClass('skipped');
+
+    expect(screen.getByText('NEXT OUTCOME')).toBeInTheDocument();
+    expect(screen.queryByText('Prerequisite complete')).not.toBeInTheDocument();
   });
 
   it('opens the dependency override modal directly from the board', async () => {
