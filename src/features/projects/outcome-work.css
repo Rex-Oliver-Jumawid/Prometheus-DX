@@ -698,20 +698,20 @@
   color: #cb4d22;
 }
 
-/* Feature Composer (Figma & Prototype) */
+/* Feature Composer - Figma Add Feature node 112:7498 */
 .pw-feature-composer {
-  margin: 0 0 12px;
-  padding: 10px 12px;
-  border: 1px solid #ded6cf;
-  border-radius: 12px;
-  background: #faf8f5;
-  box-shadow: 0 2px 6px rgba(44, 31, 25, 0.03);
+  margin: 0;
+  padding: 8px;
+  border: 1px solid #e6dfda;
+  border-radius: 8px;
+  background: #faf9f8;
+  box-shadow: none;
 }
 
 .pw-feature-composer-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
-  gap: 8px;
+  grid-template-columns: minmax(0, 0.67fr) minmax(0, 1fr);
+  gap: 6px;
 }
 
 @media (max-width: 640px) {
@@ -722,60 +722,76 @@
 
 .pw-feature-composer input {
   width: 100%;
-  padding: 7px 10px;
+  min-height: 30px;
+  padding: 7px 8px;
   border: 1px solid #ded7d2;
-  border-radius: 8px;
+  border-radius: 7px;
   background: #ffffff;
-  font-size: 11px;
   color: #27221f;
+  font-size: 10px;
+  letter-spacing: 0.01em;
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .pw-feature-composer input:focus {
   border-color: #cb4d22;
-  box-shadow: 0 0 0 2px rgba(203, 77, 34, 0.12);
+  box-shadow: 0 0 0 2px rgba(203, 77, 34, 0.1);
 }
 
 .pw-feature-composer input::placeholder {
-  color: #a0958d;
+  color: #757575;
 }
 
 .pw-feature-composer-actions {
   display: flex;
+  min-height: 36px;
   justify-content: flex-end;
+  align-items: flex-end;
   gap: 6px;
-  margin-top: 8px;
+  margin-top: 0;
+  padding-top: 6px;
 }
 
 .pw-composer-cancel-btn {
-  padding: 5px 12px;
-  font-size: 11px;
-  font-weight: 700;
-  border-radius: 7px;
-  border: 1px solid #d9cec6;
-  background: #ffffff;
-  color: #554b45;
+  min-height: 31px;
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: #756b64;
+  font-size: 10.5px;
+  font-weight: 750;
+  line-height: 14.7px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .pw-composer-cancel-btn:hover:not(:disabled) {
-  background: #faf7f4;
-  border-color: #c9b8ac;
+  background: #f4efeb;
+  border-color: #e3d9d2;
 }
 
 .pw-composer-submit-btn {
-  padding: 5px 12px;
-  font-size: 11px;
-  font-weight: 700;
-  border-radius: 7px;
+  min-height: 31px;
+  padding: 7px 9px;
   border: 1px solid #cb4d22;
+  border-radius: 11px;
   background: #cb4d22;
   color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 750;
+  line-height: 14.7px;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(203, 77, 34, 0.18);
-  transition: all 0.15s ease;
+  box-shadow: 0 2px 3px rgba(58, 41, 33, 0.02);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .pw-composer-submit-btn:hover:not(:disabled) {
@@ -845,44 +861,38 @@
 }
 
 
-/* Empty Features State */
-.outcome-features-empty-state {
+/* Empty Features State - compact Figma Add Feature layout */
+.outcome-empty-feature-stack {
   display: flex;
   flex-direction: column;
+  gap: 0;
+}
+
+.outcome-features-empty-state {
+  display: flex;
+  min-height: 53px;
   align-items: center;
+  justify-content: center;
+  margin-top: 9px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   text-align: center;
-  padding: 28px 20px 24px;
-  margin: 4px 0 6px;
-  background: #faf8f5;
-  border: 1px dashed #d4c8be;
-  border-radius: 14px;
-  gap: 8px;
-}
-
-.outcome-features-empty-icon {
-  font-size: 22px;
-  color: #d4b8ab;
-  line-height: 1;
-  margin-bottom: 2px;
-}
-
-.outcome-features-empty-title {
-  font-size: 12px;
-  font-weight: 800;
-  color: #3a3330;
-  display: block;
 }
 
 .outcome-features-empty-body {
+  width: 100%;
+  max-width: none;
   margin: 0;
-  font-size: 10.5px;
-  color: #8b8079;
-  line-height: 1.5;
-  max-width: 340px;
+  color: #98a2b3;
+  font-size: 10px;
+  line-height: 15px;
+  letter-spacing: 0.01em;
 }
 
-.outcome-features-empty-action {
-  margin-top: 4px;
+.outcome-empty-feature-stack .add-feature-large {
+  margin-top: 9px;
 }
 
 /* Outputs & Feedback Section */
