@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -71,6 +72,14 @@ export class RegistryController {
     }
 
     return this.registryService.updateDepartment(departmentId, parsed.data);
+  }
+
+  @Delete('departments/:departmentId')
+  deleteDepartment(
+    @Param('departmentId', new ParseUUIDPipe({ version: '4' }))
+    departmentId: string,
+  ) {
+    return this.registryService.deleteDepartment(departmentId);
   }
 
   @Get('members')
