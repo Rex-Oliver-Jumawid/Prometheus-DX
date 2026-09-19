@@ -209,7 +209,7 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
   await expect(profile.getByLabel('Nickname')).toBeEditable();
   await expect(profile.getByLabel('Phone number')).toBeEditable();
   await expect(profile.getByLabel('About')).toBeEditable();
-  await expect(profile.getByLabel('Time zone')).toBeDisabled();
+  await expect(profile.getByLabel('Time zone')).toHaveCount(0);
   await expect(
     profile.getByRole('button', { name: 'Change photo' }),
   ).toBeEnabled();
