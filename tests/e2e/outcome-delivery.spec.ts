@@ -246,10 +246,16 @@ test('F5-09 F5-12 F5-13: submission appends attributed history and clears the sa
     page.getByRole('button', { name: /v1.*https:\/\/example.com\/delivery/ }),
   ).toBeVisible();
   await openDelivery(page, true);
+  await expect(
+    page.locator('.outcome-submission-card.latest'),
+  ).toHaveCount(1);
   await page
     .getByRole('button', { name: /v1.*https:\/\/example.com\/delivery/ })
     .click();
   const dialog = page.getByRole('dialog', { name: 'Submission record' });
+  await expect(dialog.getByText('Member submission', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('Outcome-level review', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('Submission status', { exact: true })).toBeVisible();
   await expect(
     dialog.getByRole('link', { name: 'https://example.com/delivery' }),
   ).toHaveAttribute('rel', 'noopener noreferrer');
@@ -386,6 +392,15 @@ test('F5-17 F5-20: Lead reviews combined history and requests revision with requ
     .getByRole('button', { name: 'Review Outcome', exact: true })
     .click();
   const dialog = page.getByRole('dialog', { name: 'Review Outcome' });
+  await expect(
+    dialog.getByText('Project Lead verification', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByText('1. Outcome to satisfy', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByText('2. Team submissions', { exact: true }),
+  ).toBeVisible();
   await expect(
     dialog.getByText('Second contribution', { exact: true }),
   ).toBeVisible();
