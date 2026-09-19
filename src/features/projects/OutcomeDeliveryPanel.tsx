@@ -287,9 +287,14 @@ export function OutcomeDeliveryPanel({
   const data = delivery.data;
   const accepted = data.lifecycleStatus === 'ACCEPTED';
   const isContributor = isJoined;
+  const currentAcceptance =
+    data.acceptances.find((item) => !item.reopenedAt) ?? data.acceptances[0];
 
   return (
-    <section className="work-section output-work-section" aria-label="Outputs and feedback">
+    <section
+      className={`work-section output-work-section${accepted ? ' accepted-outcome-section' : ''}`}
+      aria-label="Outputs and feedback"
+    >
       <header className="work-section-head">
         <div className="output-section-title-row">
           <div className="output-section-icon" aria-hidden="true">
@@ -307,7 +312,7 @@ export function OutcomeDeliveryPanel({
             </h3>
             <p>
               {accepted
-                ? 'The Project Lead accepted the combined work. Submission history remains available as a permanent record.'
+                ? `This outcome is final. ${data.submissions.length} team submission${data.submissions.length === 1 ? ' was' : 's were'} preserved as the evidence behind the decision.`
                 : isContributor
                   ? 'Your submission is added to the shared outcome record. The Project Lead reviews all team submissions together.'
                   : data.isLead
@@ -329,15 +334,6 @@ export function OutcomeDeliveryPanel({
               }}
             >
               Review outcome
-            </button>
-          )}
-          {data.isLead && accepted && (
-            <button
-              className="projects-secondary-button pw-review-outcome-jump"
-              type="button"
-              onClick={() => setReopenVersion(data.outcomeUpdatedAt)}
-            >
-              Reopen outcome
             </button>
           )}
           <span
@@ -438,7 +434,7 @@ export function OutcomeDeliveryPanel({
         <div className="outcome-submission-list">
           {data.submissions.map((submission, index) => (
             <button
-              className="outcome-submission-card"
+              className={`outcome-submission-card${index === 0 ? ' latest' : ''}${accepted ? ' accepted-evidence' : ''}`}
               type="button"
               key={submission.id}
               onClick={() => setSelected(submission)}
@@ -452,17 +448,25 @@ export function OutcomeDeliveryPanel({
                   <span
                     className={`outcome-sub-status-badge ${submission.reviewStatus.toLowerCase()}`}
                   >
-                    {submission.reviewStatus === 'FOR_REVIEW'
-                      ? 'For review'
-                      : 'Reviewed'}
+                    {accepted
+                      ? 'Accepted'
+                      : submission.reviewStatus === 'FOR_REVIEW'
+                        ? 'For review'
+                        : 'Reviewed'}
                   </span>
                 </div>
                 <strong className="outcome-sub-title">
                   {submission.content}
                 </strong>
                 <span className="outcome-sub-meta">
-                  Submitted by {submission.submitter.fullName} ·{' '}
-                  {new Date(submission.createdAt).toLocaleString()}
+                  {accepted
+                    ? `Accepted by ${currentAcceptance?.acceptedBy.fullName ?? 'Project Lead'}`
+                    : (
+                        <>
+                          Submitted by {submission.submitter.fullName} ·{' '}
+                          {new Date(submission.createdAt).toLocaleString()}
+                        </>
+                      )}
                 </span>
                 <span className="outcome-sub-link">View submission →</span>
               </div>
@@ -475,9 +479,20 @@ export function OutcomeDeliveryPanel({
           className="outcome-acceptance-history"
           aria-label="Acceptance history"
         >
-          <h4>Acceptance history</h4>
+          <div className="outcome-acceptance-history-head">
+            <h4>Acceptance history</h4>
+            {data.isLead && accepted && (
+              <button
+                className="projects-secondary-button outcome-reopen-button"
+                type="button"
+                onClick={() => setReopenVersion(data.outcomeUpdatedAt)}
+              >
+                Reopen Outcome
+              </button>
+            )}
+          </div>
           {data.acceptances.map((item) => (
-            <details key={item.id} open>
+            <details key={item.id}>
               <summary>
                 Accepted {new Date(item.acceptedAt).toLocaleString()} by{' '}
                 {item.acceptedBy.fullName}
