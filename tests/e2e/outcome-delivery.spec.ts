@@ -496,6 +496,19 @@ test('F5-26 F5-27: accepted state survives refresh and denies submission, work a
   await expect(
     page.getByRole('region', { name: 'Acceptance history' }),
   ).toBeVisible();
+  await expect(page.getByText('Accepted Outcome', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(/This outcome is final\./),
+  ).toBeVisible();
+  await expect(
+    page.locator('.outcome-submission-card.latest.accepted-evidence'),
+  ).toHaveCount(1);
+  await expect(
+    page.locator('.outcome-submission-card.latest .outcome-sub-latest-badge'),
+  ).toHaveText('Latest');
+  await expect(
+    page.locator('.outcome-submission-card.latest .outcome-sub-status-badge'),
+  ).toHaveText('Accepted');
   await expect(
     page.getByRole('button', { name: 'Submit for review' }),
   ).toHaveCount(0);
