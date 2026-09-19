@@ -727,6 +727,7 @@ export class ProjectWorkflowService {
   private toOutcome(outcome: OutcomeRecord, currentMemberId: string): Outcome {
     const prerequisites = outcome.prerequisites.map((dependency) => ({
       id: dependency.prerequisiteOutcome.id,
+      dependencyId: dependency.id,
       title: dependency.prerequisiteOutcome.title,
       lifecycleStatus: dependency.prerequisiteOutcome.lifecycleStatus,
       resolved:
