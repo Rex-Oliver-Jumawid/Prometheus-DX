@@ -164,6 +164,8 @@ button:disabled {
   justify-content: center;
   overflow-y: auto;
   padding: clamp(24px, 4vh, 48px) clamp(28px, 3vw, 48px);
+  animation: auth-panel-enter 0.2s ease both;
+  will-change: transform, opacity;
 }
 .auth-inner {
   width: min(100%, 360px);
@@ -405,6 +407,16 @@ button:disabled {
 .spinner.dark {
   border-color: rgba(73, 57, 49, 0.18);
   border-top-color: #cb4d22;
+}
+@keyframes auth-panel-enter {
+  from {
+    transform: translateX(-16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 @keyframes spin {
   to {
