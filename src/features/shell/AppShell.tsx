@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/auth-context';
 import {
@@ -25,14 +25,45 @@ import { Avatar, ProfileDrawer } from './ProfileDrawer';
 import { useShellStore } from './shell-store';
 
 export function AppShell() {
-  const { member, session } = useAuth();
+  const { member, session, signOut } = useAuth();
   const queryClient = useQueryClient();
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const location = useLocation();
   const mobileOpen = useShellStore((state) => state.mobileNavigationOpen);
   const setMobileOpen = useShellStore((state) => state.setMobileNavigationOpen);
   const setProfileOpen = useShellStore((state) => state.setProfileOpen);
   const accessToken = session?.access_token;
   const workspaceRole = member?.workspaceRole;
+
+  useEffect(() => {
+    if (!accountMenuOpen) return undefined;
+
+    const closeFromOutside = (event: PointerEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Node &&
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(target)
+      ) {
+        setAccountMenuOpen(false);
+      }
+    };
+    const closeFromEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAccountMenuOpen(false);
+    };
+
+    document.addEventListener('pointerdown', closeFromOutside);
+    document.addEventListener('keydown', closeFromEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeFromOutside);
+      document.removeEventListener('keydown', closeFromEscape);
+    };
+  }, [accountMenuOpen]);
+
+  useEffect(() => {
+    setAccountMenuOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!accessToken || !workspaceRole) return;
@@ -148,24 +179,64 @@ export function AppShell() {
             ))}
           </nav>
           <div className="sidebar-divider" />
-          <button
-            className="account-card"
-            type="button"
-            onClick={() => setProfileOpen(true)}
-            aria-label="Open profile and account"
-          >
-            <Avatar member={member} />
-            <span className="account-copy">
-              <strong title={member.fullName}>{member.fullName}</strong>
-              <small>
-                {member.position ||
-                  (member.workspaceRole === 'ADMINISTRATOR'
-                    ? 'Administrator'
-                    : 'Member')}
-              </small>
-            </span>
-            <span className="account-more">•••</span>
-          </button>
+          <div className="account-area" ref={accountMenuRef}>
+            {accountMenuOpen && (
+              <div className="account-menu" role="menu" aria-label="Account menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setAccountMenuOpen(false);
+                    setProfileOpen(true);
+                  }}
+                >
+                  <span>Profile settings</span>
+                </button>
+                <div className="account-menu-divider" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="account-menu-signout"
+                  onClick={() => {
+                    setAccountMenuOpen(false);
+                    setMobileOpen(false);
+                    void signOut();
+                  }}
+                >
+                  <span>Sign out</span>
+                </button>
+              </div>
+            )}
+            <div className="account-card">
+              <button
+                className="account-profile-button"
+                type="button"
+                onClick={() => {
+                  setAccountMenuOpen(false);
+                  setProfileOpen(true);
+                }}
+                aria-label="Open profile settings"
+              >
+                <Avatar member={member} />
+                <span className="account-copy">
+                  <strong title={member.fullName}>{member.fullName}</strong>
+                  <small title={member.department.name}>
+                    {member.department.name}
+                  </small>
+                </span>
+              </button>
+              <button
+                className="account-menu-trigger"
+                type="button"
+                aria-label="Open account menu"
+                aria-haspopup="menu"
+                aria-expanded={accountMenuOpen}
+                onClick={() => setAccountMenuOpen((current) => !current)}
+              >
+                <span aria-hidden="true">•••</span>
+              </button>
+            </div>
+          </div>
         </div>
       </aside>
       <div className="workspace-main">
