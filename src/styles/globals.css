@@ -164,8 +164,6 @@ button:disabled {
   justify-content: center;
   overflow-y: auto;
   padding: clamp(24px, 4vh, 48px) clamp(28px, 3vw, 48px);
-  animation: auth-panel-enter 0.2s ease both;
-  will-change: transform, opacity;
 }
 .auth-inner {
   width: min(100%, 360px);
@@ -408,14 +406,26 @@ button:disabled {
   border-color: rgba(73, 57, 49, 0.18);
   border-top-color: #cb4d22;
 }
-@keyframes auth-panel-enter {
-  from {
-    transform: translateX(-16px);
-    opacity: 0;
+@keyframes auth-art-pan {
+  0% {
+    transform: scale(1.06) translate3d(-2.5%, -1.5%, 0);
   }
-  to {
-    transform: translateX(0);
-    opacity: 1;
+  50% {
+    transform: scale(1.12) translate3d(2%, 1%, 0);
+  }
+  100% {
+    transform: scale(1.08) translate3d(-1%, 2.5%, 0);
+  }
+}
+@keyframes auth-art-atmosphere-drift {
+  0% {
+    transform: translate3d(-5%, -2%, 0) rotate(-2deg) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, 3%, 0) rotate(3deg) scale(1.07);
+  }
+  100% {
+    transform: translate3d(-1%, 6%, 0) rotate(-1deg) scale(1.03);
   }
 }
 @keyframes spin {
@@ -427,14 +437,36 @@ button:disabled {
   position: relative;
   height: 100dvh;
   overflow: hidden;
-  background: #d46349 url('/auth/prometheus-auth-background.png') center/cover
-    no-repeat;
+  isolation: isolate;
+  background: #d46349;
 }
-.auth-art:after {
+.auth-art::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background: linear-gradient(0deg, rgba(37, 17, 18, 0.22), transparent 36%);
+  inset: -8%;
+  z-index: -2;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.02)),
+    url('/auth/prometheus-auth-background.png') center/cover no-repeat;
+  transform: scale(1.06);
+  will-change: transform;
+  animation: auth-art-pan 14s ease-in-out infinite alternate;
+}
+.auth-art::after {
+  content: '';
+  position: absolute;
+  inset: -22%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.48;
+  filter: blur(80px) saturate(1.08);
+  background:
+    radial-gradient(circle at 23% 26%, rgba(211, 73, 49, 0.92), transparent 34%),
+    radial-gradient(circle at 72% 30%, rgba(247, 227, 195, 0.82), transparent 30%),
+    radial-gradient(circle at 67% 73%, rgba(71, 115, 155, 0.92), transparent 34%);
+  mix-blend-mode: soft-light;
+  will-change: transform;
+  animation: auth-art-atmosphere-drift 18s ease-in-out infinite alternate;
 }
 .art-caption {
   position: absolute;
