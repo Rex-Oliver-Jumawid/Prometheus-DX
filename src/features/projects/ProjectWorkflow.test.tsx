@@ -173,6 +173,62 @@ describe('ProjectWorkflow Stage & Outcome Deletion', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('treats accepted prerequisites as resolved and hides redundant dependency actions', async () => {
+    const acceptedPrerequisiteTitle = 'Accepted prerequisite outcome';
+    const dependentTitle = 'Dependent outcome';
+
+    const dependencyWorkflow: ProjectWorkflowResponse = {
+      ...workflowFixture,
+      stages: [
+        {
+          ...workflowFixture.stages[0],
+          outcomes: [
+            {
+              ...workflowFixture.stages[0].outcomes[0],
+              title: acceptedPrerequisiteTitle,
+              lifecycleStatus: 'ACCEPTED',
+            },
+            {
+              ...workflowFixture.stages[0].outcomes[0],
+              id: '99999999-9999-4999-8999-999999999999',
+              title: dependentTitle,
+              position: 1,
+              prerequisites: [
+                {
+                  id: outcomeId,
+                  title: acceptedPrerequisiteTitle,
+                  lifecycleStatus: 'ACCEPTED',
+                  resolved: false,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path === `/projects/${projectId}/workflow`) {
+        return Promise.resolve(dependencyWorkflow);
+      }
+      return Promise.resolve({ success: true });
+    });
+
+    renderWorkflow();
+
+    const prerequisiteCard = await screen.findByRole('link', {
+      name: acceptedPrerequisiteTitle,
+    });
+    expect(prerequisiteCard).toHaveClass('dep-mini');
+    expect(screen.getByText('RESOLVED')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Verify prerequisite' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Skip dependency' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('renders X delete controls on manageable stages and outcomes', async () => {
     renderWorkflow();
 
