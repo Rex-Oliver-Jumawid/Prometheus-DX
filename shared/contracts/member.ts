@@ -10,6 +10,9 @@ export const CurrentMemberSchema = z.object({
   workspaceRole: WorkspaceRoleSchema,
   status: z.literal('ACTIVE'),
   position: z.string().nullable(),
+  nickname: z.string().max(40).nullable(),
+  phoneNumber: z.string().max(32).nullable(),
+  about: z.string().max(240).nullable(),
   profileImagePath: z.string().nullable(),
   department: z.object({
     id: z.string().uuid(),
@@ -24,6 +27,9 @@ export const UpdateCurrentMemberRequestSchema = z
   .object({
     fullName: z.string().trim().min(1).max(120),
     position: z.string().trim().max(120).nullable(),
+    nickname: z.string().trim().max(40).nullable(),
+    phoneNumber: z.string().trim().max(32).nullable(),
+    about: z.string().trim().max(240).nullable(),
     profileImagePath: z.string().trim().nullable().optional(),
   })
   .strict();
