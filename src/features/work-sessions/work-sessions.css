@@ -46,15 +46,15 @@
 }
 
 .attendance-control.pending {
-  width: var(--attendance-handle);
+  width: 236px;
   min-height: 58px;
-  transform: none;
+  transform: translateX(calc(100% - var(--attendance-handle)));
   pointer-events: none;
 }
 
 .attendance-control.pending:hover,
 .attendance-control.pending:focus-within {
-  transform: none;
+  transform: translateX(calc(100% - var(--attendance-handle)));
 }
 
 .attendance-pending-handle {
