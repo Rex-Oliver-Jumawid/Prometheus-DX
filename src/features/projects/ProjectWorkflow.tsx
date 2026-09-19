@@ -8,6 +8,7 @@ import {
   type ProjectDepartmentSummary,
   type ProjectMemberSummary,
 } from '../../../shared/contracts/project';
+import { OutcomeDeliverySchema } from '../../../shared/contracts/outcome-delivery';
 import {
   CreateOutcomeRequestSchema,
   CreateStageRequestSchema,
@@ -25,6 +26,7 @@ import { apiFetch } from '../../lib/api';
 import { OutcomeWorkArea } from './OutcomeWorkArea';
 import { OutcomeDeliveryPanel } from './OutcomeDeliveryPanel';
 import { OutcomeContextRail } from './OutcomeContextRail';
+import { ProjectDialog } from './ProjectDialog';
 import {
   projectCreateOptionsQuery,
   projectKeys,
@@ -886,6 +888,15 @@ export function ProjectWorkflow({
   const navigate = useNavigate();
   const [editor, setEditor] = useState<EditorState>(null);
   const [scope, setScope] = useState<'whole' | 'mine'>('whole');
+  const [dependencyOverride, setDependencyOverride] = useState<{
+    dependencyId: string;
+    outcomeId: string;
+    prerequisiteTitle: string;
+    outcomeTitle: string;
+  } | null>(null);
+  const dependencyOverrideForm = useForm<{ reason: string }>({
+    defaultValues: { reason: '' },
+  });
   const queryClient = useQueryClient();
   const workflow = useQuery({
     ...projectWorkflowQuery(projectId, accessToken),
@@ -1035,6 +1046,34 @@ export function ProjectWorkflow({
       ]);
     },
   });
+  const overrideDependency = useMutation({
+    mutationFn: ({
+      dependencyId,
+      outcomeId: dependentOutcomeId,
+      reason,
+    }: {
+      dependencyId: string;
+      outcomeId: string;
+      reason: string;
+    }) =>
+      apiFetch(
+        `/projects/${projectId}/outcomes/${dependentOutcomeId}/delivery/dependencies/${dependencyId}/override`,
+        OutcomeDeliverySchema,
+        {
+          accessToken,
+          method: 'POST',
+          body: { reason },
+        },
+      ),
+    onSuccess: () => {
+      setDependencyOverride(null);
+      dependencyOverrideForm.reset();
+      void queryClient.invalidateQueries({
+        queryKey: projectKeys.workflow(projectId),
+      });
+    },
+  });
+
   const deleteStage = useMutation({
     mutationFn: (stageId: string) =>
       apiFetch(
