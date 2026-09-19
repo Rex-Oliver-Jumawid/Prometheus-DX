@@ -298,6 +298,9 @@ export function OutcomeDeliveryPanel({
   const unresolvedDependencies = data.dependencies.filter(
     (item) => !item.resolved,
   );
+  const overrideDependency = overrideId
+    ? data.dependencies.find((item) => item.id === overrideId)
+    : null;
   const selectedIndex = selected
     ? data.submissions.findIndex((item) => item.id === selected.id)
     : -1;
@@ -746,41 +749,107 @@ export function OutcomeDeliveryPanel({
           </button>
         </ProjectDialog>
       )}
-      {overrideId && (
+      {overrideId && overrideDependency && (
         <ProjectDialog
           title="Skip dependency"
+          eyebrow="Project Lead override"
+          tag="Dependency override"
           pending={mutation.isPending}
-          onClose={() => setOverrideId(null)}
+          className="dependency-override-dialog"
+          bodyClassName="dependency-override-body"
+          onClose={() => {
+            setOverrideId(null);
+            overrideForm.reset();
+            mutation.reset();
+          }}
         >
           <form
+            className="dependency-override-form"
             onSubmit={overrideForm.handleSubmit(async ({ reason }) => {
               try {
                 await act(`dependencies/${overrideId}/override`, { reason });
                 setOverrideId(null);
+                overrideForm.reset();
               } catch {
                 /* Keep reason and show mutation error. */
               }
             })}
           >
-            <p>
-              This resolves this dependency only. The prerequisite Outcome
-              retains its lifecycle and history.
-            </p>
-            <label className="projects-field">
-              <span>Reason for dependency override</span>
+            <div className="dependency-override-notice">
+              <span className="dependency-override-notice-icon" aria-hidden="true">
+                !
+              </span>
+              <div>
+                <strong>Bypass this prerequisite only</strong>
+                <p>
+                  The prerequisite outcome and its history stay unchanged. This
+                  only unlocks the dependent outcome.
+                </p>
+              </div>
+            </div>
+
+            <div
+              className="dependency-override-flow"
+              aria-label="Dependency being skipped"
+            >
+              <div>
+                <span>Prerequisite</span>
+                <strong>{overrideDependency.title}</strong>
+              </div>
+              <span className="dependency-override-arrow" aria-hidden="true">
+                →
+              </span>
+              <div>
+                <span>Unlock outcome</span>
+                <strong>{outcomeTitle}</strong>
+              </div>
+            </div>
+
+            <label className="dependency-override-reason">
+              <span>Reason for override</span>
               <textarea
-                {...overrideForm.register('reason', { required: true })}
-                required
+                autoFocus
+                placeholder="Explain why this outcome may proceed without the prerequisite."
+                {...overrideForm.register('reason', {
+                  required: 'Add a reason before skipping this dependency.',
+                })}
               />
             </label>
-            {mutation.error && <p role="alert">{mutation.error.message}</p>}
-            <button
-              className="projects-primary-button"
-              disabled={mutation.isPending}
-              type="submit"
-            >
-              Confirm skip dependency
-            </button>
+
+            {overrideForm.formState.errors.reason?.message && (
+              <p className="dependency-override-error" role="alert">
+                {overrideForm.formState.errors.reason.message}
+              </p>
+            )}
+            {mutation.error && (
+              <p className="dependency-override-error" role="alert">
+                {mutation.error.message}
+              </p>
+            )}
+
+            <footer className="dependency-override-actions">
+              <button
+                type="button"
+                className="projects-secondary-button"
+                disabled={mutation.isPending}
+                onClick={() => {
+                  setOverrideId(null);
+                  overrideForm.reset();
+                  mutation.reset();
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="dependency-override-confirm"
+                disabled={mutation.isPending}
+                type="submit"
+              >
+                {mutation.isPending
+                  ? 'Skipping dependency...'
+                  : 'Confirm skip dependency'}
+              </button>
+            </footer>
           </form>
         </ProjectDialog>
       )}
