@@ -1598,18 +1598,19 @@ export function ProjectWorkflow({
                               outcome.departments[0]?.shortLabel ??
                               outcome.departments[0]?.name ??
                               'General';
-                            const prereqStatusLabel = prereq.resolved
+                            const dependencyResolved =
+                              prereq.resolved ||
+                              prereqOutcome?.lifecycleStatus === 'ACCEPTED';
+                            const prereqStatusLabel = dependencyResolved
                               ? 'Resolved'
-                              : prereqOutcome?.lifecycleStatus === 'ACCEPTED'
-                                ? 'Accepted'
-                                : prereqOutcome?.hasForReview
-                                  ? 'For Review'
-                                  : prereqOutcome
-                                    ? lifecycleLabel(
-                                        prereqOutcome.lifecycleStatus,
-                                      )
-                                    : 'Waiting';
-                            const depStatusLabel = prereq.resolved
+                              : prereqOutcome?.hasForReview
+                                ? 'For Review'
+                                : prereqOutcome
+                                  ? lifecycleLabel(
+                                      prereqOutcome.lifecycleStatus,
+                                    )
+                                  : 'Waiting';
+                            const depStatusLabel = dependencyResolved
                               ? lifecycleLabel(outcome.lifecycleStatus)
                               : 'Locked';
 
@@ -1622,10 +1623,10 @@ export function ProjectWorkflow({
                                   <span className="dep-title">DEPENDENCY</span>
                                   <span
                                     className={`dep-state ${
-                                      prereq.resolved ? 'resolved' : 'waiting'
+                                      dependencyResolved ? 'resolved' : 'waiting'
                                     }`}
                                   >
-                                    {prereq.resolved ? 'RESOLVED' : 'WAITING'}
+                                    {dependencyResolved ? 'RESOLVED' : 'WAITING'}
                                   </span>
                                 </div>
 
@@ -1668,7 +1669,7 @@ export function ProjectWorkflow({
                                   </Link>
                                 </div>
 
-                                {!prereq.resolved && (
+                                {!dependencyResolved && (
                                   <div className="dep-actions-row">
                                     <Link
                                       to={`/projects/${projectId}/outcomes/${prereq.id}`}
