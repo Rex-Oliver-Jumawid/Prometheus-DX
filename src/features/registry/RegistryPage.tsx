@@ -1243,13 +1243,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
                       ⌁
                     </span>
                     <span className="registry-department-copy">
-                      <strong>
-                        {department.name}
-                        <span>{department.shortLabel}</span>
-                      </strong>
-                      <span className="registry-department-description">
-                        {department.description || 'No description yet.'}
-                      </span>
+                      <strong>{department.shortLabel}</strong>
                     </span>
                     <span className="registry-member-count">
                       {department.memberCount}{' '}
