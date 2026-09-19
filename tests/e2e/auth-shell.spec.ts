@@ -198,9 +198,21 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
     .getByRole('button', { name: 'Open profile and account' })
     .first()
     .click();
-  await expect(page.getByRole('dialog', { name: 'Profile' })).toContainText(
-    email!,
-  );
+
+  const profile = page.getByRole('dialog', { name: 'Profile settings' });
+  await expect(profile).toBeVisible();
+  await expect(profile).toContainText(email!);
+  await expect(profile.getByLabel('Full name')).toHaveValue(/.+/);
+  await expect(profile.getByLabel(/Email address/)).toHaveAttribute('readonly');
+  await expect(profile.getByLabel(/Department/)).toHaveAttribute('readonly');
+  await expect(profile.getByLabel(/Access role/)).toHaveAttribute('readonly');
+  await expect(profile.getByLabel('Phone number')).toHaveAttribute('readonly');
+  await expect(profile.getByLabel('About')).toHaveAttribute('readonly');
+  await expect(profile.getByLabel('Time zone')).toBeDisabled();
+  await expect(
+    profile.getByRole('button', { name: 'Save changes' }),
+  ).toBeDisabled();
+
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
 });
