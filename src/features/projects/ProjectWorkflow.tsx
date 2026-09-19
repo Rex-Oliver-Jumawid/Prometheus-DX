@@ -1630,21 +1630,20 @@ export function ProjectWorkflow({
                                 </div>
 
                                 <div className="dep-flow">
-                                  <div className="dep-mini">
+                                  <Link
+                                    to={`/projects/${projectId}/outcomes/${prereq.id}`}
+                                    className="dep-mini"
+                                    aria-label={prereqOutcome?.title ?? prereq.title}
+                                  >
                                     <div className="dep-mini-top">
                                       <h4 className="dep-mini-title">
-                                        <Link
-                                          to={`/projects/${projectId}/outcomes/${prereq.id}`}
-                                        >
-                                          {prereqOutcome?.title ?? prereq.title}
-                                        </Link>
+                                        {prereqOutcome?.title ?? prereq.title}
                                       </h4>
-
                                     </div>
                                     <div className="dep-mini-meta">
                                       {prereqDept} · {prereqStatusLabel}
                                     </div>
-                                  </div>
+                                  </Link>
 
                                   <span
                                     className="dep-arrow"
@@ -1653,37 +1652,38 @@ export function ProjectWorkflow({
                                     →
                                   </span>
 
-                                  <div className="dep-mini">
+                                  <Link
+                                    to={`/projects/${projectId}/outcomes/${outcome.id}`}
+                                    className="dep-mini"
+                                    aria-label={outcome.title}
+                                  >
                                     <div className="dep-mini-top">
                                       <h4 className="dep-mini-title">
-                                        <Link
-                                          to={`/projects/${projectId}/outcomes/${outcome.id}`}
-                                        >
-                                          {outcome.title}
-                                        </Link>
+                                        {outcome.title}
                                       </h4>
-
                                     </div>
                                     <div className="dep-mini-meta">
                                       {depDept} · {depStatusLabel}
                                     </div>
-                                  </div>
+                                  </Link>
                                 </div>
 
-                                <div className="dep-actions-row">
-                                  <Link
-                                    to={`/projects/${projectId}/outcomes/${prereq.id}`}
-                                    className="dep-verify-btn"
-                                  >
-                                    Verify prerequisite
-                                  </Link>
-                                  <Link
-                                    to={`/projects/${projectId}/outcomes/${outcome.id}`}
-                                    className="dep-skip-btn"
-                                  >
-                                    Skip dependency
-                                  </Link>
-                                </div>
+                                {!prereq.resolved && (
+                                  <div className="dep-actions-row">
+                                    <Link
+                                      to={`/projects/${projectId}/outcomes/${prereq.id}`}
+                                      className="dep-verify-btn"
+                                    >
+                                      Verify prerequisite
+                                    </Link>
+                                    <Link
+                                      to={`/projects/${projectId}/outcomes/${outcome.id}`}
+                                      className="dep-skip-btn"
+                                    >
+                                      Skip dependency
+                                    </Link>
+                                  </div>
+                                )}
 
                                 <span className="sr-only">
                                   Prerequisites:{' '}
