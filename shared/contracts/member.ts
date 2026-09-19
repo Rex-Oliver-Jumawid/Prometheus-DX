@@ -20,11 +20,13 @@ export const CurrentMemberSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
-export const UpdateCurrentMemberRequestSchema = z.object({
-  fullName: z.string().trim().min(1).max(120),
-  position: z.string().trim().max(120).nullable(),
-  profileImagePath: z.string().trim().nullable().optional(),
-});
+export const UpdateCurrentMemberRequestSchema = z
+  .object({
+    fullName: z.string().trim().min(1).max(120),
+    position: z.string().trim().max(120).nullable(),
+    profileImagePath: z.string().trim().nullable().optional(),
+  })
+  .strict();
 
 export const RegistryAccessResponseSchema = z.object({
   allowed: z.literal(true),
