@@ -225,6 +225,81 @@ function FeatureComposer({
   );
 }
 
+function featureGlyphIndex(feature: Feature) {
+  const source = `${feature.id}:${feature.title}`;
+  let hash = 0;
+  for (let index = 0; index < source.length; index += 1) {
+    hash = (hash * 31 + source.charCodeAt(index)) >>> 0;
+  }
+  return hash % 6;
+}
+
+function FeatureGlyph({ feature }: { feature: Feature }) {
+  const glyph = featureGlyphIndex(feature);
+  const common = {
+    width: 15,
+    height: 15,
+    viewBox: '0 0 16 16',
+    fill: 'none',
+    stroke: '#ea580c',
+    strokeWidth: 1.55,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true,
+  };
+
+  if (glyph === 0) {
+    return (
+      <svg {...common}>
+        <circle cx="8" cy="8" r="5.3" />
+        <circle cx="8" cy="8" r="2.25" />
+      </svg>
+    );
+  }
+
+  if (glyph === 1) {
+    return (
+      <svg {...common}>
+        <path d="M8 2.1 13 5v6L8 13.9 3 11V5l5-2.9Z" />
+        <path d="m3.4 5.2 4.6 2.6 4.6-2.6M8 7.8v5.7" />
+      </svg>
+    );
+  }
+
+  if (glyph === 2) {
+    return (
+      <svg {...common}>
+        <path d="M3 11.8 6.4 8.4l2.2 2.2L13 5.9" />
+        <path d="M10.1 5.9H13v2.9" />
+      </svg>
+    );
+  }
+
+  if (glyph === 3) {
+    return (
+      <svg {...common}>
+        <rect x="2.6" y="3" width="10.8" height="9.8" rx="2" />
+        <path d="M5.2 6.2h5.6M5.2 9h3.5" />
+      </svg>
+    );
+  }
+
+  if (glyph === 4) {
+    return (
+      <svg {...common}>
+        <path d="M8 2.3 9.6 6l4 .4-3 2.6.9 3.8L8 10.9l-3.5 1.9.9-3.8-3-2.6 4-.4L8 2.3Z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <path d="M3 4.5h10v7H3z" />
+      <path d="M5.2 2.7h5.6v2M5.2 8h5.6" />
+    </svg>
+  );
+}
+
 function FeatureCard({
   feature,
   canPlan,
@@ -285,16 +360,7 @@ function FeatureCard({
           </svg>
         </button>
         <div className="feature-icon-badge" aria-hidden="true">
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 16 16"
-            fill="none"
-            style={{ display: 'block' }}
-          >
-            <circle cx="8" cy="8" r="6" stroke="#ea580c" strokeWidth="1.8" />
-            <circle cx="8" cy="8" r="3.4" fill="#ea580c" />
-          </svg>
+          <FeatureGlyph feature={feature} />
         </div>
         <div className="outcome-feature-title">
           <h4>{feature.title}</h4>
@@ -365,6 +431,16 @@ function FeatureCard({
                   setEditing(null);
                 }}
               />
+            </div>
+          )}
+          {feature.tasks.length === 0 && (
+            <div className="feature-empty-tasks">
+              <strong>No tasks yet</strong>
+              <span>
+                {canPlan
+                  ? 'Add the first task for this feature below.'
+                  : 'No tasks were added before this outcome was accepted.'}
+              </span>
             </div>
           )}
           {feature.tasks.map((task) => (
