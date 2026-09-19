@@ -494,7 +494,7 @@ test('F5-26 F5-27: accepted state survives refresh and denies submission, work a
   await signIn(page);
   await openDelivery(page);
   await expect(
-    page.getByRole('region', { name: 'Acceptance history' }),
+    page.getByRole('region', { name: 'Review history' }),
   ).toBeVisible();
   await expect(page.getByText('Accepted Outcome', { exact: true })).toBeVisible();
   await expect(
