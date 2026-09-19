@@ -782,39 +782,35 @@ export function OutcomeWorkArea({
         </div>
       )}
       {!work.data.features.length && (
-        <div className="outcome-features-empty-state">
-          <div className="outcome-features-empty-icon" aria-hidden="true">
-            ◉
+        <div className="outcome-empty-feature-stack">
+          {work.data.canPlan && composer && (
+            <FeatureComposer
+              pending={mutation.isPending}
+              onCancel={() => setComposer(false)}
+              onSave={async (input) => {
+                await change({ path: '/features', method: 'POST', body: input });
+                setComposer(false);
+              }}
+            />
+          )}
+
+          <div className="outcome-features-empty-state">
+            <p className="outcome-features-empty-body">
+              {work.data.canPlan
+                ? 'No features have been defined yet. Start by adding the main pieces of work needed to achieve this outcome.'
+                : 'No features have been defined yet. Join this outcome to contribute to its work plan.'}
+            </p>
           </div>
-          <strong className="outcome-features-empty-title">
-            No features defined yet
-          </strong>
-          <p className="outcome-features-empty-body">
-            {work.data.canPlan
-              ? 'Start by adding the main pieces of work needed to achieve this outcome.'
-              : 'No features have been defined yet. Join this outcome to contribute to its work plan.'}
-          </p>
-          {work.data.canPlan && !composer && (
+
+          {work.data.canPlan && (
             <button
               type="button"
-              className="feature-add-button outcome-features-empty-action"
-              disabled={mutation.isPending}
+              className="add-feature-large"
+              disabled={mutation.isPending || composer}
               onClick={() => setComposer(true)}
             >
-              ＋ Add feature
+              ＋ Add another feature
             </button>
-          )}
-          {work.data.canPlan && composer && (
-            <div style={{ width: '100%', marginTop: '12px' }}>
-              <FeatureComposer
-                pending={mutation.isPending}
-                onCancel={() => setComposer(false)}
-                onSave={async (input) => {
-                  await change({ path: '/features', method: 'POST', body: input });
-                  setComposer(false);
-                }}
-              />
-            </div>
           )}
         </div>
       )}
