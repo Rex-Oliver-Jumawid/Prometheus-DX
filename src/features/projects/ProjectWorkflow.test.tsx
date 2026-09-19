@@ -84,6 +84,30 @@ describe('ProjectWorkflow Stage & Outcome Deletion', () => {
     });
   });
 
+  it('renders the Figma project stage board controls and compact stage header', async () => {
+    renderWorkflow();
+
+    expect(await screen.findByText('STAGE 1')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Discovery' })).toBeInTheDocument();
+    expect(screen.getByText('1 outcome')).toBeInTheDocument();
+    expect(screen.queryByText('Initial stage')).not.toBeInTheDocument();
+
+    const editStage = screen.getByRole('button', {
+      name: 'Edit Stage Discovery',
+    });
+    const deleteStage = screen.getByRole('button', {
+      name: 'Delete Stage Discovery',
+    });
+    expect(editStage).toHaveTextContent('✎');
+    expect(deleteStage).toHaveTextContent('×');
+
+    expect(screen.getByRole('button', { name: '+ Outcome' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '+ Stage' })).toBeEnabled();
+    expect(
+      screen.getByRole('button', { name: '+ Add Outcome' }),
+    ).toHaveTextContent('+ Add outcome to stage');
+  });
+
   it('renders X delete controls on manageable stages and outcomes', async () => {
     renderWorkflow();
 
