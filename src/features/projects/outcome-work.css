@@ -102,7 +102,7 @@
   width: 14px;
   height: 14px;
   flex: 0 0 14px;
-  transform: rotate(45deg);
+  transform: scaleX(-1);
   transform-origin: center;
 }
 
