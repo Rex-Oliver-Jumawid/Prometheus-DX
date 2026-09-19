@@ -24,6 +24,9 @@ describe('member contracts', () => {
       workspaceRole: 'MEMBER',
       status: 'ACTIVE',
       position: null,
+      nickname: null,
+      phoneNumber: null,
+      about: null,
       profileImagePath: null,
       department: {
         id: '66666666-6666-4666-8666-666666666666',
@@ -43,11 +46,17 @@ describe('member contracts', () => {
       UpdateCurrentMemberRequestSchema.parse({
         fullName: '  Member Example  ',
         position: ' Software Engineer ',
+        nickname: ' Oli ',
+        phoneNumber: ' +63 917 123 4567 ',
+        about: ' Building useful software. ',
         profileImagePath: null,
       }),
     ).toEqual({
       fullName: 'Member Example',
       position: 'Software Engineer',
+      nickname: 'Oli',
+      phoneNumber: '+63 917 123 4567',
+      about: 'Building useful software.',
       profileImagePath: null,
     });
 
