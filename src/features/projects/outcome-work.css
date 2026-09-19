@@ -78,21 +78,51 @@
 }
 
 .pw-outcome-details-trigger {
+  gap: 6px;
+  padding: 5px 10px;
+  background: #fffdfa;
+  border-color: #d5c7bd;
+  color: #574a44;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-size: 10px;
+  font-weight: 750;
   cursor: pointer;
+  box-shadow: 0 2px 7px rgba(55, 39, 31, 0.045);
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
     color 0.15s ease,
-    box-shadow 0.15s ease;
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.pw-outcome-details-pencil {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  transform: rotate(45deg);
+  transform-origin: center;
+}
+
+.pw-outcome-details-pencil svg {
+  width: 13px;
+  height: 13px;
 }
 
 .pw-outcome-details-trigger:hover,
 .pw-outcome-details-trigger:focus-visible {
-  border-color: #cbbcb2;
-  background: #fffdfa;
-  color: #4e433d;
-  box-shadow: 0 2px 7px rgba(55, 39, 31, 0.05);
+  border-color: #cb4d22;
+  background: #ffffff;
+  color: #cb4d22;
+  box-shadow: 0 4px 12px rgba(203, 77, 34, 0.1);
+  transform: translateY(-1px);
   outline: 0;
+}
+
+.pw-outcome-details-trigger:active {
+  transform: translateY(0);
 }
 
 .pw-readonly-note {
