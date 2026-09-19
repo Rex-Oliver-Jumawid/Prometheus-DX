@@ -750,22 +750,43 @@ button:disabled {
   margin: 9px 5px 10px;
   background: rgba(93, 75, 66, 0.11);
 }
+.account-area {
+  position: relative;
+  width: 100%;
+}
 .account-card {
   width: 100%;
   min-height: 56px;
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: center;
-  padding: 7px 8px;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  align-items: stretch;
+  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.56);
   border-radius: 15px;
   background: rgba(255, 255, 255, 0.42);
   color: #352e2a;
-  text-align: left;
 }
 .account-card:hover {
   background: rgba(255, 255, 255, 0.66);
+}
+.account-profile-button {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 7px 4px 7px 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.account-profile-button:focus-visible,
+.account-menu-trigger:focus-visible,
+.account-menu button:focus-visible {
+  outline: 2px solid rgba(203, 77, 34, 0.42);
+  outline-offset: -2px;
 }
 .member-avatar {
   width: 36px;
@@ -811,9 +832,68 @@ button:disabled {
   color: #8b7f78;
   font-size: 7.5px;
 }
-.account-more {
+.account-menu-trigger {
+  width: 34px;
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #8d817a;
+  cursor: pointer;
+}
+.account-menu-trigger:hover,
+.account-menu-trigger[aria-expanded='true'] {
+  background: rgba(255, 255, 255, 0.46);
+  color: #5e514a;
+}
+.account-menu-trigger span {
+  transform: translateY(-1px);
   font-size: 10px;
+  letter-spacing: 0.06em;
+}
+.account-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 140;
+  width: 178px;
+  padding: 6px;
+  border: 1px solid #e6ddd7;
+  border-radius: 13px;
+  background: #fffaf7;
+  box-shadow: 0 16px 38px rgba(54, 37, 29, 0.16);
+}
+.account-menu button {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #4f4540;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.account-menu button:hover {
+  background: #f4ece7;
+}
+.account-menu-divider {
+  height: 1px;
+  margin: 5px 3px;
+  background: #eadfd9;
+}
+.account-menu .account-menu-signout {
+  color: #a43f27;
+}
+.account-menu .account-menu-signout:hover {
+  background: #fff0ea;
 }
 .workspace-main {
   position: relative;
@@ -1301,61 +1381,6 @@ button:disabled {
   color: #a93f1c;
   font-size: 9px;
   line-height: 1.4;
-}
-.signout-panel {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  min-height: 82px;
-  padding: 14px;
-  border: 1px solid rgba(174, 65, 47, 0.13);
-  border-radius: 15px;
-  background: rgba(255, 248, 246, 0.72);
-}
-.signout-panel div {
-  min-width: 0;
-}
-.signout-panel span {
-  color: #a34b2d;
-  font:
-    800 7px/1 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
-  letter-spacing: 0.09em;
-}
-.signout-panel strong {
-  display: block;
-  margin-top: 4px;
-  color: #3f3632;
-  font-size: 11px;
-}
-.signout-panel p {
-  margin: 4px 0 0;
-  color: #94857e;
-  font-size: 8px;
-  line-height: 1.35;
-}
-.profile-session-panel small {
-  display: block;
-  margin-top: 5px;
-  overflow: hidden;
-  color: #8d817a;
-  font-size: 7px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.signout-panel button {
-  flex: 0 0 auto;
-  min-height: 28px;
-  padding: 0 12px;
-  border: 1px solid rgba(180, 55, 40, 0.22);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.66);
-  color: #b43c2d;
-  font-size: 8px;
-  font-weight: 750;
 }
 .profile-settings-footer {
   min-height: 61px;
