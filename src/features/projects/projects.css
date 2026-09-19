@@ -943,6 +943,7 @@
    ========================================================================== */
 
 .pw-project-page {
+  position: relative;
   min-width: 0;
   width: 100%;
   display: flex;
@@ -1001,10 +1002,11 @@
   top: 10px;
   z-index: 50;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   gap: 12px;
   width: 100%;
+  min-height: 30px;
   flex-wrap: wrap;
   pointer-events: none;
 }
@@ -1014,6 +1016,13 @@
 }
 
 /* Back navigation link — lightweight, no button appearance */
+.pw-project-back-nav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+}
+
 .pw-back-nav {
   display: inline-flex;
   align-items: center;
