@@ -265,6 +265,9 @@ describe('ProjectWorkflow Stage & Outcome Deletion', () => {
           outcomeUpdatedAt: '2026-09-18T00:00:00.000Z',
         });
       }
+      if (path === '/projects/create-options') {
+        return Promise.resolve({ leads: [], departments: [] });
+      }
       return Promise.resolve({ success: true });
     });
 
@@ -275,7 +278,16 @@ describe('ProjectWorkflow Stage & Outcome Deletion', () => {
       await screen.findByRole('link', { name: /back to project workspace/i }),
     ).toBeInTheDocument();
     expect(screen.getByText('Back to Content')).toBeInTheDocument();
-    expect(screen.getByText('Outcome workspace')).toBeInTheDocument();
+    const outcomeDetails = screen.getByRole('button', {
+      name: 'Outcome details',
+    });
+    expect(outcomeDetails).toBeInTheDocument();
+    expect(screen.queryByText('Outcome workspace')).not.toBeInTheDocument();
+
+    fireEvent.click(outcomeDetails);
+    expect(
+      await screen.findByRole('heading', { name: 'Edit project outcome' }),
+    ).toBeInTheDocument();
 
     // Outcome Header Card
     expect(
