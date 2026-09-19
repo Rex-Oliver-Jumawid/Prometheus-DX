@@ -4,17 +4,33 @@ import type { OutcomeDelivery } from '../../../shared/contracts/outcome-delivery
 import { ProjectDialog } from './ProjectDialog';
 import { OutputContent } from './OutputContent';
 
+function submittedLabel(createdAt: string, submitter: string) {
+  const submitted = new Date(createdAt);
+  const today = new Date();
+  const sameDay =
+    submitted.getFullYear() === today.getFullYear() &&
+    submitted.getMonth() === today.getMonth() &&
+    submitted.getDate() === today.getDate();
+  return `Submitted ${sameDay ? 'today' : submitted.toLocaleDateString()} · ${submitter}`;
+}
+
 export function OutcomeReviewDialog({
   data,
   pending,
   error,
   act,
+  outcomeTitle,
+  outcomeDescription,
+  contributorNames,
   onClose,
 }: {
   data: OutcomeDelivery;
   pending: boolean;
   error: Error | null;
   act: (action: string, body: unknown) => Promise<OutcomeDelivery>;
+  outcomeTitle: string;
+  outcomeDescription: string;
+  contributorNames: string[];
   onClose: () => void;
 }) {
   const [reviewedData] = useState(data);
@@ -28,6 +44,7 @@ export function OutcomeReviewDialog({
     },
   });
   const checked = watch('criterionIds');
+
   const saveDraft = async () => {
     if (busy.current) return;
     busy.current = true;
@@ -45,6 +62,7 @@ export function OutcomeReviewDialog({
       busy.current = false;
     }
   };
+
   const decide = (action: 'accept' | 'request-revision') =>
     handleSubmit(async (values) => {
       if (busy.current) return;
@@ -77,85 +95,141 @@ export function OutcomeReviewDialog({
         busy.current = false;
       }
     });
+
+  const latest = reviewedData.submissions[0];
+
   return (
-    <ProjectDialog title="Review Outcome" pending={pending} onClose={onClose}>
-      <p>
-        Review all team submissions together and make one decision for the
-        Outcome.
-      </p>
-      <div className="outcome-review-evidence">
-        {reviewedData.submissions.map((item) => (
-          <article key={item.id}>
-            <strong>{item.submitter.fullName}</strong>
-            <OutputContent content={item.content} />
-            {item.note && <p>{item.note}</p>}
-          </article>
-        ))}
-      </div>
-      <form onSubmit={decide('accept')} noValidate>
-        <h3>Acceptance criteria</h3>
-        <p>
-          {checked.length} / {reviewedData.criteria.length} verified
-        </p>
-        {!reviewedData.criteria.length && (
-          <p>No acceptance criteria were defined.</p>
+    <ProjectDialog
+      title="Review all member submissions together against the expected outcome."
+      ariaLabel="Review Outcome"
+      eyebrow="Project Lead verification"
+      tag="Outcome review"
+      pending={pending}
+      className="outcome-review-dialog"
+      bodyClassName="outcome-review-dialog-body"
+      onClose={onClose}
+    >
+      <div className="outcome-review-meta">
+        <span>
+          Contributors{' '}
+          <strong>
+            {contributorNames.length > 0
+              ? contributorNames.join(', ')
+              : 'No contributors'}
+          </strong>
+        </span>
+        <span>
+          Submissions <strong>{reviewedData.submissions.length} total</strong>
+        </span>
+        {latest && (
+          <span>{submittedLabel(latest.createdAt, latest.submitter.fullName)}</span>
         )}
-        {reviewedData.criteria.map((criterion) => (
-          <label className="outcome-review-criterion" key={criterion.id}>
-            <input
-              type="checkbox"
-              checked={checked.includes(criterion.id)}
-              disabled={pending}
-              onChange={(event) => {
-                setValue(
-                  'criterionIds',
-                  event.target.checked
-                    ? [...checked, criterion.id]
-                    : checked.filter((id) => id !== criterion.id),
-                );
-                void saveDraft();
-              }}
-            />
-            <span>{criterion.description}</span>
-          </label>
-        ))}
-        <label className="projects-field">
-          <span>Outcome review feedback</span>
+      </div>
+
+      <div className="outcome-review-summary-grid">
+        <section className="outcome-review-summary-card">
+          <span className="outcome-review-step">1. Outcome to satisfy</span>
+          <strong>{outcomeDescription || outcomeTitle}</strong>
+        </section>
+
+        <section className="outcome-review-summary-card outcome-review-submissions">
+          <span className="outcome-review-step">2. Team submissions</span>
+          <div className="outcome-review-submission-list">
+            {reviewedData.submissions.map((item, index) => (
+              <article key={item.id}>
+                <div>
+                  <strong>{item.submitter.fullName}</strong>
+                  <span>v{reviewedData.submissions.length - index}</span>
+                </div>
+                <OutputContent content={item.content} />
+              </article>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <form
+        className="outcome-review-form"
+        onSubmit={decide('accept')}
+        noValidate
+      >
+        <section className="outcome-review-criteria-panel">
+          <div className="outcome-review-panel-head">
+            <span className="outcome-review-step">
+              3. Verify acceptance criteria
+            </span>
+            <span>
+              {checked.length} / {reviewedData.criteria.length} verified
+            </span>
+          </div>
+
+          {!reviewedData.criteria.length && (
+            <p className="outcome-review-empty">
+              No acceptance criteria were defined.
+            </p>
+          )}
+
+          <div className="outcome-review-criteria-list">
+            {reviewedData.criteria.map((criterion) => (
+              <label className="outcome-review-criterion" key={criterion.id}>
+                <input
+                  type="checkbox"
+                  checked={checked.includes(criterion.id)}
+                  disabled={pending}
+                  onChange={(event) => {
+                    setValue(
+                      'criterionIds',
+                      event.target.checked
+                        ? [...checked, criterion.id]
+                        : checked.filter((id) => id !== criterion.id),
+                    );
+                    void saveDraft();
+                  }}
+                />
+                <span>{criterion.description}</span>
+              </label>
+            ))}
+          </div>
+        </section>
+
+        <label className="outcome-review-feedback">
+          <span className="outcome-review-step">
+            4. Outcome review feedback
+          </span>
           <textarea
             aria-label="Outcome review feedback"
-            {...register('note')}
+            placeholder="Record what passed, or explain exactly what must be revised."
+            {...register('note', {
+              onBlur: () => void saveDraft(),
+            })}
             disabled={pending}
           />
         </label>
-        <button
-          className="workflow-icon-button"
-          type="button"
-          disabled={pending}
-          onClick={() => void saveDraft()}
-        >
-          Save review notes
-        </button>
-        {notice && <p role="status">{notice}</p>}
+
+        {notice && <p role="status" className="outcome-review-notice">{notice}</p>}
         {error && (
           <p role="alert" className="projects-save-error">
             {error.message}
           </p>
         )}
-        <footer className="projects-dialog-actions">
+
+        <footer className="outcome-review-actions">
           <button
             className="projects-secondary-button"
             type="button"
+            aria-label="Request revision"
             disabled={pending}
             onClick={() => void decide('request-revision')()}
           >
-            Request revision
+            Needs revision
           </button>
           <button
             className="projects-primary-button"
             type="submit"
+            aria-label="Accept Outcome"
             disabled={pending}
           >
-            Accept Outcome
+            Accept outcome
           </button>
         </footer>
       </form>
