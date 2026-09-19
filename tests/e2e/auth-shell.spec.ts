@@ -225,6 +225,68 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
   await expect(page).toHaveURL(/\/login$/);
 });
 
+test('profile settings persist nickname, phone number, and about', async ({
+  page,
+}) => {
+  const email = process.env.E2E_MEMBER_EMAIL;
+  const password = process.env.E2E_MEMBER_PASSWORD;
+  test.skip(
+    !hasSupabaseBrowserConfig || !email || !password,
+    'Requires Supabase browser auth config and E2E member credentials.',
+  );
+
+  const member = await prisma.member.findFirst({
+    where: { email: { equals: email!, mode: 'insensitive' } },
+  });
+  if (!member) throw new Error('E2E member record was not found.');
+
+  const nickname = `E2E-${Date.now().toString().slice(-6)}`;
+  const phoneNumber = '+63 917 555 0101';
+  const about = `Profile persistence check ${Date.now()}`;
+
+  try {
+    await signIn(page);
+    await page
+      .getByRole('button', { name: 'Open profile and account' })
+      .first()
+      .click();
+
+    const profile = page.getByRole('dialog', { name: 'Profile settings' });
+    await profile.getByLabel('Nickname').fill(nickname);
+    await profile.getByLabel('Phone number').fill(phoneNumber);
+    await profile.getByLabel('About').fill(about);
+    await profile.getByRole('button', { name: 'Save changes' }).click();
+    await expect(profile).toHaveCount(0);
+
+    await expect
+      .poll(async () =>
+        prisma.member.findUnique({
+          where: { id: member.id },
+          select: { nickname: true, phoneNumber: true, about: true },
+        }),
+      )
+      .toEqual({ nickname, phoneNumber, about });
+
+    await page
+      .getByRole('button', { name: 'Open profile and account' })
+      .first()
+      .click();
+    const reopened = page.getByRole('dialog', { name: 'Profile settings' });
+    await expect(reopened.getByLabel('Nickname')).toHaveValue(nickname);
+    await expect(reopened.getByLabel('Phone number')).toHaveValue(phoneNumber);
+    await expect(reopened.getByLabel('About')).toHaveValue(about);
+  } finally {
+    await prisma.member.update({
+      where: { id: member.id },
+      data: {
+        nickname: member.nickname,
+        phoneNumber: member.phoneNumber,
+        about: member.about,
+      },
+    });
+  }
+});
+
 test('restored Administrator session stays on neutral loading before Registry', async ({
   page,
 }) => {
