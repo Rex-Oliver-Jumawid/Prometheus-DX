@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   CorrectWorkSessionResponseSchema,
   CurrentWorkSessionResponseSchema,
@@ -26,6 +26,8 @@ export function WorkAttendanceControl() {
   const current = useQuery(currentWorkSessionQuery(session?.access_token));
   const [now, setNow] = useState(() => Date.now());
   const [expanded, setExpanded] = useState(false);
+  const [edgeOpen, setEdgeOpen] = useState(false);
+  const attendanceRef = useRef<HTMLElement>(null);
   const [reason, setReason] = useState('');
   const [correctedTimeIn, setCorrectedTimeIn] = useState('');
   const [correctedTimeOut, setCorrectedTimeOut] = useState('');
@@ -48,6 +50,24 @@ export function WorkAttendanceControl() {
       setExpanded(true);
     }
   }, [activeId, activeStatus, activeTimeIn, activeUpdatedAt]);
+
+  useEffect(() => {
+    if (!edgeOpen) return undefined;
+
+    const closeFromOutside = (event: PointerEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Node &&
+        attendanceRef.current &&
+        !attendanceRef.current.contains(target)
+      ) {
+        setEdgeOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', closeFromOutside);
+    return () => document.removeEventListener('pointerdown', closeFromOutside);
+  }, [edgeOpen]);
 
   const refreshAffectedQueries = async () => {
     await Promise.all([
@@ -111,41 +131,82 @@ export function WorkAttendanceControl() {
       ? Math.max(0, Math.floor((now - Date.parse(active.timeIn)) / 1_000))
       : 0;
 
+  const handleAttendanceAction = () => {
+    const finePointer =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+
+    if (!finePointer && !edgeOpen) {
+      setEdgeOpen(true);
+      return;
+    }
+
+    mutation.mutate(active?.status === 'OPEN' ? 'time-out' : 'time-in');
+  };
+
   return (
     <aside
-      className={`attendance-control${active?.status === 'OPEN' ? ' active' : ''}${active?.status === 'NEEDS_CORRECTION' ? ' correction' : ''}`}
+      ref={attendanceRef}
+      className={`attendance-control attendance-edge-time${active?.status === 'OPEN' ? ' active' : ''}${active?.status === 'NEEDS_CORRECTION' ? ' correction' : ''}${edgeOpen ? ' edge-open' : ''}`}
       aria-label="Time attendance"
     >
       <button
         className="attendance-main"
         type="button"
         disabled={mutation.isPending || active?.status === 'NEEDS_CORRECTION'}
-        onClick={() =>
-          mutation.mutate(active?.status === 'OPEN' ? 'time-out' : 'time-in')
+        onClick={handleAttendanceAction}
+        aria-label={
+          active?.status === 'OPEN'
+            ? 'Time Out'
+            : active?.status === 'NEEDS_CORRECTION'
+              ? 'Correction required'
+              : 'Time In'
         }
       >
-        <span className="attendance-dot" aria-hidden="true" />
-        <span>
-          <strong>
-            {active?.status === 'OPEN'
-              ? 'Time Out'
-              : active?.status === 'NEEDS_CORRECTION'
-                ? 'Correction required'
-                : 'Time In'}
-          </strong>
-          <small>
-            {active?.status === 'OPEN'
-              ? `Since ${formatManilaDateTime(active.timeIn)}`
-              : active?.status === 'NEEDS_CORRECTION'
-                ? 'Resolve the previous session to continue'
-                : 'Start a persisted work session'}
-          </small>
+        <span className="attendance-edge-handle" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <circle cx="12" cy="12" r="8" />
+            <path d="M12 7v5l3 2" />
+          </svg>
+          <span className="attendance-edge-handle-dot" />
         </span>
-        {active?.status === 'OPEN' && (
-          <time aria-label="Elapsed work session">
-            {formatDuration(elapsed)}
-          </time>
-        )}
+
+        <span className="attendance-edge-panel">
+          <span className="attendance-progress" aria-hidden="true" />
+          <span className="attendance-content">
+            <span className="attendance-dot" aria-hidden="true" />
+            <span className="attendance-copy">
+              <span className="attendance-topline">
+                <strong>
+                  {active?.status === 'OPEN'
+                    ? 'Time Out'
+                    : active?.status === 'NEEDS_CORRECTION'
+                      ? 'Correction required'
+                      : 'Time In'}
+                </strong>
+                {active?.status === 'OPEN' && (
+                  <time aria-label="Elapsed work session">
+                    {formatDuration(elapsed)}
+                  </time>
+                )}
+              </span>
+              <small>
+                {active?.status === 'OPEN'
+                  ? `Since ${formatManilaDateTime(active.timeIn)}`
+                  : active?.status === 'NEEDS_CORRECTION'
+                    ? 'Resolve the previous session to continue'
+                    : 'Start a work session'}
+              </small>
+              <span className="attendance-progress-text">
+                {active?.status === 'OPEN'
+                  ? 'Work session in progress'
+                  : active?.status === 'NEEDS_CORRECTION'
+                    ? 'Correction required before continuing'
+                    : 'No active work session'}
+              </span>
+            </span>
+          </span>
+        </span>
       </button>
 
       {(mutation.isError || correction.isError) && (
