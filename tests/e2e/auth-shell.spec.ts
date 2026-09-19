@@ -195,7 +195,7 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
   ).toBeVisible();
 
   await page
-    .getByRole('button', { name: 'Open profile and account' })
+    .getByRole('button', { name: 'Open profile settings' })
     .first()
     .click();
 
@@ -221,7 +221,20 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
     profile.getByRole('button', { name: 'Save changes' }),
   ).toBeDisabled();
 
-  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await expect(
+    profile.getByRole('button', { name: 'Sign out', exact: true }),
+  ).toHaveCount(0);
+  await profile
+    .getByRole('button', { name: 'Close profile settings' })
+    .click();
+
+  await page.getByRole('button', { name: 'Open account menu' }).click();
+  const accountMenu = page.getByRole('menu', { name: 'Account menu' });
+  await expect(accountMenu).toBeVisible();
+  await expect(
+    accountMenu.getByRole('menuitem', { name: 'Profile settings' }),
+  ).toBeVisible();
+  await accountMenu.getByRole('menuitem', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/\/login$/);
 });
 
@@ -247,7 +260,7 @@ test('profile settings persist nickname, phone number, and about', async ({
   try {
     await signIn(page);
     await page
-      .getByRole('button', { name: 'Open profile and account' })
+      .getByRole('button', { name: 'Open profile settings' })
       .first()
       .click();
 
@@ -268,7 +281,7 @@ test('profile settings persist nickname, phone number, and about', async ({
       .toEqual({ nickname, phoneNumber, about });
 
     await page
-      .getByRole('button', { name: 'Open profile and account' })
+      .getByRole('button', { name: 'Open profile settings' })
       .first()
       .click();
     const reopened = page.getByRole('dialog', { name: 'Profile settings' });
