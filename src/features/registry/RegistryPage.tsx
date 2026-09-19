@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CreateDepartmentRequestSchema,
   CreateMemberRequestSchema,
+  DeleteDepartmentResponseSchema,
   RegistryDepartmentSchema,
   RegistryMemberSchema,
   UpdateMemberRequestSchema,
@@ -285,6 +286,142 @@ function DepartmentDialog({
             </button>
           </footer>
         </form>
+      </section>
+    </div>,
+    document.body,
+  );
+}
+
+function RemoveDepartmentDialog({
+  department,
+  isRemoving,
+  removeError,
+  onClose,
+  onConfirm,
+}: {
+  department: RegistryDepartment;
+  isRemoving: boolean;
+  removeError: unknown;
+  onClose: () => void;
+  onConfirm: () => Promise<void>;
+}) {
+  const dialogRef = useRef<HTMLElement>(null);
+  const confirmRef = useRef<HTMLButtonElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null,
+  );
+
+  useEffect(() => {
+    const restoreFocusTo = restoreFocusRef.current;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const focusFrame = window.requestAnimationFrame(() =>
+      confirmRef.current?.focus(),
+    );
+
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.body.style.overflow = previousOverflow;
+      restoreFocusTo?.focus();
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isRemoving) {
+        onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+      const focusable = Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not(:disabled)',
+        ) ?? [],
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isRemoving, onClose]);
+
+  return createPortal(
+    <div
+      className="registry-dialog-backdrop"
+      role="presentation"
+      onClick={(event) => {
+        if (event.target === event.currentTarget && !isRemoving) onClose();
+      }}
+    >
+      <section
+        ref={dialogRef}
+        className="registry-dialog registry-remove-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="remove-department-dialog-title"
+      >
+        <header className="registry-dialog-header">
+          <div>
+            <p className="registry-kicker">REMOVE ORGANIZATION UNIT</p>
+            <h2 id="remove-department-dialog-title">Remove department</h2>
+            <p>
+              Remove <strong>{department.name}</strong> from the Registry?
+            </p>
+          </div>
+          <button
+            type="button"
+            className="registry-icon-button"
+            aria-label="Close remove department dialog"
+            onClick={onClose}
+            disabled={isRemoving}
+          >
+            ×
+          </button>
+        </header>
+
+        <p className="registry-remove-copy">
+          This is permanent. A department can only be removed when no members,
+          projects, or outcomes still reference it.
+        </p>
+
+        {Boolean(removeError) && (
+          <p className="registry-form-error" role="alert">
+            {messageFromError(removeError)}
+          </p>
+        )}
+
+        <footer className="registry-dialog-actions">
+          <button
+            type="button"
+            className="registry-secondary-button"
+            onClick={onClose}
+            disabled={isRemoving}
+          >
+            Cancel
+          </button>
+          <button
+            ref={confirmRef}
+            type="button"
+            className="registry-danger-button"
+            onClick={() => void onConfirm()}
+            disabled={isRemoving}
+          >
+            {isRemoving ? 'Removing...' : 'Remove department'}
+          </button>
+        </footer>
       </section>
     </div>,
     document.body,
@@ -745,6 +882,12 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
   );
   const [memberDialogState, setMemberDialogState] =
     useState<MemberDialogState | null>(null);
+  const [departmentToRemove, setDepartmentToRemove] =
+    useState<RegistryDepartment | null>(null);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [memberRoleFilter, setMemberRoleFilter] = useState<
+    'ALL' | 'ADMINISTRATOR' | 'MEMBER'
+  >('ALL');
 
   const overview = useQuery({
     ...registryOverviewQuery(accessToken),
@@ -791,6 +934,34 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
       );
       refreshProjectCreateOptions();
       setDialogState(null);
+    },
+  });
+
+  const deleteDepartment = useMutation({
+    mutationFn: (departmentId: string) =>
+      apiFetch(
+        `/registry/departments/${departmentId}`,
+        DeleteDepartmentResponseSchema,
+        {
+          accessToken,
+          method: 'DELETE',
+        },
+      ),
+    onSuccess: ({ id }) => {
+      queryClient.setQueryData<RegistryOverviewResponse>(
+        registryOverviewQueryKey,
+        (current) =>
+          current
+            ? {
+                ...current,
+                departments: current.departments.filter(
+                  (department) => department.id !== id,
+                ),
+              }
+            : current,
+      );
+      refreshProjectCreateOptions();
+      setDepartmentToRemove(null);
     },
   });
 
@@ -864,6 +1035,34 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
   const administratorCount =
     members.data?.filter((member) => member.workspaceRole === 'ADMINISTRATOR')
       .length ?? 0;
+  const filteredMembers = useMemo(() => {
+    const query = memberSearch.trim().toLocaleLowerCase();
+
+    return (members.data ?? []).filter((member) => {
+      if (
+        memberRoleFilter !== 'ALL' &&
+        member.workspaceRole !== memberRoleFilter
+      ) {
+        return false;
+      }
+
+      if (!query) return true;
+
+      return [
+        member.fullName,
+        member.email,
+        member.department.name,
+        member.department.shortLabel,
+        member.position ?? '',
+        member.status,
+        member.authenticationStatus,
+      ]
+        .join(' ')
+        .toLocaleLowerCase()
+        .includes(query);
+    });
+  }, [memberRoleFilter, memberSearch, members.data]);
+
   const openCreate = () => {
     saveDepartment.reset();
     setDialogState({ mode: 'create' });
@@ -878,6 +1077,22 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
     if (saveDepartment.isPending) return;
     saveDepartment.reset();
     setDialogState(null);
+  };
+
+  const openRemoveDepartment = (department: RegistryDepartment) => {
+    deleteDepartment.reset();
+    setDepartmentToRemove(department);
+  };
+
+  const closeRemoveDepartment = () => {
+    if (deleteDepartment.isPending) return;
+    deleteDepartment.reset();
+    setDepartmentToRemove(null);
+  };
+
+  const confirmRemoveDepartment = async () => {
+    if (!departmentToRemove) return;
+    await deleteDepartment.mutateAsync(departmentToRemove.id);
   };
 
   const save = async (request: CreateDepartmentRequest) => {
@@ -1025,14 +1240,24 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
                     {department.memberCount}{' '}
                     {department.memberCount === 1 ? 'member' : 'members'}
                   </span>
-                  <button
-                    type="button"
-                    className="registry-edit-button"
-                    onClick={() => openEdit(department)}
-                    aria-label={`Edit ${department.name}`}
-                  >
-                    Edit
-                  </button>
+                  <div className="registry-department-actions">
+                    <button
+                      type="button"
+                      className="registry-edit-button"
+                      onClick={() => openEdit(department)}
+                      aria-label={`Edit ${department.name}`}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="registry-remove-button"
+                      onClick={() => openRemoveDepartment(department)}
+                      aria-label={`Remove ${department.name}`}
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </article>
               ))}
             </div>
@@ -1047,10 +1272,37 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
             <div>
               <p className="registry-kicker">MEMBERSHIP</p>
               <h2 id="members-title">Members</h2>
-              <p>
-                Membership authorizes workspace access. Authentication remains
-                separate.
-              </p>
+              <div className="registry-member-toolbar">
+                <label className="registry-member-search">
+                  <span className="sr-only">Search members</span>
+                  <input
+                    type="search"
+                    aria-label="Search members"
+                    placeholder="Search members"
+                    value={memberSearch}
+                    onChange={(event) => setMemberSearch(event.target.value)}
+                  />
+                </label>
+                <label className="registry-role-filter">
+                  <span className="sr-only">Filter members by role</span>
+                  <select
+                    aria-label="Filter members by role"
+                    value={memberRoleFilter}
+                    onChange={(event) =>
+                      setMemberRoleFilter(
+                        event.target.value as
+                          | 'ALL'
+                          | 'ADMINISTRATOR'
+                          | 'MEMBER',
+                      )
+                    }
+                  >
+                    <option value="ALL">All roles</option>
+                    <option value="ADMINISTRATOR">Administrator</option>
+                    <option value="MEMBER">Member</option>
+                  </select>
+                </label>
+              </div>
             </div>
             <button
               type="button"
@@ -1101,106 +1353,111 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
                   {messageFromError(resendInvitation.error)}
                 </div>
               )}
-              <div className="registry-table-wrap">
-                <table className="registry-members-table">
-                  <thead>
-                    <tr>
-                      <th>Member</th>
-                      <th>Department</th>
-                      <th>Position</th>
-                      <th>Role</th>
-                      <th>Access</th>
-                      <th>Authentication</th>
-                      <th>
-                        <span className="sr-only">Actions</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {members.data.map((member) => (
-                      <tr key={member.id}>
-                        <td>
-                          <div className="registry-member-identity">
-                            <span>{memberInitials(member.fullName)}</span>
-                            <div>
-                              <strong>{member.fullName}</strong>
-                              <small>{member.email}</small>
-                            </div>
-                          </div>
-                        </td>
-                        <td>{member.department.name}</td>
-                        <td>{member.position ?? 'Not set'}</td>
-                        <td>
-                          <span className="registry-badge role">
-                            {member.workspaceRole === 'ADMINISTRATOR'
-                              ? 'Administrator'
-                              : 'Member'}
-                          </span>
-                        </td>
-                        <td>
-                          <span
-                            className={`registry-badge status ${member.status.toLowerCase()}`}
-                          >
-                            {member.status === 'DEACTIVATED'
-                              ? 'Deactivated'
-                              : member.status === 'INVITED'
-                                ? 'Invited'
-                                : 'Active'}
-                          </span>
-                        </td>
-                        <td>
-                          <span
-                            className={`registry-auth-status ${member.authenticationStatus.toLowerCase()}`}
-                          >
-                            {member.authenticationStatus === 'LINKED'
-                              ? 'Linked'
-                              : 'Setup pending'}
-                          </span>
-                          <small className="registry-auth-caption">
-                            {member.authenticationStatus === 'LINKED'
-                              ? 'Authentication identity connected'
-                              : member.invitationDeliveryStatus === 'SENT'
-                                ? 'Invitation delivered; waiting for account setup'
-                                : 'Invitation not delivered'}
-                          </small>
-                          {member.authenticationStatus === 'SETUP_PENDING' &&
-                            member.status !== 'DEACTIVATED' && (
-                              <button
-                                type="button"
-                                className="registry-inline-action"
-                                disabled={
-                                  resendInvitation.isPending &&
-                                  resendInvitation.variables === member.id
-                                }
-                                onClick={() => {
-                                  resendInvitation.reset();
-                                  resendInvitation.mutate(member.id);
-                                }}
-                              >
-                                {resendInvitation.isPending &&
-                                resendInvitation.variables === member.id
-                                  ? 'Sending...'
-                                  : member.invitationDeliveryStatus === 'SENT'
-                                    ? 'Resend invitation'
-                                    : 'Send invitation'}
-                              </button>
-                            )}
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="registry-edit-button"
-                            onClick={() => openEditMember(member)}
-                            aria-label={`Edit ${member.fullName}`}
-                          >
-                            Edit
-                          </button>
-                        </td>
+              {filteredMembers.length === 0 ? (
+                <div className="registry-state-card registry-filtered-empty">
+                  <strong>No matching members</strong>
+                  <p>Try a different search or role filter.</p>
+                </div>
+              ) : (
+                <div className="registry-table-wrap">
+                  <table className="registry-members-table">
+                    <thead>
+                      <tr>
+                        <th>Member</th>
+                        <th>Department</th>
+                        <th>Access</th>
+                        <th>Authentication</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {filteredMembers.map((member) => (
+                        <tr
+                          key={member.id}
+                          className="registry-member-row"
+                          tabIndex={0}
+                          aria-label={`Edit ${member.fullName}`}
+                          onClick={() => openEditMember(member)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              openEditMember(member);
+                            }
+                          }}
+                        >
+                          <td>
+                            <div className="registry-member-identity">
+                              <span>{memberInitials(member.fullName)}</span>
+                              <div>
+                                <strong>{member.fullName}</strong>
+                                <small>{member.email}</small>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <span
+                              className="registry-department-short-label"
+                              title={member.department.name}
+                            >
+                              {member.department.shortLabel}
+                            </span>
+                          </td>
+                          <td>
+                            <span
+                              className={`registry-badge status ${member.status.toLowerCase()}`}
+                            >
+                              {member.status === 'DEACTIVATED'
+                                ? 'Deactivated'
+                                : member.status === 'INVITED'
+                                  ? 'Invited'
+                                  : 'Active'}
+                            </span>
+                          </td>
+                          <td>
+                            <span
+                              className={`registry-auth-status ${member.authenticationStatus.toLowerCase()}`}
+                            >
+                              {member.authenticationStatus === 'LINKED'
+                                ? 'Linked'
+                                : 'Setup pending'}
+                            </span>
+                            <small className="registry-auth-caption">
+                              {member.authenticationStatus === 'LINKED'
+                                ? 'Authentication identity connected'
+                                : member.invitationDeliveryStatus === 'SENT'
+                                  ? 'Invitation delivered; waiting for account setup'
+                                  : 'Invitation not delivered'}
+                            </small>
+                            {member.authenticationStatus === 'SETUP_PENDING' &&
+                              member.status !== 'DEACTIVATED' && (
+                                <button
+                                  type="button"
+                                  className="registry-inline-action"
+                                  disabled={
+                                    resendInvitation.isPending &&
+                                    resendInvitation.variables === member.id
+                                  }
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    resendInvitation.reset();
+                                    resendInvitation.mutate(member.id);
+                                  }}
+                                  onKeyDown={(event) => event.stopPropagation()}
+                                >
+                                  {resendInvitation.isPending &&
+                                  resendInvitation.variables === member.id
+                                    ? 'Sending...'
+                                    : member.invitationDeliveryStatus === 'SENT'
+                                      ? 'Resend invitation'
+                                      : 'Send invitation'}
+                                </button>
+                              )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </>
           )}
         </section>
@@ -1213,6 +1470,15 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
           saveError={saveDepartment.error}
           onClose={closeDialog}
           onSave={save}
+        />
+      )}
+      {departmentToRemove && (
+        <RemoveDepartmentDialog
+          department={departmentToRemove}
+          isRemoving={deleteDepartment.isPending}
+          removeError={deleteDepartment.error}
+          onClose={closeRemoveDepartment}
+          onConfirm={confirmRemoveDepartment}
         />
       )}
       {memberDialogState && (
