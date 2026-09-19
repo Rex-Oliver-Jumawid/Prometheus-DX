@@ -411,13 +411,6 @@ export function ProfileDrawer({ member }: { member: CurrentMember }) {
                 />
               </label>
 
-              <label className="profile-settings-field">
-                <span>Time zone</span>
-                <select value="Asia/Manila" disabled aria-label="Time zone">
-                  <option value="Asia/Manila">Asia/Manila</option>
-                </select>
-              </label>
-
               <label className="profile-settings-field profile-field-wide profile-about-field">
                 <span>About</span>
                 <textarea
