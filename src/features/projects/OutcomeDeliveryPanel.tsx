@@ -343,18 +343,6 @@ export function OutcomeDeliveryPanel({
           </div>
         </div>
         <div className="pw-output-head-actions">
-          {data.isLead && !accepted && data.submissions.length > 0 && (
-            <button
-              className="projects-primary-button pw-review-outcome-jump"
-              type="button"
-              onClick={() => {
-                mutation.reset();
-                setReviewOpen(true);
-              }}
-            >
-              Review outcome
-            </button>
-          )}
           <span
             className={`output-status ${accepted ? 'accepted' : data.hasForReview ? 'review' : 'draft'}`}
           >
@@ -439,10 +427,24 @@ export function OutcomeDeliveryPanel({
             <h4>Team submissions</h4>
             <p>Every member submission is preserved and reviewed as part of the outcome.</p>
           </div>
-          <span className="pw-submission-count">
-            {data.submissions.length} submission
-            {data.submissions.length === 1 ? '' : 's'}
-          </span>
+          <div className="pw-submission-history-actions">
+            <span className="pw-submission-count">
+              {data.submissions.length} submission
+              {data.submissions.length === 1 ? '' : 's'}
+            </span>
+            {data.isLead && !accepted && data.submissions.length > 0 && (
+              <button
+                className="projects-primary-button pw-review-outcome-jump"
+                type="button"
+                onClick={() => {
+                  mutation.reset();
+                  setReviewOpen(true);
+                }}
+              >
+                Review outcome
+              </button>
+            )}
+          </div>
         </div>
         {!data.submissions.length && (
           <div className="empty-submissions">
