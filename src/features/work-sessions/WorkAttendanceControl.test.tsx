@@ -41,6 +41,21 @@ function renderControl() {
 describe('WorkAttendanceControl', () => {
   beforeEach(() => mocks.apiFetch.mockReset());
 
+  it('keeps initial attendance loading silent and clipped', () => {
+    mocks.apiFetch.mockImplementation(
+      () => new Promise(() => undefined),
+    );
+    renderControl();
+
+    const attendance = screen.getByLabelText('Time attendance');
+    expect(attendance).toHaveAttribute('aria-busy', 'true');
+    expect(attendance).toHaveClass('pending');
+    expect(screen.queryByText(/Loading attendance/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Time In|Time Out/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it('renders the persisted active session and prevents duplicate action while pending', async () => {
     const user = userEvent.setup();
     let resolveTimeOut: (value: typeof activeResponse) => void = () =>
