@@ -11,8 +11,19 @@ export const CurrentMemberSchema = z.object({
   status: z.literal('ACTIVE'),
   position: z.string().nullable(),
   profileImagePath: z.string().nullable(),
+  department: z.object({
+    id: z.string().uuid(),
+    name: z.string().min(1),
+    shortLabel: z.string().min(1),
+  }),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+});
+
+export const UpdateCurrentMemberRequestSchema = z.object({
+  fullName: z.string().trim().min(1).max(120),
+  position: z.string().trim().max(120).nullable(),
+  profileImagePath: z.string().trim().nullable().optional(),
 });
 
 export const RegistryAccessResponseSchema = z.object({
@@ -23,3 +34,6 @@ export const RegistryAccessResponseSchema = z.object({
 export type WorkspaceRole = z.infer<typeof WorkspaceRoleSchema>;
 export type MemberStatus = z.infer<typeof MemberStatusSchema>;
 export type CurrentMember = z.infer<typeof CurrentMemberSchema>;
+export type UpdateCurrentMemberRequest = z.infer<
+  typeof UpdateCurrentMemberRequestSchema
+>;
