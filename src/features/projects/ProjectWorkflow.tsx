@@ -1199,7 +1199,10 @@ export function ProjectWorkflow({
                   })
                 }
               >
-                Outcome details
+                <span>Outcome Details</span>
+                <span className="pw-outcome-details-pencil" aria-hidden="true">
+                  <PencilIcon />
+                </span>
               </button>
             ) : (
               <span className="pw-workspace-tag">Outcome workspace</span>
