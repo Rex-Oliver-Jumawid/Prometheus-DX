@@ -160,17 +160,26 @@ export function ProfileDrawer({ member }: { member: CurrentMember }) {
           previousObjectPath &&
           updated.profileImagePath !== member.profileImagePath
         ) {
-          await client.storage
-            .from(PROFILE_IMAGE_BUCKET)
-            .remove([previousObjectPath]);
+          try {
+            await client.storage
+              .from(PROFILE_IMAGE_BUCKET)
+              .remove([previousObjectPath]);
+          } catch {
+            // The profile update already succeeded. Old avatar cleanup is
+            // best-effort and must not roll back the newly persisted image.
+          }
         }
 
         return updated;
       } catch (error) {
         if (client && uploadedObjectPath) {
-          await client.storage
-            .from(PROFILE_IMAGE_BUCKET)
-            .remove([uploadedObjectPath]);
+          try {
+            await client.storage
+              .from(PROFILE_IMAGE_BUCKET)
+              .remove([uploadedObjectPath]);
+          } catch {
+            // Preserve the original profile error if orphan cleanup also fails.
+          }
         }
         throw error;
       }
