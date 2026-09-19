@@ -98,14 +98,79 @@ describe('ProjectWorkflow Stage & Outcome Deletion', () => {
     const deleteStage = screen.getByRole('button', {
       name: 'Delete Stage Discovery',
     });
-    expect(editStage).toHaveTextContent('✎');
-    expect(deleteStage).toHaveTextContent('×');
+    expect(editStage.querySelector('svg')).not.toBeNull();
+    expect(deleteStage.querySelector('svg')).not.toBeNull();
 
     expect(screen.getByRole('button', { name: '+ Outcome' })).toBeEnabled();
     expect(screen.getByRole('button', { name: '+ Stage' })).toBeEnabled();
     expect(
       screen.getByRole('button', { name: '+ Add Outcome' }),
     ).toHaveTextContent('+ Add outcome to stage');
+  });
+
+  it('shows complete dependency outcome names without edit or delete controls', async () => {
+    const prerequisiteTitle =
+      'Validated client requirements and complete business rules package';
+    const dependentTitle =
+      'Implementation plan for the complete approved experience';
+
+    const dependencyWorkflow: ProjectWorkflowResponse = {
+      ...workflowFixture,
+      stages: [
+        {
+          ...workflowFixture.stages[0],
+          outcomes: [
+            {
+              ...workflowFixture.stages[0].outcomes[0],
+              title: prerequisiteTitle,
+            },
+            {
+              ...workflowFixture.stages[0].outcomes[0],
+              id: '55555555-5555-4555-8555-555555555555',
+              title: dependentTitle,
+              position: 1,
+              prerequisites: [
+                {
+                  id: outcomeId,
+                  title: prerequisiteTitle,
+                  lifecycleStatus: 'OPEN',
+                  resolved: false,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path === `/projects/${projectId}/workflow`) {
+        return Promise.resolve(dependencyWorkflow);
+      }
+      return Promise.resolve({ success: true });
+    });
+
+    renderWorkflow();
+
+    expect(
+      await screen.findByRole('link', { name: prerequisiteTitle }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: dependentTitle }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole('button', { name: `Edit Outcome ${prerequisiteTitle}` }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: `Delete Outcome ${prerequisiteTitle}` }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: `Edit Outcome ${dependentTitle}` }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: `Delete Outcome ${dependentTitle}` }),
+    ).not.toBeInTheDocument();
   });
 
   it('renders X delete controls on manageable stages and outcomes', async () => {
