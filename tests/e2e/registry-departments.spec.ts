@@ -113,8 +113,11 @@ test('administrator creates and edits a department with persistence', async ({
   await expect(
     page.getByRole('button', { name: `Edit ${originalName}` }),
   ).toBeVisible();
-  await expect(page.getByText(originalDescription)).toBeVisible();
-  await expect(page.getByText(originalShortLabel)).toBeVisible();
+  await expect(page.getByText(originalShortLabel, { exact: true })).toBeVisible();
+  await expect(page.getByText(originalName, { exact: true })).toHaveCount(0);
+  await expect(page.getByText(originalDescription, { exact: true })).toHaveCount(
+    0,
+  );
 
   await page.reload();
   await expect(
@@ -133,14 +136,17 @@ test('administrator creates and edits a department with persistence', async ({
   await expect(
     page.getByRole('button', { name: `Edit ${updatedName}` }),
   ).toBeVisible();
-  await expect(page.getByText(updatedDescription)).toBeVisible();
-  await expect(page.getByText(updatedShortLabel)).toBeVisible();
+  await expect(page.getByText(updatedShortLabel, { exact: true })).toBeVisible();
+  await expect(page.getByText(updatedName, { exact: true })).toHaveCount(0);
+  await expect(page.getByText(updatedDescription, { exact: true })).toHaveCount(
+    0,
+  );
 
   await page.reload();
   await expect(
     page.getByRole('button', { name: `Edit ${updatedName}` }),
   ).toBeVisible();
-  await expect(page.getByText(updatedDescription)).toBeVisible();
+  await expect(page.getByText(updatedShortLabel, { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: `Remove ${updatedName}` }).click();
   await expect(
