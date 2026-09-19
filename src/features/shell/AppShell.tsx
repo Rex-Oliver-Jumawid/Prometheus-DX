@@ -190,6 +190,13 @@ export function AppShell() {
                     setProfileOpen(true);
                   }}
                 >
+                  <span className="account-menu-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="8" r="3" />
+                      <path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
+                      <path d="M18.5 5.5 20 4m0 0 1.5 1.5M20 4v3m-1.5-1.5h3" />
+                    </svg>
+                  </span>
                   <span>Profile settings</span>
                 </button>
                 <div className="account-menu-divider" />
@@ -203,6 +210,12 @@ export function AppShell() {
                     void signOut();
                   }}
                 >
+                  <span className="account-menu-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M10 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H10" />
+                      <path d="M14 8l4 4-4 4M18 12H9" />
+                    </svg>
+                  </span>
                   <span>Sign out</span>
                 </button>
               </div>
