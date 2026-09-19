@@ -10,6 +10,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
           queries: {
             retry: false,
             refetchOnWindowFocus: false,
+            gcTime: 30 * 60_000,
           },
         },
       }),
