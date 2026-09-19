@@ -2330,14 +2330,49 @@
   box-shadow: 0 24px 60px rgba(16, 24, 40, 0.25);
 }
 .projects-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   padding: 20px 20px 16px;
   border-bottom: 1px solid #eaecf0;
 }
+.projects-dialog-heading {
+  min-width: 0;
+}
 .projects-dialog h2 {
+  margin: 0;
   font-size: 22px;
 }
 .projects-dialog-header p:last-child {
+  margin: 4px 0 0;
   font-size: 13px;
+}
+.projects-dialog-eyebrow {
+  display: block;
+  margin-bottom: 3px;
+  color: #9b5a3f;
+  font: 700 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.projects-dialog-header-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+.projects-dialog-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid #ded3cc;
+  border-radius: 999px;
+  background: #f8f4f1;
+  color: #6f655f;
+  font: 400 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: nowrap;
 }
 .projects-icon-button {
   width: 32px;
