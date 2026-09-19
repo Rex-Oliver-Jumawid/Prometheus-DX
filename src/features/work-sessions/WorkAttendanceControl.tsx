@@ -113,7 +113,19 @@ export function WorkAttendanceControl() {
 
   if (current.isPending) {
     return (
-      <div className="attendance-control loading">Loading attendance...</div>
+      <aside
+        className="attendance-control attendance-edge-time pending"
+        aria-label="Time attendance"
+        aria-busy="true"
+      >
+        <span className="attendance-pending-handle" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <circle cx="12" cy="12" r="8" />
+            <path d="M12 7v5l3 2" />
+          </svg>
+          <span className="attendance-edge-handle-dot" />
+        </span>
+      </aside>
     );
   }
 
