@@ -1187,7 +1187,23 @@ export function ProjectWorkflow({
                 {joinOutcome.isPending ? 'Joining...' : '+ Join outcome'}
               </button>
             )}
-            <span className="pw-workspace-tag">Outcome workspace</span>
+            {isLead ? (
+              <button
+                type="button"
+                className="pw-workspace-tag pw-outcome-details-trigger"
+                onClick={() =>
+                  setEditor({
+                    type: 'edit-outcome',
+                    stage: selectedStage,
+                    outcome: selectedOutcome,
+                  })
+                }
+              >
+                Outcome details
+              </button>
+            ) : (
+              <span className="pw-workspace-tag">Outcome workspace</span>
+            )}
           </div>
         </div>
 
