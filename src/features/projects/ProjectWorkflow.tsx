@@ -1479,7 +1479,7 @@ export function ProjectWorkflow({
                               type="button"
                               className="pw-stage-edit"
                               title="Rename stage"
-                              aria-label={`Rename ${stage.name}`}
+                              aria-label={`Edit Stage ${stage.name}`}
                               onClick={(event) => {
                                 event.stopPropagation();
                                 setEditor({ type: 'edit-stage', stage });
@@ -1491,7 +1491,7 @@ export function ProjectWorkflow({
                               type="button"
                               className="pw-stage-delete"
                               title="Delete stage"
-                              aria-label={`Delete ${stage.name}`}
+                              aria-label={`Delete Stage ${stage.name}`}
                               onClick={(event) => {
                                 event.stopPropagation();
                                 setEditor({ type: 'delete-stage', stage });
