@@ -5,6 +5,7 @@ import { CurrentMemberSchema } from '../../../shared/contracts/member';
 import { apiFetch } from '../../lib/api';
 import { getSupabaseClient } from '../../lib/supabase';
 import { AuthContext, type AuthContextValue } from './auth-context';
+import { storedSessionIsInvalid } from './auth-routing';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const client = getSupabaseClient();
@@ -62,15 +63,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!active || authEventVersion !== bootstrapVersion) return;
 
-      const authStatus = error?.status;
-      const storedSessionIsInvalid =
-        !user &&
-        (!error ||
-          authStatus === 400 ||
-          authStatus === 401 ||
-          authStatus === 403);
-
-      if (storedSessionIsInvalid) {
+      if (
+        storedSessionIsInvalid({
+          hasUser: Boolean(user),
+          hasError: Boolean(error),
+          errorStatus: error?.status,
+        })
+      ) {
         queryClient.clear();
         applySession(null);
         void client.auth.signOut({ scope: 'local' });
