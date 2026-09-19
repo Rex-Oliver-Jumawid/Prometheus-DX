@@ -206,9 +206,17 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
   await expect(profile.getByLabel(/Email address/)).toHaveAttribute('readonly');
   await expect(profile.getByLabel(/Department/)).toHaveAttribute('readonly');
   await expect(profile.getByLabel(/Access role/)).toHaveAttribute('readonly');
-  await expect(profile.getByLabel('Phone number')).toHaveAttribute('readonly');
-  await expect(profile.getByLabel('About')).toHaveAttribute('readonly');
+  await expect(profile.getByLabel('Nickname')).toBeEditable();
+  await expect(profile.getByLabel('Phone number')).toBeEditable();
+  await expect(profile.getByLabel('About')).toBeEditable();
   await expect(profile.getByLabel('Time zone')).toBeDisabled();
+  await expect(
+    profile.getByRole('button', { name: 'Change photo' }),
+  ).toBeEnabled();
+  await expect(profile.getByLabel('Profile picture upload')).toHaveAttribute(
+    'accept',
+    'image/jpeg,image/png,image/webp',
+  );
   await expect(
     profile.getByRole('button', { name: 'Save changes' }),
   ).toBeDisabled();
