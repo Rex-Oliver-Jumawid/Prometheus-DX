@@ -71,6 +71,42 @@ function getOutcomeBadge(outcome: Outcome) {
   return { className: 'revision', label: 'FOR REVISION' };
 }
 
+function PencilIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M10.7 2.3a1.6 1.6 0 0 1 2.3 0l.7.7a1.6 1.6 0 0 1 0 2.3L6.1 12.9 2.5 13.5l.6-3.6 7.6-7.6Z" />
+      <path d="m9.6 3.4 3 3" />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M4 4l8 8M12 4l-8 8" />
+    </svg>
+  );
+}
+
 function getOutcomeAction(outcome: Outcome, isLead?: boolean) {
   if (isLead) {
     if (outcome.lifecycleStatus === 'ACCEPTED') {
@@ -1485,7 +1521,7 @@ export function ProjectWorkflow({
                                 setEditor({ type: 'edit-stage', stage });
                               }}
                             >
-                              <span aria-hidden="true">✎</span>
+                              <PencilIcon />
                             </button>
                             <button
                               type="button"
@@ -1497,7 +1533,7 @@ export function ProjectWorkflow({
                                 setEditor({ type: 'delete-stage', stage });
                               }}
                             >
-                              <span aria-hidden="true">×</span>
+                              <XIcon />
                             </button>
                           </div>
                         )}
@@ -1577,66 +1613,7 @@ export function ProjectWorkflow({
                                           {prereqOutcome?.title ?? prereq.title}
                                         </Link>
                                       </h4>
-                                      {prereqOutcome &&
-                                        workflow.data.canManageStructure && (
-                                          <div className="pw-dep-mini-actions">
-                                            <button
-                                              type="button"
-                                              className="pw-outcome-edit-btn"
-                                              title="Edit outcome"
-                                              aria-label={`Edit Outcome ${prereqOutcome.title}`}
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                setEditor({
-                                                  type: 'edit-outcome',
-                                                  stage,
-                                                  outcome: prereqOutcome,
-                                                });
-                                              }}
-                                            >
-                                              <svg
-                                                width="11"
-                                                height="11"
-                                                viewBox="0 0 12 12"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="1.4"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                aria-hidden="true"
-                                              >
-                                                <path d="M8.5 1.5l2 2L3.5 10.5H1.5v-2L8.5 1.5z" />
-                                              </svg>
-                                            </button>
-                                            <button
-                                              type="button"
-                                              className="pw-outcome-delete-btn"
-                                              title="Delete outcome"
-                                              aria-label={`Delete Outcome ${prereqOutcome.title}`}
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                setEditor({
-                                                  type: 'delete-outcome',
-                                                  stage,
-                                                  outcome: prereqOutcome,
-                                                });
-                                              }}
-                                            >
-                                              <svg
-                                                width="10"
-                                                height="10"
-                                                viewBox="0 0 12 12"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="1.5"
-                                                strokeLinecap="round"
-                                                aria-hidden="true"
-                                              >
-                                                <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" />
-                                              </svg>
-                                            </button>
-                                          </div>
-                                        )}
+
                                     </div>
                                     <div className="dep-mini-meta">
                                       {prereqDept} · {prereqStatusLabel}
@@ -1659,65 +1636,7 @@ export function ProjectWorkflow({
                                           {outcome.title}
                                         </Link>
                                       </h4>
-                                      {workflow.data.canManageStructure && (
-                                        <div className="pw-dep-mini-actions">
-                                          <button
-                                            type="button"
-                                            className="pw-outcome-edit-btn"
-                                            title="Edit outcome"
-                                            aria-label={`Edit Outcome ${outcome.title}`}
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setEditor({
-                                                type: 'edit-outcome',
-                                                stage,
-                                                outcome,
-                                              });
-                                            }}
-                                          >
-                                            <svg
-                                              width="11"
-                                              height="11"
-                                              viewBox="0 0 12 12"
-                                              fill="none"
-                                              stroke="currentColor"
-                                              strokeWidth="1.4"
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              aria-hidden="true"
-                                            >
-                                              <path d="M8.5 1.5l2 2L3.5 10.5H1.5v-2L8.5 1.5z" />
-                                            </svg>
-                                          </button>
-                                          <button
-                                            type="button"
-                                            className="pw-outcome-delete-btn"
-                                            title="Delete outcome"
-                                            aria-label={`Delete Outcome ${outcome.title}`}
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setEditor({
-                                                type: 'delete-outcome',
-                                                stage,
-                                                outcome,
-                                              });
-                                            }}
-                                          >
-                                            <svg
-                                              width="10"
-                                              height="10"
-                                              viewBox="0 0 12 12"
-                                              fill="none"
-                                              stroke="currentColor"
-                                              strokeWidth="1.5"
-                                              strokeLinecap="round"
-                                              aria-hidden="true"
-                                            >
-                                              <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" />
-                                            </svg>
-                                          </button>
-                                        </div>
-                                      )}
+
                                     </div>
                                     <div className="dep-mini-meta">
                                       {depDept} · {depStatusLabel}
@@ -1797,19 +1716,7 @@ export function ProjectWorkflow({
                                         });
                                       }}
                                     >
-                                      <svg
-                                        width="11"
-                                        height="11"
-                                        viewBox="0 0 12 12"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="1.4"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        aria-hidden="true"
-                                      >
-                                        <path d="M8.5 1.5l2 2L3.5 10.5H1.5v-2L8.5 1.5z" />
-                                      </svg>
+                                      <PencilIcon />
                                     </button>
                                     <button
                                       type="button"
@@ -1825,7 +1732,7 @@ export function ProjectWorkflow({
                                         });
                                       }}
                                     >
-                                      <span aria-hidden="true">×</span>
+                                      <XIcon />
                                     </button>
                                   </>
                                 )}
