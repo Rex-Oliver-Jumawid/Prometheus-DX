@@ -1984,3 +1984,542 @@
     padding: 8px 10px;
   }
 }
+
+
+/* Latest submission emphasis */
+.outcome-submission-card.latest {
+  border-color: rgba(244, 81, 30, 0.56);
+  border-left-width: 4px;
+  background: #fffdfb;
+  box-shadow: 0 3px 10px rgba(244, 81, 30, 0.04);
+}
+
+.outcome-submission-card.latest:hover,
+.outcome-submission-card.latest:focus-visible {
+  border-color: #f4511e;
+  box-shadow: 0 5px 14px rgba(244, 81, 30, 0.08);
+  outline: 0;
+}
+
+.outcome-submission-card.latest .outcome-sub-version-badge {
+  color: #9e3d1e;
+}
+
+/* Submission Record - Figma node 153:5001 */
+.submission-record-dialog {
+  width: min(1060px, calc(100vw - 48px));
+  max-height: min(560px, calc(100vh - 48px));
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.submission-record-dialog .projects-dialog-header {
+  min-height: 58px;
+  padding: 14px 18px;
+  align-items: center;
+}
+
+.submission-record-dialog .projects-dialog-heading h2 {
+  color: #342e2a;
+  font-size: 12px;
+  line-height: 15px;
+  font-weight: 750;
+}
+
+.submission-record-dialog .projects-dialog-heading p {
+  margin-top: 2px;
+  color: #5d514b;
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 700;
+}
+
+.submission-record-dialog .projects-icon-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 18px;
+}
+
+.submission-record-body {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 0;
+  padding: 0;
+  min-height: 470px;
+}
+
+.submission-record-member-pane,
+.submission-record-review-pane {
+  min-width: 0;
+  padding: 20px;
+}
+
+.submission-record-member-pane {
+  border-right: 1px solid #ebe5e1;
+  background: #fffefd;
+}
+
+.submission-record-review-pane {
+  background: #fbf9f7;
+}
+
+.submission-record-kicker {
+  display: block;
+  color: #7c7068;
+  font: 700 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.submission-record-member-pane h3,
+.submission-record-review-pane h3 {
+  margin: 4px 0 0;
+  color: #28221f;
+  font-size: 19px;
+  line-height: 1.25;
+  font-weight: 800;
+}
+
+.submission-record-intro {
+  margin: 5px 0 0;
+  color: #8a7f78;
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.submission-record-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.submission-record-meta-row > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid #e3d9d2;
+  border-radius: 999px;
+  background: #faf7f4;
+  color: #82766f;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.submission-record-meta-row strong {
+  color: #4f4540;
+  font-weight: 800;
+}
+
+.submission-record-field {
+  margin-top: 12px;
+  padding: 12px 13px;
+  border: 1px solid #e7dfda;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+.submission-record-field > span {
+  display: block;
+  color: #8a7f78;
+  font: 700 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.04em;
+}
+
+.submission-record-field > strong,
+.submission-record-field .outcome-output-content,
+.submission-record-field a {
+  display: block;
+  margin-top: 5px;
+  color: #3d3531;
+  font-size: 11px;
+  line-height: 1.45;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.submission-record-review-history {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.submission-record-review-history article {
+  padding: 10px 12px;
+  border: 1px solid #e7dfda;
+  border-radius: 8px;
+  background: #faf8f6;
+}
+
+.submission-record-review-history span,
+.submission-record-review-history strong {
+  display: block;
+}
+
+.submission-record-review-history span {
+  color: #8a7f78;
+  font-size: 9px;
+}
+
+.submission-record-review-history strong {
+  margin-top: 3px;
+  color: #514741;
+  font-size: 10px;
+}
+
+.submission-record-outcome {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid #e5ddd7;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+.submission-record-outcome span {
+  display: block;
+  color: #8a7f78;
+  font: 700 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.submission-record-outcome strong {
+  display: block;
+  margin-top: 5px;
+  color: #403733;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.submission-record-status-card {
+  margin-top: 13px;
+  overflow: hidden;
+  border: 1px solid #e5ddd7;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+.submission-record-status-card > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 12px;
+  border-bottom: 1px solid #eee8e4;
+}
+
+.submission-record-status-card > div strong {
+  color: #554b45;
+  font-size: 10px;
+}
+
+.submission-record-status-card > div span {
+  padding: 4px 7px;
+  border: 1px solid #dfcec4;
+  border-radius: 5px;
+  color: #8c5a45;
+  font: 400 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.submission-record-status-card p {
+  margin: 0;
+  padding: 12px;
+  color: #81766f;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.submission-record-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.submission-record-actions .projects-primary-button {
+  min-height: 34px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  font-size: 10px;
+}
+
+.submission-record-review-mark {
+  border: 0;
+  background: transparent;
+  color: #81766f;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.submission-record-review-mark:hover:not(:disabled),
+.submission-record-review-mark:focus-visible {
+  color: #cb4d22;
+  text-decoration: underline;
+  outline: 0;
+}
+
+/* Outcome Review - Figma node 153:6590 */
+.outcome-review-dialog {
+  width: min(900px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.outcome-review-dialog .projects-dialog-header {
+  min-height: 60px;
+  padding: 14px 18px;
+  align-items: center;
+}
+
+.outcome-review-dialog .projects-dialog-heading {
+  max-width: 620px;
+}
+
+.outcome-review-dialog .projects-dialog-eyebrow {
+  margin-bottom: 2px;
+  color: #8a5a45;
+  font-size: 8px;
+}
+
+.outcome-review-dialog .projects-dialog-heading h2 {
+  color: #2f2926;
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+.outcome-review-dialog .projects-dialog-tag {
+  min-height: 26px;
+  background: #f7f3ef;
+}
+
+.outcome-review-dialog-body {
+  display: block;
+  overflow: auto;
+  padding: 14px 18px 0;
+  background: #fffefd;
+}
+
+.outcome-review-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.outcome-review-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 22px;
+  padding: 0 7px;
+  border: 1px solid #e4dcd6;
+  border-radius: 999px;
+  background: #faf8f6;
+  color: #8a7f78;
+  font-size: 8px;
+}
+
+.outcome-review-meta strong {
+  color: #5b504a;
+  font-weight: 750;
+}
+
+.outcome-review-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.outcome-review-summary-card {
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #e5ddd7;
+  border-radius: 8px;
+  background: #fbfaf9;
+}
+
+.outcome-review-step {
+  display: block;
+  color: #766a63;
+  font: 700 9px/1.25 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.02em;
+}
+
+.outcome-review-summary-card > strong {
+  display: block;
+  margin-top: 5px;
+  color: #3f3733;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.outcome-review-submission-list {
+  display: grid;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.outcome-review-submission-list article {
+  padding: 7px 8px;
+  border: 1px solid #ece4de;
+  border-radius: 7px;
+  background: #ffffff;
+}
+
+.outcome-review-submission-list article > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.outcome-review-submission-list article strong {
+  color: #544943;
+  font-size: 9px;
+}
+
+.outcome-review-submission-list article span {
+  color: #8a7f78;
+  font: 400 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.outcome-review-submission-list .outcome-output-content,
+.outcome-review-submission-list a {
+  margin-top: 3px;
+  color: #3f3733;
+  font-size: 10px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.outcome-review-form {
+  margin-top: 8px;
+}
+
+.outcome-review-criteria-panel {
+  padding: 9px;
+  border: 1px solid #e5ddd7;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.outcome-review-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.outcome-review-panel-head > span:last-child {
+  color: #8a7f78;
+  font: 400 8px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.outcome-review-criteria-list {
+  display: grid;
+  gap: 0;
+  margin-top: 4px;
+}
+
+.outcome-review-criterion {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  border-bottom: 1px solid #f0ebe7;
+  color: #534943;
+  font-size: 10px;
+  font-weight: 550;
+}
+
+.outcome-review-criterion:last-child {
+  border-bottom: 0;
+}
+
+.outcome-review-criterion input {
+  width: 14px;
+  height: 14px;
+  accent-color: #cb4d22;
+}
+
+.outcome-review-empty {
+  margin: 8px 0 0;
+  color: #9a8f88;
+  font-size: 9px;
+}
+
+.outcome-review-feedback {
+  display: block;
+  margin-top: 8px;
+}
+
+.outcome-review-feedback textarea {
+  width: 100%;
+  min-height: 80px;
+  box-sizing: border-box;
+  margin-top: 6px;
+  padding: 9px 10px;
+  border: 1px solid #ded6d0;
+  border-radius: 7px;
+  background: #fff;
+  color: #3f3733;
+  font: 400 10px/1.45 Inter, system-ui, sans-serif;
+  resize: vertical;
+  outline: 0;
+}
+
+.outcome-review-feedback textarea:focus {
+  border-color: #cb4d22;
+  box-shadow: 0 0 0 2px rgba(203, 77, 34, 0.09);
+}
+
+.outcome-review-notice {
+  margin: 7px 0 0;
+  color: #746860;
+  font-size: 9px;
+}
+
+.outcome-review-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin: 12px -18px 0;
+  padding: 13px 18px;
+  border-top: 1px solid #ebe5e1;
+  background: #fffdfb;
+}
+
+.outcome-review-actions .projects-secondary-button,
+.outcome-review-actions .projects-primary-button {
+  min-height: 31px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 10px;
+}
+
+@media (max-width: 760px) {
+  .submission-record-dialog,
+  .outcome-review-dialog {
+    width: 100%;
+    max-height: 92vh;
+  }
+
+  .submission-record-body,
+  .outcome-review-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .submission-record-member-pane {
+    border-right: 0;
+    border-bottom: 1px solid #ebe5e1;
+  }
+
+  .submission-record-body {
+    overflow: auto;
+  }
+}
