@@ -31,15 +31,11 @@ export function AppShell() {
   const mobileOpen = useShellStore((state) => state.mobileNavigationOpen);
   const setMobileOpen = useShellStore((state) => state.setMobileNavigationOpen);
   const setProfileOpen = useShellStore((state) => state.setProfileOpen);
-  if (!member) return null;
-  const isProjectSection = location.pathname.startsWith('/projects/');
-  const breadcrumbs = isProjectSection
-    ? []
-    : breadcrumbsForPath(location.pathname);
-  const accessToken = accessToken;
+  const accessToken = session?.access_token;
+  const workspaceRole = member?.workspaceRole;
 
   useEffect(() => {
-    if (!accessToken) return;
+    if (!accessToken || !workspaceRole) return;
 
     const warmup = window.setTimeout(() => {
       void queryClient.prefetchQuery(projectsListQuery(accessToken));
@@ -54,7 +50,7 @@ export function AppShell() {
         queryClient.prefetchQuery(teamWorkSummaryQuery(accessToken)),
       ]);
 
-      if (member.workspaceRole === 'ADMINISTRATOR') {
+      if (workspaceRole === 'ADMINISTRATOR') {
         void Promise.all([
           loadRegistryRoute(),
           queryClient.prefetchQuery(registryOverviewQuery(accessToken)),
@@ -63,7 +59,14 @@ export function AppShell() {
     }, 200);
 
     return () => window.clearTimeout(warmup);
-  }, [accessToken, member.workspaceRole, queryClient]);
+  }, [accessToken, queryClient, workspaceRole]);
+
+  if (!member) return null;
+
+  const isProjectSection = location.pathname.startsWith('/projects/');
+  const breadcrumbs = isProjectSection
+    ? []
+    : breadcrumbsForPath(location.pathname);
 
   const prefetchNavigation = (path: string) => {
     if (path === '/projects') {
@@ -112,6 +115,7 @@ export function AppShell() {
               onClick={() => setMobileOpen(false)}
               onMouseEnter={() => prefetchNavigation(item.path)}
               onFocus={() => prefetchNavigation(item.path)}
+              onPointerDown={() => prefetchNavigation(item.path)}
               className={({ isActive }) =>
                 `shell-nav-item${isActive ? ' active' : ''}`
               }
