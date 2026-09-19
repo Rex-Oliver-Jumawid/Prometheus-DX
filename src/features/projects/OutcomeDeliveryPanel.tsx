@@ -701,25 +701,7 @@ export function OutcomeDeliveryPanel({
                 >
                   Continue to outcome review
                 </button>
-                {selected.reviewStatus === 'FOR_REVIEW' && (
-                  <button
-                    className="submission-record-review-mark"
-                    type="button"
-                    disabled={mutation.isPending}
-                    onClick={() =>
-                      void act(`submissions/${selected.id}/reviews`, {
-                        criterionIds: [],
-                        note: 'Submission inspected by the Project Lead.',
-                        outcomeUpdatedAt: data.outcomeUpdatedAt,
-                        submissionIds: data.submissions.map((item) => item.id),
-                      })
-                        .then(() => setSelected(null))
-                        .catch(() => {})
-                    }
-                  >
-                    Mark submission reviewed
-                  </button>
-                )}
+
               </div>
             )}
           </section>
