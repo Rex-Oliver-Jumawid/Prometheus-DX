@@ -178,11 +178,17 @@ export function OutcomeDeliveryPanel({
   outcomeId,
   accessToken,
   isJoined,
+  outcomeTitle,
+  outcomeDescription,
+  departmentLabels = [],
 }: {
   projectId: string;
   outcomeId: string;
   accessToken?: string;
   isJoined: boolean;
+  outcomeTitle: string;
+  outcomeDescription: string;
+  departmentLabels?: string[];
 }) {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Submission | null>(null);
@@ -291,6 +297,16 @@ export function OutcomeDeliveryPanel({
     data.acceptances.find((item) => !item.reopenedAt) ?? data.acceptances[0];
   const unresolvedDependencies = data.dependencies.filter(
     (item) => !item.resolved,
+  );
+  const selectedIndex = selected
+    ? data.submissions.findIndex((item) => item.id === selected.id)
+    : -1;
+  const selectedVersion =
+    selectedIndex >= 0 ? data.submissions.length - selectedIndex : null;
+  const selectedState =
+    selected?.reviewStatus === 'FOR_REVIEW' ? 'For Review' : 'Reviewed';
+  const contributorNames = Array.from(
+    new Set(data.submissions.map((item) => item.submitter.fullName)),
   );
 
   return (
@@ -577,70 +593,136 @@ export function OutcomeDeliveryPanel({
       {selected && (
         <ProjectDialog
           title="Submission record"
+          subtitle={`v${selectedVersion ?? 1} · ${selected.content}`}
           pending={mutation.isPending}
+          className="submission-record-dialog"
+          bodyClassName="submission-record-body"
           onClose={() => setSelected(null)}
         >
-          {mutation.error && <p role="alert">{mutation.error.message}</p>}
-          <p>
-            Submitted by {selected.submitter.fullName} ·{' '}
-            {new Date(selected.createdAt).toLocaleString()}
-          </p>
-          {selected.reviews.map((item) => (
-            <article key={item.id}>
-              <h4>Reviewed by {item.reviewer.fullName}</h4>
-              <p>{item.note || 'Reviewed without additional notes.'}</p>
-              <ul>
-                {item.criteria.map((criterion) => (
-                  <li key={criterion.id}>
-                    {criterion.verified ? '✓' : '○'} {criterion.description}
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
-          {data.isLead && !accepted && (
-            <div className="outcome-work-actions">
-              <button
-                className="projects-primary-button"
-                type="button"
-                onClick={() => {
-                  setSelected(null);
-                  setReviewOpen(true);
-                }}
-              >
-                Continue to Outcome review
-              </button>
-              {selected.reviewStatus === 'FOR_REVIEW' && (
-                <button
-                  className="projects-secondary-button"
-                  type="button"
-                  disabled={mutation.isPending}
-                  onClick={() =>
-                    void act(`submissions/${selected.id}/reviews`, {
-                      criterionIds: [],
-                      note: 'Submission inspected by the Project Lead.',
-                      outcomeUpdatedAt: data.outcomeUpdatedAt,
-                      submissionIds: data.submissions.map((item) => item.id),
-                    })
-                      .then(() => setSelected(null))
-                      .catch(() => {})
-                  }
-                >
-                  Mark submission reviewed
-                </button>
-              )}
-            </div>
+          {mutation.error && (
+            <p role="alert" className="projects-save-error">
+              {mutation.error.message}
+            </p>
           )}
-          <OutputContent content={selected.content} />
-          <h3>Notes</h3>
-          <p className="outcome-output-content">
-            {selected.note || 'No notes provided.'}
-          </p>
-          <p>
-            {selected.reviewStatus === 'FOR_REVIEW'
-              ? 'Awaiting Project Lead review'
-              : 'Reviewed'}
-          </p>
+          <section className="submission-record-member-pane">
+            <span className="submission-record-kicker">Member submission</span>
+            <h3>{selected.content}</h3>
+            <p className="submission-record-intro">
+              Immutable record of this member contribution to the outcome.
+            </p>
+
+            <div className="submission-record-meta-row">
+              <span>
+                Version <strong>v{selectedVersion ?? 1}</strong>
+              </span>
+              <span>
+                State <strong>{selectedState}</strong>
+              </span>
+              <span>
+                Submitted by <strong>{selected.submitter.fullName}</strong>
+              </span>
+              <span>
+                Departments{' '}
+                <strong>
+                  {departmentLabels.length > 0
+                    ? departmentLabels.join(', ')
+                    : 'General'}
+                </strong>
+              </span>
+            </div>
+
+            <div className="submission-record-field">
+              <span>Submitted / reviewed</span>
+              <strong>
+                Submitted {new Date(selected.createdAt).toLocaleString()} ·{' '}
+                {selected.submitter.fullName}
+              </strong>
+            </div>
+
+            <div className="submission-record-field">
+              <span>Output name or link</span>
+              <OutputContent content={selected.content} />
+            </div>
+
+            <div className="submission-record-field">
+              <span>Submission notes</span>
+              <strong>{selected.note || 'No notes provided.'}</strong>
+            </div>
+
+            {selected.reviews.length > 0 && (
+              <div className="submission-record-review-history">
+                {selected.reviews.map((item) => (
+                  <article key={item.id}>
+                    <span>Reviewed by {item.reviewer.fullName}</span>
+                    <strong>
+                      {item.note || 'Reviewed without additional notes.'}
+                    </strong>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="submission-record-review-pane">
+            <span className="submission-record-kicker">Outcome-level review</span>
+            <h3>Reviewed with the full submission set</h3>
+            <p className="submission-record-intro">
+              This is one team contribution. Return to the outcome review to
+              verify it together with every current submission and the
+              acceptance criteria.
+            </p>
+
+            <div className="submission-record-outcome">
+              <span>Outcome to satisfy</span>
+              <strong>{outcomeDescription}</strong>
+            </div>
+
+            <div className="submission-record-status-card">
+              <div>
+                <strong>Submission status</strong>
+                <span>{selectedState}</span>
+              </div>
+              <p>
+                Individual submissions are not accepted or rejected
+                independently. The Project Lead makes one outcome-level
+                decision from the combined submission set.
+              </p>
+            </div>
+
+            {data.isLead && !accepted && (
+              <div className="submission-record-actions">
+                <button
+                  className="projects-primary-button"
+                  type="button"
+                  onClick={() => {
+                    setSelected(null);
+                    setReviewOpen(true);
+                  }}
+                >
+                  Continue to outcome review
+                </button>
+                {selected.reviewStatus === 'FOR_REVIEW' && (
+                  <button
+                    className="submission-record-review-mark"
+                    type="button"
+                    disabled={mutation.isPending}
+                    onClick={() =>
+                      void act(`submissions/${selected.id}/reviews`, {
+                        criterionIds: [],
+                        note: 'Submission inspected by the Project Lead.',
+                        outcomeUpdatedAt: data.outcomeUpdatedAt,
+                        submissionIds: data.submissions.map((item) => item.id),
+                      })
+                        .then(() => setSelected(null))
+                        .catch(() => {})
+                    }
+                  >
+                    Mark submission reviewed
+                  </button>
+                )}
+              </div>
+            )}
+          </section>
         </ProjectDialog>
       )}
       {reviewOpen && (
@@ -649,6 +731,9 @@ export function OutcomeDeliveryPanel({
           pending={mutation.isPending}
           error={mutation.error}
           act={act}
+          outcomeTitle={outcomeTitle}
+          outcomeDescription={outcomeDescription}
+          contributorNames={contributorNames}
           onClose={() => setReviewOpen(false)}
         />
       )}
