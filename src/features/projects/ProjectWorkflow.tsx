@@ -1479,54 +1479,30 @@ export function ProjectWorkflow({
                               type="button"
                               className="pw-stage-edit"
                               title="Rename stage"
-                              aria-label={`Edit Stage ${stage.name}`}
-                              onClick={() =>
-                                setEditor({ type: 'edit-stage', stage })
-                              }
+                              aria-label={`Rename ${stage.name}`}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setEditor({ type: 'edit-stage', stage });
+                              }}
                             >
-                              <svg
-                                width="12"
-                                height="12"
-                                viewBox="0 0 12 12"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1.4"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                aria-hidden="true"
-                              >
-                                <path d="M8.5 1.5l2 2L3.5 10.5H1.5v-2L8.5 1.5z" />
-                              </svg>
+                              <span aria-hidden="true">✎</span>
                             </button>
                             <button
                               type="button"
                               className="pw-stage-delete"
                               title="Delete stage"
-                              aria-label={`Delete Stage ${stage.name}`}
-                              onClick={() =>
-                                setEditor({ type: 'delete-stage', stage })
-                              }
+                              aria-label={`Delete ${stage.name}`}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setEditor({ type: 'delete-stage', stage });
+                              }}
                             >
-                              <svg
-                                width="11"
-                                height="11"
-                                viewBox="0 0 12 12"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                                strokeLinecap="round"
-                                aria-hidden="true"
-                              >
-                                <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" />
-                              </svg>
+                              <span aria-hidden="true">×</span>
                             </button>
                           </div>
                         )}
                       </div>
                     </div>
-                    {stage.description && (
-                      <p className="stage-desc">{stage.description}</p>
-                    )}
                     <progress
                       aria-label={`${stage.name} acceptance progress`}
                       value={acceptedCount}
@@ -1849,18 +1825,7 @@ export function ProjectWorkflow({
                                         });
                                       }}
                                     >
-                                      <svg
-                                        width="10"
-                                        height="10"
-                                        viewBox="0 0 12 12"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="1.5"
-                                        strokeLinecap="round"
-                                        aria-hidden="true"
-                                      >
-                                        <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" />
-                                      </svg>
+                                      <span aria-hidden="true">×</span>
                                     </button>
                                   </>
                                 )}
