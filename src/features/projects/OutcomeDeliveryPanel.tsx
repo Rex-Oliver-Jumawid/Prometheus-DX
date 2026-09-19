@@ -289,6 +289,9 @@ export function OutcomeDeliveryPanel({
   const isContributor = isJoined;
   const currentAcceptance =
     data.acceptances.find((item) => !item.reopenedAt) ?? data.acceptances[0];
+  const unresolvedDependencies = data.dependencies.filter(
+    (item) => !item.resolved,
+  );
 
   return (
     <section
@@ -528,26 +531,36 @@ export function OutcomeDeliveryPanel({
           ))}
         </section>
       )}
-      {data.isLead && data.dependencies.length > 0 && (
+      {data.isLead && unresolvedDependencies.length > 0 && (
         <section
-          className="outcome-dependency-list"
-          aria-label="Dependency decisions"
+          className="outcome-dependency-actions"
+          aria-label="Dependency actions"
         >
-          <h4>Dependencies</h4>
-          {data.dependencies.map((item) => (
-            <article key={item.id}>
-              <Link
-                to={`/projects/${projectId}/outcomes/${item.prerequisiteId}`}
-              >
-                {item.title}
-              </Link>
-              <span>{item.resolved ? 'Resolved' : 'Waiting'}</span>
-              {item.overrideReason && (
-                <p>Lead override: {item.overrideReason}</p>
-              )}
-              {data.isLead && !item.resolved && (
+          <div className="outcome-dependency-actions-head">
+            <div>
+              <h4>Dependency action required</h4>
+              <p>
+                Resolve the prerequisite or explicitly skip it before this
+                outcome can continue.
+              </p>
+            </div>
+          </div>
+          <div className="outcome-dependency-action-list">
+            {unresolvedDependencies.map((item) => (
+              <article key={item.id} className="outcome-dependency-action-card">
+                <div className="outcome-dependency-action-copy">
+                  <Link
+                    to={`/projects/${projectId}/outcomes/${item.prerequisiteId}`}
+                    className="outcome-dependency-action-title"
+                  >
+                    {item.title}
+                  </Link>
+                  <span className="outcome-dependency-action-status">
+                    Waiting
+                  </span>
+                </div>
                 <button
-                  className="projects-secondary-button"
+                  className="projects-secondary-button outcome-dependency-skip"
                   type="button"
                   onClick={() => {
                     overrideForm.reset();
@@ -556,9 +569,9 @@ export function OutcomeDeliveryPanel({
                 >
                   Skip dependency
                 </button>
-              )}
-            </article>
-          ))}
+              </article>
+            ))}
+          </div>
         </section>
       )}
       {selected && (
