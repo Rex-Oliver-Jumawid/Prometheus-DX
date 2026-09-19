@@ -94,6 +94,9 @@ model Member {
   workspaceRole               WorkspaceRole                @default(MEMBER) @map("workspace_role")
   status                      MemberStatus                 @default(INVITED)
   position                    String?
+  nickname                    String?                      @db.VarChar(40)
+  phoneNumber                 String?                      @map("phone_number") @db.VarChar(32)
+  about                       String?                      @db.VarChar(240)
   profileImagePath            String?                      @map("profile_image_path")
   invitationSentAt            DateTime?                    @map("invitation_sent_at") @db.Timestamptz(6)
   deactivatedAt               DateTime?                    @map("deactivated_at") @db.Timestamptz(6)
