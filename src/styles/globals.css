@@ -1139,6 +1139,9 @@ button:disabled {
   font-size: 7.5px;
   line-height: 10.5px;
 }
+.profile-photo-input {
+  display: none;
+}
 .profile-photo-actions {
   display: flex;
   align-items: center;
@@ -1173,6 +1176,15 @@ button:disabled {
 .profile-photo-remove:disabled {
   cursor: default;
   opacity: 0.35;
+}
+.profile-photo-message {
+  margin: 0;
+  color: #7f726b;
+  font-size: 7px;
+  line-height: 10px;
+}
+.profile-photo-message.error {
+  color: #a93f1c;
 }
 .profile-settings-divider {
   height: 1px;
