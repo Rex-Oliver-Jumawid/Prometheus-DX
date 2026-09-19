@@ -431,28 +431,6 @@ export function ProfileDrawer({ member }: { member: CurrentMember }) {
               </p>
             )}
 
-            <div className="profile-settings-divider" />
-
-            <section className="signout-panel profile-session-panel">
-              <div>
-                <span>SESSION</span>
-                <strong>Sign out of Prometheus</strong>
-                <p>
-                  End your session on this device. Your saved profile remains
-                  available when you sign back in.
-                </p>
-                <small>{member.email}</small>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  void auth.signOut();
-                }}
-              >
-                Sign out
-              </button>
-            </section>
           </div>
 
           <footer className="profile-settings-footer">
