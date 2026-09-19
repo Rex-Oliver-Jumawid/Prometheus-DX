@@ -1760,6 +1760,8 @@
 }
 
 .card-foot .tiny {
+  flex: 1 1 auto;
+  min-width: 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 9.5px;
   line-height: 13.3px;
@@ -1767,6 +1769,10 @@
 }
 
 .pw-card-action {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-width: max-content;
   color: #d24f27;
   font-family: Inter, system-ui, -apple-system, sans-serif;
   font-size: 10px;
@@ -1774,6 +1780,7 @@
   line-height: 14px;
   letter-spacing: 0.117px;
   text-decoration: none;
+  white-space: nowrap;
   transition: color 0.15s ease;
 }
 
@@ -1855,6 +1862,17 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.dep-mini:hover,
+.dep-mini:focus-within {
+  background: #fffaf6;
+  border-color: rgba(203, 77, 34, 0.44);
+  box-shadow: 0 0 0 2px rgba(203, 77, 34, 0.07);
 }
 
 .dep-mini-top {
@@ -1876,14 +1894,13 @@
   overflow-wrap: anywhere;
 }
 
-.dep-mini-title a {
+.dep-mini-title a,
+.dep-mini-title a:visited,
+.dep-mini-title a:hover,
+.dep-mini-title a:focus-visible {
   color: #201b18;
   text-decoration: none;
-}
-
-.dep-mini-title a:hover {
-  color: #cb4d22;
-  text-decoration: underline;
+  outline: 0;
 }
 
 .dep-mini-meta {
