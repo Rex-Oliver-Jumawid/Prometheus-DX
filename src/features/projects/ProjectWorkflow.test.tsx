@@ -302,4 +302,106 @@ describe('ProjectWorkflow Stage & Outcome Deletion', () => {
     expect(screen.getByText('Prerequisite')).toBeInTheDocument();
     expect(screen.getByText('Recent Activity')).toBeInTheDocument();
   });
+
+  it('does not duplicate resolved dependency status in the main delivery panel', async () => {
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path === `/projects/${projectId}/workflow`) {
+        return Promise.resolve(workflowFixture);
+      }
+      if (path === `/projects/${projectId}/outcomes/${outcomeId}/work`) {
+        return Promise.resolve({
+          features: [],
+          completedTasks: 0,
+          totalTasks: 0,
+          progress: 0,
+          canPlan: false,
+          canExecute: false,
+        });
+      }
+      if (path === `/projects/${projectId}/outcomes/${outcomeId}/delivery`) {
+        return Promise.resolve({
+          submissions: [],
+          revisions: [],
+          acceptances: [],
+          dependencies: [
+            {
+              id: '55555555-5555-4555-8555-555555555555',
+              prerequisiteId: '66666666-6666-4666-8666-666666666666',
+              title: 'Working Prototype',
+              resolved: true,
+              overrideReason: null,
+            },
+          ],
+          activity: [],
+          canSubmit: false,
+          isLead: true,
+          hasForReview: false,
+          lifecycleStatus: 'OPEN',
+          outcomeUpdatedAt: '2026-09-18T00:00:00.000Z',
+        });
+      }
+      return Promise.resolve({ success: true });
+    });
+
+    renderWorkflow(outcomeId);
+
+    await screen.findByText('Outcome Submissions');
+    expect(
+      screen.queryByRole('region', { name: 'Dependency actions' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Dependency action required'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows a compact action area only for unresolved lead dependencies', async () => {
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path === `/projects/${projectId}/workflow`) {
+        return Promise.resolve(workflowFixture);
+      }
+      if (path === `/projects/${projectId}/outcomes/${outcomeId}/work`) {
+        return Promise.resolve({
+          features: [],
+          completedTasks: 0,
+          totalTasks: 0,
+          progress: 0,
+          canPlan: true,
+          canExecute: false,
+        });
+      }
+      if (path === `/projects/${projectId}/outcomes/${outcomeId}/delivery`) {
+        return Promise.resolve({
+          submissions: [],
+          revisions: [],
+          acceptances: [],
+          dependencies: [
+            {
+              id: '77777777-7777-4777-8777-777777777777',
+              prerequisiteId: '88888888-8888-4888-8888-888888888888',
+              title: 'Working Prototype',
+              resolved: false,
+              overrideReason: null,
+            },
+          ],
+          activity: [],
+          canSubmit: false,
+          isLead: true,
+          hasForReview: false,
+          lifecycleStatus: 'OPEN',
+          outcomeUpdatedAt: '2026-09-18T00:00:00.000Z',
+        });
+      }
+      return Promise.resolve({ success: true });
+    });
+
+    renderWorkflow(outcomeId);
+
+    expect(
+      await screen.findByRole('region', { name: 'Dependency actions' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Dependency action required')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Skip dependency' }),
+    ).toBeInTheDocument();
+  });
 });
