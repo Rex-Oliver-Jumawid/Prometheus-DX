@@ -11,6 +11,7 @@ export function ProjectDialog({
   eyebrow,
   subtitle,
   tag,
+  ariaLabel,
 }: {
   title: string;
   children: ReactNode;
@@ -21,6 +22,7 @@ export function ProjectDialog({
   eyebrow?: string;
   subtitle?: string;
   tag?: string;
+  ariaLabel?: string;
 }) {
   const dialog = useRef<HTMLElement>(null);
   const previousFocus = useRef(document.activeElement as HTMLElement | null);
@@ -79,7 +81,7 @@ export function ProjectDialog({
         className={`projects-dialog ${className}`.trim()}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-label={ariaLabel ?? title}
         tabIndex={-1}
       >
         <header className="projects-dialog-header">
