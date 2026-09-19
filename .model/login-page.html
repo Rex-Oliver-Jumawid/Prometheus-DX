@@ -697,32 +697,11 @@
 
   <script>
     const form = document.getElementById("loginForm");
-    const email = document.getElementById("email");
     const password = document.getElementById("password");
-    const emailError = document.getElementById("emailError");
-    const passwordError = document.getElementById("passwordError");
     const globalError = document.getElementById("globalError");
     const togglePassword = document.getElementById("togglePassword");
-    const submitButton = document.getElementById("submitButton");
-    const submitText = document.getElementById("submitText");
     const forgotPassword = document.getElementById("forgotPassword");
     const googleSignIn = document.getElementById("googleSignIn");
-
-    function setFieldError(input, target, message) {
-      target.textContent = message;
-      input.setAttribute("aria-invalid", message ? "true" : "false");
-    }
-
-    function clearErrors() {
-      setFieldError(email, emailError, "");
-      setFieldError(password, passwordError, "");
-      globalError.textContent = "";
-      globalError.classList.remove("is-visible");
-    }
-
-    function isValidEmail(value) {
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-    }
 
     togglePassword.addEventListener("click", () => {
       const visible = password.type === "text";
@@ -736,10 +715,7 @@
     });
 
     googleSignIn.addEventListener("click", () => {
-      clearErrors();
-      globalError.textContent =
-        "Prototype only: connect this button to Google OAuth, such as Supabase signInWithOAuth({ provider: 'google' }).";
-      globalError.classList.add("is-visible");
+      window.location.href = "./finalmodel.html";
     });
 
     forgotPassword.addEventListener("click", () => {
@@ -750,47 +726,7 @@
 
     form.addEventListener("submit", (event) => {
       event.preventDefault();
-      clearErrors();
-
-      const emailValue = email.value.trim();
-      const passwordValue = password.value;
-
-      let valid = true;
-
-      if (!emailValue) {
-        setFieldError(email, emailError, "Enter your company email.");
-        valid = false;
-      } else if (!isValidEmail(emailValue)) {
-        setFieldError(email, emailError, "Enter a valid email address.");
-        valid = false;
-      }
-
-      if (!passwordValue) {
-        setFieldError(password, passwordError, "Enter your password.");
-        valid = false;
-      } else if (passwordValue.length < 8) {
-        setFieldError(password, passwordError, "Password must contain at least 8 characters.");
-        valid = false;
-      }
-
-      if (!valid) {
-        const firstInvalid = document.querySelector('[aria-invalid="true"]');
-        if (firstInvalid) firstInvalid.focus();
-        return;
-      }
-
-      submitButton.disabled = true;
-      submitButton.classList.add("is-loading");
-      submitText.textContent = "Signing in...";
-
-      window.setTimeout(() => {
-        submitButton.disabled = false;
-        submitButton.classList.remove("is-loading");
-        submitText.textContent = "Sign in";
-        globalError.textContent =
-          "Prototype only: the form is ready to connect to the DX login action or Supabase authentication.";
-        globalError.classList.add("is-visible");
-      }, 650);
+      window.location.href = "./finalmodel.html";
     });
   </script>
 </body>
