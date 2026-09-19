@@ -1972,6 +1972,110 @@ export function ProjectWorkflow({
           }
         />
       )}
+      {dependencyOverride && (
+        <ProjectDialog
+          title="Skip dependency"
+          eyebrow="Project Lead override"
+          tag="Dependency override"
+          pending={overrideDependency.isPending}
+          className="dependency-override-dialog"
+          bodyClassName="dependency-override-body"
+          onClose={() => {
+            setDependencyOverride(null);
+            dependencyOverrideForm.reset();
+            overrideDependency.reset();
+          }}
+        >
+          <form
+            className="dependency-override-form"
+            onSubmit={dependencyOverrideForm.handleSubmit(async ({ reason }) => {
+              try {
+                await overrideDependency.mutateAsync({
+                  dependencyId: dependencyOverride.dependencyId,
+                  outcomeId: dependencyOverride.outcomeId,
+                  reason,
+                });
+              } catch {
+                /* Preserve the reason so the Project Lead can retry. */
+              }
+            })}
+          >
+            <div className="dependency-override-notice">
+              <span className="dependency-override-notice-icon" aria-hidden="true">
+                !
+              </span>
+              <div>
+                <strong>Bypass this prerequisite only</strong>
+                <p>
+                  The prerequisite outcome and its history stay unchanged. This
+                  only unlocks the dependent outcome.
+                </p>
+              </div>
+            </div>
+
+            <div className="dependency-override-flow" aria-label="Dependency being skipped">
+              <div>
+                <span>Prerequisite</span>
+                <strong>{dependencyOverride.prerequisiteTitle}</strong>
+              </div>
+              <span className="dependency-override-arrow" aria-hidden="true">
+                →
+              </span>
+              <div>
+                <span>Unlock outcome</span>
+                <strong>{dependencyOverride.outcomeTitle}</strong>
+              </div>
+            </div>
+
+            <label className="dependency-override-reason">
+              <span>Reason for override</span>
+              <textarea
+                autoFocus
+                placeholder="Explain why this outcome may proceed without the prerequisite."
+                {...dependencyOverrideForm.register('reason', {
+                  required: 'Add a reason before skipping this dependency.',
+                })}
+              />
+            </label>
+
+            {dependencyOverrideForm.formState.errors.reason?.message && (
+              <p className="dependency-override-error" role="alert">
+                {dependencyOverrideForm.formState.errors.reason.message}
+              </p>
+            )}
+            {overrideDependency.error && (
+              <p className="dependency-override-error" role="alert">
+                {errorMessage(overrideDependency.error)}
+              </p>
+            )}
+
+            <footer className="dependency-override-actions">
+              <button
+                type="button"
+                className="projects-secondary-button"
+                disabled={overrideDependency.isPending}
+                onClick={() => {
+                  setDependencyOverride(null);
+                  dependencyOverrideForm.reset();
+                  overrideDependency.reset();
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="dependency-override-confirm"
+                disabled={overrideDependency.isPending}
+              >
+                {overrideDependency.isPending
+                  ? 'Skipping dependency...'
+                  : 'Confirm skip dependency'}
+              </button>
+            </footer>
+          </form>
+        </ProjectDialog>
+      )}
+
       {outcomeEditor && (
         <OutcomeDialog
           stage={outcomeEditor.stage}
