@@ -21,7 +21,6 @@
   transform: translateX(0);
 }
 
-.attendance-control.loading,
 .attendance-control.error {
   right: 20px;
   width: min(320px, calc(100vw - 28px));
@@ -44,6 +43,46 @@
   align-items: center;
   justify-content: space-between;
   color: #963c2b;
+}
+
+.attendance-control.pending {
+  width: var(--attendance-handle);
+  min-height: 58px;
+  transform: none;
+  pointer-events: none;
+}
+
+.attendance-control.pending:hover,
+.attendance-control.pending:focus-within {
+  transform: none;
+}
+
+.attendance-pending-handle {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--attendance-handle);
+  min-height: 58px;
+  border: 1px solid rgba(116, 116, 116, 0.14);
+  border-right: 0;
+  border-radius: 16px 0 0 16px;
+  background: rgba(247, 247, 247, 0.94);
+  color: #8a8a8a;
+  box-shadow:
+    -6px 8px 20px rgba(45, 45, 45, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.attendance-pending-handle svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .attendance-main {
@@ -404,7 +443,6 @@
     grid-template-columns: var(--attendance-handle) minmax(0, 1fr);
   }
 
-  .attendance-control.loading,
   .attendance-control.error,
   .attendance-control.correction {
     right: 14px;
