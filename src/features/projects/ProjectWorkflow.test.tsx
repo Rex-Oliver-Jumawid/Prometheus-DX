@@ -279,7 +279,7 @@ describe('ProjectWorkflow Stage & Outcome Deletion', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Back to Content')).toBeInTheDocument();
     const outcomeDetails = screen.getByRole('button', {
-      name: 'Outcome details',
+      name: 'Outcome Details',
     });
     expect(outcomeDetails).toBeInTheDocument();
     expect(screen.queryByText('Outcome workspace')).not.toBeInTheDocument();
