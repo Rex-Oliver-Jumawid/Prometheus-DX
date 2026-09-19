@@ -442,12 +442,16 @@ export function OutcomeDeliveryPanel({
             >
               <div className="outcome-sub-card-content">
                 <div className="outcome-sub-card-top">
-                  <span className="outcome-sub-version-badge">
-                    v{data.submissions.length - index}
-                    {index === 0 ? ' · Latest' : ''}
+                  <span className="outcome-sub-version-row">
+                    <span className="outcome-sub-version-badge">
+                      v{data.submissions.length - index}
+                    </span>
+                    {index === 0 && (
+                      <span className="outcome-sub-latest-badge">Latest</span>
+                    )}
                   </span>
                   <span
-                    className={`outcome-sub-status-badge ${submission.reviewStatus.toLowerCase()}`}
+                    className={`outcome-sub-status-badge ${accepted ? 'accepted' : submission.reviewStatus.toLowerCase()}`}
                   >
                     {accepted
                       ? 'Accepted'
