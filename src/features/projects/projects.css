@@ -997,12 +997,20 @@
 }
 
 .pw-top-bar {
+  position: sticky;
+  top: 10px;
+  z-index: 50;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
   width: 100%;
   flex-wrap: wrap;
+  pointer-events: none;
+}
+
+.pw-top-bar > * {
+  pointer-events: auto;
 }
 
 /* Back navigation link — lightweight, no button appearance */
