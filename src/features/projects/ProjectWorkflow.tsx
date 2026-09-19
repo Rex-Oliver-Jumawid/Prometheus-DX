@@ -1331,6 +1331,13 @@ export function ProjectWorkflow({
               outcomeId={selectedOutcome.id}
               accessToken={accessToken}
               isJoined={selectedOutcome.isJoined}
+              outcomeTitle={selectedOutcome.title}
+              outcomeDescription={
+                selectedOutcome.description || selectedOutcome.title
+              }
+              departmentLabels={selectedOutcome.departments.map(
+                (department) => department.shortLabel || department.name,
+              )}
             />
           </main>
           <OutcomeContextRail
