@@ -1,7 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/auth-context';
-import { projectsListQuery } from '../projects/project-queries';
+import {
+  projectCreateOptionsQuery,
+  projectsListQuery,
+} from '../projects/project-queries';
 import { registryOverviewQuery } from '../registry/registry-queries';
 import { teamScheduleQuery } from '../schedule/schedule-queries';
 import { WorkAttendanceControl } from '../work-sessions/WorkAttendanceControl';
@@ -32,23 +36,52 @@ export function AppShell() {
   const breadcrumbs = isProjectSection
     ? []
     : breadcrumbsForPath(location.pathname);
+  const accessToken = accessToken;
+
+  useEffect(() => {
+    if (!accessToken) return;
+
+    const warmup = window.setTimeout(() => {
+      void queryClient.prefetchQuery(projectsListQuery(accessToken));
+      void queryClient.prefetchQuery(projectCreateOptionsQuery(accessToken));
+
+      void Promise.all([
+        loadScheduleRoute(),
+        queryClient.prefetchQuery(teamScheduleQuery(accessToken)),
+      ]);
+      void Promise.all([
+        loadTeamRoute(),
+        queryClient.prefetchQuery(teamWorkSummaryQuery(accessToken)),
+      ]);
+
+      if (member.workspaceRole === 'ADMINISTRATOR') {
+        void Promise.all([
+          loadRegistryRoute(),
+          queryClient.prefetchQuery(registryOverviewQuery(accessToken)),
+        ]);
+      }
+    }, 200);
+
+    return () => window.clearTimeout(warmup);
+  }, [accessToken, member.workspaceRole, queryClient]);
+
   const prefetchNavigation = (path: string) => {
     if (path === '/projects') {
-      void queryClient.prefetchQuery(projectsListQuery(session?.access_token));
+      void queryClient.prefetchQuery(projectsListQuery(accessToken));
     } else if (path === '/registry') {
       void Promise.all([
         loadRegistryRoute(),
-        queryClient.prefetchQuery(registryOverviewQuery(session?.access_token)),
+        queryClient.prefetchQuery(registryOverviewQuery(accessToken)),
       ]);
     } else if (path === '/schedule') {
       void Promise.all([
         loadScheduleRoute(),
-        queryClient.prefetchQuery(teamScheduleQuery(session?.access_token)),
+        queryClient.prefetchQuery(teamScheduleQuery(accessToken)),
       ]);
     } else if (path === '/team') {
       void Promise.all([
         loadTeamRoute(),
-        queryClient.prefetchQuery(teamWorkSummaryQuery(session?.access_token)),
+        queryClient.prefetchQuery(teamWorkSummaryQuery(accessToken)),
       ]);
     }
   };
