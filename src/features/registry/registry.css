@@ -243,11 +243,11 @@
 
 .registry-department-card {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  align-items: stretch;
   min-width: 0;
-  padding: 12px;
+  padding: 0;
+  overflow: hidden;
   border: 1px solid #e5ddd7;
   border-radius: 13px;
   background: rgba(255, 255, 255, 0.56);
@@ -257,21 +257,46 @@
     box-shadow 150ms ease;
 }
 
+.registry-department-main {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.registry-department-main:focus-visible {
+  outline: 2px solid rgba(203, 77, 34, 0.42);
+  outline-offset: -2px;
+}
+
 .registry-members-panel {
   min-width: 0;
   overflow: hidden;
+}
+
+.registry-members-panel .registry-panel-header > div:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .registry-member-toolbar {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: min(100%, 420px);
+  width: 100%;
   margin-top: 8px;
 }
 
 .registry-member-search {
-  flex: 1 1 220px;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -583,8 +608,9 @@
   white-space: nowrap;
 }
 
-.registry-department-copy p {
-  margin: 3px 0 0;
+.registry-department-description {
+  display: block;
+  margin-top: 3px;
   overflow: hidden;
   color: #9b8f88;
   font-size: 10px;
@@ -606,39 +632,26 @@
   white-space: nowrap;
 }
 
-.registry-department-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 2px;
-}
-
-.registry-edit-button,
 .registry-remove-button {
-  min-height: 32px;
-  padding: 0 8px;
+  align-self: stretch;
+  width: 34px;
+  min-height: 100%;
+  padding: 0;
   border: 0;
-  border-radius: 8px;
+  border-left: 1px solid rgba(229, 221, 215, 0.8);
   background: transparent;
-  font-size: 10px;
-  font-weight: 760;
-}
-
-.registry-edit-button {
-  color: #ba4925;
-}
-
-.registry-remove-button {
   color: #8d5c4d;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
 }
 
-.registry-edit-button:hover {
-  background: rgba(203, 77, 34, 0.08);
-}
-
-.registry-remove-button:hover {
+.registry-remove-button:hover,
+.registry-remove-button:focus-visible {
   background: rgba(169, 63, 28, 0.07);
   color: #a93f1c;
+  outline: 0;
 }
 
 .registry-department-skeleton {
@@ -1020,19 +1033,16 @@
   }
 
   .registry-department-card {
-    grid-template-columns: 38px minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) 34px;
+  }
+
+  .registry-department-main {
+    grid-template-columns: 38px minmax(0, 1fr);
   }
 
   .registry-member-count {
     grid-column: 2;
     justify-self: start;
-  }
-
-  .registry-department-actions {
-    grid-column: 3;
-    grid-row: 1 / span 2;
-    flex-direction: column;
-    align-items: stretch;
   }
 
   .registry-member-toolbar {
