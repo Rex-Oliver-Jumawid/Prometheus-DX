@@ -10,6 +10,10 @@ const SeedMemberSchema = z.object({
   status: z.enum(['INVITED', 'ACTIVE', 'DEACTIVATED']).default('INVITED'),
   authUserId: z.string().uuid().nullable().optional(),
   position: z.string().nullable().optional(),
+  nickname: z.string().max(40).nullable().optional(),
+  phoneNumber: z.string().max(32).nullable().optional(),
+  about: z.string().max(240).nullable().optional(),
+  profileImagePath: z.string().nullable().optional(),
 });
 const SeedSchema = z.array(SeedMemberSchema);
 
@@ -38,6 +42,10 @@ async function seed(): Promise<void> {
         status: member.status,
         authUserId: member.authUserId ?? null,
         position: member.position ?? null,
+        nickname: member.nickname ?? null,
+        phoneNumber: member.phoneNumber ?? null,
+        about: member.about ?? null,
+        profileImagePath: member.profileImagePath ?? null,
         deactivatedAt: member.status === 'DEACTIVATED' ? new Date() : null,
       };
       if (existing)
