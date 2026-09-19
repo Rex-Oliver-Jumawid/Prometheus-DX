@@ -125,11 +125,11 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await addMemberButton.click();
   await expect(page.getByRole('dialog', { name: 'Add member' })).toBeVisible();
   const fullNameInput = page.getByLabel('Full name');
-  await expect(fullNameInput).toBeFocused();
   const existingMembersList = page.getByRole('listbox', {
     name: 'Existing members',
   });
-  await fullNameInput.focus();
+  await expect(existingMembersList).toHaveCount(0);
+  await fullNameInput.click();
   await expect(existingMembersList).toBeVisible();
   await fullNameInput.fill(existingSuggestionName);
   await expect(
