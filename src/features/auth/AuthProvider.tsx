@@ -19,13 +19,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     let active = true;
-    void client.auth.getSession().then(({ data }) => {
-      if (active) {
-        authenticatedUserId.current = data.session?.user.id ?? null;
-        setSession(data.session);
-      }
-    });
-    const { data } = client.auth.onAuthStateChange((_event, nextSession) => {
+    let authEventVersion = 0;
+
+    const applySession = (nextSession: Session | null) => {
       const nextUserId = nextSession?.user.id ?? null;
       if (
         authenticatedUserId.current &&
@@ -35,11 +31,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       authenticatedUserId.current = nextUserId;
       setSession(nextSession);
-    });
+    };
+
+    const { data: authListener } = client.auth.onAuthStateChange(
+      (event, nextSession) => {
+        // Bootstrap owns the initial stored session so it can verify it with
+        // Supabase before protected routes trust it.
+        if (event === 'INITIAL_SESSION') return;
+        authEventVersion += 1;
+        applySession(nextSession);
+      },
+    );
+
+    void (async () => {
+      const bootstrapVersion = authEventVersion;
+      const {
+        data: { session: storedSession },
+      } = await client.auth.getSession();
+
+      if (!active || authEventVersion !== bootstrapVersion) return;
+      if (!storedSession) {
+        applySession(null);
+        return;
+      }
+
+      const {
+        data: { user },
+        error,
+      } = await client.auth.getUser(storedSession.access_token);
+
+      if (!active || authEventVersion !== bootstrapVersion) return;
+
+      const authStatus = error?.status;
+      const storedSessionIsInvalid =
+        !user &&
+        (!error ||
+          authStatus === 400 ||
+          authStatus === 401 ||
+          authStatus === 403);
+
+      if (storedSessionIsInvalid) {
+        queryClient.clear();
+        applySession(null);
+        void client.auth.signOut({ scope: 'local' });
+        return;
+      }
+
+      // A transient Auth service/network failure should not silently sign a
+      // valid user out. Keep the stored session and let /me determine whether
+      // workspace access can be verified.
+      applySession(storedSession);
+    })();
 
     return () => {
       active = false;
-      data.subscription.unsubscribe();
+      authListener.subscription.unsubscribe();
     };
   }, [client, queryClient]);
 
