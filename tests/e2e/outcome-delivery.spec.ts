@@ -355,32 +355,21 @@ test('F5-18 F5-19 F5-40: non-Lead and CAN_EDIT cannot review, accept, reopen or 
   });
 });
 
-test('Individual submission review preserves other pending submissions', async ({
+test('Submission record keeps review decisions at the outcome level', async ({
   page,
 }) => {
   await signIn(page);
   await openDelivery(page);
   await page.getByRole('button', { name: /v2.*Second contribution/ }).click();
-  const response = page.waitForResponse(
-    (response) =>
-      response.url().endsWith('/reviews') &&
-      response.request().method() === 'POST',
-  );
-  await page
-    .getByRole('dialog', { name: 'Submission record' })
-    .getByRole('button', { name: 'Mark submission reviewed' })
-    .click();
-  expect((await response).status()).toBe(201);
-  expect(
-    await prisma.outcomeSubmission.count({
-      where: { outcomeId, reviewStatus: 'REVIEWED' },
-    }),
-  ).toBe(1);
-  expect(
-    await prisma.outcomeSubmission.count({
-      where: { outcomeId, reviewStatus: 'FOR_REVIEW' },
-    }),
-  ).toBe(1);
+
+  const dialog = page.getByRole('dialog', { name: 'Submission record' });
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByRole('button', { name: 'Mark submission reviewed' }),
+  ).toHaveCount(0);
+  await expect(
+    dialog.getByRole('button', { name: 'Continue to outcome review' }),
+  ).toBeVisible();
 });
 
 test('F5-17 F5-20: Lead reviews combined history and requests revision with required feedback', async ({
