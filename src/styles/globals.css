@@ -593,7 +593,7 @@ button:disabled {
   padding: 16px 14px 13px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid rgba(255, 255, 255, 0.92);
   border-radius: 30px;
   background: rgba(255, 252, 249, 0.36);
@@ -855,8 +855,8 @@ button:disabled {
 }
 .account-menu {
   position: absolute;
-  right: 0;
-  bottom: calc(100% + 8px);
+  left: calc(100% + 10px);
+  bottom: 0;
   z-index: 140;
   width: 178px;
   padding: 6px;
@@ -867,9 +867,10 @@ button:disabled {
 }
 .account-menu button {
   width: 100%;
-  min-height: 34px;
+  min-height: 36px;
   display: flex;
   align-items: center;
+  gap: 9px;
   padding: 0 10px;
   border: 0;
   border-radius: 9px;
@@ -881,6 +882,24 @@ button:disabled {
   text-align: left;
   cursor: pointer;
 }
+.account-menu-icon {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  flex: 0 0 18px;
+  place-items: center;
+  border-radius: 6px;
+  color: #796b64;
+}
+.account-menu-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .account-menu button:hover {
   background: #f4ece7;
 }
@@ -890,6 +909,9 @@ button:disabled {
   background: #eadfd9;
 }
 .account-menu .account-menu-signout {
+  color: #a43f27;
+}
+.account-menu .account-menu-signout .account-menu-icon {
   color: #a43f27;
 }
 .account-menu .account-menu-signout:hover {
@@ -1590,6 +1612,11 @@ button:disabled {
     flex-direction: column;
     text-align: center;
     padding: 25px 18px;
+  }
+  .account-menu {
+    left: 0;
+    right: auto;
+    bottom: calc(100% + 8px);
   }
   .profile-drawer {
     inset: 0;
