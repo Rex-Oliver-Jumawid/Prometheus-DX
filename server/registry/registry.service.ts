@@ -87,6 +87,48 @@ export class RegistryService {
     return this.toDepartment(updated);
   }
 
+  async deleteDepartment(departmentId: string): Promise<{ id: string }> {
+    const department = await this.prisma.department.findUnique({
+      where: { id: departmentId },
+      select: {
+        id: true,
+        _count: {
+          select: {
+            members: true,
+            projects: true,
+            outcomes: true,
+          },
+        },
+      },
+    });
+    if (!department) throw new NotFoundException('Department not found.');
+
+    if (
+      department._count.members > 0 ||
+      department._count.projects > 0 ||
+      department._count.outcomes > 0
+    ) {
+      throw new ConflictException(
+        'This department is still in use. Reassign its members and remove it from projects and outcomes before deleting it.',
+      );
+    }
+
+    try {
+      await this.prisma.department.delete({ where: { id: departmentId } });
+      return { id: departmentId };
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
+        throw new ConflictException(
+          'This department is still in use. Remove its references before deleting it.',
+        );
+      }
+      throw error;
+    }
+  }
+
   async listMembers(): Promise<RegistryMember[]> {
     const members = await this.prisma.member.findMany({
       include: { department: true },
