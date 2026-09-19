@@ -17,6 +17,7 @@ import {
   type UpdateMemberRequest,
 } from '../../../shared/contracts/registry';
 import { apiFetch } from '../../lib/api';
+import { projectCreateOptionsQuery } from '../projects/project-queries';
 import {
   registryOverviewQuery,
   registryOverviewQueryKey,
@@ -751,6 +752,14 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
   const departments = { ...overview, data: overview.data?.departments ?? [] };
   const members = { ...overview, data: overview.data?.members ?? [] };
 
+  const refreshProjectCreateOptions = () => {
+    if (!accessToken) return;
+    void queryClient.fetchQuery({
+      ...projectCreateOptionsQuery(accessToken),
+      staleTime: 0,
+    });
+  };
+
   const saveDepartment = useMutation({
     mutationFn: ({ departmentId, request }: SaveDepartmentInput) =>
       apiFetch(
@@ -780,6 +789,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
               }
             : current,
       );
+      refreshProjectCreateOptions();
       setDialogState(null);
     },
   });
@@ -814,6 +824,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
           };
         },
       );
+      refreshProjectCreateOptions();
       setMemberDialogState(null);
     },
   });
