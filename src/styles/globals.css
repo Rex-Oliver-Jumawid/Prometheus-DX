@@ -1562,6 +1562,22 @@ button:disabled {
     width: 100%;
     border-radius: 0;
   }
+  .profile-settings-header {
+    min-height: 96px;
+    padding: 20px 18px 16px;
+  }
+  .profile-settings-scroll {
+    padding: 18px;
+  }
+  .profile-settings-grid {
+    grid-template-columns: 1fr;
+  }
+  .profile-field-wide {
+    grid-column: auto;
+  }
+  .profile-settings-footer {
+    padding: 14px 18px 16px;
+  }
   .signout-panel {
     align-items: flex-start;
     flex-direction: column;
