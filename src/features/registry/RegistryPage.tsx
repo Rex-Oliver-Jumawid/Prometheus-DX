@@ -470,7 +470,6 @@ function MemberDialog({
     register,
     reset,
     setError,
-    setFocus,
     setValue,
     watch,
   } = useForm<MemberFormValues>({
@@ -523,11 +522,13 @@ function MemberDialog({
       status: member?.status ?? 'INVITED',
     });
     setDepartmentSearch(nextDepartmentName);
-    setFullNameSuggestionsOpen(state.mode === 'create');
+    setFullNameSuggestionsOpen(false);
     setActiveMemberSuggestion(0);
-    const focusFrame = window.requestAnimationFrame(() => setFocus('fullName'));
+    const focusFrame = window.requestAnimationFrame(() =>
+      dialogRef.current?.focus(),
+    );
     return () => window.cancelAnimationFrame(focusFrame);
-  }, [departments, member, reset, setFocus]);
+  }, [departments, member, reset]);
 
   useEffect(() => {
     setActiveMemberSuggestion(0);
@@ -616,6 +617,7 @@ function MemberDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="member-dialog-title"
+        tabIndex={-1}
       >
         <header className="registry-dialog-header">
           <div>
@@ -654,7 +656,6 @@ function MemberDialog({
                   state.mode === 'create' ? fullNameSuggestionsOpen : undefined
                 }
                 role={state.mode === 'create' ? 'combobox' : undefined}
-                autoFocus
                 autoComplete="off"
                 onFocus={() => {
                   if (state.mode === 'create') setFullNameSuggestionsOpen(true);
