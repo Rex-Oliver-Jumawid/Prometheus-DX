@@ -18,6 +18,30 @@ const LoginSchema = z.object({
 });
 type LoginValues = z.infer<typeof LoginSchema>;
 
+function PasswordVisibilityIcon({ visible }: { visible: boolean }) {
+  return (
+    <svg
+      className="password-visibility-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      {visible ? (
+        <>
+          <path d="m3 3 18 18" />
+          <path d="M10.6 6.2A11.3 11.3 0 0 1 12 6c6.5 0 10 6 10 6a17 17 0 0 1-3.1 3.8" />
+          <path d="M6.2 6.2C3.4 8 2 12 2 12s3.5 6 10 6c1 0 2-.2 2.8-.5" />
+          <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+        </>
+      ) : (
+        <>
+          <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+          <circle cx="12" cy="12" r="2.6" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 export function GoogleIcon() {
   return (
     <svg className="google-icon" viewBox="0 0 18 18" aria-hidden="true">
@@ -183,9 +207,10 @@ export function LoginPage() {
                 <button
                   type="button"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  title={showPassword ? 'Hide password' : 'Show password'}
                   onClick={() => setShowPassword((value) => !value)}
                 >
-                  {showPassword ? 'Hide' : 'Show'}
+                  <PasswordVisibilityIcon visible={showPassword} />
                 </button>
               </div>
               {errors.password && (
