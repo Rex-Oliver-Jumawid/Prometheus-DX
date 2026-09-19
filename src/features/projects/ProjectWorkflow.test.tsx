@@ -225,8 +225,79 @@ describe('ProjectWorkflow Stage & Outcome Deletion', () => {
       screen.queryByRole('link', { name: 'Verify prerequisite' }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('link', { name: 'Skip dependency' }),
+      screen.queryByRole('button', { name: 'Skip dependency' }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Prerequisite complete'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Continue to next outcome →' }),
+    ).toHaveAttribute(
+      'href',
+      `/projects/${projectId}/outcomes/99999999-9999-4999-8999-999999999999`,
+    );
+  });
+
+  it('opens the dependency override modal directly from the board', async () => {
+    const dependencyId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const prerequisiteTitle = 'Prototype approved';
+    const dependentTitle = 'Production rollout';
+
+    const dependencyWorkflow: ProjectWorkflowResponse = {
+      ...workflowFixture,
+      stages: [
+        {
+          ...workflowFixture.stages[0],
+          outcomes: [
+            {
+              ...workflowFixture.stages[0].outcomes[0],
+              title: prerequisiteTitle,
+            },
+            {
+              ...workflowFixture.stages[0].outcomes[0],
+              id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+              title: dependentTitle,
+              position: 1,
+              isLocked: true,
+              prerequisites: [
+                {
+                  id: outcomeId,
+                  dependencyId,
+                  title: prerequisiteTitle,
+                  lifecycleStatus: 'OPEN',
+                  resolved: false,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path === `/projects/${projectId}/workflow`) {
+        return Promise.resolve(dependencyWorkflow);
+      }
+      return Promise.resolve({ success: true });
+    });
+
+    renderWorkflow();
+
+    const skip = await screen.findByRole('button', {
+      name: 'Skip dependency',
+    });
+    fireEvent.click(skip);
+
+    const dialog = screen.getByRole('dialog', { name: 'Skip dependency' });
+    expect(dialog).toBeInTheDocument();
+    expect(
+      screen.getByText('Bypass this prerequisite only'),
+    ).toBeInTheDocument();
+    expect(screen.getByText(prerequisiteTitle)).toBeInTheDocument();
+    expect(screen.getByText(dependentTitle)).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Confirm skip dependency' }),
+    ).toBeInTheDocument();
   });
 
   it('renders X delete controls on manageable stages and outcomes', async () => {
