@@ -203,6 +203,36 @@ File access, Registry operations, project actions, and workflow transitions must
 
 After a meaningful change, run the smallest relevant verification first and expand according to the change surface.
 
+### Agent browser-test budget
+
+During normal implementation and debugging, do not run the entire Chromium suite by default.
+
+Agents must not run `pnpm test:e2e`, `pnpm verify:e2e`, `pnpm verify:release`, or a bare `pnpm exec playwright test` during the normal inner loop unless one of the broad-gate conditions below applies.
+
+Start browser verification with the guarded focused runner:
+
+```bash
+pnpm test:e2e:focused -- tests/e2e/<relevant>.spec.ts -g "<relevant journey>"
+```
+
+The focused runner requires at least one explicit Playwright spec, accepts at most three spec files, forces Chromium, uses compact output, and stops after the first failure by default.
+
+Prefer one spec and one matching `-g` journey first.
+
+Expand to at most three directly affected specs only when the change surface justifies it.
+
+If verification appears to require more than three Playwright specs or a large portion of the E2E suite, stop and identify why broader regression is needed before running it.
+
+A full Chromium suite is appropriate only when the user explicitly requests it, when a phase or merge gate genuinely requires broad browser regression, when shared authentication/routing/shell/persistence changes make focused coverage insufficient, or in CI.
+
+Firefox and WebKit remain release-level checks unless the task is specifically browser compatibility work.
+
+Do not rerun a broad suite after a small follow-up fix when the failed or affected focused path can prove the correction first.
+
+When reporting test results, summarize the command, pass/fail result, and relevant failures.
+
+Do not paste long successful Playwright logs into the final report or agent context.
+
 Use the lowest test layer that proves the behavior reliably.
 
 The default ownership is:
@@ -255,9 +285,11 @@ pnpm verify:release
 
 Use `pnpm verify` for the normal non-browser repository gate.
 
-Use `pnpm verify:e2e` when Chromium browser regression is required for a phase or change.
+Use `pnpm verify:e2e` only for an intentional broad Chromium gate after focused browser verification has already passed.
 
 Use `pnpm verify:release` for release-level Firefox and WebKit confidence rather than the normal development loop.
+
+During ordinary feature work, use `pnpm test:e2e:focused -- <spec> [-g <journey>]` instead of `pnpm test:e2e`.
 
 Use focused unit, component, service, API, or Chromium tests before these broad gates whenever a smaller check can provide faster feedback.
 
