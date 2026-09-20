@@ -143,6 +143,16 @@ Completed browser-visible slice
 -> focused Chromium Playwright path
 ```
 
+During implementation, use the guarded focused command rather than the full E2E suite:
+
+```bash
+pnpm test:e2e:focused -- tests/e2e/<relevant>.spec.ts -g "<relevant journey>"
+```
+
+Do not run `pnpm test:e2e` or `pnpm verify:e2e` in the normal inner loop merely because Playwright coverage exists.
+
+Reserve those broad commands for the phase or merge gate when broad Chromium regression is intentionally required.
+
 Expand verification according to the change surface.
 
 Authentication, authorization, persistence, routing, and shared infrastructure require broader regression than an isolated visual change.
