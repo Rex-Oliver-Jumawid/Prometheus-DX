@@ -98,13 +98,23 @@ Formatting remains a separate explicit check until the current stylesheet and UI
 pnpm format:check
 ```
 
-Run Chromium Playwright verification for routing, authentication, persistence, critical workflow, or real browser behavior changes:
+For normal development, run only the directly affected Chromium journey:
+
+```bash
+pnpm test:e2e:focused -- tests/e2e/<relevant>.spec.ts -g "<relevant journey>"
+```
+
+The focused runner requires an explicit spec file and accepts at most three specs so routine agent work cannot accidentally launch the entire browser suite.
+
+Start with one spec and one `-g` filter when practical.
+
+Use the full Chromium suite only for an intentional broad regression gate:
 
 ```bash
 pnpm test:e2e
 ```
 
-Use the combined non-browser and Chromium gate for phase completion or broad browser-impacting work:
+Use the combined non-browser and Chromium gate for phase completion, merge-level shared-infrastructure changes, or other deliberately broad browser-impacting work:
 
 ```bash
 pnpm verify:e2e
