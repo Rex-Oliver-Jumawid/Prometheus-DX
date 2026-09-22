@@ -1,6 +1,6 @@
 ---
 name: prometheus-ui-implementation
-description: Use when implementing or substantially changing Prometheus user-facing UI. Treats .model/finalmodel.html as the prototype source of truth and Figma as a supporting implementation helper while preserving production security and architecture.
+description: Use when implementing or substantially changing Prometheus user-facing UI. Treats the current Figma design as the source of truth for UI layout and visual design, with HTML prototypes as interaction references and canonical requirements preserving production security and architecture.
 ---
 
 # Prometheus UI Implementation
@@ -9,48 +9,42 @@ Use this workflow for pages, components, navigation, drawers, modals, responsive
 
 Read `.context/ui-reference.md` before substantial UI work.
 
-## 1. Start from the functional prototype
+## 1. Start from the current Figma frame
 
-For the main authenticated application, `.model/finalmodel.html` is the prototype source of truth.
+For user-facing layout and visual design, the current Prometheus Figma file is the source of truth.
 
-The goal is to turn that prototype into the real working Prometheus application.
+Inspect the exact target frame with the connected Figma integration before implementing the production screen.
 
-Do not treat it as loose inspiration.
+Do not treat Figma as loose inspiration.
 
-Inspect the relevant prototype workflow before implementing the production screen.
-
-When practical, run and interact with the prototype instead of only reading its source.
-
-Assume user-visible behavior demonstrated by the prototype should exist in production unless the user explicitly changes that product decision.
-
-Capture all relevant details, including where applicable:
+Capture all relevant visual details, including where applicable:
 
 - page and screen composition
-- navigation flow and destinations
-- visible fields
-- buttons and actions
-- tabs and toggles
-- drawers and modals
-- backdrop, Escape, and close behavior
-- expandable and collapsible regions
-- scrolling behavior
-- state changes visible to the user
-- loading, empty, success, and error presentation demonstrated by the prototype
-- repeated open and close behavior
-- profile and settings interactions
-- sidebar behavior
-- interaction sequencing
-- functional relationships between controls
+- application-shell layout
+- navigation placement and grouping
+- visible fields and controls
+- cards, panels, drawers, and modals
+- scrolling regions
+- responsive hierarchy
+- spacing
+- typography
+- colors
+- icons
+- component sizing
+- visual state treatment
+- profile and sidebar placement
 
-If production differs from `finalmodel.html`, do not automatically preserve the production difference.
+If production differs from the current Figma frame, do not automatically preserve the production difference.
 
 Treat the difference as something to reconcile.
 
-Authentication-specific user-visible behavior should follow `.model/login-page.html`.
+Use `.model/finalmodel.html` and `.model/login-page.html` only for interaction and workflow details that the target Figma frame does not fully express.
+
+When practical, run and interact with those prototypes to understand missing behavioral detail without copying their older layout.
 
 ## 2. Preserve the experience, not the prototype implementation technique
 
-The prototype is authoritative for the intended application experience, but its JavaScript and DOM are not production architecture.
+Figma is authoritative for current layout and visual design, while the HTML prototypes may supply interaction detail that is not fully represented by a static frame.
 
 Do not copy prototype JavaScript state, mock data, DOM structure, local persistence, or frontend-only permission checks as the real implementation.
 
@@ -64,13 +58,11 @@ If a prototype feature requires a field, state, or relationship missing from the
 
 Identify the mismatch and reconcile the requirements and persistence model before continuing.
 
-## 3. Use Figma as a helper, not the source of truth
+## 3. Use Figma as the visual source of truth
 
-Figma is a supporting visual implementation reference.
+Figma owns current UI layout and visual design.
 
-It should help the agent inspect details that are easier to extract from structured design data than from the HTML prototype.
-
-Use Figma for things such as:
+Use the live Figma connection to inspect:
 
 - measurements
 - spacing
@@ -81,48 +73,52 @@ Use Figma for things such as:
 - component details
 - frame structure
 - screenshots
-- fine visual alignment
+- visual alignment
+- navigation placement
+- responsive intent
 
-When Figma and `.model/finalmodel.html` disagree about the application experience, follow `finalmodel.html` unless an explicit newer product decision says otherwise.
+When Figma and an HTML prototype disagree about layout or visual presentation, follow Figma.
 
-Do not redesign prototype behavior merely to match an inconsistent Figma frame.
+Do not reintroduce an older prototype-only control merely because it still exists in historical code or documentation.
 
 ### Figma MCP / connected integration
 
-For better visual accuracy, configure Figma MCP or an equivalent connected Figma integration when available.
+The connected Figma integration should be used for substantial Prometheus UI work.
 
-The integration should be able to access the target Prometheus Figma file and the specific node or frame relevant to the implementation.
+Inspect the specific frame relevant to the implementation rather than relying only on a pasted URL or screenshot.
 
-Use the live connection to inspect design context, screenshots, variables, dimensions, components, and node structure instead of relying only on a pasted URL.
+If the Figma connection is unavailable or cannot access the file, state that limitation explicitly and do not claim live Figma inspection occurred.
 
-If the Figma connection is unavailable or cannot access the file, state that limitation explicitly.
+Current Prometheus Figma file:
 
-Do not claim live Figma inspection occurred when it did not.
-
-Lack of Figma access does not make `finalmodel.html` secondary and does not block implementation when the prototype contains the required interaction and design reference.
-
-Current Prometheus Figma helper reference:
-
-`https://www.figma.com/design/8zgQ4pcWtku7rSWzjlP9K9/Prometheus?node-id=17-4603&t=9bvq2LAHiC0GPJs7-1`
+`https://www.figma.com/design/8zgQ4pcWtku7rSWzjlP9K9/Prometheus`
 
 File key: `8zgQ4pcWtku7rSWzjlP9K9`
 
-Starting node: `17:4603`
+Current Phase 7 frame references:
 
-If the current phase or `.docs/CURRENT.md` provides a more specific Figma node, inspect that node as a helper for the relevant screen.
+- Home: `189:3`
+- Notifications: `11:2301`
+
+The current Figma shell places Notifications in the lower sidebar utility area with an unread badge.
+
+Do not add a separate top-right notification bell or notification control unless a newer explicit product decision changes the layout.
+
+If the current phase or `.docs/CURRENT.md` provides another specific Figma node, inspect that node for the relevant screen.
 
 ## 4. Resolve conflicts correctly
 
 Apply this order when implementation references disagree:
 
-1. `.model/finalmodel.html` owns the intended user-visible prototype behavior and main application experience.
-2. `.model/login-page.html` owns the authentication-screen prototype experience.
-3. SRS and `user-flows.md` define business and authorization intent that production must enforce securely behind that experience.
-4. `data-model.md` defines the current persistence model, but a mismatch with a required prototype feature must be reconciled rather than solved by silently deleting the feature.
+1. SRS and `user-flows.md` define functional, workflow, and authorization intent that production must enforce securely.
+2. Figma owns current UI layout, visual composition, navigation placement, and visual design.
+3. `.model/finalmodel.html` and `.model/login-page.html` provide interaction detail where the target Figma frame does not fully specify behavior.
+4. `data-model.md` defines the current persistence model, but a mismatch with a required feature must be reconciled rather than solved by silently deleting the feature.
 5. `tech-stack.md` owns production architecture.
-6. Figma is a helper for visual implementation detail.
 
-If a real security or data-integrity conflict remains, surface it explicitly and resolve it instead of silently changing the prototype behavior or weakening backend safeguards.
+If a real behavioral conflict remains, resolve it against canonical requirements or a newer explicit product decision.
+
+If a real security or data-integrity conflict remains, surface it explicitly and resolve it instead of weakening backend safeguards.
 
 ## 5. Reuse canonical assets
 
@@ -153,13 +149,13 @@ General boundaries:
 
 Do not duplicate persistent server-managed business state into frontend-only stores.
 
-## 7. Treat prototype fidelity as part of correctness
+## 7. Treat Figma fidelity as part of correctness
 
 Inspect the production implementation in a real browser whenever possible.
 
-Compare the working application directly against the relevant workflow in `finalmodel.html`.
+Compare the working application directly against the relevant current Figma frame.
 
-Use Figma as an additional helper for fine visual comparison when available.
+Use the HTML prototype only to verify interaction or workflow details that are not fully expressed by the Figma frame.
 
 Check:
 
@@ -185,9 +181,9 @@ Check:
 - icon consistency
 - visual hierarchy
 
-An unexplained user-visible difference from the prototype should be treated as a defect or unresolved product conflict.
+An unexplained visual difference from Figma or behavioral difference from the canonical workflow should be treated as a defect or unresolved product conflict.
 
-Do not preserve an obvious accidental prototype bug when it clearly contradicts an explicit user decision, security requirement, or later documented correction.
+Do not preserve an obvious accidental prototype behavior when it clearly contradicts Figma, an explicit user decision, a security requirement, or a later documented correction.
 
 ## 8. Verify responsive behavior
 
@@ -207,13 +203,13 @@ Watch for accidental overflow caused by:
 
 Collapsed navigation must remain usable and important actions must remain discoverable.
 
-Fixed-height areas may use intentional internal scrolling when that matches the prototype behavior.
+Fixed-height areas may use intentional internal scrolling when that matches the Figma layout or an explicitly documented interaction.
 
 ## 9. Handle overlays correctly
 
 For modals and drawers:
 
-- Match the interaction demonstrated in `finalmodel.html`.
+- Match the Figma overlay layout and use the interaction reference or canonical workflow for behavior that a static frame does not show.
 - Keep modal content inside an overlay rather than normal page flow.
 - Use internal scrolling when content exceeds the intended height.
 - Keep drawers attached to the intended screen edge.
