@@ -4,6 +4,7 @@ import { AccountSetupPage } from '../features/auth/AccountSetupPage';
 import { AuthGate } from '../features/auth/AuthGate';
 import { LoginPage } from '../features/auth/LoginPage';
 import { FoundationPage } from '../features/foundation/FoundationPage';
+import { HomePage } from '../features/home/HomePage';
 import { ProjectsPage } from '../features/projects/ProjectsPage';
 import { NotFoundPage } from '../features/foundation/NotFoundPage';
 import { AppShell } from '../features/shell/AppShell';
@@ -34,7 +35,7 @@ export const router = createBrowserRouter([
       {
         element: <AppShell />,
         children: [
-          { path: '/', element: <PlaceholderPage title="Home" /> },
+          { path: '/', element: <HomePage /> },
           { path: '/projects', element: <ProjectsPage /> },
           { path: '/projects/:projectId', lazy: loadProjectOverviewRoute },
           {
