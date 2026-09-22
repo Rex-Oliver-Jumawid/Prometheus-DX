@@ -8,16 +8,19 @@ Prometheus is an internal web application for project delivery, open internal pr
 
 Phases 00 through 04 are complete.
 
-Phase 05 - Outcome Work, Submission, Review, and Dependencies - is in progress.
+Phase 05 - Outcome Work, Submission, Review, and Dependencies - remains in progress because final acceptance and regression are still pending.
 
-The current Phase 05 implementation includes persisted Features and Tasks, output drafts and shared submissions, Project Lead review and revision flows, Outcome acceptance and reopening, dependency handling, and perceived-latency improvements for project navigation and access updates.
+Phase 06 - Schedule, Work Sessions, and Team - is complete and is present on `main`.
 
-Phase 05 is not yet closed.
-Final race, stale-history, read-state, visual, and complete regression/acceptance checks remain outstanding.
+Phase 07 - Notifications and Home - is in progress.
 
-Phases 06 through 09 have not started.
+The current Phase 07 slice is Notifications.
 
-See `.docs/phases/README.md` for the current high-level status index and `.docs/phases/phase-05-work-review.md` for the active implementation record.
+Phase 07 Home is planned as a separate slice after Notifications is stable.
+
+Phases 08 and 09 have not started.
+
+See `.docs/phases/README.md` for the canonical high-level status index, `.docs/CURRENT.md` for the current handoff, and `.docs/phases/phase-07-notifications-home.md` for the active Phase 07 implementation record.
 
 ## Repository structure
 
@@ -186,7 +189,9 @@ pnpm format
 
 Use the matching `.testcases/phase-XX-*.md` file as the acceptance gate for the phase being delivered.
 
-The active Phase 05 acceptance file is `.testcases/phase-05-work-review-tests.md`.
+The active Phase 07 acceptance file is `.testcases/phase-07-notifications-home-tests.md`.
+
+Phase 05 remains open and still uses `.testcases/phase-05-work-review-tests.md` for its pending closure work.
 
 ## Environment security
 
