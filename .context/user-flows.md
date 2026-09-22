@@ -10,7 +10,9 @@ The Software Requirements Specification remains the source of truth for function
 
 The tech stack document remains the source of truth for implementation architecture.
 
-`finalmodel.html` is an interaction prototype and must not be treated as the production authorization mechanism.
+The current Prometheus Figma file is the source of truth for UI layout, visual composition, and navigation placement.
+
+`finalmodel.html` is an interaction prototype and must not be treated as the production authorization mechanism or as an override of current Figma layout.
 
 ---
 
@@ -260,6 +262,8 @@ Home
  |
  +-> Team
  |
+ +-> Reports & Analytics
+ |
  +-> Notifications
  |
  +-> Profile
@@ -267,6 +271,16 @@ Home
  +-> Registry
        Administrator only
 ```
+
+The current Figma shell groups Home, Projects, VisiWork, Schedule, Team, and Reports & Analytics as primary sidebar navigation.
+
+Registry and Notifications are lower sidebar utilities, with Registry visible only to Administrators.
+
+The signed-in profile control is at the bottom of the sidebar.
+
+Notifications may show an unread-count badge in the sidebar utility item.
+
+Do not add a separate top-right notification bell or duplicate notification control unless a newer explicit product decision changes the layout.
 
 All active authorized Prometheus users may access the normal Prometheus workspace.
 
