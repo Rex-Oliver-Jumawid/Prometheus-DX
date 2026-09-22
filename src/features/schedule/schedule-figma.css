@@ -78,6 +78,7 @@
 .schedule-calendar-editing .editor-day-header.rest-day span{color:#8b807b}
 .schedule-calendar-block.editable{cursor:grab;touch-action:none;user-select:none;padding-bottom:14px}
 .schedule-calendar-block.editable:active{cursor:grabbing}
+.schedule-calendar-block.editable.dragging{z-index:8;box-shadow:0 12px 26px rgba(84,45,28,.22);transform:scale(1.015)}
 .schedule-calendar-block.editable.selected{outline:2px solid rgba(244,81,30,.55);outline-offset:2px;z-index:6}
 .schedule-calendar-block.editable:focus-visible{outline:3px solid #e86e37;outline-offset:2px}
 .schedule-resize-handle{position:absolute;bottom:3px;left:8px;right:8px;height:8px;border-radius:999px;background:rgba(244,81,30,.29);cursor:ns-resize;touch-action:none}

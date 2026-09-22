@@ -88,6 +88,32 @@ function renderPage() {
   );
 }
 
+function mockExistingSchedule(schedule: MemberSchedule = savedSchedule) {
+  mocks.apiFetch.mockImplementation(
+    (
+      path: string,
+      _schema: unknown,
+      options?: { method?: string; body?: unknown },
+    ) => {
+      if (path === '/schedule/team') return Promise.resolve(teamResponse(schedule));
+      if (path === '/schedule/me' && options?.method === 'PUT') {
+        return Promise.resolve({
+          ...schedule,
+          ...(options.body as object),
+          blocks: (
+            (options.body as { blocks: MemberSchedule['blocks'] }).blocks ?? []
+          ).map((block, index) => ({
+            ...block,
+            id: `44444444-4444-4444-8444-${String(index + 1).padStart(12, '0')}`,
+          })),
+        });
+      }
+      if (path === '/schedule/me') return Promise.resolve({ schedule });
+      throw new Error(`Unexpected request: ${path}`);
+    },
+  );
+}
+
 describe('SchedulePage', () => {
   beforeEach(() => {
     mocks.apiFetch.mockReset();
@@ -279,31 +305,42 @@ describe('SchedulePage', () => {
     expect(screen.queryByText('Schedule save failed.')).not.toBeInTheDocument();
   });
 
-  it('shows overlap validation without sending an invalid update', async () => {
+  it('rejects a button adjustment that would overlap another own block', async () => {
     const user = userEvent.setup();
+    const twoBlockSchedule: MemberSchedule = {
+      ...savedSchedule,
+      targetWeeklyMinutes: 420,
+      blocks: [
+        { ...savedSchedule.blocks[0], startTime: '09:00', endTime: '12:00' },
+        {
+          id: '66666666-6666-4666-8666-666666666666',
+          weekday: 'MONDAY',
+          startTime: '13:00',
+          endTime: '17:00',
+        },
+      ],
+    };
+    mockExistingSchedule(twoBlockSchedule);
     renderPage();
 
-    await screen.findByRole('heading', {
-      name: 'Your schedule is ready to configure',
-    });
+    await screen.findByRole('heading', { name: 'Schedule' });
+    await user.click(screen.getByRole('button', { name: 'Configure My Schedule' }));
     await user.click(
-      screen.getAllByRole('button', { name: 'Configure My Schedule' })[0],
+      screen.getByRole('button', {
+        name: /Select Monday schedule block, 9:00 AM to 12:00 PM/,
+      }),
     );
-    await user.click(screen.getByRole('button', { name: 'Add Block' }));
-    await user.click(screen.getByRole('button', { name: 'Add Block' }));
-    await user.click(screen.getByRole('button', { name: 'Save Schedule' }));
+    await user.click(screen.getByRole('button', { name: 'Later' }));
+    expect(screen.getByText(/Monday · 10:00 AM.*1:00 PM · 3h/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Later' }));
 
     expect(
-      await screen.findByText(
-        'Schedule blocks on the same day cannot overlap.',
+      screen.getByText(
+        'Cannot move or resize this block: it would overlap another of your blocks.',
       ),
     ).toBeInTheDocument();
-    expect(
-      mocks.apiFetch.mock.calls.some(
-        ([path, , options]) =>
-          path === '/schedule/me' && options?.method === 'PUT',
-      ),
-    ).toBe(false);
+    expect(screen.getByText(/Monday · 10:00 AM.*1:00 PM · 3h/)).toBeInTheDocument();
   });
 
 
@@ -369,4 +406,163 @@ describe('SchedulePage', () => {
       await screen.findByRole('heading', { name: 'Schedule' }),
     ).toBeInTheDocument();
   });
+
+  it('drags an own block across days and time, then resizes it from the bottom handle', async () => {
+    mockExistingSchedule();
+    const { container } = renderPage();
+
+    await screen.findByRole('heading', { name: 'Schedule' });
+    fireEvent.click(screen.getByRole('button', { name: 'Configure My Schedule' }));
+
+    const original = screen.getByRole('button', {
+      name: /Select Monday schedule block, 9:00 AM to 5:00 PM/,
+    });
+    const stage = container.querySelector('.schedule-calendar-stage');
+    expect(stage).not.toBeNull();
+
+    fireEvent.pointerDown(original, {
+      pointerId: 1,
+      button: 0,
+      clientX: 100,
+      clientY: 100,
+    });
+    fireEvent.pointerMove(stage!, {
+      pointerId: 1,
+      clientX: 230,
+      clientY: 144,
+    });
+    fireEvent.pointerUp(stage!, { pointerId: 1, clientX: 230, clientY: 144 });
+
+    const moved = screen.getByRole('button', {
+      name: /Select Tuesday schedule block, 10:00 AM to 6:00 PM/,
+    });
+    expect(moved).toHaveAttribute('aria-pressed', 'true');
+
+    const handle = moved.querySelector('[aria-label="Resize selected schedule block"]');
+    expect(handle).not.toBeNull();
+    fireEvent.pointerDown(handle!, {
+      pointerId: 2,
+      button: 0,
+      clientX: 230,
+      clientY: 144,
+    });
+    fireEvent.pointerMove(stage!, {
+      pointerId: 2,
+      clientX: 230,
+      clientY: 188,
+    });
+    fireEvent.pointerUp(stage!, { pointerId: 2, clientX: 230, clientY: 188 });
+
+    expect(
+      screen.getByRole('button', {
+        name: /Select Tuesday schedule block, 10:00 AM to 7:00 PM/,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Tuesday · 10:00 AM.*7:00 PM · 9h/)).toBeInTheDocument();
+  });
+
+  it('swaps the rest day when an own block is dragged onto a rest day', async () => {
+    mockExistingSchedule();
+    const { container } = renderPage();
+
+    await screen.findByRole('heading', { name: 'Schedule' });
+    fireEvent.click(screen.getByRole('button', { name: 'Configure My Schedule' }));
+
+    const original = screen.getByRole('button', {
+      name: /Select Monday schedule block, 9:00 AM to 5:00 PM/,
+    });
+    const stage = container.querySelector('.schedule-calendar-stage');
+    expect(stage).not.toBeNull();
+
+    fireEvent.pointerDown(original, {
+      pointerId: 3,
+      button: 0,
+      clientX: 100,
+      clientY: 100,
+    });
+    fireEvent.pointerMove(stage!, {
+      pointerId: 3,
+      clientX: 735,
+      clientY: 100,
+    });
+    fireEvent.pointerUp(stage!, { pointerId: 3, clientX: 735, clientY: 100 });
+
+    expect(
+      screen.getByRole('button', {
+        name: /Select Saturday schedule block, 9:00 AM to 5:00 PM/,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Monday: rest day, make workday' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Saturday: workday, make rest day' }),
+    ).toBeInTheDocument();
+  });
+
+  it('rolls back an invalid pointer move that would overlap another own block', async () => {
+    const twoBlockSchedule: MemberSchedule = {
+      ...savedSchedule,
+      targetWeeklyMinutes: 420,
+      blocks: [
+        { ...savedSchedule.blocks[0], startTime: '09:00', endTime: '12:00' },
+        {
+          id: '66666666-6666-4666-8666-666666666666',
+          weekday: 'MONDAY',
+          startTime: '13:00',
+          endTime: '17:00',
+        },
+      ],
+    };
+    mockExistingSchedule(twoBlockSchedule);
+    const { container } = renderPage();
+
+    await screen.findByRole('heading', { name: 'Schedule' });
+    fireEvent.click(screen.getByRole('button', { name: 'Configure My Schedule' }));
+
+    const original = screen.getByRole('button', {
+      name: /Select Monday schedule block, 9:00 AM to 12:00 PM/,
+    });
+    const stage = container.querySelector('.schedule-calendar-stage');
+    expect(stage).not.toBeNull();
+
+    fireEvent.pointerDown(original, {
+      pointerId: 4,
+      button: 0,
+      clientX: 100,
+      clientY: 100,
+    });
+    fireEvent.pointerMove(stage!, {
+      pointerId: 4,
+      clientX: 100,
+      clientY: 276,
+    });
+    fireEvent.pointerUp(stage!, { pointerId: 4, clientX: 100, clientY: 276 });
+
+    expect(
+      screen.getByRole('button', {
+        name: /Select Monday schedule block, 9:00 AM to 12:00 PM/,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'That placement is unavailable. Avoid overlapping your own blocks, or free the source day before swapping onto a rest day.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('keeps overlapping team schedules in separate visual lanes', async () => {
+    mockExistingSchedule();
+    const { container } = renderPage();
+
+    await screen.findByRole('heading', { name: 'Schedule' });
+    const mondayBlocks = container.querySelectorAll(
+      '.schedule-calendar-day[aria-label="Monday"] .schedule-calendar-block',
+    );
+
+    expect(mondayBlocks).toHaveLength(2);
+    expect((mondayBlocks[0] as HTMLElement).style.width).toContain('50%');
+    expect((mondayBlocks[1] as HTMLElement).style.width).toContain('50%');
+  });
+
 });

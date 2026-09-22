@@ -1,4 +1,4 @@
-import { useRef, type CSSProperties, type PointerEvent } from 'react';
+import { useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import {
   WEEKDAYS,
   clockTimeToMinutes,
@@ -46,6 +46,7 @@ type Gesture = {
   initialStart: number;
   initialEnd: number;
   originalBlocks: ScheduleBlockInput[];
+  originalRestDays: Set<Weekday>;
   changed: boolean;
   invalid: boolean;
 };
@@ -72,13 +73,14 @@ export function EditableTeamCalendar({
   restDays: ReadonlySet<Weekday>;
   selectedIndex: number | null;
   onSelect: (index: number | null) => void;
-  onChange: (blocks: ScheduleBlockInput[]) => void;
+  onChange: (blocks: ScheduleBlockInput[], restDays?: ReadonlySet<Weekday>) => void;
   onToggleRest: (day: Weekday) => void;
   onMessage: (message: string) => void;
   disabled?: boolean;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const gestureRef = useRef<Gesture | null>(null);
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const hours = Array.from({ length: 17 }, (_, index) => (7 + index) * 60);
   const teamEntries = members
     .filter((person) => person.id !== currentMemberId)
@@ -110,9 +112,11 @@ export function EditableTeamCalendar({
       initialStart: clockTimeToMinutes(block.startTime),
       initialEnd: clockTimeToMinutes(block.endTime),
       originalBlocks: blocks.map((item) => ({ ...item })),
+      originalRestDays: new Set(restDays),
       changed: false,
       invalid: false,
     };
+    setDraggingIndex(index);
     stageRef.current?.setPointerCapture?.(event.pointerId);
   }
 
@@ -134,7 +138,12 @@ export function EditableTeamCalendar({
         ),
       };
     } else {
-      const dayDelta = Math.round((event.clientX - gesture.clientX) / DAY_WIDTH);
+      const stageWidth = stageRef.current?.getBoundingClientRect().width ?? 0;
+      const dayWidth =
+        stageWidth > TIME_WIDTH
+          ? (stageWidth - TIME_WIDTH) / WEEKDAYS.length
+          : DAY_WIDTH;
+      const dayDelta = Math.round((event.clientX - gesture.clientX) / dayWidth);
       const dayIndex = Math.max(
         0,
         Math.min(6, WEEKDAYS.indexOf(gesture.initialDay) + dayDelta),
@@ -150,9 +159,22 @@ export function EditableTeamCalendar({
         endTime: editorClock(proposedStart + duration),
       };
     }
-    if (restDays.has(candidate.weekday)) {
-      gesture.invalid = true;
-      return;
+    const nextRestDays = new Set(gesture.originalRestDays);
+    if (
+      gesture.mode === 'move' &&
+      candidate.weekday !== gesture.initialDay &&
+      nextRestDays.has(candidate.weekday)
+    ) {
+      const sourceStillHasWork = gesture.originalBlocks.some(
+        (item, otherIndex) =>
+          otherIndex !== index && item.weekday === gesture.initialDay,
+      );
+      if (sourceStillHasWork) {
+        gesture.invalid = true;
+        return;
+      }
+      nextRestDays.delete(candidate.weekday);
+      nextRestDays.add(gesture.initialDay);
     }
     if (!isValidEditorPlacement(gesture.originalBlocks, index, candidate)) {
       gesture.invalid = true;
@@ -168,23 +190,28 @@ export function EditableTeamCalendar({
     if (changed) {
       const next = gesture.originalBlocks.map((item) => ({ ...item }));
       next[index] = candidate;
-      onChange(next);
+      onChange(next, nextRestDays);
     } else {
-      onChange(gesture.originalBlocks);
+      onChange(gesture.originalBlocks, gesture.originalRestDays);
     }
   }
 
   function finishGesture(event: PointerEvent<HTMLDivElement>, cancelled = false) {
     const gesture = gestureRef.current;
     if (!gesture || event.pointerId !== gesture.pointerId) return;
-    if (cancelled) onChange(gesture.originalBlocks);
-    else if (gesture.invalid) {
-      onMessage('That placement is unavailable. Choose a workday and avoid overlapping your own blocks.');
+    if (cancelled || gesture.invalid) {
+      onChange(gesture.originalBlocks, gesture.originalRestDays);
+    }
+    if (gesture.invalid) {
+      onMessage(
+        'That placement is unavailable. Avoid overlapping your own blocks, or free the source day before swapping onto a rest day.',
+      );
     }
     if (stageRef.current?.hasPointerCapture?.(event.pointerId)) {
       stageRef.current.releasePointerCapture(event.pointerId);
     }
     gestureRef.current = null;
+    setDraggingIndex(null);
   }
 
   return (
@@ -282,7 +309,7 @@ export function EditableTeamCalendar({
                           }
                         } : undefined}
                         onPointerDown={own && !disabled ? (event) => startGesture(event, entry.ownIndex!, 'move') : undefined}
-                        className={'schedule-calendar-block' + (own ? ' mine editable' : '') + (isSelected ? ' selected' : '') + (100 / laneCount < 34 ? ' thin' : '')}
+                        className={'schedule-calendar-block' + (own ? ' mine editable' : '') + (isSelected ? ' selected' : '') + (own && entry.ownIndex === draggingIndex ? ' dragging' : '') + (100 / laneCount < 34 ? ' thin' : '')}
                         key={entry.key}
                         style={style}
                         title={entry.name + ': ' + formatClock(editorClock(entry.start)) + ' - ' + formatClock(editorClock(entry.end))}

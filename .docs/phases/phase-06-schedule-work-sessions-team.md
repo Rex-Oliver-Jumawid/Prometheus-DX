@@ -601,3 +601,26 @@ The current `/schedule/me` contract persists recurring blocks and the weekly tar
 Changing a rest day into a workday does not persist a standalone workday unless it receives a scheduled block.
 Lowering the Rest days count releases excess rest days, retaining later days where possible.
 The draft is submitted once through `PUT /schedule/me` when configuration is completed; cancellation discards changes.
+
+
+## 2026-09-22 Interactive Schedule Editor Follow-up
+
+The Figma Schedule configuration states now drive the interactive editor rather than treating the time-input form as the primary workflow.
+The configuration draft keeps block selection, one-hour adjustment controls, pointer dragging, bottom-handle resizing, and rest-day header toggles synchronized with the merged calendar.
+Pointer movement permits overlap with other Members and continues to reject overlap between the current Member's own recurring blocks.
+Dragging an only block onto a rest day swaps the rest designation back to the source day so the configured rest-day count stays coherent.
+A move onto a rest day is rejected when another own block remains on the source day because that source day cannot safely become rest.
+Invalid pointer placements roll back to the gesture's original draft rather than preserving a partially valid intermediate position.
+Horizontal drag distance is derived from the rendered calendar width with the existing fixed geometry retained only as a test and layout fallback.
+
+Rest days remain configuration-draft state because the Phase 6 backend persists recurring Schedule blocks rather than an explicit rest-day entity.
+No migration or API field was added for rest days.
+After a saved schedule is reopened, the editor infers at most the trailing two unscheduled days as the initial rest-day guidance instead of presenting every empty weekday as explicitly persisted rest.
+This avoids claiming that an unsupported rest-day preference was saved independently of recurring blocks.
+
+The initial empty schedule target now matches the interaction reference at 20 hours per week.
+The weekly target input follows the interaction reference range of 1 through 119 whole hours.
+The daily generation input supports up to 16 hours in production because the current PostgreSQL time model stores same-day clock values and cannot represent the prototype's exact 24:00 endpoint as an end time.
+Generation and workday creation shift long blocks earlier when necessary so they remain inside the production 07:00 through 23:00 editable range.
+
+Focused component coverage was expanded for pointer movement, resizing, rest-day swapping, invalid overlap rollback, and cross-Member overlap lanes in addition to the existing generation, selection, adjustment, cancellation, rest-day-limit, save-error, and retry coverage.

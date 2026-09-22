@@ -174,7 +174,7 @@ function defaultFormValues(
           endTime,
         })),
       }
-    : { targetWeeklyMinutes: 2_400, blocks: [] };
+    : { targetWeeklyMinutes: 1_200, blocks: [] };
 }
 
 function weekMinutes(
@@ -343,13 +343,17 @@ export function SchedulePage() {
     mutation.mutate(parsed.data);
   };
 
-  const setDraftBlocks = (next: ScheduleBlockInput[]) => {
+  const setDraftBlocks = (
+    next: ScheduleBlockInput[],
+    nextRestDays?: ReadonlySet<Weekday>,
+  ) => {
     form.setValue('blocks', next, { shouldDirty: true, shouldValidate: true });
+    if (nextRestDays) setRestDays(new Set(nextRestDays));
     setFormError(null);
   };
 
   const generateWeek = () => {
-    const target = Math.max(0, Math.min(10_080, Number.isFinite(targetMinutes) ? targetMinutes : 0));
+    const target = Math.max(60, Math.min(7_140, Number.isFinite(targetMinutes) ? targetMinutes : 60));
     // As in finalmodel.html, generation uses the selected number of rest days
     // and starts with the trailing days of the week; manual toggles apply afterward.
     const generatedRest = new Set<Weekday>(WEEKDAYS.slice(7 - restDayCount));
@@ -372,11 +376,22 @@ export function SchedulePage() {
       next.delete(day);
       setRestDays(next);
       if (!watchedBlocks.some((block) => block.weekday === day)) {
-        const duration = Math.max(60, Math.min(9 * 60, dailyHours * 60));
+        const duration = Math.max(
+          60,
+          Math.min(
+            16 * 60,
+            dailyHours * 60,
+            EDITOR_END_MINUTES - EDITOR_START_MINUTES,
+          ),
+        );
+        const start = Math.max(
+          EDITOR_START_MINUTES,
+          Math.min(14 * 60, EDITOR_END_MINUTES - duration),
+        );
         setDraftBlocks([...watchedBlocks, {
           weekday: day,
-          startTime: '14:00',
-          endTime: editorClock(14 * 60 + duration),
+          startTime: editorClock(start),
+          endTime: editorClock(start + duration),
         }]);
       }
       setEditorMessage(DAY_LABELS[day] + ' is now a workday.');
@@ -762,13 +777,17 @@ export function SchedulePage() {
                   <input
                     aria-label="Hours per week"
                     type="number"
-                    min="0"
-                    max="168"
-                    step="0.5"
+                    min="1"
+                    max="119"
+                    step="1"
                     value={targetMinutes / 60}
-                    onChange={(event) =>
-                      form.setValue('targetWeeklyMinutes', Math.round(Number(event.target.value) * 60), { shouldDirty: true })
-                    }
+                    onChange={(event) => {
+                      const hours = Math.max(
+                        1,
+                        Math.min(119, Math.round(Number(event.target.value) || 1)),
+                      );
+                      form.setValue('targetWeeklyMinutes', hours * 60, { shouldDirty: true });
+                    }}
                   />
                 </label>
                 <label>
@@ -777,10 +796,14 @@ export function SchedulePage() {
                     aria-label="Initial hours per day"
                     type="number"
                     min="1"
-                    max="9"
+                    max="16"
                     step="1"
                     value={dailyHours}
-                    onChange={(event) => setDailyHours(Math.max(1, Math.min(9, Number(event.target.value) || 1)))}
+                    onChange={(event) =>
+                      setDailyHours(
+                        Math.max(1, Math.min(16, Math.round(Number(event.target.value) || 1))),
+                      )
+                    }
                   />
                 </label>
                 <label>
@@ -899,8 +922,15 @@ export function SchedulePage() {
               </div>
               <div className="schedule-form-actions">
                 <button type="button" className="schedule-button" disabled={mutation.isPending} onClick={() => {
-                  form.reset(defaultFormValues(mineQuery.data?.schedule ?? null));
+                  const saved = mineQuery.data?.schedule ?? null;
+                  form.reset(defaultFormValues(saved));
+                  const inferred = initialRestDays(saved?.blocks ?? []);
+                  setRestDays(new Set(inferred));
+                  setRestDayCount(Math.min(6, inferred.length));
+                  setDailyHours(4);
                   setSelectedBlockIndex(null);
+                  setEditorMessage('');
+                  mutation.reset();
                   setConfiguring(false);
                   setFormError(null);
                 }}>Cancel</button>

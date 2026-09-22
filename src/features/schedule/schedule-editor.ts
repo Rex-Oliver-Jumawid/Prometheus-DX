@@ -37,9 +37,15 @@ export function isValidEditorPlacement(
   );
 }
 
-export function initialRestDays(blocks: ScheduleBlockInput[]): Weekday[] {
-  if (!blocks.length) return ['SATURDAY', 'SUNDAY'];
-  return WEEKDAYS.filter((day) => !blocks.some((block) => block.weekday === day));
+export function initialRestDays(
+  blocks: ScheduleBlockInput[],
+  maximum = 2,
+): Weekday[] {
+  if (maximum <= 0) return [];
+  const unscheduled = WEEKDAYS.filter(
+    (day) => !blocks.some((block) => block.weekday === day),
+  );
+  return unscheduled.slice(-Math.min(maximum, unscheduled.length));
 }
 
 export function generateInitialSchedule(
@@ -51,7 +57,10 @@ export function generateInitialSchedule(
   let remainingMinutes = targetMinutes;
   // Match finalmodel.html's 2 PM starting point, shifting earlier if a
   // longer daily block otherwise could not fit in the existing API's range.
-  const start = Math.min(14 * 60, EDITOR_END_MINUTES - dailyMinutes);
+  const start = Math.max(
+    EDITOR_START_MINUTES,
+    Math.min(14 * 60, EDITOR_END_MINUTES - dailyMinutes),
+  );
   for (const weekday of WEEKDAYS) {
     if (restDays.has(weekday) || remainingMinutes <= 0) continue;
     const duration = Math.min(
