@@ -1,22 +1,31 @@
-# Phase 8 Manual Test Cases - VisiWork and Reporting
+# Phase 8 Manual Test Cases - VisiWork and Reports & Analytics
 
 ## Phase Context
 
-VisiWork and reporting should provide management visibility over canonical Prometheus data.
+VisiWork and Reports & Analytics are separate primary-navigation destinations in the current Figma design.
 
-The exact final visual design may evolve, but reported metrics must remain traceable to their source records.
+VisiWork provides the operational visibility view shown by the VisiWork Figma frame.
+
+Reports & Analytics provides management reporting and metric views over canonical Prometheus data.
+
+The current Figma layout is the visual source of truth, while reported metrics must remain traceable to their source records.
 
 Do not create a separate manually synchronized analytics state.
 
 ## Required Pages and Interfaces
 
-- `/visiwork` or final approved route
+- VisiWork as its own primary-navigation page
+- `/visiwork` unless a newer explicit route decision changes it
+- Reports & Analytics as a separate primary-navigation page
+- A dedicated Reports & Analytics route that is distinct from VisiWork
+- Project progress
 - Project health
-- Outcome progress
+- Outcome pipeline
 - Department workload
 - Member workload
 - Team capacity
-- Scheduled versus actual hours
+- Capacity used
+- Scheduled versus actual hours where supported
 - Filters
 - Empty states
 
@@ -117,6 +126,7 @@ Apply these checks to every page in this phase:
 | F8-18 | Manual reconciliation | Pick one report and calculate totals directly from source records. | Report matches exactly. |
 | F8-19 | Refresh | Refresh after data changes. | Metrics remain correct. |
 | F8-20 | Permissions | Open reports as each supported role. | Visibility matches final approved reporting permissions. |
+| F8-21 | VisiWork and Reports separation | Navigate through the primary sidebar. | VisiWork and Reports & Analytics appear as distinct destinations and do not collapse into one page. |
 
 ## Phase 8 Main E2E Flow
 
@@ -126,8 +136,10 @@ Create controlled project data
 -> Accept outcome
 -> Configure schedules
 -> Record work sessions
--> Open VisiWork
+-> Open Reports & Analytics
 -> Reconcile displayed metrics against source records
+-> Open VisiWork
+-> Confirm its operational view remains a distinct destination
 ```
 
 ## Phase 8 Exit Checklist
@@ -138,3 +150,5 @@ Create controlled project data
 - [ ] Empty and zero states are distinct.
 - [ ] Reopened/accepted states do not corrupt historical reporting.
 - [ ] Reporting permissions match final product rules.
+- [ ] VisiWork and Reports & Analytics remain separate primary-navigation destinations.
+- [ ] Both pages follow their current Figma layouts.
