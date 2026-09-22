@@ -25,7 +25,7 @@ See `.docs/phases/README.md` for the current high-level status index and `.docs/
 .agents/skills/ Vendor-neutral reusable workflows for coding agents
 .context/       Product requirements, UI reference policy, user flows, data model, tech stack, and implementation phases
 .docs/phases/   Per-phase implementation journals, decisions, lessons, and final acceptance records
-.model/         Functional HTML prototypes that define the intended application experience
+.model/         HTML interaction and workflow references; Figma owns current UI layout and visual design
 .testcases/     Manual acceptance gates for each implementation phase
 scripts/        Repository health and maintenance scripts
 src/            React application
@@ -44,7 +44,7 @@ Detailed procedures live under `.agents/skills/` and are loaded when relevant:
 
 - `prometheus-phase-delivery` for phase implementation, acceptance, regression, and phase journals.
 - `prometheus-debugging` for diagnosis and root-cause fixes.
-- `prometheus-ui-implementation` for prototype-driven UI implementation, Figma-assisted visual inspection, responsive behavior, accessibility, and browser verification.
+- `prometheus-ui-implementation` for Figma-driven UI implementation, prototype interaction references, responsive behavior, accessibility, and browser verification.
 - `prometheus-database-change` for Prisma schema, migrations, constraints, and persistence changes.
 
 Agents that do not support automatic skill discovery can read the corresponding `SKILL.md` directly because `AGENTS.md` routes each workflow to its file.
@@ -57,21 +57,21 @@ Agents that do not support automatic skill discovery can read the corresponding 
 - `.context/tech-stack.md` defines implementation architecture and technology choices.
 - `.context/phases.md` defines implementation order.
 - `.context/ui-reference.md` defines how the prototype and Figma are used during UI implementation.
-- `.model/finalmodel.html` is the prototype source of truth for the main authenticated application's user-visible behavior and experience.
-- `.model/login-page.html` is the prototype source of truth for the authentication screen experience.
-- Figma is a supporting helper for measurements, visual detail, variables, icons, and frame inspection.
+- Figma is the source of truth for current UI layout, visual composition, navigation placement, spacing, typography, colors, icons, and component appearance.
+- `.model/finalmodel.html` is an interaction and workflow reference for the main authenticated application where Figma does not fully specify behavior.
+- `.model/login-page.html` is an authentication interaction reference where Figma does not fully specify behavior.
 - `.testcases/` contains the manual acceptance gates for each phase.
 - `.docs/phases/` records what was actually implemented, important decisions and challenges, lessons learned, and the final phase result.
 
-The production application is intended to turn `finalmodel.html` into a real working application rather than design a different application inspired by it.
+The production application should implement the approved Figma interface through real application behavior rather than preserve an older prototype layout.
 
-For substantial UI work, inspect the relevant workflow in `finalmodel.html` first.
+For substantial UI work, inspect the relevant Figma frame first with the connected Figma integration.
 
-Everything demonstrated by that workflow should be reflected in production unless the user explicitly changes the product decision.
+Use `finalmodel.html` and `login-page.html` for interaction and workflow details that are not fully expressed by the target Figma frame.
 
-Use Figma MCP or another connected Figma integration as a helper for fine visual implementation details when available.
+When Figma and an HTML prototype disagree about layout or visual presentation, follow Figma.
 
-When Figma and `finalmodel.html` disagree about the application experience, follow `finalmodel.html` unless a newer explicit user decision says otherwise.
+Canonical requirements and user flows still own functionality, workflow rules, and authorization.
 
 Prototype code itself is not production architecture.
 
@@ -204,7 +204,7 @@ The workflow requires agents to read the active phase and canonical requirements
 
 For substantial UI work, also read `.context/ui-reference.md` and use `.agents/skills/prometheus-ui-implementation/SKILL.md`.
 
-Start from the relevant `finalmodel.html` workflow, reproduce that experience in the working application, and use Figma as a supporting visual helper rather than a competing source of truth.
+Start from the relevant current Figma frame, reproduce its layout and visual design in the working application, and use the HTML prototypes only for interaction or workflow details not fully expressed by Figma.
 
 A phase is not complete until its acceptance gate and required regression checks pass and its implementation journal is finalized.
 
