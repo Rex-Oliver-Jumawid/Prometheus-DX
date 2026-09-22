@@ -232,11 +232,18 @@ Intentional loading, error with retry, and per-section empty states are included
 
 Focused Home service and React Testing Library coverage was added for project grouping, summary values, authorization-shaped attention queries, empty states, error handling, and navigation targets.
 
-The Treehouse worktree path supplied for this session was not available in the execution environment, so implementation was performed through the connected GitHub repository rather than a local checkout.
+The Treehouse worktree path supplied for the implementation session was not available in the execution environment, so implementation was performed through the connected GitHub repository rather than a local checkout.
 
-Local test execution and live browser comparison were therefore not claimed as verification evidence from this session.
+Focused local verification was subsequently run by the user from the supplied Treehouse worktree after generating the Prisma Client.
 
-After integration, run the focused Home tests and Chromium Home journey, then compare the rendered page directly with Figma at 1244x682, 1440x900, 900x900, and 390x844.
+Verification evidence:
+
+- `pnpm exec vitest run server/home/home.service.test.ts`: 2/2 Home service tests passed.
+- `pnpm exec vitest run src/features/home/HomePage.test.tsx --config vitest.ui.config.ts`: 4/4 Home React Testing Library tests passed.
+- `pnpm typecheck`: passed after `pnpm prisma:generate`.
+- The earlier Prisma import failures were caused by a missing generated Prisma Client in the worktree rather than by the Home implementation.
+
+Live Chromium and Figma comparison remain to be verified at 1244x682, 1440x900, 900x900, and 390x844.
 
 Notifications remains a separate parallel slice and is not implemented or assumed by this Home branch.
 
