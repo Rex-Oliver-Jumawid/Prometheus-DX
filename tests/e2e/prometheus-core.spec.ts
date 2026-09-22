@@ -523,7 +523,7 @@ test('Core 15 F5-40: Lead overrides only the selected dependency; non-Lead canno
     .click();
   const dialog = lead.getByRole('dialog', { name: 'Skip dependency' });
   await dialog
-    .getByLabel('Reason for dependency override')
+    .getByLabel('Reason for override', { exact: true })
     .fill('Independent evidence makes this prerequisite unnecessary.');
   const response = lead.waitForResponse(
     (response) =>
