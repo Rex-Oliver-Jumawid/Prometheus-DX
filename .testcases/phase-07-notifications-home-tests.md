@@ -8,12 +8,23 @@ Home is a command-center view over existing canonical data.
 
 Home should not create a parallel source of truth for projects, attention items, or work status.
 
+The current visual references are Figma Home node `189:3` and Notifications node `11:2301`.
+
+Notifications are accessed through the lower sidebar utility entry with an unread-count badge when applicable.
+
+Do not add a separate top-right notification bell or notification control.
+
 ## Required Pages and Interfaces
 
 - `/notifications`
+- Notifications layout matching Figma node `11:2301`
 - Read/unread state
+- All and Unread filters
+- Mark all as read
 - Notification detail or navigation
+- Notifications sidebar utility entry with unread-count badge
 - `/`
+- Home layout matching Figma node `189:3`
 - My Project Summary
 - Working Now
 - Needs Attention
@@ -108,6 +119,7 @@ Apply these checks to every page in this phase:
 | F7-22 | Needs Attention overflow | Seed many attention items. | Section scrolls internally without expanding entire layout unexpectedly. |
 | F7-23 | Empty Home sections | Use account with no relevant records. | Each section has intentional empty state. |
 | F7-24 | Home data refresh | Change underlying project/work data, then return to Home. | Home reflects canonical data rather than stale duplicate state. |
+| F7-25 | Figma shell notification placement | Open Home and Notifications and inspect the authenticated shell. | Notifications appears in the lower sidebar utility area with the Figma-defined treatment, and there is no separate top-right notification bell or control. |
 
 ## Phase 7 Main E2E Flow
 
@@ -129,3 +141,6 @@ Member submits output
 - [ ] Home uses real project/work/attention data.
 - [ ] Working Now reflects Work Sessions rather than fake UI state.
 - [ ] Overflow behavior matches the fixed-height dashboard design.
+- [ ] Home matches Figma node `189:3` at the supported reference viewport and preserves the same hierarchy responsively.
+- [ ] Notifications matches Figma node `11:2301` at the supported reference viewport and preserves the same hierarchy responsively.
+- [ ] Notification access uses the sidebar utility entry and does not add a separate top-right bell.
