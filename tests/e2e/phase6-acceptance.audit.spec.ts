@@ -253,6 +253,21 @@ test('Phase 6 loading, error, long-content, and correction visual states', async
   await page.getByText('Fine-tune blocks using time inputs').click();
   await page.getByRole('button', { name: 'Add Block' }).click();
   await page.getByRole('button', { name: 'Add Block' }).click();
+  // Addition picks separate free days, so deliberately move the second block
+  // onto the first to cover the invalid overlapping schedule case.
+  const editorRows = page.locator('.schedule-block-row');
+  const lastRowIndex = (await editorRows.count()) - 1;
+  const earlierRow = editorRows.nth(lastRowIndex - 1);
+  const lastRow = editorRows.nth(lastRowIndex);
+  await lastRow.locator('select').selectOption(
+    await earlierRow.locator('select').inputValue(),
+  );
+  await lastRow.locator('input[type="time"]').nth(0).fill(
+    await earlierRow.locator('input[type="time"]').nth(0).inputValue(),
+  );
+  await lastRow.locator('input[type="time"]').nth(1).fill(
+    await earlierRow.locator('input[type="time"]').nth(1).inputValue(),
+  );
   await page.getByRole('button', { name: 'Done configuring' }).click();
   await expect(page.getByRole('alert')).toContainText(
     'Schedule blocks on the same day cannot overlap',
@@ -262,7 +277,7 @@ test('Phase 6 loading, error, long-content, and correction visual states', async
     fullPage: false,
   });
 
-  await page.getByRole('button', { name: 'Remove block 2' }).click();
+  await page.getByRole('button', { name: `Remove block ${lastRowIndex + 1}` }).click();
   let releaseScheduleSave: (() => void) | undefined;
   const scheduleSaveReleased = new Promise<void>((resolve) => {
     releaseScheduleSave = resolve;

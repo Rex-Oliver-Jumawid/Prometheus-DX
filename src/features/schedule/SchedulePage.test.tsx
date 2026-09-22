@@ -247,6 +247,7 @@ describe('SchedulePage', () => {
       screen.getByRole('heading', { name: 'Configure My Schedule' }),
     ).toBeInTheDocument();
 
+    await user.click(screen.getByText('Fine-tune blocks using time inputs'));
     await user.click(screen.getByRole('button', { name: 'Add Block' }));
     fireEvent.change(screen.getByLabelText('Start'), {
       target: { value: '08:00' },
