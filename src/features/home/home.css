@@ -1,7 +1,11 @@
 .home-page {
   width: 100%;
   max-width: 1120px;
-  margin: 0 auto -16px;
+  height: 100%;
+  min-height: 0;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
   color: #352e2a;
 }
 
@@ -134,10 +138,13 @@
 }
 
 .home-dashboard-grid {
+  min-height: 405.703125px;
+  flex: 1 1 auto;
   display: grid;
   grid-template-columns: minmax(0, 2.385fr) minmax(238px, 1fr);
   gap: 11px;
   margin-top: 12px;
+  align-items: stretch;
 }
 
 .home-panel {
@@ -150,7 +157,8 @@
 }
 
 .home-projects-panel {
-  height: 406px;
+  height: 100%;
+  min-height: 405.703125px;
   min-width: 0;
   padding: 14px;
 }
@@ -351,13 +359,20 @@
 
 .home-side-column {
   min-width: 0;
+  min-height: 0;
+  height: 100%;
   display: grid;
-  grid-template-rows: 138px 138px 109px;
+  grid-template-rows:
+    minmax(138.3515625px, 1fr)
+    minmax(138.3515625px, 1fr)
+    minmax(109px, auto);
   gap: 10px;
 }
 
 .home-side-panel {
   min-height: 0;
+  display: flex;
+  flex-direction: column;
   padding: 14px;
 }
 
@@ -370,8 +385,8 @@
 }
 
 .home-fixed-list {
-  height: 72px;
   min-height: 0;
+  flex: 1 1 auto;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
@@ -603,17 +618,15 @@
   .home-page {
     max-width: 1160px;
   }
+}
 
-  .home-projects-panel {
-    height: 430px;
+@media (min-height: 800px) and (min-width: 1051px) {
+  .home-dashboard-grid {
+    column-gap: 16px;
   }
 
   .home-side-column {
-    grid-template-rows: 146px 146px 118px;
-  }
-
-  .home-fixed-list {
-    height: 80px;
+    gap: 16px;
   }
 }
 
@@ -622,7 +635,14 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .home-page {
+    height: auto;
+    min-height: 100%;
+  }
+
   .home-dashboard-grid {
+    min-height: 0;
+    flex: 0 0 auto;
     grid-template-columns: 1fr;
   }
 

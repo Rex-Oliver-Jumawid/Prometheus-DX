@@ -245,6 +245,14 @@ Verification evidence:
 
 Live Chromium and Figma comparison remain to be verified at 1244x682, 1440x900, 900x900, and 390x844.
 
+A subsequent desktop visual review identified two layout issues in the first Home rendering: the main glass workspace started 6px lower than the sidebar, and the right-side Working Now / Needs Attention / Quick Access stack stayed at fixed compact heights on taller viewports.
+
+The shell now uses the same 12px top and bottom inset for both sidebar and main workspace.
+
+Home now fills the available desktop workspace height.
+
+The main dashboard grid stretches vertically, Working Now and Needs Attention use flexible rows with internally scrolling content, Quick Access remains compact, and taller desktop viewports increase the inter-card gaps without changing the fixed-height scrolling behavior at the Figma reference size.
+
 Notifications remains a separate parallel slice and is not implemented or assumed by this Home branch.
 
 ### P7-D03 - Home uses a narrow derived read model
