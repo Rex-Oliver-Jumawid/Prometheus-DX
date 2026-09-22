@@ -10,13 +10,20 @@ NestJS must then verify that the authenticated identity maps to an active author
 
 The prototype's `currentViewer` or any demo user switcher must not control production authorization.
 
+The application-shell layout should follow the current Figma design.
+
+Notifications belong in the lower sidebar utility area rather than a separate top-right notification control.
+
 ## Required Pages and Interfaces
 
 - `/login`
 - `/access-denied`
 - Protected application shell
-- Sidebar
-- Top navigation
+- Figma-defined sidebar
+- Sidebar primary navigation
+- Sidebar utility navigation
+- Notifications utility destination in the sidebar
+- Profile/account control at the bottom of the sidebar
 - Profile/account drawer
 - Sign out
 - Protected route handling
@@ -102,7 +109,7 @@ Apply these checks to every page in this phase:
 | F1-17 | Navigation | Navigate between available shell routes. | Active item and page content remain synchronized. |
 | F1-18 | Browser Back and Forward | Navigate through several pages then use browser Back and Forward. | History behaves naturally. |
 | F1-19 | Profile drawer | Open profile/account interface. | Correct current member information appears. |
-| F1-20 | Notification control placeholder | Open notification control if present. | Interface opens safely even when there are no notifications. |
+| F1-20 | Notifications sidebar destination | Open Notifications from the sidebar utility area. | The Notifications destination opens safely, and no separate top-right notification control is required. |
 | F1-21 | Deep-route breadcrumb behavior | Open an initial page and a deeper page. | Breadcrumb appears only where intended. |
 | F1-22 | Auth API failure | Make the auth or `/api/me` request fail. | App shows a controlled state rather than rendering another user's data or crashing. |
 
