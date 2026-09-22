@@ -590,3 +590,14 @@ Planned Schedule values and actual WorkSessions remain separate, self-owned writ
 The authenticated Schedule, Time In, refresh, Team Working Now, Time Out, weekly-history, responsive, console, and network acceptance paths pass.
 The known Project Members regression is unrelated to Phase 6 and remains documented for its owning Project UI branch.
 Phase 6 is safe to merge into `main` without starting Phase 7 automatically.
+
+## Interactive configuration and rest-day persistence
+
+Configure My Schedule edits a local React Hook Form draft above the merged Team Schedule calendar.
+The calendar supports pointer-based movement, day changes, duration resizing, and keyboard-accessible selection with button-based adjustments.
+Only the signed-in member's blocks are editable; concurrent teammates' blocks occupy separate visual lanes.
+Day-header toggles and the Rest days count are draft-only editing constraints.
+The current `/schedule/me` contract persists recurring blocks and the weekly target, not explicit rest-day preferences; on reentry, empty days are inferred as rest.
+Changing a rest day into a workday does not persist a standalone workday unless it receives a scheduled block.
+Lowering the Rest days count releases excess rest days, retaining later days where possible.
+The draft is submitted once through `PUT /schedule/me` when configuration is completed; cancellation discards changes.

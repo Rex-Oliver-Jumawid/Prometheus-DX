@@ -62,6 +62,7 @@ export function EditableTeamCalendar({
   onChange,
   onToggleRest,
   onMessage,
+  disabled = false,
 }: {
   members: TeamScheduleResponse['members'];
   currentMemberId?: string;
@@ -74,6 +75,7 @@ export function EditableTeamCalendar({
   onChange: (blocks: ScheduleBlockInput[]) => void;
   onToggleRest: (day: Weekday) => void;
   onMessage: (message: string) => void;
+  disabled?: boolean;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const gestureRef = useRef<Gesture | null>(null);
@@ -91,7 +93,7 @@ export function EditableTeamCalendar({
     );
 
   function startGesture(event: PointerEvent<HTMLDivElement>, index: number, mode: 'move' | 'resize') {
-    if (event.button !== 0) return;
+    if (disabled || event.button !== 0) return;
     const block = blocks[index];
     if (!block) return;
     event.preventDefault();
@@ -116,7 +118,7 @@ export function EditableTeamCalendar({
 
   function updateGesture(event: PointerEvent<HTMLDivElement>) {
     const gesture = gestureRef.current;
-    if (!gesture || gesture.pointerId !== event.pointerId) return;
+    if (disabled || !gesture || gesture.pointerId !== event.pointerId) return;
     const hourDelta = Math.round((event.clientY - gesture.clientY) / ROW_HEIGHT) * EDITOR_STEP_MINUTES;
     const index = gesture.index;
     let candidate: ScheduleBlockInput;
@@ -203,6 +205,7 @@ export function EditableTeamCalendar({
                 className={'schedule-calendar-day-head editor-day-header' + (restDays.has(day) ? ' rest-day' : '')}
                 aria-label={DAY_NAMES[day] + ': ' + (restDays.has(day) ? 'rest day, make workday' : 'workday, make rest day')}
                 aria-pressed={restDays.has(day)}
+                disabled={disabled}
                 onClick={() => onToggleRest(day)}
                 key={day}
               >
@@ -278,7 +281,7 @@ export function EditableTeamCalendar({
                             onSelect(entry.ownIndex);
                           }
                         } : undefined}
-                        onPointerDown={own ? (event) => startGesture(event, entry.ownIndex!, 'move') : undefined}
+                        onPointerDown={own && !disabled ? (event) => startGesture(event, entry.ownIndex!, 'move') : undefined}
                         className={'schedule-calendar-block' + (own ? ' mine editable' : '') + (isSelected ? ' selected' : '') + (100 / laneCount < 34 ? ' thin' : '')}
                         key={entry.key}
                         style={style}
@@ -291,7 +294,7 @@ export function EditableTeamCalendar({
                             className="schedule-resize-handle"
                             role="button"
                             aria-label="Resize selected schedule block"
-                            onPointerDown={(event) => startGesture(event, entry.ownIndex!, 'resize')}
+                            onPointerDown={disabled ? undefined : (event) => startGesture(event, entry.ownIndex!, 'resize')}
                           />
                         )}
                       </div>
@@ -307,7 +310,7 @@ export function EditableTeamCalendar({
         {WEEKDAYS.map((day) => (
           <article key={day}>
             <header>
-              <button type="button" onClick={() => onToggleRest(day)}>
+              <button type="button" disabled={disabled} onClick={() => onToggleRest(day)}>
                 {DAY_NAMES[day]} · {restDays.has(day) ? 'Rest (tap for work)' : 'Work (tap for rest)'}
               </button>
               <span>{dateLabels[day]}</span>

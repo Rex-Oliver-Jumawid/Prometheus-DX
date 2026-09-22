@@ -275,10 +275,10 @@ export function SchedulePage() {
   const targetMinutes = form.watch('targetWeeklyMinutes');
 
   useEffect(() => {
-    if (!mineQuery.isPending) {
+    if (!mineQuery.isPending && !configuring) {
       form.reset(defaultFormValues(mineQuery.data?.schedule ?? null));
     }
-  }, [form, mineQuery.data, mineQuery.isPending]);
+  }, [configuring, form, mineQuery.data, mineQuery.isPending]);
 
   useEffect(() => {
     if (!selectedMemberId && member?.id) setSelectedMemberId(member.id);
@@ -329,6 +329,7 @@ export function SchedulePage() {
   };
 
   const submitSchedule = (input: UpdateScheduleRequest) => {
+    if (mutation.isPending) return;
     if (input.blocks.some((block) => restDays.has(block.weekday))) {
       setFormError('A rest day cannot contain your schedule blocks. Mark it as a workday first.');
       return;
@@ -348,7 +349,7 @@ export function SchedulePage() {
   };
 
   const generateWeek = () => {
-    const target = Math.max(0, Math.min(10_080, targetMinutes));
+    const target = Math.max(0, Math.min(10_080, Number.isFinite(targetMinutes) ? targetMinutes : 0));
     // As in finalmodel.html, generation uses the selected number of rest days
     // and starts with the trailing days of the week; manual toggles apply afterward.
     const generatedRest = new Set<Weekday>(WEEKDAYS.slice(7 - restDayCount));
@@ -402,7 +403,7 @@ export function SchedulePage() {
   };
 
   const adjustSelected = (operation: 'earlier' | 'later' | 'shorter' | 'longer') => {
-    if (selectedBlockIndex === null) return;
+    if (mutation.isPending || selectedBlockIndex === null) return;
     const block = watchedBlocks[selectedBlockIndex];
     if (!block) return;
     const start = clockTimeToMinutes(block.startTime);
@@ -534,7 +535,7 @@ export function SchedulePage() {
             </button>
           </div>
           <button className="schedule-button primary" onClick={() => configuring ? void form.handleSubmit(submitSchedule)() : enterConfiguration()} disabled={mutation.isPending}>
-            {configuring ? 'Done' : 'Configure My Schedule'}
+            {configuring ? 'Done configuring' : 'Configure My Schedule'}
           </button>
         </div>
       </header>
@@ -791,16 +792,26 @@ export function SchedulePage() {
                     max="6"
                     step="1"
                     value={restDayCount}
-                    onChange={(event) => setRestDayCount(Math.max(0, Math.min(6, Number(event.target.value) || 0)))}
+                    onChange={(event) => {
+                       const count = Math.max(0, Math.min(6, Math.trunc(Number(event.target.value) || 0)));
+                       setRestDayCount(count);
+                       if (restDays.size > count) {
+                         // Prefer retaining trailing weekend rest days when lowering the limit.
+                         const kept = WEEKDAYS.filter((day) => restDays.has(day)).slice(-count);
+                         setRestDays(new Set(count ? kept : []));
+                         setEditorMessage('Reduced rest days to ' + count + '. Newly opened days can receive blocks.');
+                       }
+                     }}
                   />
                 </label>
-                <button type="button" className="schedule-button primary" onClick={generateWeek}>
+                <button type="button" className="schedule-button primary" disabled={mutation.isPending} onClick={generateWeek}>
                   Generate initial schedule
                 </button>
                 <button type="submit" className="schedule-button" disabled={mutation.isPending}>
                   {mutation.isPending ? 'Saving...' : 'Done configuring'}
                 </button>
               </div>
+              <p className="schedule-rest-note">Rest days are a draft editing preference. The current API saves recurring blocks only, so days without blocks are inferred as rest when you return.</p>
               <div className="schedule-config-help">
                 <span><b>Move:</b> drag your block up/down or to another free day.</span>
                 <span><b>Resize:</b> drag the bottom handle.</span>
@@ -816,7 +827,7 @@ export function SchedulePage() {
                     : 'Select one of your schedule blocks.'}
                 </strong>
                 <div className="schedule-selected-actions">
-                  <button type="button" className="schedule-button" disabled={!selectedBlock} onClick={() => adjustSelected('earlier')}>Earlier</button>
+                  <button type="button" className="schedule-button" disabled={!selectedBlock || mutation.isPending} onClick={() => adjustSelected('earlier')}>Earlier</button>
                   <button type="button" className="schedule-button" disabled={!selectedBlock} onClick={() => adjustSelected('later')}>Later</button>
                   <button type="button" className="schedule-button" disabled={!selectedBlock} onClick={() => adjustSelected('shorter')}>− 1 hour</button>
                   <button type="button" className="schedule-button" disabled={!selectedBlock} onClick={() => adjustSelected('longer')}>+ 1 hour</button>
@@ -831,6 +842,7 @@ export function SchedulePage() {
                       className="schedule-button"
                       type="button"
                       onClick={() => {
+                        if (mutation.isPending) return;
                         const day = WEEKDAYS.find((item) => !restDays.has(item) && !watchedBlocks.some((block) => block.weekday === item && clockTimeToMinutes(block.startTime) < 17 * 60 && clockTimeToMinutes(block.endTime) > 14 * 60));
                         if (!day) {
                           setEditorMessage('No free 2 PM–5 PM workday is available. Adjust an existing block or unmark a rest day.');
@@ -943,6 +955,7 @@ export function SchedulePage() {
                 onChange={setDraftBlocks}
                 onToggleRest={toggleRestDay}
                 onMessage={setEditorMessage}
+                disabled={mutation.isPending}
               />
             ) : (
               <TeamCalendar
