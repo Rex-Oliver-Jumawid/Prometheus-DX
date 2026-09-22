@@ -549,9 +549,7 @@ export function SchedulePage() {
               Shifts
             </button>
           </div>
-          <button className="schedule-button primary" onClick={() => configuring ? void form.handleSubmit(submitSchedule)() : enterConfiguration()} disabled={mutation.isPending}>
-            {configuring ? 'Done configuring' : 'Configure My Schedule'}
-          </button>
+          {!configuring && <button className="schedule-button primary" onClick={enterConfiguration}>Configure My Schedule</button>}
         </div>
       </header>
 
@@ -759,6 +757,7 @@ export function SchedulePage() {
           {configuring && (
             <form
               className="schedule-config-drawer"
+              aria-busy={mutation.isPending}
               onSubmit={form.handleSubmit(submitSchedule)}
             >
               <div className="schedule-config-topline">
@@ -767,8 +766,9 @@ export function SchedulePage() {
                   <h2>Configure My Schedule</h2>
                   <p>Set your initial workload, then shape the week directly on the calendar.</p>
                 </div>
-                <div className={'schedule-balance' + (weekMinutes(watchedBlocks) === targetMinutes ? ' matched' : ' unmatched')}>
-                  Scheduled {formatMinutes(weekMinutes(watchedBlocks))} / Target {formatMinutes(targetMinutes)}
+                <div className={'schedule-balance' + (weekMinutes(watchedBlocks) === targetMinutes ? ' matched' : ' unmatched')} aria-label="Weekly schedule progress">
+                  <span className="schedule-balance-label">WEEKLY PROGRESS</span>
+                  <strong>Scheduled {formatMinutes(weekMinutes(watchedBlocks))} / Target {formatMinutes(targetMinutes)}</strong>
                 </div>
               </div>
               <div className="schedule-config-toolbar">
@@ -830,26 +830,20 @@ export function SchedulePage() {
                 <button type="button" className="schedule-button primary" disabled={mutation.isPending} onClick={generateWeek}>
                   Generate initial schedule
                 </button>
-                <button type="submit" className="schedule-button" disabled={mutation.isPending}>
-                  {mutation.isPending ? 'Saving...' : 'Done configuring'}
-                </button>
-              </div>
-              <p className="schedule-rest-note">Rest days are a draft editing preference. The current API saves recurring blocks only, so days without blocks are inferred as rest when you return.</p>
-              <div className="schedule-config-help">
-                <span><b>Move:</b> drag your block up/down or to another free day.</span>
-                <span><b>Resize:</b> drag the bottom handle.</span>
-                <span><b>Rest:</b> click a day header while configuring.</span>
-                <span><b>Overlap:</b> simultaneous team schedules split into lanes.</span>
               </div>
               <div className="schedule-selected-tools">
-                <strong>
-                  {selectedBlock
-                    ? DAY_LABELS[selectedBlock.weekday] + ' · ' + formatClock(selectedBlock.startTime) +
-                      '–' + formatClock(selectedBlock.endTime) + ' · ' +
-                      formatMinutes(clockTimeToMinutes(selectedBlock.endTime) - clockTimeToMinutes(selectedBlock.startTime))
-                    : 'Select one of your schedule blocks.'}
-                </strong>
-                <div className="schedule-selected-actions">
+                <div className="schedule-selected-summary">
+                  <span className="schedule-editor-eyebrow">SELECTED BLOCK</span>
+                  <strong>
+                    {selectedBlock
+                      ? DAY_LABELS[selectedBlock.weekday] + ' · ' + formatClock(selectedBlock.startTime) +
+                        '–' + formatClock(selectedBlock.endTime) + ' · ' +
+                        formatMinutes(clockTimeToMinutes(selectedBlock.endTime) - clockTimeToMinutes(selectedBlock.startTime))
+                      : 'Select one of your schedule blocks.'}
+                  </strong>
+                  <p>{selectedBlock ? 'Adjust the selected block or drag it in the calendar.' : 'Choose your own block below to adjust its time.'}</p>
+                </div>
+                <div className="schedule-selected-actions" aria-label="Adjust selected schedule block">
                   <button type="button" className="schedule-button" disabled={!selectedBlock || mutation.isPending} onClick={() => adjustSelected('earlier')}>Earlier</button>
                   <button type="button" className="schedule-button" disabled={!selectedBlock} onClick={() => adjustSelected('later')}>Later</button>
                   <button type="button" className="schedule-button" disabled={!selectedBlock} onClick={() => adjustSelected('shorter')}>− 1 hour</button>
@@ -857,6 +851,16 @@ export function SchedulePage() {
                 </div>
               </div>
               {editorMessage && <p className="schedule-editor-message" role="status">{editorMessage}</p>}
+              <div className="schedule-config-disclosures">
+                <details>
+                  <summary>How to edit blocks</summary>
+                  <p>Drag a block to change its day or time. Resize it using the bottom handle, or use the adjustment buttons. Click day headers to toggle rest days.</p>
+                </details>
+                <details>
+                  <summary>How rest days are saved</summary>
+                  <p>Only recurring blocks and your weekly target are saved. Days without blocks are inferred as rest next time; empty workdays do not persist.</p>
+                </details>
+              </div>
               <div className="schedule-config-advanced">
                 <details>
                   <summary>Fine-tune blocks using time inputs</summary>
@@ -920,8 +924,12 @@ export function SchedulePage() {
                   </div>
                 </details>
               </div>
-              <div className="schedule-form-actions">
-                <button type="button" className="schedule-button" disabled={mutation.isPending} onClick={() => {
+              {formError && <p className="schedule-message error" role="alert">{formError}</p>}
+              {mutation.isError && <p className="schedule-message error" role="alert">{mutation.error.message}</p>}
+              <div className="schedule-config-footer">
+                <span>Your edits remain a draft until you finish.</span>
+                <div className="schedule-form-actions">
+                  <button type="button" className="schedule-button" disabled={mutation.isPending} onClick={() => {
                   const saved = mineQuery.data?.schedule ?? null;
                   form.reset(defaultFormValues(saved));
                   const inferred = initialRestDays(saved?.blocks ?? []);
@@ -933,11 +941,12 @@ export function SchedulePage() {
                   mutation.reset();
                   setConfiguring(false);
                   setFormError(null);
-                }}>Cancel</button>
-                <button type="submit" className="schedule-button" disabled={mutation.isPending}>Save Schedule</button>
+                  }}>Cancel</button>
+                  <button type="submit" className="schedule-button primary" disabled={mutation.isPending}>
+                    {mutation.isPending ? 'Saving...' : 'Done configuring'}
+                  </button>
+                </div>
               </div>
-              {formError && <p className="schedule-message error" role="alert">{formError}</p>}
-              {mutation.isError && <p className="schedule-message error" role="alert">{mutation.error.message}</p>}
             </form>
           )}
 
