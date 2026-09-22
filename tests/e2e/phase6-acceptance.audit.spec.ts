@@ -250,9 +250,10 @@ test('Phase 6 loading, error, long-content, and correction visual states', async
     .getByRole('button', { name: 'Configure My Schedule' })
     .first()
     .click();
+  await page.getByText('Fine-tune blocks using time inputs').click();
   await page.getByRole('button', { name: 'Add Block' }).click();
   await page.getByRole('button', { name: 'Add Block' }).click();
-  await page.getByRole('button', { name: 'Save Schedule' }).click();
+  await page.getByRole('button', { name: 'Done configuring' }).click();
   await expect(page.getByRole('alert')).toContainText(
     'Schedule blocks on the same day cannot overlap',
   );
@@ -293,7 +294,7 @@ test('Phase 6 loading, error, long-content, and correction visual states', async
       }),
     });
   });
-  await page.getByRole('button', { name: 'Save Schedule' }).click();
+  await page.getByRole('button', { name: 'Done configuring' }).click();
   await expect(page.getByRole('button', { name: 'Saving...' })).toBeDisabled();
   await page.screenshot({
     path: testInfo.outputPath('schedule-save-pending.png'),

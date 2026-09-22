@@ -624,3 +624,12 @@ The daily generation input supports up to 16 hours in production because the cur
 Generation and workday creation shift long blocks earlier when necessary so they remain inside the production 07:00 through 23:00 editable range.
 
 Focused component coverage was expanded for pointer movement, resizing, rest-day swapping, invalid overlap rollback, and cross-Member overlap lanes in addition to the existing generation, selection, adjustment, cancellation, rest-day-limit, save-error, and retry coverage.
+
+## Schedule editor layout refinement
+
+Configure My Schedule now uses a compact settings row, a clearly separated weekly-progress indicator, and a selected-block panel with accessible adjustment controls.
+Large rest-day persistence and editing instructions moved into collapsed help disclosures; the explanation remains available before saving.
+The sole `Done configuring` action is in the draft footer next to `Cancel`, eliminating the duplicate save controls previously shown in the header and settings row.
+The footer states that modifications are drafts until submitted through `PUT /schedule/me`.
+Focused component and browser test selectors follow the footer action and expand the optional fine-tuning form when needed.
+The interaction and backend contracts remain unchanged; rest days are inferred from recurring blocks when configuration is reopened.

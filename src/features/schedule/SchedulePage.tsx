@@ -845,7 +845,7 @@ export function SchedulePage() {
                 </div>
                 <div className="schedule-selected-actions" aria-label="Adjust selected schedule block">
                   <button type="button" className="schedule-button" disabled={!selectedBlock || mutation.isPending} onClick={() => adjustSelected('earlier')}>Earlier</button>
-                  <button type="button" className="schedule-button" disabled={!selectedBlock} onClick={() => adjustSelected('later')}>Later</button>
+                  <button type="button" className="schedule-button" disabled={!selectedBlock || mutation.isPending} onClick={() => adjustSelected('later')}>Later</button>
                   <button type="button" className="schedule-button" disabled={!selectedBlock} onClick={() => adjustSelected('shorter')}>− 1 hour</button>
                   <button type="button" className="schedule-button" disabled={!selectedBlock} onClick={() => adjustSelected('longer')}>+ 1 hour</button>
                 </div>

@@ -254,7 +254,7 @@ describe('SchedulePage', () => {
     fireEvent.change(screen.getByLabelText('End'), {
       target: { value: '12:00' },
     });
-    await user.click(screen.getByRole('button', { name: 'Save Schedule' }));
+    await user.click(screen.getByRole('button', { name: 'Done configuring' }));
 
     await waitFor(() =>
       expect(mocks.apiFetch).toHaveBeenCalledWith(
@@ -292,7 +292,7 @@ describe('SchedulePage', () => {
     await user.click(
       screen.getAllByRole('button', { name: 'Configure My Schedule' })[0],
     );
-    await user.click(screen.getByRole('button', { name: 'Save Schedule' }));
+    await user.click(screen.getByRole('button', { name: 'Done configuring' }));
     expect(
       await screen.findByText('Schedule save failed.'),
     ).toBeInTheDocument();
@@ -343,6 +343,25 @@ describe('SchedulePage', () => {
     expect(screen.getByText(/Monday · 10:00 AM.*1:00 PM · 3h/)).toBeInTheDocument();
   });
 
+
+  it('shows a single completion action and keeps editing help collapsed', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole('heading', { name: 'Your schedule is ready to configure' });
+    await user.click(screen.getAllByRole('button', { name: 'Configure My Schedule' })[0]);
+
+    expect(screen.getAllByRole('button', { name: 'Done configuring' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Save Schedule' })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Weekly schedule progress')).toHaveTextContent('Target');
+    const restHelp = screen.getByText('How rest days are saved').closest('details');
+    expect(restHelp).not.toBeNull();
+    expect(restHelp).not.toHaveAttribute('open');
+    await user.click(screen.getByText('How rest days are saved'));
+    expect(restHelp).toHaveAttribute('open');
+    expect(screen.getByText(/Only recurring blocks and your weekly target are saved/)).toBeInTheDocument();
+    await user.click(screen.getByText('How to edit blocks'));
+    expect(screen.getByText(/Drag a block to change its day or time/)).toBeInTheDocument();
+  });
 
   it('generates a weekly draft, selects a block, adjusts it and cancels without saving', async () => {
     const user = userEvent.setup();
