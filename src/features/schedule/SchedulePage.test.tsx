@@ -306,6 +306,45 @@ describe('SchedulePage', () => {
     ).toBe(false);
   });
 
+
+  it('generates a weekly draft, selects a block, adjusts it and cancels without saving', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole('heading', { name: 'Your schedule is ready to configure' });
+    await user.click(screen.getAllByRole('button', { name: 'Configure My Schedule' })[0]);
+    expect(screen.getByText('Select one of your schedule blocks.')).toBeInTheDocument();
+    await user.clear(screen.getByRole('spinbutton', { name: 'Hours per week' }));
+    await user.type(screen.getByRole('spinbutton', { name: 'Hours per week' }), '20');
+    await user.click(screen.getByRole('button', { name: 'Generate initial schedule' }));
+    expect(screen.getByText('Scheduled 20h / Target 20h')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Select Monday schedule block/ }));
+    await user.click(screen.getByRole('button', { name: 'Earlier' }));
+    expect(screen.getByRole('button', { name: /Select Monday schedule block, 1:00 PM/ })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '− 1 hour' }));
+    expect(screen.getByText('Scheduled 19h / Target 20h')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('heading', { name: 'Configure My Schedule' })).not.toBeInTheDocument();
+    expect(mocks.apiFetch.mock.calls.some(([p, , options]) =>
+      p === '/schedule/me' && options?.method === 'PUT')).toBe(false);
+  });
+
+  it('toggles rest days and rejects exceeding the configured limit', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole('heading', { name: 'Your schedule is ready to configure' });
+    await user.click(screen.getAllByRole('button', { name: 'Configure My Schedule' })[0]);
+    await user.clear(screen.getByRole('spinbutton', { name: 'Hours per week' }));
+    await user.type(screen.getByRole('spinbutton', { name: 'Hours per week' }), '20');
+    await user.click(screen.getByRole('button', { name: 'Generate initial schedule' }));
+    await user.click(screen.getByRole('button', { name: /Saturday: rest day, make workday/ }));
+    expect(screen.getByText('Scheduled 24h / Target 20h')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Monday: workday, make rest day/ }));
+    expect(screen.getByText('Scheduled 20h / Target 20h')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Tuesday: workday, make rest day/ }));
+    expect(screen.getByRole('status')).toHaveTextContent('Unmark another rest day');
+    expect(screen.getByText('Scheduled 20h / Target 20h')).toBeInTheDocument();
+  });
+
   it('recovers from a load error through the retry action', async () => {
     const user = userEvent.setup();
     let failTeamRequest = true;
