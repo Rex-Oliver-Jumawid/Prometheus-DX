@@ -8,19 +8,46 @@ Canonical requirements belong in `.context/`.
 
 ## Current Phase
 
+Phase 7 - Notifications and Home
+
+Status: In progress.
+
+Current slice: Notifications.
+
+Formal implementation record:
+
+`.docs/phases/phase-07-notifications-home.md`
+
+## Current Product Decision
+
+Phase 7 implementation starts with Notifications on its own branch.
+
+Home should be implemented as a separate Phase 7 slice or branch so both surfaces can be developed and verified independently before integration.
+
+The current Prometheus Figma file is the source of truth for UI layout and visual design.
+
+Phase 7 visual references:
+
+- Notifications: Figma node `11:2301`
+- Home: Figma node `189:3`
+
+Notifications are accessed through the lower sidebar utility area with an unread-count badge when applicable.
+
+Do not add a separate top-right notification bell or notification control.
+
+Use `.context/ui-reference.md` for the complete UI source-of-truth policy.
+
+## Previous Phase
+
 Phase 6 - Schedule, Work Sessions, and Team
 
 Status: Complete.
 
-Formal implementation record:
+Phase 6 is already present on `main`.
 
-`.docs/phases/phase-06-schedule-work-sessions-team.md`
+Phase 5 - Outcome Work, Submission, Review, and Dependencies remains in progress on its own line of work because final acceptance and regression are still pending.
 
-## Previous Phase
-
-Phase 5 - Outcome Work, Submission, Review, and Dependencies
-
-Status: In progress on its own branch and not marked complete here.
+Do not mark Phase 5 complete from Phase 7 work.
 
 ## Verified Baseline
 
@@ -34,72 +61,45 @@ Phase 3 - Project Core: Complete.
 
 Phase 4 - Project Workflow Structure: Complete.
 
-Final Phase 4 verification on 2026-09-16:
+Phase 6 - Schedule, Work Sessions, and Team: Complete.
 
-- Full Playwright suite: 35/35 passed.
-- The full suite includes F2-21, the Phase 4 Stage and Outcome workflow, Outcome joining and permanent membership, derived Project Membership, Project Member access management, the canonical Phase 4 main E2E flow, Phase 3 Project regressions, and Registry regressions.
-- `pnpm prisma migrate status`: seven migrations found and the database schema is up to date.
-- `pnpm verify`: passed.
-- Unit tests: 84/84 passed across 13 test files.
-- Typecheck: passed.
-- Production web and API builds: passed.
-- Lint: zero errors with one pre-existing `RegistryPage.tsx` React Hook dependency warning.
+Phase 6 provides the canonical Schedule, WorkSession, and Team data that Phase 7 Home may aggregate.
 
-## Phase 4 Delivered Scope
-
-Phase 4 now provides persisted ordered Stages and Outcomes, responsible Departments, Acceptance Criteria, same-Project prerequisites, direct Outcome access, permanent Outcome Membership, derived Project Membership, Participating classification, a Project Members interface, and persisted `CAN_VIEW` / `CAN_EDIT` access management.
-
-Only the persisted Project Lead may create or manage Stages and Outcomes or change Project Member access.
-
-Project Leads and Project Members with `CAN_EDIT` may change Project status.
-
-`CAN_EDIT` does not grant Stage, Outcome, Project Member access-management, Registry, or Project Lead authority.
-
-Administrator role and Project creator history remain separate from project-specific authority.
-
-Outcome Membership remains permanent and is the source of Project participation.
+The known Project Members regression remains owned by the Project UI work and should not be silently treated as a Phase 7 defect unless Phase 7 changes that surface.
 
 ## Current Testing Workflow
 
-The repository now uses layered verification rather than defaulting all behavior checks to Playwright.
+The repository uses layered verification rather than defaulting all behavior checks to Playwright.
 
 Use Vitest for pure logic, validation, permissions, and service behavior.
 
 Use Vitest with React Testing Library and jsdom for React component interaction.
 
-Use service or API integration tests for authorization, persistence, stale-write protection, and concurrency where a browser is not required.
+Use service or API integration tests for authorization, persistence, stale-write protection, concurrency, and notification event creation where a browser is not required.
 
-Use Playwright with Chromium for critical real user journeys that depend on browser, authentication, API, and persistence integration.
+Use Playwright with Chromium for critical real user journeys that depend on browser, authentication, API, persistence, and navigation integration.
 
 Use Firefox and WebKit only for release-level cross-browser verification unless browser compatibility is the feature under test.
 
-Use `.testcases/` for the phase acceptance requirements and preserve manual visual or UX checks where human judgment is intentional.
-
-The normal broad gates are `pnpm verify`, `pnpm verify:e2e`, and `pnpm verify:release`.
+Use `.testcases/phase-07-notifications-home-tests.md` as the Phase 7 acceptance gate.
 
 ## Next Action
 
-Phase 6 is complete and may be merged into `main` when desired.
+Start the Phase 7 Notifications slice from current `main`.
 
-F6-01 through F6-26 pass their layered acceptance evidence.
+Implement real notification persistence and event creation before building presentation-only state.
 
-Migration `20260918010000_phase_06_work_sessions` is deployed and all 15 migrations are applied.
+Implement the dedicated `/notifications` page against Figma node `11:2301`.
 
-Live database integration passes 4 Schedule tests, 5 WorkSession tests, and 2 Team tests.
+Preserve the Figma sidebar placement for Notifications and its unread-count treatment.
 
-The final required non-browser gates pass with 139 enabled Node tests, 22 component tests, and both production builds.
+Do not add a duplicate top-right notification icon.
 
-The focused Phase 6 Chromium journeys pass 2/2, and the visual/responsive/state audits pass 2/2 at 1440x1000, 900x900, and 390x844.
+Keep notification state canonical and server-backed.
 
-The final full Chromium run passed 92 tests.
-One pre-existing Phase 4 Project Members test still fails because the current Project page does not mount the existing `ProjectMembersPanel`, and its three serial dependents do not run.
-Phase 6 did not change Project UI relative to `main`.
+After the Notifications slice is stable, implement Home against Figma node `189:3` as a separate slice or branch.
 
-Resolve the Project Members regression on its owning Project UI branch and rerun that serial acceptance file there.
-
-Do not mark Phase 5 complete from this branch.
-Do not begin Phase 7 automatically.
-Do not add ScheduleOverride or realtime presence without a concrete acceptance requirement.
+Home should aggregate canonical Projects, Outcome workflow, Schedule, WorkSession, Team, and actionable review data rather than persist duplicate dashboard state.
 
 ## Handoff Maintenance Rule
 
