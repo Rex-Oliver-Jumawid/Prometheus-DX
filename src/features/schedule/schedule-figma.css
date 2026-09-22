@@ -51,3 +51,39 @@
 @media(max-width:640px){.schedule-page{padding-inline:14px}.schedule-filterbar{display:grid;grid-template-columns:1fr}.schedule-filter-field,.schedule-people-filter,.schedule-filter-summary,.schedule-select-field,.shift-week-picker{width:100%}.schedule-filter-summary strong{min-height:auto;padding-top:4px}.schedule-header-actions,.schedule-tabs{align-items:stretch;width:100%}.schedule-tabs button{flex:1}.schedule-header-actions>.schedule-button{width:100%}.schedule-config-toolbar{display:grid;grid-template-columns:1fr}.schedule-config-toolbar label{width:100%}.schedule-block-row{grid-template-columns:1fr}.shift-stat-grid{grid-template-columns:1fr}.shift-day-row{grid-template-columns:72px minmax(0,1fr)}.shift-day-total{grid-column:1/-1;text-align:left}}
 
 .schedule-compat-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* Interactive calendar editor: Figma Configure, Shift Dragged and Rest modes. */
+.schedule-config-drawer{display:grid;gap:10px}
+.schedule-config-toolbar{align-items:end}
+.schedule-config-toolbar>button{align-self:end}
+.schedule-balance.matched{background:rgba(88,142,102,.12);color:#427c50;border-color:rgba(88,142,102,.22)}
+.schedule-balance.unmatched{background:rgba(255,239,226,.9);color:#ac542b}
+.schedule-config-help{display:flex;flex-wrap:wrap;gap:5px 14px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.44);font-size:9px;color:#746861}
+.schedule-config-help b{color:#453a34}
+.schedule-selected-tools{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border:1px solid rgba(121,99,87,.13);border-radius:12px;background:rgba(255,255,255,.48)}
+.schedule-selected-tools>strong{font-size:9px;color:#493f39}
+.schedule-selected-actions{display:flex;gap:6px;flex-wrap:wrap}
+.schedule-selected-actions .schedule-button:disabled{opacity:.35;cursor:not-allowed}
+.schedule-editor-message{margin:0;padding:7px 10px;border-left:2px solid #cb4d22;border-radius:5px;background:rgba(251,234,226,.7);font-size:9px;color:#80492f}
+.schedule-config-advanced summary{width:max-content;max-width:100%;font-size:9px;font-weight:700;color:#786d66;cursor:pointer}
+.schedule-config-advanced[open],.schedule-config-advanced details[open]{padding:8px;border:1px solid rgba(121,99,87,.12);border-radius:10px}
+.schedule-config-advanced .schedule-block-editor{margin-top:10px}
+.schedule-config-drawer>.schedule-form-actions{margin:0;justify-content:flex-end}
+.schedule-config-drawer>.schedule-form-actions .schedule-button{min-width:100px}
+.schedule-calendar-editing{touch-action:pan-y}
+.schedule-calendar-editing .editor-day-header{appearance:none;align-items:flex-start;text-align:left;cursor:pointer}
+.schedule-calendar-editing .editor-day-header:hover{background:rgba(251,231,219,.92)}
+.schedule-calendar-editing .editor-day-header.rest-day{background:rgba(231,226,222,.95)}
+.schedule-calendar-editing .editor-day-header span{align-self:flex-start;margin-top:3px;color:#a25735;font-size:5.5px;font-weight:750}
+.schedule-calendar-editing .editor-day-header.rest-day span{color:#8b807b}
+.schedule-calendar-block.editable{cursor:grab;touch-action:none;user-select:none;padding-bottom:14px}
+.schedule-calendar-block.editable:active{cursor:grabbing}
+.schedule-calendar-block.editable.selected{outline:2px solid rgba(244,81,30,.55);outline-offset:2px;z-index:6}
+.schedule-calendar-block.editable:focus-visible{outline:3px solid #e86e37;outline-offset:2px}
+.schedule-resize-handle{position:absolute;bottom:3px;left:8px;right:8px;height:8px;border-radius:999px;background:rgba(244,81,30,.29);cursor:ns-resize;touch-action:none}
+.schedule-calendar-block.editable.selected .schedule-resize-handle{background:rgba(244,81,30,.55)}
+.schedule-compact-edit-block{display:block;width:100%;padding:9px;border:1px solid rgba(244,81,30,.2);border-radius:8px;background:rgba(255,236,226,.68);color:#9e4829;font-size:9px;text-align:left;cursor:pointer}
+.schedule-compact-edit-block.selected{border-color:#cb4d22;box-shadow:0 0 0 1px rgba(203,77,34,.25)}
+.compact-team-week article>header button{border:0;background:transparent;font-size:10px;font-weight:750;color:#403936;text-align:left;cursor:pointer}
+@media(max-width:900px){.schedule-config-toolbar{justify-content:flex-start}.schedule-selected-tools{align-items:flex-start;flex-direction:column}}
+@media(max-width:640px){.schedule-selected-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}.schedule-config-toolbar>button{width:100%}}
