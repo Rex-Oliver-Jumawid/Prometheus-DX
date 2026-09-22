@@ -8,13 +8,13 @@ Keep changes phase-focused, easy to review, and aligned with the Prometheus sour
 - Load the relevant workflow under `.agents/skills/` for phase delivery, debugging, UI work, or database changes.
 - Read the relevant section in `.context/phases.md` before starting implementation work.
 - Read the matching requirements in `.context/` before implementing behavior.
-- For substantial user-facing work, read `.context/ui-reference.md` and inspect the relevant workflow in `.model/finalmodel.html` before coding the production UI.
-- Treat `.model/finalmodel.html` as the prototype source of truth for the main authenticated application experience.
-- Treat `.model/login-page.html` as the prototype source of truth for authentication-screen user-visible behavior.
-- Reproduce the demonstrated prototype behavior in production unless the user explicitly changes that product decision.
-- Use Figma and Figma MCP or an equivalent connected integration as supporting helpers for measurements, spacing, typography, icons, variables, frame structure, screenshots, and fine visual detail.
-- When Figma and `finalmodel.html` disagree about the application experience, follow `finalmodel.html` unless a newer explicit user decision says otherwise.
-- Do not silently omit a prototype field or interaction merely because the current data model does not support it.
+- For substantial user-facing work, read `.context/ui-reference.md` and inspect the relevant current Figma frame with the connected Figma integration before coding the production UI.
+- Treat Figma as the source of truth for current UI layout, visual composition, navigation placement, spacing, typography, colors, icons, and component appearance.
+- Treat `.model/finalmodel.html` as an interaction and workflow reference where the target Figma frame does not fully specify behavior.
+- Treat `.model/login-page.html` as an authentication interaction reference where the target Figma frame does not fully specify behavior.
+- When Figma and an HTML prototype disagree about layout or visual presentation, follow Figma.
+- Resolve behavioral conflicts against the SRS and `.context/user-flows.md`, unless a newer explicit product decision already resolves them.
+- Do not silently omit a required field or interaction merely because the current data model does not support it.
 - Reconcile the requirements and persistence model instead.
 - Do not treat prototype JavaScript, DOM structure, mock state, or frontend-only permission checks as production architecture or backend authority.
 - Read the matching implementation journal in `.docs/phases/` when one already exists so previous decisions and lessons are carried forward.
@@ -132,7 +132,7 @@ For bug fixes, follow `.agents/skills/prometheus-debugging/SKILL.md`.
 
 For each implementation phase, follow `.agents/skills/prometheus-phase-delivery/SKILL.md` and complete the matching acceptance checks in `.testcases/`.
 
-For substantial UI work, also follow `.agents/skills/prometheus-ui-implementation/SKILL.md` and compare the working application against the relevant `finalmodel.html` workflow in a browser.
+For substantial UI work, also follow `.agents/skills/prometheus-ui-implementation/SKILL.md`, compare the working application against the relevant Figma frame in a browser, and verify any interaction details against the canonical workflow references.
 
 ## Database and configuration changes
 
