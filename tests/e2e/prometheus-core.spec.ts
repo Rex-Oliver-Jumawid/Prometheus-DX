@@ -124,7 +124,9 @@ test.beforeAll(async ({ browser }) => {
     page.on('pageerror', (error) => browserErrors.push(error.message));
 });
 test.afterAll(async () => {
-  await Promise.all(contexts.map((context) => context.close()));
+  // A stopped Playwright worker may have already closed its browser contexts.
+  // Still clean up the database fixtures after a failed serial test.
+  await Promise.allSettled(contexts.map((context) => context.close()));
   if (projectId) {
     await prisma.outcomeDependency.deleteMany({
       where: { outcome: { stage: { projectId } } },
@@ -260,19 +262,32 @@ test('Core 06: Outcome Member creates and completes a Task', async () => {
   await worker
     .getByLabel('Add a task to Evidence package', { exact: true })
     .fill('Document evidence');
+  const created = worker.waitForResponse(
+    (response) =>
+      response.url().endsWith('/tasks') &&
+      response.url().includes('/work/features/') &&
+      response.request().method() === 'POST',
+  );
   await worker.getByRole('button', { name: 'Add task', exact: true }).click();
-  const response = worker.waitForResponse(
+  expect((await created).status()).toBe(201);
+
+  const checkbox = worker.getByRole('checkbox', {
+    name: 'Complete Document evidence',
+  });
+  await expect(checkbox).toBeVisible();
+  const updated = worker.waitForResponse(
     (response) =>
       response.url().endsWith('/state') &&
       response.request().method() === 'PATCH',
   );
-  await worker
-    .getByRole('checkbox', { name: 'Complete Document evidence' })
-    .check();
-  expect((await response).status()).toBe(200);
+  // Completion is persisted asynchronously; .check() expects the controlled
+  // checkbox to remain checked immediately after the click.
+  await checkbox.click();
+  expect((await updated).status()).toBe(200);
+  await expect(checkbox).toBeChecked();
   await expect(
-    worker.getByText('100% work progress', { exact: true }),
-  ).toBeVisible();
+    worker.getByRole('progressbar', { name: 'Work progress' }),
+  ).toHaveAttribute('aria-valuenow', '100');
 });
 
 test('Core 07: Member submits Output and Lead requests revision', async () => {
