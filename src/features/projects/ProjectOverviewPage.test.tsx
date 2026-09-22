@@ -7,6 +7,23 @@ import { apiFetch } from '../../lib/api';
 import { ProjectOverviewPage } from './ProjectOverviewPage';
 
 const projectId = '11111111-1111-4111-8111-111111111111';
+const projectMemberId = '44444444-4444-4444-8444-444444444444';
+const projectMembersResponse = {
+  projectId,
+  canManageAccess: true,
+  members: [
+    {
+      member: {
+        id: projectMemberId,
+        fullName: 'Project Member',
+        email: 'member@example.com',
+      },
+      accessLevel: 'CAN_VIEW' as const,
+      outcomes: [],
+    },
+  ],
+};
+
 const project: Project = {
   id: projectId,
   name: 'Fast Project',
@@ -83,9 +100,31 @@ describe('ProjectOverviewPage status mutation', () => {
           stages: [],
         });
       }
+      if (path === `/projects/${projectId}/members`) {
+        return Promise.resolve(projectMembersResponse);
+      }
       if (path === `/projects/${projectId}`) return Promise.resolve(project);
       return Promise.resolve({});
     });
+  });
+
+  it('loads the Project Members surface on the Project overview', async () => {
+    renderPage();
+
+    expect(
+      await screen.findByRole('heading', { name: 'Project Members' }),
+    ).toBeVisible();
+    expect(
+      screen.getByLabelText('Project access for Project Member'),
+    ).toHaveValue('CAN_VIEW');
+
+    await waitFor(() =>
+      expect(apiFetch).toHaveBeenCalledWith(
+        `/projects/${projectId}/members`,
+        expect.anything(),
+        expect.objectContaining({ accessToken: 'token' }),
+      ),
+    );
   });
 
   it('updates status immediately and rolls back a failed request', async () => {
@@ -100,6 +139,9 @@ describe('ProjectOverviewPage status mutation', () => {
           canManageStructure: false,
           stages: [],
         });
+      }
+      if (path === `/projects/${projectId}/members`) {
+        return Promise.resolve(projectMembersResponse);
       }
       if (path.endsWith('/status')) return statusRequest;
       return Promise.resolve(project);
