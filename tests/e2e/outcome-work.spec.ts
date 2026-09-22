@@ -145,11 +145,11 @@ test('F5-02: viewer cannot create Feature work', async ({
   await openWork(page);
   const workPlan = page.getByRole('region', { name: 'Team Work Plan' });
   await expect(
-    workPlan.getByText('No features defined yet', { exact: true }),
+    workPlan.getByText(/No features have been defined yet\./),
   ).toBeVisible();
-  await expect(page.getByRole('button', { name: '+ Add Feature' })).toHaveCount(
-    0,
-  );
+  await expect(
+    page.getByRole('button', { name: /add.*feature/i }),
+  ).toHaveCount(0);
   expect(
     (await request(page, '/work/features', 'POST', { title: 'Forbidden' }))
       .status,
@@ -208,7 +208,7 @@ test('F5-01 F5-08: joined member creates a persisted Feature', async ({
   ]);
   await signIn(page);
   await openWork(page);
-  await expect(page.getByText('✓ Joined Outcome')).toBeVisible();
+  await expect(page.getByText('✓ Joined outcome', { exact: true })).toBeVisible();
   await page
     .getByRole('button', { name: 'Add a feature to this outcome', exact: true })
     .click();
@@ -546,9 +546,9 @@ test('F5-35 F5-37: dependencies allow planning but block execution; accepted wor
       .status,
   ).toBe(409);
   await openWork(page, true);
-  await expect(page.getByRole('button', { name: '+ Add Feature' })).toHaveCount(
-    0,
-  );
+  await expect(
+    page.getByRole('button', { name: /add.*feature/i }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole('progressbar', { name: 'Work progress' }),
   ).toHaveAttribute('aria-valuenow', '100');
