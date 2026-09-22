@@ -111,7 +111,7 @@ export function EditableTeamCalendar({
       changed: false,
       invalid: false,
     };
-    stageRef.current?.setPointerCapture(event.pointerId);
+    stageRef.current?.setPointerCapture?.(event.pointerId);
   }
 
   function updateGesture(event: PointerEvent<HTMLDivElement>) {
@@ -179,7 +179,7 @@ export function EditableTeamCalendar({
     else if (gesture.invalid) {
       onMessage('That placement is unavailable. Choose a workday and avoid overlapping your own blocks.');
     }
-    if (stageRef.current?.hasPointerCapture(event.pointerId)) {
+    if (stageRef.current?.hasPointerCapture?.(event.pointerId)) {
       stageRef.current.releasePointerCapture(event.pointerId);
     }
     gestureRef.current = null;
