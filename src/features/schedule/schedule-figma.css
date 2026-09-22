@@ -88,3 +88,163 @@
 .compact-team-week article>header button{border:0;background:transparent;font-size:10px;font-weight:750;color:#403936;text-align:left;cursor:pointer}
 @media(max-width:900px){.schedule-config-toolbar{justify-content:flex-start}.schedule-selected-tools{align-items:flex-start;flex-direction:column}}
 @media(max-width:640px){.schedule-selected-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}.schedule-config-toolbar>button{width:100%}}
+
+
+/* Compact schedule editor. These rules override the static Figma layout. */
+.schedule-config-drawer {
+  gap: 16px;
+  padding: clamp(16px, 2vw, 26px);
+  background: linear-gradient(125deg, rgba(255,252,249,.87), rgba(255,255,255,.70));
+}
+.schedule-config-topline { align-items: flex-start; gap: 18px; }
+.schedule-config-topline h2 {
+  margin: 5px 0 7px;
+  font-size: clamp(18px,1.6vw,23px);
+  font-weight: 780;
+  letter-spacing: -.03em;
+}
+.schedule-config-topline p:last-child { font-size: 12px; line-height: 1.5; }
+.schedule-config-drawer .page-kicker { font-size: 9px; }
+.schedule-balance {
+  display: grid;
+  gap: 5px;
+  min-width: 194px;
+  padding: 11px 15px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+.schedule-balance-label {
+  font: 750 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing: .08em;
+  opacity: .75;
+}
+.schedule-balance strong { font-size: 13px; font-weight: 790; }
+.schedule-config-toolbar {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(105px,1fr)) minmax(155px,auto);
+  gap: 12px;
+  align-items: end;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid rgba(118,95,82,.08);
+  border-radius: 15px;
+  background: rgba(125,100,84,.045);
+}
+.schedule-config-toolbar label { width: auto; min-width: 0; gap: 3px; }
+.schedule-config-toolbar label > span { margin: 0 0 3px; font-size: 9px; line-height: 1.4; }
+.schedule-config-toolbar input {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px;
+  border-color: rgba(118,95,82,.16);
+  border-radius: 10px;
+  background: rgba(255,255,255,.92);
+  color: #332c28;
+  font-size: 14px;
+  font-weight: 650;
+}
+.schedule-config-toolbar > .schedule-button {
+  align-self: end;
+  min-height: 42px;
+  padding: 0 16px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.schedule-selected-tools {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 15px 16px;
+  border: 1px solid rgba(119,97,85,.13);
+  border-radius: 15px;
+  background: rgba(255,255,255,.78);
+}
+.schedule-selected-summary { display: grid; gap: 5px; min-width: 0; }
+.schedule-editor-eyebrow {
+  color: #a25231;
+  font: 770 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing: .08em;
+}
+.schedule-selected-summary strong { color: #352c28; font-size: 13px; line-height: 1.45; }
+.schedule-selected-summary p { margin: 0; color: #81746c; font-size: 11px; line-height: 1.45; }
+.schedule-selected-actions { gap: 8px; justify-content: flex-end; }
+.schedule-selected-actions .schedule-button {
+  min-height: 36px;
+  padding: 0 12px;
+  background: #fff;
+  font-size: 11px;
+}
+.schedule-selected-actions .schedule-button:disabled { opacity: .48; cursor: not-allowed; }
+.schedule-config-disclosures { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.schedule-config-disclosures details { min-width: 0; max-width: 100%; }
+.schedule-config-disclosures summary,
+.schedule-config-advanced summary {
+  color: #795e4e;
+  font-size: 11px;
+  font-weight: 730;
+  line-height: 1.6;
+  cursor: pointer;
+}
+.schedule-config-disclosures p {
+  max-width: 650px;
+  margin: 8px 0 3px;
+  color: #746861;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.schedule-config-disclosures details[open] {
+  padding: 7px 11px 10px;
+  border-radius: 11px;
+  background: rgba(255,255,255,.65);
+}
+.schedule-config-advanced { padding: 0 0 2px; }
+.schedule-config-drawer .schedule-editor-message {
+  margin: 0;
+  padding: 11px 13px;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.schedule-config-drawer .schedule-message.error { font-size: 12px; line-height: 1.5; }
+.schedule-config-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 1px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(116,93,79,.13);
+}
+.schedule-config-footer > span { color: #857870; font-size: 11px; line-height: 1.4; }
+.schedule-config-footer .schedule-form-actions { display: flex; gap: 9px; margin: 0 0 0 auto; }
+.schedule-config-footer .schedule-button { min-height: 40px; min-width: 118px; font-size: 12px; }
+.schedule-config-drawer .schedule-button:focus-visible,
+.schedule-config-toolbar input:focus-visible,
+.schedule-config-disclosures summary:focus-visible,
+.schedule-config-advanced summary:focus-visible {
+  outline: 2px solid #cb4d22;
+  outline-offset: 3px;
+}
+@media (max-width: 1080px) {
+  .schedule-config-toolbar { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .schedule-config-toolbar > .schedule-button { grid-column: 1/-1; width: 100%; }
+  .schedule-selected-tools { grid-template-columns: 1fr; }
+  .schedule-selected-actions { justify-content: flex-start; }
+}
+@media (max-width: 640px) {
+  .schedule-config-drawer { gap: 14px; padding: 15px; }
+  .schedule-config-topline { flex-direction: column; gap: 12px; }
+  .schedule-balance { min-width: 0; width: 100%; }
+  .schedule-config-toolbar { grid-template-columns: repeat(2,minmax(0,1fr)); padding: 12px; }
+  .schedule-config-toolbar label:last-of-type { grid-column: 1/-1; }
+  .schedule-selected-actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); width: 100%; }
+  .schedule-config-footer { align-items: stretch; }
+  .schedule-config-footer .schedule-form-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; margin: 0; }
+  .schedule-config-footer .schedule-button { min-width: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .schedule-config-drawer .schedule-button { transition: background-color .15s,transform .15s; }
+  .schedule-config-drawer .schedule-button.primary:not(:disabled):hover { background: #b4421d; transform: translateY(-1px); }
+}
