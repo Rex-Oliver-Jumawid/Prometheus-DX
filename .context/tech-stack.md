@@ -107,7 +107,7 @@ The frontend may hide or disable unavailable controls, but it must not be treate
 
 React will be used to build the Prometheus user interface.
 
-The existing `finalmodel.html` prototype will be converted into reusable React components instead of maintaining one large HTML, CSS, and JavaScript file.
+The current Figma interface will be implemented as reusable React components, using `finalmodel.html` only for interaction and workflow details not fully expressed by the target Figma frame.
 
 Primary frontend areas include:
 
@@ -123,9 +123,10 @@ Primary frontend areas include:
 - Schedule
 - Shifts and work sessions
 - Team
+- VisiWork
+- Reports & Analytics
 - Notifications
-- Reports and analytics
-- Admin Registry
+- Registry
 - Profile and account interface
 
 ### 4.2 TypeScript
@@ -152,15 +153,16 @@ Example routes may include:
 /projects/:projectId
 /projects/:projectId/outcomes/:outcomeId
 /projects/:projectId/chat
+/visiwork
 /schedule
 /team
-/notifications
 /reports
-/admin
+/notifications
+/registry
 /profile
 ```
 
-The `/admin` route must require the Administrator organization role.
+The `/registry` route must require the Administrator organization role.
 
 ### 4.5 TanStack Query
 
@@ -190,7 +192,7 @@ Zustand will manage shared frontend-only state.
 
 Examples include:
 
-- Sidebar collapsed state
+- Mobile navigation open state
 - Open drawer
 - Open modal
 - Selected filters
@@ -692,9 +694,10 @@ prometheus/
 │   │   ├── submissions/
 │   │   ├── schedule/
 │   │   ├── team/
-│   │   ├── notifications/
+│   │   ├── visiwork/
 │   │   ├── reports/
-│   │   └── admin/
+│   │   ├── notifications/
+│   │   └── registry/
 │   ├── components/
 │   │   ├── ui/
 │   │   └── layout/
@@ -745,11 +748,11 @@ The SRS defines the functional requirements, business rules, permissions, workfl
 
 ### Figma
 
-Figma defines visual design, layout, typography, colors, spacing, component appearance, responsive design intent, and UI interaction design.
+Figma defines current visual design, layout, navigation placement, typography, colors, spacing, component appearance, and responsive design intent.
 
 ### `finalmodel.html`
 
-The prototype remains an interaction reference for navigation, project boards, stages, outcomes, submission review, modals and drawers, schedule interactions, and workspace behavior.
+The prototype remains an interaction and workflow reference for behavior not fully expressed by the target Figma frame, including project boards, stages, outcomes, submission review, modals and drawers, schedule interactions, and workspace behavior.
 
 Prototype-only behavior must not override the SRS or `user-flows.md`.
 
