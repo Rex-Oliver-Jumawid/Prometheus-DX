@@ -1,120 +1,167 @@
-# Prometheus UI Prototype Source of Truth
+# Prometheus UI Reference Policy
 
 ## Purpose
 
-This document defines how the production Prometheus application should use the HTML prototype and Figma during implementation.
+This document defines which Prometheus artifacts own visual layout, interaction behavior, product rules, and production architecture.
 
-For the main authenticated application, `.model/finalmodel.html` is the prototype source of truth.
+The current Prometheus Figma file is the source of truth for user-interface layout and visual design.
 
-The production application is intended to turn that prototype into a real working application with real authentication, authorization, APIs, persistence, validation, and testing.
+Figma file:
 
-## Prototype Source of Truth
+`https://www.figma.com/design/8zgQ4pcWtku7rSWzjlP9K9/Prometheus`
 
-`.model/finalmodel.html` owns the intended user-visible application experience demonstrated by the prototype.
+Figma file key:
 
-Unless an explicit newer product decision changes the prototype, production should reflect what the prototype demonstrates, including where applicable:
+`8zgQ4pcWtku7rSWzjlP9K9`
+
+The HTML prototypes remain useful interaction and workflow references, but they do not override a current Figma layout.
+
+## Figma Owns UI Layout and Visual Design
+
+For user-facing production work, follow the current Figma frame for the screen being implemented.
+
+Figma owns the intended presentation of:
 
 - page and screen composition
-- navigation and destination behavior
-- tabs and toggles
-- buttons and actions
-- drawers and modals
-- open and close behavior
-- expandable and collapsible regions
-- forms and visible fields
-- validation and visible feedback
-- scrolling behavior
-- state changes visible to the user
-- interaction sequencing
-- profile and settings interactions
-- sidebar and navigation behavior
-- screen-level workflows
-- visual composition and treatment demonstrated by the prototype
-
-Do not invent a different interaction simply because it is easier to implement in React.
-
-When a prototype control, field, state, or workflow exists in `finalmodel.html`, assume it should be represented in the production application unless the user explicitly changes that product decision.
-
-If the current production implementation differs from `finalmodel.html`, treat the difference as something to reconcile rather than automatically treating the implementation as correct.
-
-## Authentication Prototype
-
-`.model/login-page.html` is the prototype source of truth for the authentication screen and its user-visible interaction behavior.
-
-The same rules apply: preserve the demonstrated user experience while implementing real authentication securely through the approved production architecture.
-
-## Figma Is a Helper Reference
-
-Figma is a supporting design reference, not the primary source of truth for the Prometheus application experience.
-
-Use Figma and Figma MCP or another connected Figma integration to help inspect:
-
-- dimensions
-- spacing
+- application-shell layout
+- navigation placement and grouping
+- sidebar structure
+- visual hierarchy
+- spacing and dimensions
 - typography
 - colors
 - icons
-- component details
-- design tokens and variables
-- screenshots and frame structure
-- visual details that are difficult to inspect from the HTML prototype alone
+- component appearance
+- card, panel, drawer, and modal placement
+- visible visual states
+- scrolling regions
+- responsive design intent
+- visual treatment of badges, filters, tabs, buttons, and controls
 
-When Figma and `.model/finalmodel.html` disagree about the app being built, follow `finalmodel.html` unless an explicit newer product decision says otherwise.
+Do not preserve an older production or prototype layout merely because it already exists in code.
 
-Do not change prototype behavior merely to match an older or inconsistent Figma frame.
+When the production UI differs from the current Figma frame, treat the difference as something to reconcile.
 
-Figma MCP should be configured when available because live node inspection improves implementation accuracy, but lack of Figma access does not make the HTML prototype secondary.
+For substantial UI work, use the connected Figma integration to inspect the specific target frame rather than relying only on a pasted screenshot or old implementation.
 
-## Production Architecture Boundary
+## Current Application Shell Decision
 
-The prototype defines the intended application experience, not the production implementation technique.
+The current Figma shell is the approved layout for the authenticated application.
 
-Do not copy prototype JavaScript, DOM structure, local mock state, or frontend-only permission checks as production architecture.
+The primary navigation is located in the left sidebar.
 
-Rebuild the prototype as maintainable React, NestJS, Prisma, PostgreSQL, and Supabase-backed functionality according to `.context/tech-stack.md`.
+The current primary navigation presents:
 
-The goal is behavioral and visual fidelity to the prototype with production-quality architecture underneath it.
+- Home
+- Projects
+- VisiWork
+- Schedule
+- Team
+- Reports & Analytics
 
-## Security, Authorization, and Persistence
+The lower sidebar utility area presents:
 
-Prototype behavior must be implemented through real backend rules rather than simulated frontend state.
+- Registry, subject to Administrator visibility rules
+- Notifications
 
-Canonical security, authorization, persistence, and historical-data invariants still require server-side enforcement.
+Notifications are accessed through the dedicated Notifications sidebar utility item.
 
-For example, if the prototype shows an Administrator action, production should preserve the same user-facing action while enforcing the corresponding permission on the backend.
+The Notifications sidebar item may display an unread-count badge.
 
-If implementing a prototype feature requires a persistent field or relationship that is missing from the current data model, do not silently drop the prototype feature.
+Do not add a separate global top-right notification bell, notification icon, or notification control unless a newer explicit product decision changes this layout.
 
-Identify the mismatch and reconcile the canonical data model and requirements with the prototype before continuing.
+The signed-in profile control is located at the bottom of the sidebar in the current Figma shell.
 
-If a prototype interaction appears to create a genuine security or data-integrity conflict, surface the conflict explicitly instead of silently changing the prototype or weakening production safeguards.
+The Time In and Time Out attendance control remains a separate work-session control and must not be confused with notification navigation.
+
+## Phase 7 Figma Frames
+
+The current Phase 7 visual references are:
+
+- Home: node `189:3`
+- Notifications: node `11:2301`
+
+Both frames use the same authenticated application shell.
+
+The Home frame contains the Figma-defined dashboard composition, including My Project Summary, Working Now, Needs Attention, and Quick Access.
+
+The Notifications frame contains the Figma-defined notification header, Mark all as read action, All and Unread filters, unread-count treatment, and notification list presentation.
+
+These desktop frames are visual references rather than instructions to hard-code one viewport size.
+
+Responsive production behavior should preserve the same hierarchy, navigation model, and visual intent at supported viewport sizes.
+
+## HTML Prototypes Are Interaction References
+
+`.model/finalmodel.html` is an interaction and workflow reference for the main authenticated application.
+
+`.model/login-page.html` is an interaction reference for authentication behavior.
+
+Use the HTML prototypes to understand behavior that a static Figma frame does not fully specify, such as:
+
+- interaction sequencing
+- open and close behavior
+- workflow transitions
+- tab or toggle behavior not evident from the target Figma state
+- validation and visible feedback
+- state transitions
+- deeper workflow relationships
+
+The HTML prototypes do not own current page layout, navigation placement, visual composition, spacing, or styling when those details are defined in Figma.
+
+Do not reintroduce an older prototype-only control when it is absent from the approved Figma design.
+
+## Product and Security Boundaries
+
+The Software Requirements Specification owns functional requirements and business intent.
+
+`.context/user-flows.md` owns canonical workflow and authorization rules.
+
+`.context/data-model.md` owns persistent entities, relationships, constraints, history, and derived state.
+
+`.context/tech-stack.md` owns production architecture and technology choices.
+
+Figma does not override backend authorization, persistence, security, or data-integrity requirements.
+
+A control being visible or hidden in Figma does not by itself grant or revoke authority.
+
+Implement the Figma experience through real React, NestJS, Prisma, PostgreSQL, Supabase, validation, and backend authorization.
+
+If implementing a Figma-defined feature requires missing persistent data or a new relationship, reconcile the canonical requirements and data model rather than silently removing the feature.
 
 ## Conflict Resolution
 
-Use these rules when implementation references disagree:
+Use these ownership rules when implementation references disagree:
 
-1. `.model/finalmodel.html` is the source of truth for the main application's intended user-visible prototype behavior and experience.
-2. `.model/login-page.html` is the source of truth for authentication-screen prototype behavior and experience.
-3. SRS and user-flow documents define business intent and authorization requirements that must be implemented securely behind that experience.
-4. `data-model.md` defines the current persistence model, but a mismatch with a required prototype feature must be reconciled rather than solved by silently deleting the prototype behavior.
-5. `tech-stack.md` defines production architecture.
-6. Figma is a helper for visual inspection and implementation detail.
-7. `.testcases/` defines the phase acceptance gates and should be extended when a prototype behavior needs explicit regression coverage.
+1. The SRS owns functional requirements and business intent.
+2. `user-flows.md` owns canonical authorization and workflow rules.
+3. Figma owns current user-interface layout, visual composition, navigation placement, and visual design.
+4. `finalmodel.html` and `login-page.html` provide interaction and workflow detail where Figma does not fully specify behavior.
+5. `data-model.md` owns current persistence structure and invariants.
+6. `tech-stack.md` owns production architecture.
+7. `.testcases/` owns phase acceptance gates.
+8. `.docs/phases/` records historical implementation evidence and decisions.
 
-When a real conflict remains after applying these ownership rules, document it and resolve it explicitly before encoding a contradictory production behavior.
+When Figma and an HTML prototype disagree only about layout or visual presentation, follow Figma.
+
+When Figma and an HTML prototype disagree about an interaction, use the newer explicit product decision when one exists.
+
+If no newer interaction decision exists, reconcile the conflict against the SRS and `user-flows.md` before implementation.
+
+Never weaken authorization, persistence, or security merely to reproduce a visual mockup.
 
 ## Implementation Rule
 
 For substantial user-facing work:
 
-1. Run or inspect the relevant workflow in `.model/finalmodel.html` first.
-2. Identify every user-visible state and interaction that the production slice must reproduce.
-3. Read the canonical requirements and persistence model needed to make that workflow real.
-4. Use Figma MCP or another connected Figma integration as a helper for visual detail when available.
-5. Implement the same experience using the approved production architecture.
-6. Compare the working application against the prototype in a browser.
-7. Treat unexplained behavioral differences from the prototype as defects or unresolved product conflicts.
+1. Read the canonical requirements and user flows for the feature.
+2. Inspect the relevant current Figma frame with the connected Figma integration.
+3. Record or identify the exact frame or node used for implementation.
+4. Inspect the HTML prototype only for interaction or workflow details not fully expressed by the Figma frame.
+5. Reuse existing production components and design tokens where they match the Figma intent.
+6. Implement the design through the approved production architecture.
+7. Compare the working application directly against the Figma frame in a real browser.
+8. Verify interactions against canonical workflows and acceptance tests.
+9. Treat unexplained visual differences from Figma as defects or unresolved product conflicts.
 
-The objective is not to design a new application inspired by the prototype.
-
-The objective is to turn the prototype into the working Prometheus application.
+The objective is to implement the approved Prometheus Figma interface as a real, secure, persistent application rather than to preserve an older prototype layout.
