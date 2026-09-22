@@ -46,6 +46,26 @@ describe('ProjectDialog', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('uses the dialog accessible name for the close button', () => {
+    const onClose = vi.fn();
+    render(
+      <ProjectDialog
+        title="Review all member submissions together against the expected outcome."
+        ariaLabel="Review Outcome"
+        onClose={onClose}
+      >
+        <p>Review details</p>
+      </ProjectDialog>,
+    );
+
+    const dialog = screen.getByRole('dialog', { name: 'Review Outcome' });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Close Review Outcome' }),
+    );
+    expect(dialog).toBeInTheDocument();
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
   it('blocks dismissal while an operation is pending', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
