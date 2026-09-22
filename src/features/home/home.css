@@ -142,7 +142,8 @@
   flex: 1 1 auto;
   display: grid;
   grid-template-columns: minmax(0, 2.385fr) minmax(238px, 1fr);
-  gap: 11px;
+  column-gap: 18px;
+  row-gap: 11px;
   margin-top: 12px;
   align-items: stretch;
 }
@@ -377,7 +378,9 @@
 }
 
 .home-panel-heading.compact {
+  width: 100%;
   min-height: 38px;
+  padding: 0;
 }
 
 .home-panel-heading.compact h2 {
@@ -622,7 +625,7 @@
 
 @media (min-height: 800px) and (min-width: 1051px) {
   .home-dashboard-grid {
-    column-gap: 16px;
+    column-gap: 20px;
   }
 
   .home-side-column {
@@ -644,6 +647,7 @@
     min-height: 0;
     flex: 0 0 auto;
     grid-template-columns: 1fr;
+    column-gap: 0;
   }
 
   .home-projects-panel {
