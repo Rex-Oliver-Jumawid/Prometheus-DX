@@ -10,13 +10,13 @@ import {
   type UpdateScheduleRequest,
   type Weekday,
 } from '../../../shared/contracts/schedule';
-import type { WorkSessionHistoryResponse } from '../../../shared/contracts/work-session';
+import type {
+  WorkSession,
+  WorkSessionHistoryResponse,
+} from '../../../shared/contracts/work-session';
 import { apiFetch } from '../../lib/api';
 import { useAuth } from '../auth/auth-context';
-import {
-  formatHours,
-  formatManilaDateTime,
-} from '../work-sessions/work-session-format';
+import { formatHours, formatManilaDateTime } from '../work-sessions/work-session-format';
 import {
   teamWorkSummaryQuery,
   workSessionHistoryQuery,
@@ -41,13 +41,15 @@ const DAY_LABELS: Record<Weekday, string> = {
 
 const CALENDAR_START_MINUTES = 7 * 60;
 const CALENDAR_END_MINUTES = 24 * 60;
-const CALENDAR_ROW_HEIGHT = 54;
+const CALENDAR_ROW_HEIGHT = 44;
 
 function minutesToClock(minutes: number): string {
   if (minutes === 24 * 60) return '00:00';
-  return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(
-    minutes % 60,
-  ).padStart(2, '0')}`;
+  return (
+    String(Math.floor(minutes / 60)).padStart(2, '0') +
+    ':' +
+    String(minutes % 60).padStart(2, '0')
+  );
 }
 
 function currentWeekDateLabels(): Record<Weekday, string> {
@@ -80,10 +82,74 @@ function currentWeekDateLabels(): Record<Weekday, string> {
   ) as Record<Weekday, string>;
 }
 
+function currentMondayYmd(): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const year = Number(parts.find((part) => part.type === 'year')?.value ?? 0);
+  const month = Number(parts.find((part) => part.type === 'month')?.value ?? 1);
+  const day = Number(parts.find((part) => part.type === 'day')?.value ?? 1);
+  const date = new Date(Date.UTC(year, month - 1, day, 12));
+  const mondayOffset = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - mondayOffset);
+  return date.toISOString().slice(0, 10);
+}
+
+function addDaysYmd(ymd: string, days: number): string {
+  const date = new Date(ymd + 'T12:00:00.000Z');
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function weekRangeLabel(weekStart: string): string {
+  const start = new Date(weekStart + 'T12:00:00.000Z');
+  const end = new Date(start);
+  end.setUTCDate(start.getUTCDate() + 6);
+  const sameMonth = start.getUTCMonth() === end.getUTCMonth();
+  const month = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    timeZone: 'UTC',
+  });
+  if (sameMonth) return month.format(start) + ' ' + start.getUTCDate() + '–' + end.getUTCDate();
+  return (
+    month.format(start) +
+    ' ' +
+    start.getUTCDate() +
+    ' – ' +
+    month.format(end) +
+    ' ' +
+    end.getUTCDate()
+  );
+}
+
+function weekDateLabels(weekStart: string): Record<Weekday, string> {
+  const label = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+  return Object.fromEntries(
+    WEEKDAYS.map((weekday, index) => {
+      const date = new Date(weekStart + 'T12:00:00.000Z');
+      date.setUTCDate(date.getUTCDate() + index);
+      return [weekday, label.format(date)];
+    }),
+  ) as Record<Weekday, string>;
+}
+
 function formatMinutes(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const remainder = minutes % 60;
-  return remainder ? `${hours}h ${remainder}m` : `${hours}h`;
+  return remainder ? hours + 'h ' + remainder + 'm' : hours + 'h';
+}
+
+function formatSignedHours(seconds: number): string {
+  if (!seconds) return '0h';
+  const sign = seconds > 0 ? '+' : '−';
+  return sign + formatHours(Math.abs(seconds));
 }
 
 function defaultFormValues(
@@ -115,6 +181,54 @@ function weekMinutes(
   );
 }
 
+function weekdayFromInstant(instant: string): Weekday {
+  const raw = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Manila',
+    weekday: 'long',
+  }).format(new Date(instant));
+  return raw.toUpperCase() as Weekday;
+}
+
+function clockMinutesFromInstant(instant: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Manila',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date(instant));
+  const hour = Number(parts.find((part) => part.type === 'hour')?.value ?? 0) % 24;
+  const minute = Number(parts.find((part) => part.type === 'minute')?.value ?? 0);
+  return hour * 60 + minute;
+}
+
+function sessionOverlapSeconds(
+  session: WorkSession,
+  schedule: TeamScheduleResponse['members'][number]['schedule'],
+): number {
+  if (!session.timeOut || !schedule) return 0;
+  const weekday = weekdayFromInstant(session.timeIn);
+  const start = clockMinutesFromInstant(session.timeIn);
+  const end = clockMinutesFromInstant(session.timeOut);
+  if (end < start) return 0;
+
+  return schedule.blocks
+    .filter((block) => block.weekday === weekday)
+    .reduce((total, block) => {
+      const blockStart = clockTimeToMinutes(block.startTime);
+      const blockEnd = clockTimeToMinutes(block.endTime);
+      return total + Math.max(0, Math.min(end, blockEnd) - Math.max(start, blockStart)) * 60;
+    }, 0);
+}
+
+function dayActualSeconds(
+  history: WorkSessionHistoryResponse | undefined,
+  weekday: Weekday,
+): number {
+  return (history?.sessions ?? [])
+    .filter((session) => weekdayFromInstant(session.timeIn) === weekday)
+    .reduce((total, session) => total + session.durationSeconds, 0);
+}
+
 export function SchedulePage() {
   const { member, session } = useAuth();
   const queryClient = useQueryClient();
@@ -122,20 +236,22 @@ export function SchedulePage() {
   const [configuring, setConfiguring] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState(member?.id ?? '');
-  const [selectedPeopleIds, setSelectedPeopleIds] = useState<string[] | null>(
-    null,
-  );
+  const [selectedPeopleIds, setSelectedPeopleIds] = useState<string[] | null>(null);
   const [departmentId, setDepartmentId] = useState('');
+  const [weekParam, setWeekParam] = useState<string | undefined>(undefined);
+  const [selectedDay, setSelectedDay] = useState<Weekday | null>(null);
+
   const teamQuery = useQuery(teamScheduleQuery(session?.access_token));
   const mineQuery = useQuery(myScheduleQuery(session?.access_token));
   const historyQuery = useQuery({
-    ...workSessionHistoryQuery(session?.access_token),
+    ...workSessionHistoryQuery(session?.access_token, weekParam),
     enabled: view === 'shifts',
   });
   const teamWorkQuery = useQuery({
-    ...teamWorkSummaryQuery(session?.access_token),
+    ...teamWorkSummaryQuery(session?.access_token, weekParam),
     enabled: view === 'shifts',
   });
+
   const form = useForm<UpdateScheduleRequest>({
     defaultValues: defaultFormValues(null),
   });
@@ -174,6 +290,7 @@ export function SchedulePage() {
       teamQuery.data?.members[0],
     [member?.id, selectedMemberId, teamQuery.data?.members],
   );
+
   const selectedWorkMember = teamWorkQuery.data?.members.find(
     (item) => item.id === selectedMember?.id,
   );
@@ -190,9 +307,7 @@ export function SchedulePage() {
   const submitSchedule = (input: UpdateScheduleRequest) => {
     const parsed = UpdateScheduleRequestSchema.safeParse(input);
     if (!parsed.success) {
-      setFormError(
-        parsed.error.issues[0]?.message ?? 'Check the schedule values.',
-      );
+      setFormError(parsed.error.issues[0]?.message ?? 'Check the schedule values.');
       return;
     }
     setFormError(null);
@@ -211,9 +326,10 @@ export function SchedulePage() {
       generated.push({
         weekday,
         startTime: '09:00',
-        endTime: `${String(Math.floor(end / 60)).padStart(2, '0')}:${String(
-          end % 60,
-        ).padStart(2, '0')}`,
+        endTime:
+          String(Math.floor(end / 60)).padStart(2, '0') +
+          ':' +
+          String(end % 60).padStart(2, '0'),
       });
       remaining -= duration;
     }
@@ -224,9 +340,7 @@ export function SchedulePage() {
   };
 
   if (teamQuery.isPending || mineQuery.isPending) {
-    return (
-      <section className="schedule-state">Loading Team Schedule...</section>
-    );
+    return <section className="schedule-state">Loading Team Schedule...</section>;
   }
 
   if (teamQuery.isError || mineQuery.isError) {
@@ -236,9 +350,7 @@ export function SchedulePage() {
         <p>{(teamQuery.error ?? mineQuery.error)?.message}</p>
         <button
           className="schedule-button primary"
-          onClick={() =>
-            void Promise.all([teamQuery.refetch(), mineQuery.refetch()])
-          }
+          onClick={() => void Promise.all([teamQuery.refetch(), mineQuery.refetch()])}
         >
           Try again
         </button>
@@ -250,9 +362,7 @@ export function SchedulePage() {
   const ownMember = members.find((item) => item.id === member?.id);
   const ownSchedule = mineQuery.data?.schedule ?? ownMember?.schedule ?? null;
   const departments = Array.from(
-    new Map(
-      members.map((item) => [item.department.id, item.department]),
-    ).values(),
+    new Map(members.map((item) => [item.department.id, item.department])).values(),
   ).sort((left, right) => left.name.localeCompare(right.name));
   const peopleIds = selectedPeopleIds ?? members.map((item) => item.id);
   const filteredMembers = members.filter(
@@ -273,20 +383,39 @@ export function SchedulePage() {
     setSelectedPeopleIds(nextIds.length === members.length ? null : nextIds);
   };
 
+  const currentWeek = weekParam ?? currentMondayYmd();
+  const currentRange = weekRangeLabel(currentWeek);
+  const shiftsDateLabels = weekDateLabels(currentWeek);
+  const scheduledMinutes = selectedWorkMember?.scheduledMinutes ?? 0;
+  const workedSeconds =
+    selectedMember?.id === member?.id
+      ? historyQuery.data?.totalDurationSeconds ?? selectedWorkMember?.actualWorkedSeconds ?? 0
+      : selectedWorkMember?.actualWorkedSeconds ?? 0;
+  const varianceSeconds = workedSeconds - scheduledMinutes * 60;
+  const overlapSeconds =
+    selectedMember?.id === member?.id
+      ? (historyQuery.data?.sessions ?? []).reduce(
+          (total, item) => total + sessionOverlapSeconds(item, selectedMember?.schedule ?? null),
+          0,
+        )
+      : 0;
+
+  const shiftWeek = (days: number) => {
+    const next = addDaysYmd(currentWeek, days);
+    setWeekParam(next === currentMondayYmd() ? undefined : next);
+    setSelectedDay(null);
+  };
+
   return (
     <section className="schedule-page" aria-labelledby="schedule-title">
       <header className="schedule-header">
         <div>
           <p className="page-kicker">COMPANY AVAILABILITY</p>
           <h1 id="schedule-title">Schedule</h1>
-          <p>Planned local working hours in one shared weekly view.</p>
+          <p>Chosen startup duty hours in one merged weekly calendar.</p>
         </div>
         <div className="schedule-header-actions">
-          <div
-            className="schedule-tabs"
-            role="tablist"
-            aria-label="Schedule view"
-          >
+          <div className="schedule-tabs" role="tablist" aria-label="Schedule view">
             <button
               role="tab"
               aria-selected={view === 'team'}
@@ -307,71 +436,148 @@ export function SchedulePage() {
               Shifts
             </button>
           </div>
-          <button
-            className="schedule-button primary"
-            onClick={enterConfiguration}
-          >
+          <button className="schedule-button primary" onClick={enterConfiguration}>
             Configure My Schedule
           </button>
         </div>
       </header>
 
       {view === 'shifts' ? (
-        <section className="schedule-panel shifts-panel" aria-label="Shifts">
-          <div className="schedule-panel-heading">
+        <section className="shifts-workspace" aria-label="Shifts">
+          <div className="shift-filter-card">
             <div>
-              <p className="page-kicker">PLANNED SHIFTS</p>
-              <h2>
-                {selectedMember?.id === member?.id
-                  ? 'My Shifts'
-                  : `${selectedMember?.fullName}'s Shifts`}
-              </h2>
-              <p>Recurring planned availability shown in Asia/Manila.</p>
+              <p className="page-kicker">SHIFT FILTERS</p>
+              <strong>Member work history</strong>
+              <p>Compare scheduled commitment and actual sessions one week at a time.</p>
             </div>
-            <label className="schedule-select-field">
-              <span>Member</span>
-              <select
-                value={selectedMember?.id ?? ''}
-                onChange={(event) => setSelectedMemberId(event.target.value)}
-              >
-                {members.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.fullName}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="shift-filter-controls">
+              <label className="schedule-select-field">
+                <span>Member</span>
+                <select
+                  value={selectedMember?.id ?? ''}
+                  onChange={(event) => {
+                    setSelectedMemberId(event.target.value);
+                    setSelectedDay(null);
+                  }}
+                >
+                  {members.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.fullName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="shift-week-picker">
+                <span>Week</span>
+                <div>
+                  <button type="button" aria-label="Previous week" onClick={() => shiftWeek(-7)}>
+                    ‹
+                  </button>
+                  <strong>{currentRange}</strong>
+                  <button type="button" aria-label="Next week" onClick={() => shiftWeek(7)}>
+                    ›
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="work-week-stats">
-            <article>
-              <span>Scheduled</span>
-              <strong>
-                {formatMinutes(selectedWorkMember?.scheduledMinutes ?? 0)}
-              </strong>
-              <small>Recurring planned hours</small>
-            </article>
-            <article>
-              <span>Worked</span>
-              <strong>
-                {formatHours(selectedWorkMember?.actualWorkedSeconds ?? 0)}
-              </strong>
-              <small>Persisted Time In / Out</small>
-            </article>
-            <article>
-              <span>Status</span>
-              <strong>
-                {selectedWorkMember?.workingNow ? 'Working Now' : 'Timed Out'}
-              </strong>
-              <small>From unresolved OPEN session</small>
-            </article>
+
+          <div className="shift-comparison-heading">
+            <div>
+              <p className="page-kicker">PLANNED VS ACTUAL</p>
+              <strong>{currentRange}</strong>
+              <p>
+                Planned commitment compared with actual Time In / Time Out sessions for{' '}
+                {selectedMember?.fullName ?? 'this member'}.
+              </p>
+            </div>
           </div>
-          <ScheduleSummary schedule={selectedMember?.schedule ?? null} />
-          {selectedMember?.id === member?.id && (
-            <WorkHistory
-              pending={historyQuery.isPending}
-              error={historyQuery.error}
-              history={historyQuery.data}
-              retry={() => void historyQuery.refetch()}
+
+          <div className="shift-stat-grid">
+            <ShiftStat label="Scheduled" value={formatMinutes(scheduledMinutes)} note="Effective planned hours" />
+            <ShiftStat label="Worked" value={formatHours(workedSeconds)} note="Recorded Time In / Out" />
+            <ShiftStat label="Variance" value={formatSignedHours(varianceSeconds)} note="Worked minus scheduled" />
+            <ShiftStat
+              label="Schedule overlap"
+              value={selectedMember?.id === member?.id ? formatHours(overlapSeconds) : '—'}
+              note={
+                selectedMember?.id === member?.id
+                  ? 'Worked inside planned windows'
+                  : 'Detailed overlap is available for your own sessions'
+              }
+            />
+          </div>
+
+          <section className="shift-week-card">
+            <header>
+              <div>
+                <strong>Week comparison</strong>
+                <p>Click any day to inspect its schedule and actual sessions.</p>
+              </div>
+              {scheduledMinutes > 0 && workedSeconds >= scheduledMinutes * 60 && (
+                <span className="fulfilled-pill">Commitment fulfilled ✓</span>
+              )}
+            </header>
+            <div className="shift-day-list">
+              {WEEKDAYS.map((weekday) => {
+                const planned =
+                  selectedMember?.schedule?.blocks
+                    .filter((block) => block.weekday === weekday)
+                    .reduce(
+                      (total, block) =>
+                        total +
+                        Math.max(
+                          0,
+                          clockTimeToMinutes(block.endTime) -
+                            clockTimeToMinutes(block.startTime),
+                        ),
+                      0,
+                    ) ?? 0;
+                const actual =
+                  selectedMember?.id === member?.id
+                    ? dayActualSeconds(historyQuery.data, weekday)
+                    : 0;
+                const maxMinutes = Math.max(planned, actual / 60, 60);
+                return (
+                  <button
+                    type="button"
+                    className={'shift-day-row' + (selectedDay === weekday ? ' selected' : '')}
+                    key={weekday}
+                    onClick={() => setSelectedDay(weekday)}
+                  >
+                    <div className="shift-day-label">
+                      <strong>{DAY_LABELS[weekday]}</strong>
+                      <span>{shiftsDateLabels[weekday]}</span>
+                    </div>
+                    <div className="shift-day-bars">
+                      <TimelineBar
+                        label="Planned"
+                        ratio={planned / maxMinutes}
+                        variant="planned"
+                      />
+                      <TimelineBar
+                        label="Actual"
+                        ratio={(actual / 60) / maxMinutes}
+                        variant="actual"
+                      />
+                    </div>
+                    <strong className="shift-day-total">
+                      {formatHours(actual)} / {formatMinutes(planned)}
+                    </strong>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          {selectedDay && (
+            <DayInspector
+              weekday={selectedDay}
+              schedule={selectedMember?.schedule ?? null}
+              history={
+                selectedMember?.id === member?.id ? historyQuery.data : undefined
+              }
+              dateLabel={shiftsDateLabels[selectedDay]}
             />
           )}
         </section>
@@ -384,8 +590,8 @@ export function SchedulePage() {
                   <span className="schedule-filter-control-label">People</span>
                   <span className="schedule-filter-control">
                     {peopleIds.length === members.length
-                      ? `All ${members.length} members`
-                      : `${peopleIds.length} selected`}
+                      ? 'All ' + members.length + ' members'
+                      : peopleIds.length + ' selected'}
                     <span aria-hidden="true">⌄</span>
                   </span>
                 </summary>
@@ -427,41 +633,37 @@ export function SchedulePage() {
 
               <div className="schedule-filter-field">
                 <span>Time range</span>
-                <div className="schedule-static-value">7:00 AM - 12:00 AM</div>
+                <div className="schedule-static-value">7:00 AM – 12:00 AM</div>
               </div>
 
               <div className="schedule-filter-summary">
                 <span>Showing</span>
-                <strong>
-                  Merged schedule · {filteredMembers.length} visible
-                </strong>
+                <strong>Merged schedule · {filteredMembers.length} visible</strong>
               </div>
             </div>
           </section>
 
           {configuring && (
             <form
-              className="schedule-panel configure-panel"
+              className="schedule-config-drawer"
               onSubmit={form.handleSubmit(submitSchedule)}
             >
-              <div className="schedule-panel-heading">
+              <div className="schedule-config-topline">
                 <div>
-                  <p className="page-kicker">PERSONAL SCHEDULE</p>
+                  <p className="page-kicker">YOUR MOVABLE SCHEDULE</p>
                   <h2>Configure My Schedule</h2>
-                  <p>
-                    Set your weekly target, then add, edit, or remove planned
-                    blocks.
-                  </p>
+                  <p>Build your base week while keeping the merged team calendar visible below.</p>
                 </div>
                 <div className="schedule-balance">
-                  Scheduled {formatMinutes(weekMinutes(watchedBlocks))} / Target{' '}
-                  {formatMinutes(targetMinutes)}
+                  {formatMinutes(weekMinutes(watchedBlocks))} / {formatMinutes(targetMinutes)}
                 </div>
               </div>
+
               <div className="schedule-config-toolbar">
                 <label>
                   <span>Target hours per week</span>
                   <input
+                    aria-label="Target hours per week"
                     type="number"
                     min="0"
                     max="168"
@@ -476,11 +678,7 @@ export function SchedulePage() {
                     }
                   />
                 </label>
-                <button
-                  type="button"
-                  className="schedule-button"
-                  onClick={generateWeek}
-                >
+                <button type="button" className="schedule-button" onClick={generateWeek}>
                   Generate Weekdays
                 </button>
                 <button
@@ -496,7 +694,25 @@ export function SchedulePage() {
                 >
                   Add Block
                 </button>
+                <div className="schedule-form-actions">
+                  <button
+                    type="button"
+                    className="schedule-button"
+                    disabled={mutation.isPending}
+                    onClick={() => setConfiguring(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="schedule-button primary"
+                    disabled={mutation.isPending}
+                  >
+                    {mutation.isPending ? 'Saving...' : 'Save Schedule'}
+                  </button>
+                </div>
               </div>
+
               <div className="schedule-block-editor">
                 {blocks.fields.length === 0 ? (
                   <div className="schedule-empty compact">
@@ -508,7 +724,10 @@ export function SchedulePage() {
                     <div className="schedule-block-row" key={field.id}>
                       <label>
                         <span>Day</span>
-                        <select {...form.register(`blocks.${index}.weekday`)}>
+                        <select
+                          aria-label={'Day ' + (index + 1)}
+                          {...form.register('blocks.' + index + '.weekday' as const)}
+                        >
                           {WEEKDAYS.map((day) => (
                             <option key={day} value={day}>
                               {DAY_LABELS[day]}
@@ -519,29 +738,32 @@ export function SchedulePage() {
                       <label>
                         <span>Start</span>
                         <input
+                          aria-label={index === 0 ? 'Start' : 'Start ' + (index + 1)}
                           type="time"
-                          {...form.register(`blocks.${index}.startTime`)}
+                          {...form.register('blocks.' + index + '.startTime' as const)}
                         />
                       </label>
                       <label>
                         <span>End</span>
                         <input
+                          aria-label={index === 0 ? 'End' : 'End ' + (index + 1)}
                           type="time"
-                          {...form.register(`blocks.${index}.endTime`)}
+                          {...form.register('blocks.' + index + '.endTime' as const)}
                         />
                       </label>
                       <button
                         type="button"
                         className="schedule-remove"
-                        aria-label={`Remove block ${index + 1}`}
+                        aria-label={'Remove block ' + (index + 1)}
                         onClick={() => blocks.remove(index)}
                       >
-                        Remove
+                        ×
                       </button>
                     </div>
                   ))
                 )}
               </div>
+
               {formError && (
                 <p className="schedule-message error" role="alert">
                   {formError}
@@ -552,74 +774,46 @@ export function SchedulePage() {
                   {mutation.error.message}
                 </p>
               )}
-              <div className="schedule-form-actions">
-                <button
-                  type="button"
-                  className="schedule-button"
-                  disabled={mutation.isPending}
-                  onClick={() => setConfiguring(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="schedule-button primary"
-                  disabled={mutation.isPending}
-                >
-                  {mutation.isPending ? 'Saving...' : 'Save Schedule'}
-                </button>
-              </div>
             </form>
           )}
 
           {!ownSchedule && !configuring && (
             <section className="schedule-empty hero">
-              <span className="schedule-empty-icon" aria-hidden="true">
-                ＋
-              </span>
+              <div className="schedule-empty-icon" aria-hidden="true">↔</div>
               <h2>Your schedule is ready to configure</h2>
               <p>
-                Add planned hours so teammates can see when you are usually
-                available.
+                Generate a base schedule, mark rest days, then redistribute your hours
+                while keeping the team view visible.
               </p>
-              <button
-                className="schedule-button primary"
-                onClick={enterConfiguration}
-              >
+              <button className="schedule-button primary" onClick={enterConfiguration}>
                 Configure My Schedule
               </button>
             </section>
           )}
 
-          <section
-            className="schedule-panel team-panel"
-            aria-label="Team Schedule"
-          >
+          <section className="schedule-panel team-panel">
             <div className="schedule-panel-heading">
               <div>
                 <p className="page-kicker">MERGED WEEK</p>
                 <h2>Team Schedule</h2>
-                <p>Each horizontal band is one hour. Times use Asia/Manila.</p>
+                <p>
+                  Each horizontal band is one hour. Your selected viewer&apos;s blocks
+                  stay visible alongside the rest of the team.
+                </p>
               </div>
               <div className="schedule-legend" aria-label="Schedule legend">
-                <span>
-                  <i className="mine" />
-                  Your schedule
-                </span>
-                <span>
-                  <i className="team" />
-                  Team schedule
-                </span>
-                <span>
-                  <i className="rest" />
-                  Rest day
-                </span>
+                <span><i className="mine" />Your movable schedule</span>
+                <span><i className="team" />Team schedule</span>
+                <span><i className="rest" />Rest day</span>
               </div>
             </div>
+
             <TeamCalendar
               members={filteredMembers}
               currentMemberId={member?.id}
+              dateLabels={currentWeekDateLabels()}
             />
+
             {visibleBlockCount === 0 && (
               <div className="schedule-calendar-empty">
                 No schedule blocks match these filters.
@@ -630,12 +824,10 @@ export function SchedulePage() {
           <aside className="schedule-note">
             <span aria-hidden="true">↔</span>
             <div>
-              <strong>
-                Redistribute hours instead of forcing identical days.
-              </strong>
+              <strong>Redistribute hours instead of forcing identical days.</strong>
               <p>
-                Generate a base schedule, then adjust your own blocks while
-                keeping the weekly target visible.
+                Generate a base schedule, mark rest days, then move your own blocks
+                while keeping the weekly target visible.
               </p>
             </div>
           </aside>
@@ -645,171 +837,157 @@ export function SchedulePage() {
   );
 }
 
-function WorkHistory({
-  pending,
-  error,
-  history,
-  retry,
+function ShiftStat({
+  label,
+  value,
+  note,
 }: {
-  pending: boolean;
-  error: Error | null;
-  history: WorkSessionHistoryResponse | undefined;
-  retry: () => void;
+  label: string;
+  value: string;
+  note: string;
 }) {
   return (
-    <section className="work-history" aria-labelledby="work-history-title">
-      <div className="work-history-head">
-        <div>
-          <p className="page-kicker">ACTUAL WORK</p>
-          <h3 id="work-history-title">Weekly work history</h3>
-        </div>
-        {history && (
-          <strong>{formatHours(history.totalDurationSeconds)}</strong>
-        )}
-      </div>
-      {pending ? (
-        <p>Loading work history...</p>
-      ) : error ? (
-        <div className="work-history-error" role="alert">
-          <span>{error.message}</span>
-          <button onClick={retry}>Try again</button>
-        </div>
-      ) : history?.sessions.length ? (
-        <div className="work-history-list">
-          {history.sessions.map((session) => (
-            <article key={session.id}>
-              <div>
-                <strong>{formatManilaDateTime(session.timeIn)}</strong>
-                <span>
-                  {session.timeOut
-                    ? `to ${formatManilaDateTime(session.timeOut)}`
-                    : session.status === 'OPEN'
-                      ? 'Active session'
-                      : 'Correction required'}
-                </span>
-              </div>
-              <div className="work-history-duration">
-                <strong>{formatHours(session.durationSeconds)}</strong>
-                <span>{session.status.replace('_', ' ')}</span>
-              </div>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <div className="schedule-empty compact">
-          <strong>No work sessions this week</strong>
-          <span>Time In to begin recording actual work separately.</span>
-        </div>
-      )}
-    </section>
+    <article className="shift-stat">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{note}</small>
+    </article>
   );
 }
 
-function ScheduleSummary({
-  schedule,
+function TimelineBar({
+  label,
+  ratio,
+  variant,
 }: {
-  schedule: TeamScheduleResponse['members'][number]['schedule'];
+  label: string;
+  ratio: number;
+  variant: 'planned' | 'actual';
 }) {
-  if (!schedule || schedule.blocks.length === 0) {
-    return (
-      <div className="schedule-empty compact">
-        <strong>No planned schedule</strong>
-        <span>This member has not shared recurring availability yet.</span>
-      </div>
-    );
-  }
   return (
-    <div className="shift-list">
-      {WEEKDAYS.map((day) => {
-        const dayBlocks = schedule.blocks.filter(
-          (block) => block.weekday === day,
-        );
-        return (
-          <article key={day} className="shift-day">
-            <strong>{DAY_LABELS[day]}</strong>
-            <div>
-              {dayBlocks.length ? (
-                dayBlocks.map((block) => (
-                  <span key={block.id}>
-                    {formatClock(block.startTime)} -{' '}
-                    {formatClock(block.endTime)}
-                  </span>
-                ))
-              ) : (
-                <span className="rest-label">No planned hours</span>
-              )}
-            </div>
-          </article>
-        );
-      })}
-      <div className="shift-total">
-        <span>Weekly target</span>
-        <strong>{formatMinutes(schedule.targetWeeklyMinutes)}</strong>
+    <div className="timeline-row">
+      <span>{label}</span>
+      <div className="timeline-track">
+        <i
+          className={variant}
+          style={{ width: Math.max(0, Math.min(100, ratio * 100)) + '%' }}
+        />
       </div>
     </div>
+  );
+}
+
+function DayInspector({
+  weekday,
+  schedule,
+  history,
+  dateLabel,
+}: {
+  weekday: Weekday;
+  schedule: TeamScheduleResponse['members'][number]['schedule'];
+  history?: WorkSessionHistoryResponse;
+  dateLabel: string;
+}) {
+  const planned = schedule?.blocks.filter((block) => block.weekday === weekday) ?? [];
+  const actual = (history?.sessions ?? []).filter(
+    (session) => weekdayFromInstant(session.timeIn) === weekday,
+  );
+
+  return (
+    <section className="day-inspector">
+      <header>
+        <div>
+          <p className="page-kicker">DAY INSPECTOR</p>
+          <h3>{DAY_LABELS[weekday]} · {dateLabel}</h3>
+        </div>
+        <span>Schedule overrides are not configured yet.</span>
+      </header>
+      <div className="day-inspector-columns">
+        <div>
+          <strong>Planned schedule</strong>
+          {planned.length ? (
+            planned.map((block) => (
+              <p key={block.id}>{formatClock(block.startTime)} – {formatClock(block.endTime)}</p>
+            ))
+          ) : (
+            <p>Rest day</p>
+          )}
+        </div>
+        <div>
+          <strong>Actual sessions</strong>
+          {actual.length ? (
+            actual.map((item) => (
+              <p key={item.id}>
+                {formatManilaDateTime(item.timeIn)}
+                {item.timeOut ? ' – ' + formatManilaDateTime(item.timeOut) : ' – Working now'}
+              </p>
+            ))
+          ) : (
+            <p>No recorded session.</p>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 
 function TeamCalendar({
   members,
   currentMemberId,
+  dateLabels,
 }: {
   members: TeamScheduleResponse['members'];
   currentMemberId?: string;
+  dateLabels: Record<Weekday, string>;
 }) {
-  const dateLabels = useMemo(currentWeekDateLabels, []);
-  const hourRows = Array.from(
+  const hours = Array.from(
     { length: (CALENDAR_END_MINUTES - CALENDAR_START_MINUTES) / 60 },
     (_, index) => CALENDAR_START_MINUTES + index * 60,
   );
 
   return (
-    <div className="schedule-calendar-scroll">
-      <div className="schedule-calendar-stage">
-        <div className="schedule-calendar-head-row">
-          <div className="schedule-calendar-time-head">Time</div>
-          {WEEKDAYS.map((day) => {
-            const hasBlocks = members.some((item) =>
-              item.schedule?.blocks.some((block) => block.weekday === day),
-            );
-            const isRestDay =
-              (day === 'SATURDAY' || day === 'SUNDAY') && !hasBlocks;
-            return (
+    <>
+      <div className="schedule-calendar-scroll">
+        <div className="schedule-calendar-stage">
+          <div className="schedule-calendar-head-row">
+            <div className="schedule-calendar-time-head">Time</div>
+            {WEEKDAYS.map((day) => (
               <div
-                className={`schedule-calendar-day-head${isRestDay ? ' rest-day' : ''}`}
+                className={
+                  'schedule-calendar-day-head' +
+                  (day === 'SATURDAY' || day === 'SUNDAY' ? ' rest-day' : '')
+                }
                 key={day}
               >
                 <strong>{DAY_LABELS[day]}</strong>
                 <small>{dateLabels[day]}</small>
-                {isRestDay && <span>Rest</span>}
+                {(day === 'SATURDAY' || day === 'SUNDAY') && <span>Rest</span>}
               </div>
-            );
-          })}
-        </div>
-
-        <div className="schedule-calendar-body">
-          <div className="schedule-time-axis">
-            {hourRows.map((minutes) => (
-              <div key={minutes}>{formatClock(minutesToClock(minutes))}</div>
             ))}
           </div>
-          {WEEKDAYS.map((day) => (
-            <CalendarDay
-              day={day}
-              key={day}
-              members={members}
-              currentMemberId={currentMemberId}
-            />
-          ))}
+          <div className="schedule-calendar-body">
+            <div className="schedule-time-axis">
+              {hours.map((minutes) => (
+                <div key={minutes}>{formatClock(minutesToClock(minutes))}</div>
+              ))}
+            </div>
+            {WEEKDAYS.map((day) => (
+              <CalendarDay
+                day={day}
+                members={members}
+                currentMemberId={currentMemberId}
+                key={day}
+              />
+            ))}
+          </div>
         </div>
       </div>
-
       <div className="compact-team-week">
         {WEEKDAYS.map((day) => {
-          const entries = members.flatMap((member) =>
-            (member.schedule?.blocks ?? [])
+          const dayEntries = members.flatMap((calendarMember) =>
+            (calendarMember.schedule?.blocks ?? [])
               .filter((block) => block.weekday === day)
-              .map((block) => ({ member, block })),
+              .map((block) => ({ calendarMember, block })),
           );
           return (
             <article key={day}>
@@ -818,19 +996,16 @@ function TeamCalendar({
                 <span>{dateLabels[day]}</span>
               </header>
               <div>
-                {entries.length ? (
-                  entries.map(({ member, block }) => (
+                {dayEntries.length ? (
+                  dayEntries.map(({ calendarMember, block }) => (
                     <div
-                      className={member.id === currentMemberId ? 'mine' : ''}
+                      className={calendarMember.id === currentMemberId ? 'mine' : ''}
                       key={block.id}
                     >
-                      <strong
-                        aria-label={member.fullName}
-                        data-label={member.fullName}
-                      />
+                      <strong aria-label={calendarMember.fullName} data-label={calendarMember.fullName} />
                       <span
-                        aria-label={`${formatClock(block.startTime)} - ${formatClock(block.endTime)}`}
-                        data-label={`${formatClock(block.startTime)} - ${formatClock(block.endTime)}`}
+                        aria-label={formatClock(block.startTime) + ' - ' + formatClock(block.endTime)}
+                        data-label={formatClock(block.startTime) + ' - ' + formatClock(block.endTime)}
                       />
                     </div>
                   ))
@@ -842,7 +1017,7 @@ function TeamCalendar({
           );
         })}
       </div>
-    </div>
+    </>
   );
 }
 
@@ -856,11 +1031,11 @@ function CalendarDay({
   currentMemberId?: string;
 }) {
   const entries = members
-    .flatMap((member) =>
-      (member.schedule?.blocks ?? [])
+    .flatMap((calendarMember) =>
+      (calendarMember.schedule?.blocks ?? [])
         .filter((block) => block.weekday === day)
         .map((block) => ({
-          member,
+          calendarMember,
           block,
           start: clockTimeToMinutes(block.startTime),
           end: clockTimeToMinutes(block.endTime),
@@ -873,10 +1048,13 @@ function CalendarDay({
     )
     .sort(
       (left, right) =>
-        left.start - right.start ||
-        left.end - right.end ||
-        left.member.fullName.localeCompare(right.member.fullName),
+        left.start -
+          right.start ||
+        left.end -
+          right.end ||
+        left.calendarMember.fullName.localeCompare(right.calendarMember.fullName),
     );
+
   const laneEnds: number[] = [];
   const positioned = entries.map((entry) => {
     let lane = laneEnds.findIndex((end) => end <= entry.start);
@@ -888,10 +1066,14 @@ function CalendarDay({
 
   return (
     <div
-      className={`schedule-calendar-day${entries.length === 0 ? ' empty' : ''}`}
+      className={
+        'schedule-calendar-day' +
+        (entries.length === 0 ? ' empty' : '') +
+        (day === 'SATURDAY' || day === 'SUNDAY' ? ' rest-day' : '')
+      }
       aria-label={DAY_LABELS[day]}
     >
-      {positioned.map(({ member, block, start, end, lane }) => {
+      {positioned.map(({ calendarMember, block, start, end, lane }) => {
         const visibleStart = Math.max(start, CALENDAR_START_MINUTES);
         const visibleEnd = Math.min(end, CALENDAR_END_MINUTES);
         const top =
@@ -901,21 +1083,29 @@ function CalendarDay({
         const style = {
           top,
           height: Math.max(height, 18),
-          left: `calc(${lane * width}% + 3px)`,
-          width: `calc(${width}% - 6px)`,
+          left: 'calc(' + lane * width + '% + 3px)',
+          width: 'calc(' + width + '% - 6px)',
         } satisfies CSSProperties;
 
         return (
           <div
-            className={`schedule-calendar-block${member.id === currentMemberId ? ' mine' : ''}${width < 34 ? ' thin' : ''}`}
+            className={
+              'schedule-calendar-block' +
+              (calendarMember.id === currentMemberId ? ' mine' : '') +
+              (width < 34 ? ' thin' : '')
+            }
             key={block.id}
             style={style}
-            title={`${member.fullName}: ${formatClock(block.startTime)} - ${formatClock(block.endTime)}`}
+            title={
+              calendarMember.fullName +
+              ': ' +
+              formatClock(block.startTime) +
+              ' - ' +
+              formatClock(block.endTime)
+            }
           >
-            <strong>{member.fullName}</strong>
-            <small>
-              {formatClock(block.startTime)} - {formatClock(block.endTime)}
-            </small>
+            <strong>{calendarMember.fullName}</strong>
+            <small>{formatClock(block.startTime)} - {formatClock(block.endTime)}</small>
           </div>
         );
       })}
