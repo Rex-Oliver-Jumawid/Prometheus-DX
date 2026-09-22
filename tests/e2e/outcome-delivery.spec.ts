@@ -469,7 +469,7 @@ test('F5-24 F5-25: verify criteria and accept entire Outcome with all current me
   await signIn(page);
   await openDelivery(page);
   await page
-    .getByRole('button', { name: 'Review Outcome', exact: true })
+    .getByRole('button', { name: 'Review outcome', exact: true })
     .click();
   const dialog = page.getByRole('dialog', { name: 'Review Outcome' });
   await dialog
