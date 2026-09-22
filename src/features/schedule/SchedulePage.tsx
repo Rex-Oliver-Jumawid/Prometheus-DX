@@ -6,6 +6,7 @@ import {
   UpdateScheduleRequestSchema,
   WEEKDAYS,
   clockTimeToMinutes,
+  type ScheduleBlockInput,
   type TeamScheduleResponse,
   type UpdateScheduleRequest,
   type Weekday,
@@ -22,6 +23,15 @@ import {
   workSessionHistoryQuery,
 } from '../work-sessions/work-session-queries';
 import { formatClock } from './schedule-format';
+import { EditableTeamCalendar } from './EditableTeamCalendar';
+import {
+  EDITOR_END_MINUTES,
+  EDITOR_START_MINUTES,
+  editorClock,
+  generateInitialSchedule,
+  initialRestDays,
+  isValidEditorPlacement,
+} from './schedule-editor';
 import {
   myScheduleQuery,
   scheduleKeys,
@@ -240,6 +250,11 @@ export function SchedulePage() {
   const [departmentId, setDepartmentId] = useState('');
   const [weekParam, setWeekParam] = useState<string | undefined>(undefined);
   const [selectedDay, setSelectedDay] = useState<Weekday | null>(null);
+  const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(null);
+  const [restDays, setRestDays] = useState<Set<Weekday>>(() => new Set(['SATURDAY', 'SUNDAY']));
+  const [restDayCount, setRestDayCount] = useState(2);
+  const [dailyHours, setDailyHours] = useState(4);
+  const [editorMessage, setEditorMessage] = useState('');
 
   const teamQuery = useQuery(teamScheduleQuery(session?.access_token));
   const mineQuery = useQuery(myScheduleQuery(session?.access_token));
@@ -280,6 +295,8 @@ export function SchedulePage() {
       queryClient.setQueryData(scheduleKeys.mine, { schedule: saved });
       await queryClient.invalidateQueries({ queryKey: scheduleKeys.team });
       setConfiguring(false);
+      setSelectedBlockIndex(null);
+      setEditorMessage('');
     },
   });
 
@@ -298,13 +315,24 @@ export function SchedulePage() {
   const enterConfiguration = () => {
     setView('team');
     setSelectedMemberId(member?.id ?? '');
-    form.reset(defaultFormValues(mineQuery.data?.schedule ?? null));
+    const saved = mineQuery.data?.schedule ?? null;
+    form.reset(defaultFormValues(saved));
+    const inferred = initialRestDays(saved?.blocks ?? []);
+    setRestDays(new Set(inferred));
+    setRestDayCount(Math.min(6, inferred.length));
+    setDailyHours(4);
+    setSelectedBlockIndex(null);
+    setEditorMessage('');
     setFormError(null);
     mutation.reset();
     setConfiguring(true);
   };
 
   const submitSchedule = (input: UpdateScheduleRequest) => {
+    if (input.blocks.some((block) => restDays.has(block.weekday))) {
+      setFormError('A rest day cannot contain your schedule blocks. Mark it as a workday first.');
+      return;
+    }
     const parsed = UpdateScheduleRequestSchema.safeParse(input);
     if (!parsed.success) {
       setFormError(parsed.error.issues[0]?.message ?? 'Check the schedule values.');
@@ -314,30 +342,95 @@ export function SchedulePage() {
     mutation.mutate(parsed.data);
   };
 
-  const generateWeek = () => {
-    const dailyMinutes = 8 * 60;
-    const target = Math.max(0, Math.min(5 * dailyMinutes, targetMinutes));
-    let remaining = target;
-    const generated: UpdateScheduleRequest['blocks'] = [];
-    for (const weekday of WEEKDAYS.slice(0, 5)) {
-      if (remaining <= 0) break;
-      const duration = Math.min(dailyMinutes, remaining);
-      const end = 9 * 60 + duration;
-      generated.push({
-        weekday,
-        startTime: '09:00',
-        endTime:
-          String(Math.floor(end / 60)).padStart(2, '0') +
-          ':' +
-          String(end % 60).padStart(2, '0'),
-      });
-      remaining -= duration;
-    }
-    form.setValue('blocks', generated, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
+  const setDraftBlocks = (next: ScheduleBlockInput[]) => {
+    form.setValue('blocks', next, { shouldDirty: true, shouldValidate: true });
+    setFormError(null);
   };
+
+  const generateWeek = () => {
+    const target = Math.max(0, Math.min(10_080, targetMinutes));
+    const result = generateInitialSchedule(target, dailyHours * 60, restDays);
+    blocks.replace(result.blocks);
+    setSelectedBlockIndex(result.blocks.length ? 0 : null);
+    setFormError(null);
+    setEditorMessage(
+      result.remainingMinutes
+        ? 'Generated the base week. ' + formatMinutes(result.remainingMinutes) + ' remain unscheduled; adjust or extend your blocks.'
+        : 'Generated ' + result.blocks.length + ' work blocks. You can now drag and resize them.',
+    );
+  };
+
+  const toggleRestDay = (day: Weekday) => {
+    if (mutation.isPending) return;
+    const next = new Set(restDays);
+    if (next.has(day)) {
+      next.delete(day);
+      setRestDays(next);
+      if (!watchedBlocks.some((block) => block.weekday === day)) {
+        const duration = Math.max(60, Math.min(9 * 60, dailyHours * 60));
+        setDraftBlocks([...watchedBlocks, {
+          weekday: day,
+          startTime: '14:00',
+          endTime: editorClock(14 * 60 + duration),
+        }]);
+      }
+      setEditorMessage(DAY_LABELS[day] + ' is now a workday.');
+    } else {
+      if (next.size >= restDayCount) {
+        setEditorMessage(
+          'You selected ' + restDayCount + ' rest days. Unmark another rest day or increase the Rest days setting first.',
+        );
+        return;
+      }
+      next.add(day);
+      const nextBlocks = watchedBlocks.filter((block) => block.weekday !== day);
+      if (selectedBlockIndex !== null && watchedBlocks[selectedBlockIndex]?.weekday === day) {
+        setSelectedBlockIndex(null);
+      } else if (selectedBlockIndex !== null) {
+        const selected = watchedBlocks[selectedBlockIndex];
+        setSelectedBlockIndex(selected ? nextBlocks.indexOf(selected) : null);
+      }
+      setDraftBlocks(nextBlocks);
+      setRestDays(next);
+      setEditorMessage(DAY_LABELS[day] + ' is now a rest day. Redistribute those hours to another workday.');
+    }
+    setFormError(null);
+  };
+
+  const adjustSelected = (operation: 'earlier' | 'later' | 'shorter' | 'longer') => {
+    if (selectedBlockIndex === null) return;
+    const block = watchedBlocks[selectedBlockIndex];
+    if (!block) return;
+    const start = clockTimeToMinutes(block.startTime);
+    const end = clockTimeToMinutes(block.endTime);
+    const duration = end - start;
+    const nextStart = operation === 'earlier'
+      ? Math.max(EDITOR_START_MINUTES, start - 60)
+      : operation === 'later'
+        ? Math.min(EDITOR_END_MINUTES - duration, start + 60)
+        : start;
+    const nextEnd = operation === 'shorter'
+      ? Math.max(start + 60, end - 60)
+      : operation === 'longer'
+        ? Math.min(EDITOR_END_MINUTES, end + 60)
+        : nextStart + duration;
+    const proposed = {
+      ...block,
+      startTime: editorClock(nextStart),
+      endTime: editorClock(nextEnd),
+    };
+    if (!isValidEditorPlacement(watchedBlocks, selectedBlockIndex, proposed)) {
+      setEditorMessage('Cannot move or resize this block: it would overlap another of your blocks.');
+      return;
+    }
+    const next = watchedBlocks.map((item) => ({ ...item }));
+    next[selectedBlockIndex] = proposed;
+    setDraftBlocks(next);
+    setEditorMessage('');
+  };
+
+  const selectedBlock =
+    selectedBlockIndex === null ? null : watchedBlocks[selectedBlockIndex] ?? null;
 
   if (teamQuery.isPending || mineQuery.isPending) {
     return <section className="schedule-state">Loading Team Schedule...</section>;
@@ -436,8 +529,8 @@ export function SchedulePage() {
               Shifts
             </button>
           </div>
-          <button className="schedule-button primary" onClick={enterConfiguration}>
-            Configure My Schedule
+          <button className="schedule-button primary" onClick={() => configuring ? void form.handleSubmit(submitSchedule)() : enterConfiguration()} disabled={mutation.isPending}>
+            {configuring ? 'Done' : 'Configure My Schedule'}
           </button>
         </div>
       </header>
@@ -650,130 +743,155 @@ export function SchedulePage() {
             >
               <div className="schedule-config-topline">
                 <div>
-                  <p className="page-kicker">YOUR MOVABLE SCHEDULE</p>
+                  <p className="page-kicker">PERSONAL SCHEDULE</p>
                   <h2>Configure My Schedule</h2>
-                  <p>Build your base week while keeping the merged team calendar visible below.</p>
+                  <p>Set your initial workload, then shape the week directly on the calendar.</p>
                 </div>
-                <div className="schedule-balance">
-                  {formatMinutes(weekMinutes(watchedBlocks))} / {formatMinutes(targetMinutes)}
+                <div className={'schedule-balance' + (weekMinutes(watchedBlocks) === targetMinutes ? ' matched' : ' unmatched')}>
+                  Scheduled {formatMinutes(weekMinutes(watchedBlocks))} / Target {formatMinutes(targetMinutes)}
                 </div>
               </div>
-
               <div className="schedule-config-toolbar">
                 <label>
-                  <span>Target hours per week</span>
+                  <span>Hours per week</span>
                   <input
-                    aria-label="Target hours per week"
+                    aria-label="Hours per week"
                     type="number"
                     min="0"
                     max="168"
                     step="0.5"
                     value={targetMinutes / 60}
                     onChange={(event) =>
-                      form.setValue(
-                        'targetWeeklyMinutes',
-                        Math.round(Number(event.target.value) * 60),
-                        { shouldDirty: true, shouldValidate: true },
-                      )
+                      form.setValue('targetWeeklyMinutes', Math.round(Number(event.target.value) * 60), { shouldDirty: true })
                     }
                   />
                 </label>
-                <button type="button" className="schedule-button" onClick={generateWeek}>
-                  Generate Weekdays
+                <label>
+                  <span>Initial hours per day</span>
+                  <input
+                    aria-label="Initial hours per day"
+                    type="number"
+                    min="1"
+                    max="9"
+                    step="1"
+                    value={dailyHours}
+                    onChange={(event) => setDailyHours(Math.max(1, Math.min(9, Number(event.target.value) || 1)))}
+                  />
+                </label>
+                <label>
+                  <span>Rest days</span>
+                  <input
+                    aria-label="Rest days"
+                    type="number"
+                    min="0"
+                    max="6"
+                    step="1"
+                    value={restDayCount}
+                    onChange={(event) => setRestDayCount(Math.max(0, Math.min(6, Number(event.target.value) || 0)))}
+                  />
+                </label>
+                <button type="button" className="schedule-button primary" onClick={generateWeek}>
+                  Generate initial schedule
                 </button>
-                <button
-                  type="button"
-                  className="schedule-button"
-                  onClick={() =>
-                    blocks.append({
-                      weekday: 'MONDAY',
-                      startTime: '09:00',
-                      endTime: '17:00',
-                    })
-                  }
-                >
-                  Add Block
+                <button type="submit" className="schedule-button" disabled={mutation.isPending}>
+                  {mutation.isPending ? 'Saving...' : 'Done configuring'}
                 </button>
-                <div className="schedule-form-actions">
-                  <button
-                    type="button"
-                    className="schedule-button"
-                    disabled={mutation.isPending}
-                    onClick={() => setConfiguring(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="schedule-button primary"
-                    disabled={mutation.isPending}
-                  >
-                    {mutation.isPending ? 'Saving...' : 'Save Schedule'}
-                  </button>
+              </div>
+              <div className="schedule-config-help">
+                <span><b>Move:</b> drag your block up/down or to another free day.</span>
+                <span><b>Resize:</b> drag the bottom handle.</span>
+                <span><b>Rest:</b> click a day header while configuring.</span>
+                <span><b>Overlap:</b> simultaneous team schedules split into lanes.</span>
+              </div>
+              <div className="schedule-selected-tools">
+                <strong>
+                  {selectedBlock
+                    ? DAY_LABELS[selectedBlock.weekday] + ' · ' + formatClock(selectedBlock.startTime) +
+                      '–' + formatClock(selectedBlock.endTime) + ' · ' +
+                      formatMinutes(clockTimeToMinutes(selectedBlock.endTime) - clockTimeToMinutes(selectedBlock.startTime))
+                    : 'Select one of your schedule blocks.'}
+                </strong>
+                <div className="schedule-selected-actions">
+                  <button type="button" className="schedule-button" disabled={!selectedBlock} onClick={() => adjustSelected('earlier')}>Earlier</button>
+                  <button type="button" className="schedule-button" disabled={!selectedBlock} onClick={() => adjustSelected('later')}>Later</button>
+                  <button type="button" className="schedule-button" disabled={!selectedBlock} onClick={() => adjustSelected('shorter')}>− 1 hour</button>
+                  <button type="button" className="schedule-button" disabled={!selectedBlock} onClick={() => adjustSelected('longer')}>+ 1 hour</button>
                 </div>
               </div>
-
-              <div className="schedule-block-editor">
-                {blocks.fields.length === 0 ? (
-                  <div className="schedule-empty compact">
-                    <strong>No planned blocks yet.</strong>
-                    <span>Add a block or generate a weekday schedule.</span>
+              {editorMessage && <p className="schedule-editor-message" role="status">{editorMessage}</p>}
+              <div className="schedule-config-advanced">
+                <details>
+                  <summary>Fine-tune blocks using time inputs</summary>
+                  <div className="schedule-block-editor">
+                    <button
+                      className="schedule-button"
+                      type="button"
+                      onClick={() => {
+                        const day = WEEKDAYS.find((item) => !restDays.has(item) && !watchedBlocks.some((block) => block.weekday === item && clockTimeToMinutes(block.startTime) < 17 * 60 && clockTimeToMinutes(block.endTime) > 14 * 60));
+                        if (!day) {
+                          setEditorMessage('No free 2 PM–5 PM workday is available. Adjust an existing block or unmark a rest day.');
+                          return;
+                        }
+                        blocks.append({ weekday: day, startTime: '14:00', endTime: '17:00' });
+                        setSelectedBlockIndex(watchedBlocks.length);
+                      }}
+                    >
+                      Add Block
+                    </button>
+                    {blocks.fields.map((field, index) => (
+                      <div className="schedule-block-row" key={field.id}>
+                        <label>
+                          <span>Day</span>
+                          <select
+                            aria-label={'Day ' + (index + 1)}
+                            {...form.register(`blocks.${index}.weekday`, {
+                              onChange: (event) => {
+                                if (restDays.has(event.target.value as Weekday)) {
+                                  setRestDays((previous) => {
+                                    const next = new Set(previous);
+                                    next.delete(event.target.value as Weekday);
+                                    return next;
+                                  });
+                                }
+                              },
+                            })}
+                          >
+                            {WEEKDAYS.map((day) => <option key={day} value={day}>{DAY_LABELS[day]}</option>)}
+                          </select>
+                        </label>
+                        <label>
+                          <span>Start</span>
+                          <input aria-label={index === 0 ? 'Start' : 'Start ' + (index + 1)} type="time" {...form.register(`blocks.${index}.startTime`)} />
+                        </label>
+                        <label>
+                          <span>End</span>
+                          <input aria-label={index === 0 ? 'End' : 'End ' + (index + 1)} type="time" {...form.register(`blocks.${index}.endTime`)} />
+                        </label>
+                        <button
+                          type="button"
+                          className="schedule-remove"
+                          aria-label={'Remove block ' + (index + 1)}
+                          onClick={() => {
+                            blocks.remove(index);
+                            setSelectedBlockIndex((selected) => selected === null ? null : selected === index ? null : selected > index ? selected - 1 : selected);
+                          }}
+                        >×</button>
+                      </div>
+                    ))}
                   </div>
-                ) : (
-                  blocks.fields.map((field, index) => (
-                    <div className="schedule-block-row" key={field.id}>
-                      <label>
-                        <span>Day</span>
-                        <select
-                          aria-label={'Day ' + (index + 1)}
-                          {...form.register(`blocks.${index}.weekday`)}
-                        >
-                          {WEEKDAYS.map((day) => (
-                            <option key={day} value={day}>
-                              {DAY_LABELS[day]}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label>
-                        <span>Start</span>
-                        <input
-                          aria-label={index === 0 ? 'Start' : 'Start ' + (index + 1)}
-                          type="time"
-                          {...form.register(`blocks.${index}.startTime`)}
-                        />
-                      </label>
-                      <label>
-                        <span>End</span>
-                        <input
-                          aria-label={index === 0 ? 'End' : 'End ' + (index + 1)}
-                          type="time"
-                          {...form.register(`blocks.${index}.endTime`)}
-                        />
-                      </label>
-                      <button
-                        type="button"
-                        className="schedule-remove"
-                        aria-label={'Remove block ' + (index + 1)}
-                        onClick={() => blocks.remove(index)}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))
-                )}
+                </details>
               </div>
-
-              {formError && (
-                <p className="schedule-message error" role="alert">
-                  {formError}
-                </p>
-              )}
-              {mutation.isError && (
-                <p className="schedule-message error" role="alert">
-                  {mutation.error.message}
-                </p>
-              )}
+              <div className="schedule-form-actions">
+                <button type="button" className="schedule-button" disabled={mutation.isPending} onClick={() => {
+                  form.reset(defaultFormValues(mineQuery.data?.schedule ?? null));
+                  setSelectedBlockIndex(null);
+                  setConfiguring(false);
+                  setFormError(null);
+                }}>Cancel</button>
+                <button type="submit" className="schedule-button" disabled={mutation.isPending}>Save Schedule</button>
+              </div>
+              {formError && <p className="schedule-message error" role="alert">{formError}</p>}
+              {mutation.isError && <p className="schedule-message error" role="alert">{mutation.error.message}</p>}
             </form>
           )}
 
@@ -808,13 +926,29 @@ export function SchedulePage() {
               </div>
             </div>
 
-            <TeamCalendar
-              members={filteredMembers}
-              currentMemberId={member?.id}
-              dateLabels={currentWeekDateLabels()}
-            />
+            {configuring ? (
+              <EditableTeamCalendar
+                members={filteredMembers}
+                currentMemberId={member?.id}
+                currentMemberName={member?.fullName ?? 'You'}
+                dateLabels={currentWeekDateLabels()}
+                blocks={watchedBlocks}
+                restDays={restDays}
+                selectedIndex={selectedBlockIndex}
+                onSelect={setSelectedBlockIndex}
+                onChange={setDraftBlocks}
+                onToggleRest={toggleRestDay}
+                onMessage={setEditorMessage}
+              />
+            ) : (
+              <TeamCalendar
+                members={filteredMembers}
+                currentMemberId={member?.id}
+                dateLabels={currentWeekDateLabels()}
+              />
+            )}
 
-            {visibleBlockCount === 0 && (
+            {!configuring && visibleBlockCount === 0 && (
               <div className="schedule-calendar-empty">
                 No schedule blocks match these filters.
               </div>
