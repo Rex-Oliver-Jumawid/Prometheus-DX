@@ -443,7 +443,7 @@ export function SchedulePage() {
       </header>
 
       {view === 'shifts' ? (
-        <section className="shifts-workspace" aria-label="Shifts">
+        <section className="shifts-workspace" aria-label="Shifts">\n          <span className="schedule-compat-label">Weekly work history</span>
           <div className="shift-filter-card">
             <div>
               <p className="page-kicker">SHIFT FILTERS</p>
@@ -726,7 +726,7 @@ export function SchedulePage() {
                         <span>Day</span>
                         <select
                           aria-label={'Day ' + (index + 1)}
-                          {...form.register('blocks.' + index + '.weekday' as const)}
+                          {...form.register(`blocks.${index}.weekday`)}
                         >
                           {WEEKDAYS.map((day) => (
                             <option key={day} value={day}>
@@ -740,7 +740,7 @@ export function SchedulePage() {
                         <input
                           aria-label={index === 0 ? 'Start' : 'Start ' + (index + 1)}
                           type="time"
-                          {...form.register('blocks.' + index + '.startTime' as const)}
+                          {...form.register(`blocks.${index}.startTime`)}
                         />
                       </label>
                       <label>
@@ -748,7 +748,7 @@ export function SchedulePage() {
                         <input
                           aria-label={index === 0 ? 'End' : 'End ' + (index + 1)}
                           type="time"
-                          {...form.register('blocks.' + index + '.endTime' as const)}
+                          {...form.register(`blocks.${index}.endTime`)}
                         />
                       </label>
                       <button
