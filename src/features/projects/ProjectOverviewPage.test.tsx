@@ -115,7 +115,7 @@ describe('ProjectOverviewPage status mutation', () => {
       await screen.findByRole('heading', { name: 'Project Members' }),
     ).toBeVisible();
     expect(
-      screen.getByLabelText('Project access for Project Member'),
+      await screen.findByLabelText('Project access for Project Member'),
     ).toHaveValue('CAN_VIEW');
 
     await waitFor(() =>
