@@ -349,7 +349,11 @@ export function SchedulePage() {
 
   const generateWeek = () => {
     const target = Math.max(0, Math.min(10_080, targetMinutes));
-    const result = generateInitialSchedule(target, dailyHours * 60, restDays);
+    // As in finalmodel.html, generation uses the selected number of rest days
+    // and starts with the trailing days of the week; manual toggles apply afterward.
+    const generatedRest = new Set<Weekday>(WEEKDAYS.slice(7 - restDayCount));
+    setRestDays(generatedRest);
+    const result = generateInitialSchedule(target, dailyHours * 60, generatedRest);
     blocks.replace(result.blocks);
     setSelectedBlockIndex(result.blocks.length ? 0 : null);
     setFormError(null);
