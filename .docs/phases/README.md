@@ -160,8 +160,8 @@ The root `README.md` should summarize this status, while each phase journal reco
 | 4 | Project Workflow Structure | Complete | `phase-04-project-workflow.md` |
 | 5 | Outcome Work, Submission, Review, and Dependencies | In progress - slices 1-4 delivered; final acceptance and regression pending | `phase-05-work-review.md` |
 | 6 | Schedule, Work Sessions, and Team | Complete | `phase-06-schedule-work-sessions-team.md` |
-| 7 | Notifications and Home | Not started | To be created |
-| 8 | VisiWork and Reporting | Not started | To be created |
+| 7 | Notifications and Home | In progress - Notifications is the current slice | `phase-07-notifications-home.md` |
+| 8 | VisiWork and Reports & Analytics | Not started | To be created |
 | 9 | Collaboration, Realtime, and Attachments | Not started | To be created |
 
 ## Principle
