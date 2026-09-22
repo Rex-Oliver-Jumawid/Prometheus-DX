@@ -115,7 +115,9 @@ test.beforeAll(async ({ browser }) => {
     authFixtures.push(await createAuthFixture(prisma, `${runId}-${i}`));
   for (let i = 0; i < 4; i++)
     contexts.push(
-      await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
+      await browser.newContext({
+        baseURL: `http://127.0.0.1:${process.env.E2E_WEB_PORT ?? '5173'}`,
+      }),
     );
   [admin, lead, worker, newcomer] = await Promise.all(
     contexts.map((context) => context.newPage()),
