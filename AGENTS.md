@@ -26,25 +26,21 @@ Use this hierarchy:
 - `.context/tech-stack.md` owns technical architecture and approved technologies.
 - `.context/phases.md` owns implementation order, phase scope, dependencies, and exit criteria.
 - `.context/ui-reference.md` owns the UI implementation reference policy.
-- `.model/finalmodel.html` is the prototype source of truth for the main authenticated application's user-visible behavior and experience.
-- `.model/login-page.html` is the prototype source of truth for the authentication screen's user-visible behavior and experience.
-- Figma is a supporting visual helper, not the primary source of truth for how the application should behave or look when it conflicts with the HTML prototype.
+- Figma is the source of truth for current UI layout, visual composition, navigation placement, spacing, typography, colors, icons, and component appearance.
+- `.model/finalmodel.html` is an interaction and workflow reference for the main authenticated application where the target Figma frame does not fully specify behavior.
+- `.model/login-page.html` is an authentication interaction reference where the target Figma frame does not fully specify behavior.
 - `.testcases/` owns phase acceptance gates.
 - `.docs/phases/` records what was actually implemented, important decisions, difficult problems, lessons, and next approaches.
 
-For substantial user-facing implementation, inspect the relevant workflow in `.model/finalmodel.html` before coding.
+For substantial user-facing implementation, inspect the relevant current Figma frame with the connected Figma integration before coding.
 
-The production application is intended to turn that prototype into a real working application.
+Use the HTML prototypes to fill interaction or workflow gaps that are not fully expressed by the Figma frame.
 
-Everything demonstrated by the relevant prototype workflow should be reflected in production unless the user explicitly changes that product decision.
+When Figma and an HTML prototype disagree about layout or visual presentation, follow Figma.
 
-This includes navigation, visible fields, buttons, tabs, toggles, drawers, modals, expansion, scrolling, visible state changes, interaction sequencing, and screen-level workflows.
+When they disagree about behavior, use the SRS and `.context/user-flows.md` to resolve the intended workflow unless a newer explicit product decision already resolves it.
 
 Do not invent a different interaction simply because it is easier to implement.
-
-Use Figma and Figma MCP or an equivalent connected integration as a helper for measurements, spacing, typography, icons, variables, frame structure, and visual detail.
-
-When Figma and `.model/finalmodel.html` disagree about the application experience, follow `finalmodel.html` unless an explicit newer product decision says otherwise.
 
 Do not silently drop a prototype feature because the current data model does not yet support it.
 
@@ -381,10 +377,8 @@ NestJS enforces protected business rules.
 
 React presents that state.
 
-`.model/finalmodel.html` is the prototype source of truth for the main application experience that production is expected to reproduce.
+Figma is the source of truth for current production UI layout and visual design.
 
-`.model/login-page.html` is the prototype source of truth for authentication UI behavior.
-
-Figma is a supporting visual helper.
+`.model/finalmodel.html` and `.model/login-page.html` remain interaction references for behavior not fully represented by the target Figma frame.
 
 Tests verify the behavior users depend on at the lowest reliable layer, with end-to-end coverage reserved for the workflows that genuinely require it.
