@@ -6,6 +6,18 @@
 
 Phase 1 established real Supabase authentication, Prometheus workspace authorization, protected routing, the reusable application shell, role-sensitive navigation, and browser-level acceptance coverage.
 
+### Current UI Supersession Note
+
+This journal records the shell as it existed at Phase 1 exit.
+
+The current Figma design now owns application-shell layout and visual presentation.
+
+References below to a top navigation or generic notification placeholder are historical implementation notes, not current layout requirements.
+
+The current shell places Notifications in the lower sidebar utility area with an unread-count badge when applicable and does not use a separate top-right notification bell or notification control.
+
+Use `.context/ui-reference.md` and the current Figma frame for new UI work rather than reconstructing the original Phase 1 shell layout.
+
 ## Objective
 
 Replace prototype identity assumptions with a real authenticated identity and a separate Prometheus authorization layer.
