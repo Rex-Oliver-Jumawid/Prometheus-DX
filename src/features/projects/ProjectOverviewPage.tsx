@@ -8,6 +8,7 @@ import {
 } from '../../../shared/contracts/project';
 import { useAuth } from '../auth/auth-context';
 import { ApiRequestError, apiFetch } from '../../lib/api';
+import { ProjectMembersPanel } from './ProjectMembersPanel';
 import { ProjectWorkflow } from './ProjectWorkflow';
 import {
   projectDetailQuery,
@@ -413,6 +414,13 @@ export function ProjectOverviewPage() {
         accessToken={accessToken}
         isLead={value.lead.id === session?.user?.id || value.canChangeStatus}
       />
+
+      {!outcomeId && (
+        <ProjectMembersPanel
+          projectId={projectId!}
+          accessToken={accessToken}
+        />
+      )}
     </div>
   );
 }
