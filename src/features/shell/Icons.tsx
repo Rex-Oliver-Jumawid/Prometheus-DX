@@ -34,6 +34,12 @@ export function NavIcon({ name }: { name: NavigationItem['icon'] }) {
         <path d="M15.5 14.2a4.4 4.4 0 0 1 5 4.3V20" />
       </>
     ),
+    reports: (
+      <>
+        <path d="M5 20V10h4v10M10.5 20V4h4v16M16 20v-7h4v7" />
+        <path d="M4 20h17" />
+      </>
+    ),
     notifications: (
       <>
         <path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
