@@ -199,7 +199,9 @@ export function EditableTeamCalendar({
   function finishGesture(event: PointerEvent<HTMLDivElement>, cancelled = false) {
     const gesture = gestureRef.current;
     if (!gesture || event.pointerId !== gesture.pointerId) return;
-    if (cancelled || gesture.invalid) {
+    // An invalid attempt without a valid drag preview has not mutated the
+    // draft. Avoid emitting an unnecessary form update on pointer release.
+    if ((cancelled || gesture.invalid) && gesture.changed) {
       onChange(gesture.originalBlocks, gesture.originalRestDays);
     }
     if (gesture.invalid) {
