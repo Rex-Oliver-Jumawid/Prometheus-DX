@@ -85,7 +85,8 @@ describe.runIf(enabled)('Project Activity PostgreSQL integration', () => {
     expect(events.items.some((item) => item.id === original.id)).toBe(true);
     expect(events.items.find((item) => item.id === original.id)?.metadata).toEqual({});
     expect(events.items.some((item) =>
-      item.action === 'OUTCOME_DELETED' && item.metadata.title === 'Retired audit outcome',
+      item.action === 'OUTCOME_DELETED' &&
+      JSON.stringify(item.metadata) === JSON.stringify({ title: 'Retired audit outcome' }),
     )).toBe(true);
     expect(JSON.stringify(events)).not.toContain(secret);
   });
