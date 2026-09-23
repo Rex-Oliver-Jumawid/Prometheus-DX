@@ -214,8 +214,10 @@ The results container retains its existing tab-panel semantics, while an accessi
 At widths up to 520 px the placeholder list displays three rows and follows the same two-column layout and stacked timestamp treatment as real mobile notification cards.
 The shimmer animation respects `prefers-reduced-motion`.
 The existing component loading test now checks four skeleton rows, the busy status, absence of premature empty-state content, and removal of the placeholders once the inbox resolves.
-Focused UI verification is pending the user's run of `pnpm exec vitest run --config vitest.ui.config.ts src/features/notifications/NotificationsPage.test.tsx`.
-No previously reported test results are being reused as verification of this follow-up.
+The user pulled commit `cb9dceb` and ran `pnpm exec vitest run --config vitest.ui.config.ts src/features/notifications/NotificationsPage.test.tsx` on 2026-09-23.
+The focused UI verification passed: one test file and all nine tests passed in 2.22 seconds, including the updated loading skeleton test.
+Vite displayed its existing CJS Node API deprecation warning; no tests failed.
+A production web build and throttled-network visual inspection of the new skeleton remain pending.
 
 ## Sidebar Unread Badge
 
