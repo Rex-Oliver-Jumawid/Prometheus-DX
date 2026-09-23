@@ -107,6 +107,43 @@ function NotificationRow({
   );
 }
 
+function NotificationsListSkeleton() {
+  return (
+    <div
+      className="notifications-loading"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <span className="notifications-loading-label">
+        Loading notifications...
+      </span>
+      <ol className="notifications-list notifications-skeleton-list" aria-hidden="true">
+        {Array.from({ length: 4 }, (_, index) => (
+          <li key={index}>
+            <div className="notification-row notification-skeleton-row">
+              <span className="notification-icon notification-skeleton-icon">
+                <span className="notification-skeleton-block notification-skeleton-glyph" />
+              </span>
+              <span className="notification-copy notification-skeleton-copy">
+                <span className="notification-skeleton-block notification-skeleton-title" />
+                <span className="notification-skeleton-block notification-skeleton-description" />
+                <span className="notification-skeleton-block notification-skeleton-context" />
+              </span>
+              <span className="notification-time notification-skeleton-time">
+                <span className="notification-skeleton-block notification-skeleton-timestamp" />
+                {index === 0 && (
+                  <span className="notification-skeleton-block notification-skeleton-dot" />
+                )}
+              </span>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 export function NotificationsPage() {
   const { session } = useAuth();
   const navigate = useNavigate();
@@ -216,10 +253,7 @@ export function NotificationsPage() {
         }
       >
         {active.isPending ? (
-          <div className="notifications-state" role="status">
-            <span className="spinner dark" aria-hidden="true" />
-            Loading notifications...
-          </div>
+          <NotificationsListSkeleton />
         ) : active.isError ? (
           <div className="notifications-state error" role="alert">
             <h2>Notifications could not be loaded</h2>

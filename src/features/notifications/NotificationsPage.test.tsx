@@ -137,10 +137,14 @@ describe('NotificationsPage', () => {
     listRequest = new Promise((resolve) => {
       resolveList = resolve;
     });
-    renderPage();
+    const { container } = renderPage();
 
     expect(screen.getByRole('status')).toHaveTextContent(
       'Loading notifications',
+    );
+    expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true');
+    expect(container.querySelectorAll('.notification-skeleton-row')).toHaveLength(
+      4,
     );
     expect(screen.queryByText('No notifications yet')).not.toBeInTheDocument();
 
@@ -148,6 +152,7 @@ describe('NotificationsPage', () => {
     expect(
       await screen.findByText('Output ready for your review'),
     ).toBeInTheDocument();
+    expect(container.querySelector('.notification-skeleton-row')).toBeNull();
   });
 
   it('shows distinct empty inbox and filtered-empty states', async () => {

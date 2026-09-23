@@ -207,6 +207,16 @@ The focused UI run passed: one test file and all nine tests passed.
 Checkpoint E focused component verification is satisfied.
 The browser journey, typechecking, and targeted regressions subsequently passed as recorded below; manual visual comparison remains pending.
 
+### Loading skeleton follow-up
+
+The centered loading spinner was replaced with a four-row notification skeleton that reuses the real card, icon, copy, and timestamp layout.
+The results container retains its existing tab-panel semantics, while an accessible loading status announces the pending inbox without exposing decorative placeholder rows to screen readers.
+At widths up to 520 px the placeholder list displays three rows and follows the same two-column layout and stacked timestamp treatment as real mobile notification cards.
+The shimmer animation respects `prefers-reduced-motion`.
+The existing component loading test now checks four skeleton rows, the busy status, absence of premature empty-state content, and removal of the placeholders once the inbox resolves.
+Focused UI verification is pending the user's run of `pnpm exec vitest run --config vitest.ui.config.ts src/features/notifications/NotificationsPage.test.tsx`.
+No previously reported test results are being reused as verification of this follow-up.
+
 ## Sidebar Unread Badge
 
 The existing lower-sidebar Notifications utility link now observes the same `notificationKeys.unreadCount` TanStack Query entry used by the inbox.
