@@ -85,12 +85,12 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
       body: 'Cross-Project reply', parentMessageId: foreign.id,
     })).rejects.toBeInstanceOf(BadRequestException);
     await expect(chat.edit(lead, projectId, reply.id, {
-      body: 'Not my message',
+      body: 'Not my message', expectedEditedAt: null,
     })).rejects.toBeInstanceOf(ForbiddenException);
     await expect(chat.edit(participant, secondProjectId, reply.id, {
-      body: 'Wrong Project',
+      body: 'Wrong Project', expectedEditedAt: null,
     })).rejects.toBeInstanceOf(ForbiddenException);
-    await chat.edit(participant, projectId, reply.id, { body: 'Author edit persisted' });
+    await chat.edit(participant, projectId, reply.id, { body: 'Author edit persisted', expectedEditedAt: null });
     const persisted = await db.projectMessage.findUniqueOrThrow({ where: { id: reply.id } });
     expect(persisted.body).toBe('Author edit persisted');
     expect(persisted.editedAt).not.toBeNull();
