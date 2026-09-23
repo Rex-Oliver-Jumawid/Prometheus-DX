@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CreateProjectMessageSchema,
@@ -35,6 +35,10 @@ export function ProjectChatPanel({
   const [body, setBody] = useState('');
   const [replyTo, setReplyTo] = useState<ProjectMessage | null>(null);
   const [editing, setEditing] = useState<{ id: string; body: string; expectedEditedAt: string | null } | null>(null);
+  const threadRef = useRef<HTMLOListElement>(null);
+  const pinnedToBottom = useRef(true);
+  const initiallyScrolled = useRef(false);
+  const olderScroll = useRef<{ top: number; height: number } | null>(null);
 
   const messages = useInfiniteQuery({
     queryKey,
@@ -96,6 +100,21 @@ export function ProjectChatPanel({
   );
   const canWrite = messages.data?.pages[0]?.canWrite ?? false;
 
+  // Show the newest conversation on entry. Preserve a reader's scroll position
+  // when earlier messages are prepended, and follow new messages only if pinned.
+  useLayoutEffect(() => {
+    const thread = threadRef.current;
+    if (!thread || ordered.length === 0) return;
+    const previous = olderScroll.current;
+    if (previous) {
+      thread.scrollTop = previous.top + thread.scrollHeight - previous.height;
+      olderScroll.current = null;
+    } else if (!initiallyScrolled.current || pinnedToBottom.current) {
+      thread.scrollTop = thread.scrollHeight;
+    }
+    initiallyScrolled.current = true;
+  }, [ordered.length, ordered[0]?.id, ordered[ordered.length - 1]?.id]);
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!body.trim() || body.length > 4000 || !canWrite || send.isPending) return;
@@ -134,7 +153,17 @@ export function ProjectChatPanel({
             <button
               type="button"
               className="pw-collaboration-load-more"
-              onClick={() => void messages.fetchNextPage()}
+              onClick={() => {
+                const thread = threadRef.current;
+                if (thread) olderScroll.current = {
+                  top: thread.scrollTop,
+                  height: thread.scrollHeight,
+                };
+                pinnedToBottom.current = false;
+                void messages.fetchNextPage().then((result) => {
+                  if (result.isError) olderScroll.current = null;
+                });
+              }}
               disabled={messages.isFetchingNextPage}
             >
               {messages.isFetchingNextPage ? 'Loading…' : 'Load earlier messages'}
@@ -143,7 +172,16 @@ export function ProjectChatPanel({
           {ordered.length === 0 ? (
             <p className="pw-collaboration-state">No messages yet. Start the conversation.</p>
           ) : (
-            <ol className="pw-chat-thread" aria-label="Project messages">
+            <ol
+              className="pw-chat-thread"
+              aria-label="Project messages"
+              ref={threadRef}
+              onScroll={(event) => {
+                const thread = event.currentTarget;
+                pinnedToBottom.current =
+                  thread.scrollHeight - thread.scrollTop - thread.clientHeight < 80;
+              }}
+            >
               {ordered.map((message) => (
                 <li key={message.id} className="pw-chat-message">
                   <div className="pw-chat-avatar" aria-hidden="true">
