@@ -310,6 +310,19 @@ function SchedulePageSkeleton() {
               </div>
             </div>
           </div>
+          <div className="compact-team-week schedule-skeleton-compact-week">
+            {WEEKDAYS.map((day) => (
+              <article key={day}>
+                <header>
+                  <strong>{DAY_LABELS[day]}</strong>
+                  <span className="schedule-skeleton-line schedule-skeleton-date" />
+                </header>
+                <div>
+                  <span className="schedule-skeleton-line schedule-skeleton-compact-bar" />
+                </div>
+              </article>
+            ))}
+          </div>
         </section>
       </div>
     </section>

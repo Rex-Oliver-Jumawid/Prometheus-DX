@@ -90,6 +90,20 @@ test('Phase 6 visual, responsive, route, console, and network audit', async ({
   await page.setViewportSize({ width: 1440, height: 1000 });
   await signIn(page);
   await page.goto('/schedule');
+  await expect(page.locator('.schedule-panel.team-panel:not(.schedule-skeleton-panel)')).toBeVisible();
+  const panelFrame = await page.locator('.workspace-content').boundingBox();
+  const pageFrame = await page.locator('.schedule-page').boundingBox();
+  expect(panelFrame).not.toBeNull();
+  expect(pageFrame).not.toBeNull();
+  const leftGutter = pageFrame!.x - panelFrame!.x;
+  const rightGutter = panelFrame!.x + panelFrame!.width - pageFrame!.x - pageFrame!.width;
+  // Figma uses approximately 40px of spacing inside the right glass panel.
+  // The page must not add another nested 28px route gutter.
+  expect(leftGutter).toBeGreaterThan(28);
+  expect(leftGutter).toBeLessThan(56);
+  expect(rightGutter).toBeGreaterThan(28);
+  expect(rightGutter).toBeLessThan(56);
+  expect(Math.abs(leftGutter - rightGutter)).toBeLessThan(13);
   await capture(page, testInfo, 'desktop-schedule', '.schedule-page');
 
   await page
@@ -115,12 +129,14 @@ test('Phase 6 visual, responsive, route, console, and network audit', async ({
 
   await page.setViewportSize({ width: 900, height: 900 });
   await page.goto('/schedule');
+  await expect(page.locator('.schedule-panel.team-panel:not(.schedule-skeleton-panel)')).toBeVisible();
   await capture(page, testInfo, 'tablet-schedule', '.schedule-page');
   await page.goto('/team');
   await capture(page, testInfo, 'tablet-team', '.team-page');
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/schedule');
+  await expect(page.locator('.schedule-panel.team-panel:not(.schedule-skeleton-panel)')).toBeVisible();
   await capture(page, testInfo, 'mobile-schedule', '.schedule-page');
   await page.getByRole('button', { name: 'Open navigation' }).click();
   await expect(page.locator('.app-sidebar')).toBeVisible();
