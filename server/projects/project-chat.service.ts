@@ -36,8 +36,12 @@ type MessageRecord = Prisma.ProjectMessageGetPayload<{
 export class ProjectChatService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
-  private async projectFor(member: Member, projectId: string) {
-    const project = await this.prisma.project.findUnique({
+  private async projectFor(
+    member: Member,
+    projectId: string,
+    db: Prisma.TransactionClient = this.prisma,
+  ) {
+    const project = await db.project.findUnique({
       where: { id: projectId },
       select: {
         id: true,
@@ -130,26 +134,31 @@ export class ProjectChatService {
     projectId: string,
     input: CreateProjectMessage,
   ): Promise<ProjectMessage> {
-    const project = await this.projectFor(member, projectId);
-    this.requireWrite(member, project);
-    if (input.parentMessageId) {
-      const parent = await this.prisma.projectMessage.findFirst({
-        where: { id: input.parentMessageId, projectId },
-        select: { id: true },
+    return this.prisma.$transaction(async (db) => {
+      // Project workflow access changes take this same lock.
+      // Check authorization and persist the message while holding it.
+      await db.$queryRaw`SELECT id FROM projects WHERE id = ${projectId}::uuid FOR UPDATE`;
+      const project = await this.projectFor(member, projectId, db);
+      this.requireWrite(member, project);
+      if (input.parentMessageId) {
+        const parent = await db.projectMessage.findFirst({
+          where: { id: input.parentMessageId, projectId },
+          select: { id: true },
+        });
+        if (!parent)
+          throw new BadRequestException('Reply must reference a message in this Project.');
+      }
+      const message = await db.projectMessage.create({
+        data: {
+          projectId,
+          memberId: member.id,
+          body: input.body,
+          parentMessageId: input.parentMessageId,
+        },
+        include: messageInclude,
       });
-      if (!parent)
-        throw new BadRequestException('Reply must reference a message in this Project.');
-    }
-    const message = await this.prisma.projectMessage.create({
-      data: {
-        projectId,
-        memberId: member.id,
-        body: input.body,
-        parentMessageId: input.parentMessageId,
-      },
-      include: messageInclude,
+      return this.toMessage(message, member.id);
     });
-    return this.toMessage(message, member.id);
   }
 
   async edit(
