@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
 import { ApiRequestError } from '../../lib/api';
 import { getSupabaseClient } from '../../lib/supabase';
@@ -249,6 +249,9 @@ export function LoginPage() {
                 'Sign in'
               )}
             </button>
+            <p className="auth-helper">
+              <Link to="/forgot-password">Forgot password?</Link>
+            </p>
             <div className="auth-divider">or</div>
             <button
               className="oauth-button"
