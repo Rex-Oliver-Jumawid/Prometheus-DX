@@ -10,6 +10,7 @@ import { useAuth } from '../auth/auth-context';
 import { ApiRequestError, apiFetch } from '../../lib/api';
 import { ProjectMembersPanel } from './ProjectMembersPanel';
 import { ProjectActivityPanel } from './ProjectActivityPanel';
+import { ProjectChatPanel } from './ProjectChatPanel';
 import { ProjectWorkflow } from './ProjectWorkflow';
 import {
   projectDetailQuery,
@@ -67,8 +68,12 @@ function withProjectStatus(
 export function ProjectOverviewPage() {
   const { projectId, outcomeId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') === 'activity' ? 'activity' : 'content';
-  const chooseTab = (tab: 'content' | 'activity') => {
+  const activeTab = searchParams.get('tab') === 'activity'
+    ? 'activity'
+    : searchParams.get('tab') === 'chat'
+      ? 'chat'
+      : 'content';
+  const chooseTab = (tab: 'content' | 'chat' | 'activity') => {
     setSearchParams((previous) => {
       const next = new URLSearchParams(previous);
       if (tab === 'content') next.delete('tab');
@@ -419,7 +424,15 @@ export function ProjectOverviewPage() {
             >
               Content
             </button>
-            <button className="tab-btn" type="button" disabled title="Project Chat is in development">
+            <button
+              className={`tab-btn ${activeTab === 'chat' ? 'active' : ''}`}
+              type="button"
+              role="tab"
+              id="pw-chat-tab"
+              aria-selected={activeTab === 'chat'}
+              aria-controls="pw-chat-panel"
+              onClick={() => chooseTab('chat')}
+            >
               Chat
             </button>
             <button
@@ -444,6 +457,10 @@ export function ProjectOverviewPage() {
           accessToken={accessToken}
           isLead={value.lead.id === session?.user?.id || value.canChangeStatus}
         />
+      ) : activeTab === 'chat' ? (
+        <div id="pw-chat-panel" role="tabpanel" aria-labelledby="pw-chat-tab">
+          <ProjectChatPanel projectId={projectId!} accessToken={accessToken} />
+        </div>
       ) : activeTab === 'activity' ? (
         <div id="pw-activity-panel" role="tabpanel" aria-labelledby="pw-activity-tab">
           <ProjectActivityPanel projectId={projectId!} accessToken={accessToken} />
