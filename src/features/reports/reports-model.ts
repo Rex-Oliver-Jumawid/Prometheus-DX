@@ -83,7 +83,12 @@ export function buildReportsAnalyticsModel(
     workflows.map((workflow) => [workflow.projectId, workflow]),
   );
   const scopedProjects = projects.filter(
-    (project) => !filters.projectId || project.id === filters.projectId,
+    (project) =>
+      (!filters.projectId || project.id === filters.projectId) &&
+      (!filters.departmentId ||
+        project.departments.some(
+          (department) => department.id === filters.departmentId,
+        )),
   );
 
   const scopedOutcomes = scopedProjects.flatMap((project) => {
