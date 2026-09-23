@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 
 const prisma = new PrismaClient();
@@ -72,7 +73,7 @@ test.beforeAll(async () => {
       },
       {
         projectId, actorMemberId: memberId,
-        entityType: 'OutcomeSubmission', entityId: crypto.randomUUID(), outcomeId,
+        entityType: 'OutcomeSubmission', entityId: randomUUID(), outcomeId,
         action: 'SUBMISSION_CREATED', metadata: { content: privateSubmissionText },
       },
     ],
@@ -126,7 +127,7 @@ test('Activity links to Outcomes but never returns private submission content', 
   await page.goto('/projects/' + projectId + '?tab=activity');
   await expect(page.getByRole('heading', { name: 'Project activity' })).toBeVisible();
   await expect(page.getByText(/created an outcome/)).toBeVisible();
-  await expect(page.getByRole('link', { name: 'View outcome' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'View outcome' }).first()).toHaveAttribute(
     'href', '/projects/' + projectId + '/outcomes/' + outcomeId,
   );
   expect(await page.getByText(privateSubmissionText).count()).toBe(0);
