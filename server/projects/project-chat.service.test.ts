@@ -36,7 +36,18 @@ function setup(options: {
     : options.project;
   const transactionDb = {
     $queryRaw: vi.fn().mockResolvedValue([{ id: projectId }]),
-    project: { findUnique: vi.fn().mockResolvedValue(project) },
+    project: {
+      findUnique: vi.fn().mockImplementation((query: {
+        select: { members: { where: { memberId: string } } };
+      }) => Promise.resolve(project
+        ? {
+            ...project,
+            members: project.members.filter(
+              (entry) => entry.memberId === query.select.members.where.memberId,
+            ),
+          }
+        : null)),
+    },
     projectMessage: {
       findFirst: vi.fn().mockImplementation((query: { where: { id: string } }) => {
         if (query.where.id === messageId)
