@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PrismaService } from '../database/prisma.service';
@@ -87,9 +87,11 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
     await expect(chat.edit(lead, projectId, reply.id, {
       body: 'Not my message', expectedEditedAt: null,
     })).rejects.toBeInstanceOf(ForbiddenException);
-    await expect(chat.edit(participant, secondProjectId, reply.id, {
+    // The same author can write in both Projects, but cannot address a message
+    // through the wrong Project's route.
+    await expect(chat.edit(lead, secondProjectId, root.id, {
       body: 'Wrong Project', expectedEditedAt: null,
-    })).rejects.toBeInstanceOf(ForbiddenException);
+    })).rejects.toBeInstanceOf(NotFoundException);
     await chat.edit(participant, projectId, reply.id, { body: 'Author edit persisted', expectedEditedAt: null });
     const persisted = await db.projectMessage.findUniqueOrThrow({ where: { id: reply.id } });
     expect(persisted.body).toBe('Author edit persisted');
