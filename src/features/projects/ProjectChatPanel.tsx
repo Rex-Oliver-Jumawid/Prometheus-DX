@@ -34,7 +34,7 @@ export function ProjectChatPanel({
   const queryKey = ['projects', projectId, 'chat'];
   const [body, setBody] = useState('');
   const [replyTo, setReplyTo] = useState<ProjectMessage | null>(null);
-  const [editing, setEditing] = useState<{ id: string; body: string } | null>(null);
+  const [editing, setEditing] = useState<{ id: string; body: string; expectedEditedAt: string | null } | null>(null);
 
   const messages = useInfiniteQuery({
     queryKey,
@@ -69,14 +69,17 @@ export function ProjectChatPanel({
   });
 
   const edit = useMutation({
-    mutationFn: (input: { id: string; body: string }) =>
+    mutationFn: (input: { id: string; body: string; expectedEditedAt: string | null }) =>
       apiFetch(
         '/projects/' + projectId + '/messages/' + input.id,
         ProjectMessageSchema,
         {
           accessToken,
           method: 'PATCH',
-          body: EditProjectMessageSchema.parse({ body: input.body }),
+          body: EditProjectMessageSchema.parse({
+            body: input.body,
+            expectedEditedAt: input.expectedEditedAt,
+          }),
         },
       ),
     onSuccess: async () => {
@@ -203,7 +206,7 @@ export function ProjectChatPanel({
                                 type="button"
                                 onClick={() => {
                                   edit.reset();
-                                  setEditing({ id: message.id, body: message.body });
+                                  setEditing({ id: message.id, body: message.body, expectedEditedAt: message.editedAt });
                                 }}
                               >
                                 Edit
