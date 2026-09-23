@@ -167,21 +167,23 @@ export class ProjectChatService {
     messageId: string,
     input: EditProjectMessage,
   ): Promise<ProjectMessage> {
-    const project = await this.projectFor(member, projectId);
-    this.requireWrite(member, project);
-    const original = await this.prisma.projectMessage.findFirst({
-      where: { id: messageId, projectId },
-      select: { id: true, memberId: true },
+    return this.prisma.$transaction(async (db) => {
+      await db.$queryRaw`SELECT id FROM projects WHERE id = ${projectId}::uuid FOR UPDATE`;
+      const project = await this.projectFor(member, projectId, db);
+      this.requireWrite(member, project);
+      const original = await db.projectMessage.findFirst({
+        where: { id: messageId, projectId },
+        select: { id: true, memberId: true },
+      });
+      if (!original) throw new NotFoundException('Message not found.');
+      if (original.memberId !== member.id)
+        throw new ForbiddenException('Only the author may edit this message.');
+      const updated = await db.projectMessage.update({
+        where: { id: messageId },
+        data: { body: input.body, editedAt: new Date() },
+        include: messageInclude,
+      });
+      return this.toMessage(updated, member.id);
     });
-    if (!original) throw new NotFoundException('Message not found.');
-    if (original.memberId !== member.id)
-      throw new ForbiddenException('Only the author may edit this message.');
-
-    const updated = await this.prisma.projectMessage.update({
-      where: { id: messageId },
-      data: { body: input.body, editedAt: new Date() },
-      include: messageInclude,
-    });
-    return this.toMessage(updated, member.id);
   }
 }
