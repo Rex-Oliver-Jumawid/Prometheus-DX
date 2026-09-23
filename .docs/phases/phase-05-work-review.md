@@ -558,3 +558,36 @@ Migrate browser-only permission, validation, stale-write, and concurrency assert
 
 Not complete.
 The repository is not yet ready to begin Phase 6.
+
+## Project Chat and Project Activity - Stacked Branch
+
+This section describes the unmerged `feat/project-chat-activity` work stacked on `fix/phase5-e2e-regressions`.
+It does not change the earlier Phase 5 acceptance result or imply that browser verification has completed.
+
+### Project Chat
+
+The Project overview has URL-backed Content, Chat, and Activity tabs.
+Chat persists messages and replies in `project_messages`; authors may edit their own messages while they retain write permission.
+All active authorized workspace Members can read general Project Chat, while only the Project Lead and Project Members can write.
+Archived Projects are read-only.
+Write transactions acquire the Project row lock before checking current membership and persisting the message, matching the Project membership-change lock order.
+Older messages use immutable `created_at` and UUID keyset pagination.
+Chat polls while the panel is mounted every eight seconds and also refetches on focus or reconnect.
+Polling is an intentional first-release trade-off, not push-based realtime; Supabase Realtime can be evaluated if measured collaboration needs justify its authorization and connection complexity.
+
+### Project Activity
+
+The Project-wide timeline reuses `activity_logs`, with project-scoped, newest-first keyset pagination.
+The API explicitly allowlists safe display metadata for reviewed action types and does not expose submission content, draft content, review notes, or arbitrary stored JSON.
+Project, Stage, Outcome, and Project Member changes are audited inside their mutations, including permitted Stage and Outcome deletion.
+Outcome deletion leaves earlier activity intact and clears its nullable Outcome foreign key.
+The timeline links to live Outcomes using the existing `/projects/:projectId/outcomes/:outcomeId` route.
+The Activity panel polls every 20 seconds and provides manual refresh and older-page loading.
+
+### Migration and verification
+
+`20260923000000_project_chat` creates persistent Chat storage, validates nonblank messages, enables row-level security, and revokes direct `anon` and `authenticated` table privileges.
+`20260923010000_project_activity_history` preserves audit rows after permitted Outcome deletion and adds the composite activity pagination index.
+The Prisma schema must remain aligned with both migrations, including `onDelete: SetNull` on ActivityLog's Outcome relation.
+Focused service and component regression tests cover core permissions, replies, editing, pagination, redaction, and read-only behavior.
+Database migration deployment, direct-role privilege verification, focused browser journeys, mobile and desktop visual checks, and the combined Phase 5 acceptance suite remain verification gates.
