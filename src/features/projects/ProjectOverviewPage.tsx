@@ -459,11 +459,11 @@ export function ProjectOverviewPage() {
         />
       ) : activeTab === 'chat' ? (
         <div id="pw-chat-panel" role="tabpanel" aria-labelledby="pw-chat-tab">
-          <ProjectChatPanel projectId={projectId!} accessToken={accessToken} />
+          <ProjectChatPanel key={projectId} projectId={projectId!} accessToken={accessToken} />
         </div>
       ) : activeTab === 'activity' ? (
         <div id="pw-activity-panel" role="tabpanel" aria-labelledby="pw-activity-tab">
-          <ProjectActivityPanel projectId={projectId!} accessToken={accessToken} />
+          <ProjectActivityPanel key={projectId} projectId={projectId!} accessToken={accessToken} />
         </div>
       ) : (
         <div id="pw-content-panel" role="tabpanel" aria-labelledby="pw-content-tab">
