@@ -86,6 +86,38 @@ describe('ProjectChatService', () => {
     );
   });
 
+  it('checks permissions after locking the Project, so a revoked Member cannot post', async () => {
+    const { service, db } = setup();
+    let releaseLock!: () => void;
+    db.$queryRaw.mockImplementation(
+      () => new Promise((resolve) => { releaseLock = () => resolve([{ id: projectId }]); }),
+    );
+    const attempt = service.send(member, projectId, { body: 'Stale permission', parentMessageId: null });
+    await vi.waitFor(() => expect(db.$queryRaw).toHaveBeenCalledTimes(1));
+    db.project.findUnique.mockResolvedValue({
+      id: projectId, leadMemberId: leadId, archivedAt: null, members: [],
+    });
+    releaseLock();
+    await expect(attempt).rejects.toBeInstanceOf(ForbiddenException);
+    expect(db.projectMessage.create).not.toHaveBeenCalled();
+  });
+
+  it('uses a timestamp and UUID boundary for older messages', async () => {
+    const { service, db } = setup();
+    await service.list(member, projectId, messageId);
+    expect(db.projectMessage.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          projectId,
+          OR: [
+            { createdAt: { lt: message.createdAt } },
+            { createdAt: message.createdAt, id: { lt: messageId } },
+          ],
+        },
+      }),
+    );
+  });
+
   it('rejects cross-Project replies before creating messages', async () => {
     const parentMessageId = '66666666-6666-4666-8666-666666666666';
     const { service, db } = setup({ parent: null });
