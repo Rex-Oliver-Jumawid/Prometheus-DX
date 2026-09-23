@@ -70,6 +70,10 @@ export function ProjectChatPanel({
       setReplyTo(null);
       await queryClient.invalidateQueries({ queryKey });
     },
+    onError: () => {
+      // Refresh permissions after a revoked write, without discarding the draft.
+      void queryClient.invalidateQueries({ queryKey });
+    },
   });
 
   const edit = useMutation({
@@ -89,6 +93,10 @@ export function ProjectChatPanel({
     onSuccess: async () => {
       setEditing(null);
       await queryClient.invalidateQueries({ queryKey });
+    },
+    onError: () => {
+      // Reload the latest revision so a conflicting edit can be reopened.
+      void queryClient.invalidateQueries({ queryKey });
     },
   });
 
