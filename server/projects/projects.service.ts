@@ -188,6 +188,17 @@ export class ProjectsService {
         },
       });
 
+      await transaction.activityLog.create({
+        data: {
+          projectId: created.id,
+          actorMemberId: currentMember.id,
+          entityType: 'Project',
+          entityId: created.id,
+          action: 'PROJECT_CREATED',
+          metadata: { name: input.name },
+        },
+      });
+
       return transaction.project.findUniqueOrThrow({
         where: { id: created.id },
         relationLoadStrategy: 'join',
@@ -264,6 +275,23 @@ export class ProjectsService {
             'USER'::"ProjectStatusChangeSource"
           FROM updated_project
           RETURNING project_id
+        ),
+        activity_write AS (
+          INSERT INTO activity_logs (
+            actor_member_id, project_id, entity_type, entity_id, action, metadata
+          )
+          SELECT
+            ${currentMember.id}::uuid,
+            updated_project.id,
+            'Project',
+            updated_project.id,
+            'PROJECT_STATUS_CHANGED',
+            jsonb_build_object(
+              'fromStatus', updated_project."fromStatus",
+              'toStatus', updated_project.status
+            )
+          FROM updated_project
+          RETURNING project_id
         )
         SELECT
           updated_project.id,
@@ -272,6 +300,7 @@ export class ProjectsService {
           updated_project."updatedAt"
         FROM updated_project
         CROSS JOIN (SELECT count(*) FROM status_history) AS history_write
+        CROSS JOIN (SELECT count(*) FROM activity_write) AS audit_write
         UNION ALL
         SELECT
           authorized_project.id,
