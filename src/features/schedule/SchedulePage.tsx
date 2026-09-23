@@ -780,13 +780,25 @@ export function SchedulePage() {
                     min="1"
                     max="119"
                     step="1"
-                    value={targetMinutes / 60}
+                    value={targetMinutes === 0 ? '' : targetMinutes / 60}
                     onChange={(event) => {
+                      // Keep the field empty while the user replaces its value.
+                      // Clamping each intermediate keystroke turns "20" into
+                      // "119" when the previous value was cleared to 1.
+                      if (event.target.value === '') {
+                        form.setValue('targetWeeklyMinutes', 0, { shouldDirty: true });
+                        return;
+                      }
                       const hours = Math.max(
                         1,
                         Math.min(119, Math.round(Number(event.target.value) || 1)),
                       );
                       form.setValue('targetWeeklyMinutes', hours * 60, { shouldDirty: true });
+                    }}
+                    onBlur={() => {
+                      if (!targetMinutes) {
+                        form.setValue('targetWeeklyMinutes', 60, { shouldDirty: true });
+                      }
                     }}
                   />
                 </label>

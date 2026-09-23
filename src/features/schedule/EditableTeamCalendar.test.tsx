@@ -21,20 +21,30 @@ const dateLabels = Object.fromEntries(WEEKDAYS.map(day => [day, 'Sep 21'])) as R
 function setup(initial: ScheduleBlockInput[] = [monday], rest = new Set<(typeof WEEKDAYS)[number]>(['SATURDAY', 'SUNDAY'])) {
   const changed = vi.fn();
   const toggleRest = vi.fn();
+  const restChanges = vi.fn();
   const message = vi.fn();
   function Harness() {
     const [blocks, setBlocks] = useState(initial);
+    const [restDays, setRestDays] = useState(new Set(rest));
     const [selected, setSelected] = useState<number | null>(null);
     return <EditableTeamCalendar members={members} currentMemberId={ownId}
-      currentMemberName="Me" dateLabels={dateLabels} blocks={blocks} restDays={rest}
+      currentMemberName="Me" dateLabels={dateLabels} blocks={blocks} restDays={restDays}
       selectedIndex={selected} onSelect={setSelected}
-      onChange={next => { changed(next); setBlocks(next); }}
-      onToggleRest={toggleRest} onMessage={message} />;
+      onChange={(next, nextRestDays) => {
+        changed(next);
+        setBlocks(next);
+        if (nextRestDays) {
+          restChanges(new Set(nextRestDays));
+          setRestDays(new Set(nextRestDays));
+        }
+      }}
+      onToggleRest={(day) => { toggleRest(day); }}
+      onMessage={message} />;
   }
   const view = render(<Harness />);
   const stage = view.container.querySelector('.schedule-calendar-stage')!;
   const mine = () => screen.getByRole('button', { name: /Select Monday schedule block/ });
-  return { ...view, stage, mine, changed, toggleRest, message };
+  return { ...view, stage, mine, changed, restChanges, toggleRest, message };
 }
 
 describe('EditableTeamCalendar pointer gestures', () => {
@@ -55,13 +65,25 @@ describe('EditableTeamCalendar pointer gestures', () => {
     expect(s.changed).toHaveBeenLastCalledWith([{ weekday: 'MONDAY', startTime: '10:00', endTime: '13:00' }]);
   });
 
-  it('rejects movement onto a rest day without changing the draft', () => {
-    const s = setup();
+  it('rejects moving onto a rest day when the source still has another block', () => {
+    const s = setup([monday, { weekday: 'MONDAY', startTime: '13:00', endTime: '15:00' }]);
     fireEvent.pointerDown(s.mine(), { pointerId: 3, button: 0, clientX: 200, clientY: 200 });
     fireEvent.pointerMove(s.stage, { pointerId: 3, clientX: 835, clientY: 200 });
     fireEvent.pointerUp(s.stage, { pointerId: 3 });
     expect(s.changed).not.toHaveBeenCalled();
     expect(s.message).toHaveBeenCalledWith(expect.stringContaining('unavailable'));
+  });
+
+  it('swaps the source rest day when moving its only block onto a rest day', () => {
+    const s = setup();
+    fireEvent.pointerDown(s.mine(), { pointerId: 5, button: 0, clientX: 200, clientY: 200 });
+    fireEvent.pointerMove(s.stage, { pointerId: 5, clientX: 835, clientY: 200 });
+    fireEvent.pointerUp(s.stage, { pointerId: 5 });
+    expect(s.changed).toHaveBeenLastCalledWith([
+      { weekday: 'SATURDAY', startTime: '10:00', endTime: '12:00' },
+    ]);
+    expect(s.restChanges).toHaveBeenLastCalledWith(new Set(['MONDAY', 'SUNDAY']));
+    expect(screen.getByRole('button', { name: /Saturday: workday, make rest day/ })).toBeInTheDocument();
   });
 
   it('rejects overlap with another own block but allows overlap with teammates', () => {
