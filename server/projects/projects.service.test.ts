@@ -97,6 +97,9 @@ function createDatabase(
           ),
         ),
     },
+    activityLog: {
+      create: vi.fn().mockResolvedValue({ id: '99999999-9999-4999-8999-999999999999' }),
+    },
     project: {
       findMany: vi.fn().mockResolvedValue(options.listedProjects ?? []),
       findUnique: vi
