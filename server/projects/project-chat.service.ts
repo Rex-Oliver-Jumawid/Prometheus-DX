@@ -189,11 +189,14 @@ export class ProjectChatService {
       this.requireWrite(member, project);
       const original = await db.projectMessage.findFirst({
         where: { id: messageId, projectId },
-        select: { id: true, memberId: true },
+        select: { id: true, memberId: true, editedAt: true },
       });
       if (!original) throw new NotFoundException('Message not found.');
       if (original.memberId !== member.id)
         throw new ForbiddenException('Only the author may edit this message.');
+      // A stale editor must not replace another tab's more recent changes.
+      if ((original.editedAt?.toISOString() ?? null) !== input.expectedEditedAt)
+        throw new ConflictException('This message was edited elsewhere. Cancel and reopen the editor.');
       const updated = await db.projectMessage.update({
         where: { id: messageId },
         data: { body: input.body, editedAt: new Date() },
