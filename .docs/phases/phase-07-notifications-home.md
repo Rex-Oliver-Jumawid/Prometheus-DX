@@ -293,7 +293,22 @@ Visible differences compared with the live Figma reference:
 - The Figma frame includes a Reports & Analytics primary navigation item, currently outside this branch's Phase 7 implementation scope.
 - The Figma sample contains Mentions and Projects filters and populated example rows; All/Unread only, with those additional filters intentionally deferred, is documented above.
 
-Do not mark manual visual acceptance complete until a populated inbox and narrow viewport have been reviewed and any material discrepancies resolved.
+That empty-inbox review was followed by a populated desktop screenshot and 390 × 844 responsive screenshots, recorded below.
+
+### Manual visual review: populated inbox and mobile navigation (2026-09-23)
+
+The user opened the Phase 7 worktree's application and created a submission using a different Member from the Project Lead.
+At desktop width, the Project Lead's Notifications page displayed one unread `SUBMISSION_CREATED` item with the submitter and Outcome context, a relative timestamp, an orange unread dot and left accent, All = 1, Unread = 1, and a matching orange sidebar badge = 1.
+This verifies the visible populated-row and unread presentation with a real user-generated event; it does not by itself verify Mark all as read or persistence after navigating back.
+
+At 390 × 844, the user supplied a screenshot showing the responsive Notifications page with the menu button, a single notification row, All/Unread controls, wrapped notification copy, and the timestamp below the text.
+A second screenshot shows the mobile sidebar **open**: primary navigation, Registry, the active Notifications utility item, and the profile area are present inside the drawer while the inbox remains behind it.
+The developer-tools viewport was scaled to fit the desktop display, so assess native-size readability separately if necessary.
+The screenshots verify that the mobile drawer opens; they do not independently prove it closes on button press, backdrop click, or navigation.
+
+Open acceptance checks: close the mobile drawer and verify the backdrop/navigation behavior; click the actual notification, confirm correct Outcome navigation and persisted read state after Back/reload; inspect a medium-width viewport if desired; and decide whether the stronger shared-shell background is acceptable relative to Figma.
+The legacy Figma mockup's Mentions and Projects tabs remain intentionally deferred as documented above.
+Do not merge or mark manual visual acceptance complete until these remaining interactive checks and material visual decisions are resolved.
 
 ### Final manual acceptance checklist
 
