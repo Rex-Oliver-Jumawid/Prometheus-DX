@@ -212,7 +212,7 @@ describe('SchedulePage', () => {
     };
     mockExistingSchedule(weekend);
     const { container } = renderPage();
-    await screen.findByRole('heading', { name: 'Schedule', exact: true });
+    await screen.findByTitle('Member One: 2:00 PM - 5:00 PM');
 
     const sunday = container.querySelector('.schedule-calendar-day[aria-label="Sunday"]');
     expect(sunday).not.toBeNull();
@@ -234,7 +234,7 @@ describe('SchedulePage', () => {
     };
     mockExistingSchedule(weekend);
     renderPage();
-    await screen.findByRole('heading', { name: 'Schedule', exact: true });
+    await screen.findByTitle('Member One: 2:00 PM - 5:00 PM');
     await user.click(screen.getByRole('button', { name: 'Configure My Schedule' }));
     // Rest days are initially inferred as Friday and Saturday for this schedule.
     await user.click(screen.getByRole('button', { name: 'Saturday: rest day, make workday' }));
@@ -458,7 +458,7 @@ describe('SchedulePage', () => {
     const user = userEvent.setup();
     mockExistingSchedule();
     renderPage();
-    await screen.findByRole('heading', { name: 'Schedule', exact: true });
+    await screen.findByTitle('Member One: 9:00 AM - 5:00 PM');
     await user.click(screen.getByRole('button', { name: 'Configure My Schedule' }));
     await user.click(screen.getByText('Fine-tune blocks using time inputs'));
     const daySelect = screen.getByRole('combobox', { name: 'Day 1' });
