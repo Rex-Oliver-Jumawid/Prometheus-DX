@@ -1,3 +1,7 @@
+.workspace-content-inner.reports-content-inner {
+  padding: 0;
+}
+
 .reports-page {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
