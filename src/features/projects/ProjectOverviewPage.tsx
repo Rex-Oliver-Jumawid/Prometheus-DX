@@ -455,7 +455,7 @@ export function ProjectOverviewPage() {
           projectId={projectId!}
           outcomeId={outcomeId}
           accessToken={accessToken}
-          isLead={value.lead.id === session?.user?.id || value.canChangeStatus}
+          isLead={workflow.data?.canManageStructure ?? false}
         />
       ) : activeTab === 'chat' ? (
         <div id="pw-chat-panel" role="tabpanel" aria-labelledby="pw-chat-tab">
@@ -470,7 +470,7 @@ export function ProjectOverviewPage() {
           <ProjectWorkflow
             projectId={projectId!}
             accessToken={accessToken}
-            isLead={value.lead.id === session?.user?.id || value.canChangeStatus}
+            isLead={workflow.data?.canManageStructure ?? false}
           />
           <ProjectMembersPanel projectId={projectId!} accessToken={accessToken} />
         </div>
