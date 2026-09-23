@@ -28,7 +28,7 @@ const message = {
 function setup(options: {
   project?: { id: string; leadMemberId: string; archivedAt: Date | null; members: { memberId: string }[] } | null;
   parent?: { id: string } | null;
-  original?: { id: string; memberId: string } | null;
+  original?: { id: string; memberId: string; editedAt?: Date | null } | null;
   rows?: typeof message[];
 } = {}) {
   const project = options.project === undefined
