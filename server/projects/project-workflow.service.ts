@@ -605,6 +605,7 @@ export class ProjectWorkflowService {
           outcomes: {
             select: {
               id: true,
+              title: true,
               _count: {
                 select: {
                   members: true,
@@ -643,6 +644,20 @@ export class ProjectWorkflowService {
           metadata: { name: stage.name },
         },
       });
+      // Stage deletion cascades to safe, unassigned Outcomes. Record those
+      // deletions too, preserving their IDs and titles in the Project audit.
+      if (stage.outcomes.length > 0) {
+        await transaction.activityLog.createMany({
+          data: stage.outcomes.map((outcome) => ({
+            projectId,
+            actorMemberId: currentMember.id,
+            entityType: 'Outcome',
+            entityId: outcome.id,
+            action: 'OUTCOME_DELETED',
+            metadata: { title: outcome.title },
+          })),
+        });
+      }
 
       // Compact sibling stage positions within the Project.
       const siblings = await transaction.stage.findMany({
