@@ -1,5 +1,6 @@
 .home-page {
   --home-edge-gutter: clamp(20px, 1.8vw, 28px);
+  --home-top-align-overhang: clamp(38px, 3.4vw, 48px);
   width: 100%;
   max-width: none;
   height: 100%;
@@ -13,6 +14,8 @@
 }
 
 .home-header {
+  width: calc(100% + var(--home-top-align-overhang));
+  max-width: none;
   min-height: 69px;
   display: flex;
   align-items: flex-end;
@@ -72,8 +75,8 @@
 }
 
 .home-summary-grid {
-  width: 100%;
-  max-width: 100%;
+  width: calc(100% + var(--home-top-align-overhang));
+  max-width: none;
   min-width: 0;
   align-self: stretch;
   display: grid;
@@ -901,6 +904,7 @@
 
   .home-page {
     --home-edge-gutter: 0px;
+    --home-top-align-overhang: 0px;
     height: auto;
     min-height: 100%;
   }
