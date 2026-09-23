@@ -105,20 +105,30 @@ export class ProjectChatService {
     cursor?: string,
   ): Promise<ProjectMessagePage> {
     const project = await this.projectFor(member, projectId);
-    if (cursor) {
-      const previous = await this.prisma.projectMessage.findFirst({
-        where: { id: cursor, projectId },
-        select: { id: true },
-      });
-      if (!previous)
-        throw new BadRequestException('Invalid Project chat cursor.');
-    }
+    const previous = cursor
+      ? await this.prisma.projectMessage.findFirst({
+          where: { id: cursor, projectId },
+          select: { id: true, createdAt: true },
+        })
+      : null;
+    if (cursor && !previous)
+      throw new BadRequestException('Invalid Project chat cursor.');
+
     const records = await this.prisma.projectMessage.findMany({
-      where: { projectId },
+      where: {
+        projectId,
+        ...(previous
+          ? {
+              OR: [
+                { createdAt: { lt: previous.createdAt } },
+                { createdAt: previous.createdAt, id: { lt: previous.id } },
+              ],
+            }
+          : {}),
+      },
       include: messageInclude,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: PAGE_SIZE + 1,
-      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
     });
     const hasMore = records.length > PAGE_SIZE;
     const items = records.slice(0, PAGE_SIZE);
