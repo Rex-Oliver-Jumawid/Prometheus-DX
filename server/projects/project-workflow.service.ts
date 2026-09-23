@@ -550,6 +550,16 @@ export class ProjectWorkflowService {
       const { stageId, position } = outcome;
 
       await transaction.outcome.delete({ where: { id: outcomeId } });
+      await transaction.activityLog.create({
+        data: {
+          projectId,
+          actorMemberId: currentMember.id,
+          entityType: 'Outcome',
+          entityId: outcomeId,
+          action: 'OUTCOME_DELETED',
+          metadata: { title: outcome.title },
+        },
+      });
 
       // Compact sibling positions within the same Stage.
       // Two-pass to avoid transient unique constraint violations on
@@ -590,6 +600,7 @@ export class ProjectWorkflowService {
         select: {
           projectId: true,
           position: true,
+          name: true,
           outcomes: {
             select: {
               id: true,
@@ -621,6 +632,16 @@ export class ProjectWorkflowService {
       const { position } = stage;
 
       await transaction.stage.delete({ where: { id: stageId } });
+      await transaction.activityLog.create({
+        data: {
+          projectId,
+          actorMemberId: currentMember.id,
+          entityType: 'Stage',
+          entityId: stageId,
+          action: 'STAGE_DELETED',
+          metadata: { name: stage.name },
+        },
+      });
 
       // Compact sibling stage positions within the Project.
       const siblings = await transaction.stage.findMany({
