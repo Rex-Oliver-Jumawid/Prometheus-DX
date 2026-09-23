@@ -21,13 +21,13 @@ const event = {
 
 function setup(options: {
   project?: { id: string } | null;
-  matchingCursor?: { id: string } | null;
+  matchingCursor?: { id: string; createdAt: Date } | null;
   rows?: typeof event[];
 } = {}) {
   const db = {
     project: { findUnique: vi.fn().mockResolvedValue(options.project === undefined ? { id: projectId } : options.project) },
     activityLog: {
-      findFirst: vi.fn().mockResolvedValue(options.matchingCursor === undefined ? { id: cursor } : options.matchingCursor),
+      findFirst: vi.fn().mockResolvedValue(options.matchingCursor === undefined ? { id: cursor, createdAt: event.createdAt } : options.matchingCursor),
       findMany: vi.fn().mockResolvedValue(options.rows ?? [event]),
     },
   };
@@ -71,10 +71,18 @@ describe('ProjectActivityService', () => {
     expect(response.nextCursor).toBe(rows[24].id);
     expect(db.activityLog.findFirst).toHaveBeenCalledWith({
       where: { id: cursor, projectId },
-      select: { id: true },
+      select: { id: true, createdAt: true },
     });
     expect(db.activityLog.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ cursor: { id: cursor }, skip: 1 }),
+      expect.objectContaining({
+        where: {
+          projectId,
+          OR: [
+            { createdAt: { lt: event.createdAt } },
+            { createdAt: event.createdAt, id: { lt: cursor } },
+          ],
+        },
+      }),
     );
   });
 
