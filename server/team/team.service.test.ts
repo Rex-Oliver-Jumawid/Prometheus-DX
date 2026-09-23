@@ -48,7 +48,9 @@ describe('TeamService', () => {
       refreshStaleSessions: vi.fn(),
     } as unknown as WorkSessionsService;
 
-    const result = await new TeamService(prisma, workSessions).getSummary();
+    const result = await new TeamService(prisma, workSessions).getSummary(
+      '2026-09-18',
+    );
 
     expect(result.members[0]).toMatchObject({
       fullName: 'Member One',
