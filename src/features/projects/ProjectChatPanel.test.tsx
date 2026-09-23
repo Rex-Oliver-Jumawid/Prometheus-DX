@@ -95,6 +95,40 @@ describe('ProjectChatPanel interactions', () => {
     ));
   });
 
+  it('refreshes a conflicting edit and lets the author reopen the latest revision', async () => {
+    let reads = 0;
+    vi.mocked(apiFetch).mockImplementation((path, _schema, options) => {
+      if (options?.method === 'PATCH')
+        return Promise.reject(new Error('This message was edited elsewhere.'));
+      if (path.endsWith('/messages')) {
+        const latest = reads++ > 0;
+        return Promise.resolve({
+          items: [{
+            ...existing,
+            body: latest ? 'Updated in another tab' : existing.body,
+            editedAt: latest ? '2026-09-23T02:00:00.000Z' : null,
+          }],
+          nextCursor: null,
+          canWrite: true,
+        });
+      }
+      return Promise.reject(new Error('Unexpected API request'));
+    });
+    renderChat();
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Edit message' }), {
+      target: { value: 'My stale change' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('edited elsewhere');
+    await waitFor(() => expect(reads).toBeGreaterThan(1));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(await screen.findByText('Updated in another tab')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    expect(screen.getByRole('textbox', { name: 'Edit message' }))
+      .toHaveValue('Updated in another tab');
+  });
+
   it('loads earlier messages using the returned pagination cursor', async () => {
     vi.mocked(apiFetch).mockImplementation((path) => {
       if (path.endsWith('?cursor=' + messageId))
