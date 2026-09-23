@@ -10,6 +10,12 @@ export function loadRegistryRoute() {
   }));
 }
 
+export function loadReportsAnalyticsRoute() {
+  return import('../features/reports/ReportsAnalyticsPage').then((module) => ({
+    Component: module.ReportsAnalyticsPage,
+  }));
+}
+
 export function loadScheduleRoute() {
   return import('../features/schedule/SchedulePage').then((module) => ({
     Component: module.SchedulePage,
