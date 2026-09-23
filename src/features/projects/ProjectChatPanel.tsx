@@ -38,7 +38,7 @@ export function ProjectChatPanel({
   const threadRef = useRef<HTMLOListElement>(null);
   const pinnedToBottom = useRef(true);
   const initiallyScrolled = useRef(false);
-  const olderScroll = useRef<{ top: number; height: number } | null>(null);
+  const olderScroll = useRef<{ top: number; height: number; pageCount: number } | null>(null);
 
   const messages = useInfiniteQuery({
     queryKey,
@@ -99,6 +99,7 @@ export function ProjectChatPanel({
       a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id),
   );
   const canWrite = messages.data?.pages[0]?.canWrite ?? false;
+  const pageCount = messages.data?.pages.length ?? 0;
 
   // Show the newest conversation on entry. Preserve a reader's scroll position
   // when earlier messages are prepended, and follow new messages only if pinned.
@@ -107,13 +108,21 @@ export function ProjectChatPanel({
     if (!thread || ordered.length === 0) return;
     const previous = olderScroll.current;
     if (previous) {
+      if (pageCount <= previous.pageCount) {
+        // A poll may deliver new messages before the older-page request finishes.
+        previous.top = thread.scrollTop;
+        previous.height = thread.scrollHeight;
+        return;
+      }
       thread.scrollTop = previous.top + thread.scrollHeight - previous.height;
       olderScroll.current = null;
+      pinnedToBottom.current =
+        thread.scrollHeight - thread.scrollTop - thread.clientHeight < 80;
     } else if (!initiallyScrolled.current || pinnedToBottom.current) {
       thread.scrollTop = thread.scrollHeight;
     }
     initiallyScrolled.current = true;
-  }, [ordered.length, ordered[0]?.id, ordered[ordered.length - 1]?.id]);
+  }, [pageCount, ordered.length, ordered[0]?.id, ordered[ordered.length - 1]?.id]);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -158,10 +167,16 @@ export function ProjectChatPanel({
                 if (thread) olderScroll.current = {
                   top: thread.scrollTop,
                   height: thread.scrollHeight,
+                  pageCount,
                 };
                 pinnedToBottom.current = false;
                 void messages.fetchNextPage().then((result) => {
-                  if (result.isError) olderScroll.current = null;
+                  if (result.isError) {
+                    olderScroll.current = null;
+                    const current = threadRef.current;
+                    if (current) pinnedToBottom.current =
+                      current.scrollHeight - current.scrollTop - current.clientHeight < 80;
+                  }
                 });
               }}
               disabled={messages.isFetchingNextPage}
