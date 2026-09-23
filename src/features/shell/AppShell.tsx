@@ -12,6 +12,7 @@ import { WorkAttendanceControl } from '../work-sessions/WorkAttendanceControl';
 import { teamWorkSummaryQuery } from '../work-sessions/work-session-queries';
 import {
   loadRegistryRoute,
+  loadReportsAnalyticsRoute,
   loadScheduleRoute,
   loadTeamRoute,
 } from '../../routes/route-modules';
@@ -106,6 +107,12 @@ export function AppShell() {
       void Promise.all([
         loadRegistryRoute(),
         queryClient.prefetchQuery(registryOverviewQuery(accessToken)),
+      ]);
+    } else if (path === '/reports') {
+      void Promise.all([
+        loadReportsAnalyticsRoute(),
+        queryClient.prefetchQuery(projectsListQuery(accessToken)),
+        queryClient.prefetchQuery(teamWorkSummaryQuery(accessToken)),
       ]);
     } else if (path === '/schedule') {
       void Promise.all([
