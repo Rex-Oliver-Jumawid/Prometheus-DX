@@ -12,8 +12,10 @@ const descriptions: Record<string, string> = {
   PROJECT_ARCHIVED: 'archived the project',
   STAGE_CREATED: 'created a stage',
   STAGE_UPDATED: 'updated a stage',
+  STAGE_DELETED: 'deleted a stage',
   OUTCOME_CREATED: 'created an outcome',
   OUTCOME_UPDATED: 'updated an outcome',
+  OUTCOME_DELETED: 'deleted an outcome',
   OUTCOME_JOINED: 'joined an outcome',
   OUTCOME_ACCEPTED: 'accepted an outcome',
   OUTCOME_REOPENED: 'reopened an outcome',
@@ -41,7 +43,18 @@ function eventTitle(item: ProjectActivity) {
     item.metadata && typeof item.metadata === 'object' && !Array.isArray(item.metadata)
       ? (item.metadata as Record<string, unknown>)
       : {};
-  return typeof meta.title === 'string' ? meta.title : null;
+  if (typeof meta.title === 'string') return meta.title;
+  if (
+    item.action === 'PROJECT_STATUS_CHANGED' &&
+    typeof meta.fromStatus === 'string' &&
+    typeof meta.toStatus === 'string'
+  ) return meta.fromStatus + ' → ' + meta.toStatus;
+  if (
+    item.action === 'PROJECT_MEMBER_ACCESS_CHANGED' &&
+    typeof meta.previousAccess === 'string' &&
+    typeof meta.newAccess === 'string'
+  ) return meta.previousAccess + ' → ' + meta.newAccess;
+  return null;
 }
 
 function eventTime(date: string) {
@@ -76,7 +89,10 @@ export function ProjectActivityPanel({
     staleTime: 10_000,
     refetchInterval: 20_000,
   });
-  const items = feed.data?.pages.flatMap((page) => page.items) ?? [];
+  const seenIds = new Set<string>();
+  const items = (feed.data?.pages.flatMap((page) => page.items) ?? []).filter(
+    (item) => !seenIds.has(item.id) && Boolean(seenIds.add(item.id)),
+  );
   return (
     <section className="pw-collaboration-panel" aria-label="Project activity">
       <header className="pw-collaboration-heading">
@@ -107,7 +123,7 @@ export function ProjectActivityPanel({
         <p className="pw-collaboration-state">No project activity has been recorded yet.</p>
       ) : (
         <>
-          <ol className="pw-activity-timeline">
+          <ol className="pw-activity-timeline" aria-label="Project activity timeline">
             {items.map((item) => (
               <li className="pw-activity-entry" key={item.id}>
                 <span className="pw-activity-node" aria-hidden="true" />
@@ -116,7 +132,7 @@ export function ProjectActivityPanel({
                     <strong>{item.actor?.fullName ?? 'System'}</strong>{' '}
                     {eventDescription(item.action)}
                     {eventTitle(item) && (
-                      <span className="pw-activity-subject"> — {eventTitle(item)}</span>
+                      <span className="pw-activity-subject"> - {eventTitle(item)}</span>
                     )}
                   </p>
                   <div className="pw-activity-entry-meta">
