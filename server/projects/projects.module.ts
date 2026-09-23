@@ -7,6 +7,8 @@ import { OutcomeWorkController } from './outcome-work.controller';
 import { OutcomeWorkService } from './outcome-work.service';
 import { OutcomeDeliveryController } from './outcome-delivery.controller';
 import { OutcomeDeliveryService } from './outcome-delivery.service';
+import { ProjectActivityController } from './project-activity.controller';
+import { ProjectActivityService } from './project-activity.service';
 
 @Module({
   controllers: [
@@ -14,12 +16,14 @@ import { OutcomeDeliveryService } from './outcome-delivery.service';
     ProjectWorkflowController,
     OutcomeWorkController,
     OutcomeDeliveryController,
+    ProjectActivityController,
   ],
   providers: [
     ProjectsService,
     ProjectWorkflowService,
     OutcomeWorkService,
     OutcomeDeliveryService,
+    ProjectActivityService,
   ],
 })
 export class ProjectsModule {}
