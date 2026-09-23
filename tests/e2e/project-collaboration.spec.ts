@@ -147,6 +147,38 @@ test('Activity links to Outcomes but never returns private submission content', 
   expect(JSON.stringify(apiResponse.json)).not.toContain(privateSubmissionText);
 });
 
+test('Chat opens on recent messages and keeps the viewport when older history loads', async ({ page }) => {
+  test.skip(!hasCredentials, 'Requires E2E credentials.');
+  await prisma.projectMessage.createMany({
+    data: Array.from({ length: 35 }, (_, index) => ({
+      projectId,
+      memberId,
+      body: 'Conversation record ' + String(index).padStart(4, '0'),
+    })),
+  });
+  await signIn(page);
+  await page.goto('/projects/' + projectId + '?tab=chat');
+  const thread = page.getByRole('list', { name: 'Project messages' });
+  await expect(thread.locator('li')).toHaveCount(30);
+  await expect.poll(
+    () => thread.evaluate((element) =>
+      element.scrollHeight - element.clientHeight - element.scrollTop),
+  ).toBeLessThan(4);
+
+  const visiblePageAnchor = thread.locator('li').first();
+  const anchorText = await visiblePageAnchor.locator('.pw-chat-message-text').innerText();
+  const before = await visiblePageAnchor.evaluate((element) =>
+    element.getBoundingClientRect().top,
+  );
+  await page.getByRole('button', { name: 'Load earlier messages' }).click();
+  await expect(thread.locator('li')).toHaveCount(37);
+  const anchor = thread.locator('li').filter({
+    has: page.getByText(anchorText, { exact: true }),
+  });
+  const after = await anchor.evaluate((element) => element.getBoundingClientRect().top);
+  expect(Math.abs(after - before)).toBeLessThan(5);
+});
+
 test('Collaboration panels fit narrow and desktop viewports', async ({ page }) => {
   test.skip(!hasCredentials, 'Requires E2E credentials.');
   await signIn(page);
