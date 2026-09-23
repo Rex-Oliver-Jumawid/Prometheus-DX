@@ -98,7 +98,7 @@ function createDatabase(
     outcomeRevisionCount?: number;
     outcomeDependentCount?: number;
     outcomeFeatureCount?: number;
-    stageOutcomes?: Array<{ id: string; counts: { members: number; submissions: number; acceptances: number; revisionRequests: number; dependents: number; features: number } }>;
+    stageOutcomes?: Array<{ id: string; title?: string; counts: { members: number; submissions: number; acceptances: number; revisionRequests: number; dependents: number; features: number } }>;
     stageSiblings?: Array<{ id: string; position: number }>;
     outcomeSiblings?: Array<{ id: string; position: number }>;
   } = {},
@@ -131,11 +131,13 @@ function createDatabase(
           if (options.stageProjectId === null) return Promise.resolve(null);
           const stageOutcomes = (options.stageOutcomes ?? []).map((o) => ({
             id: o.id,
+            title: o.title ?? 'Retired Outcome',
             _count: o.counts,
           }));
           return Promise.resolve({
             projectId: options.stageProjectId ?? projectId,
             position: 1,
+            name: 'Discovery',
             outcomes: stageOutcomes,
           });
         }),
@@ -296,6 +298,7 @@ function createDatabase(
     },
     activityLog: {
       create: vi.fn().mockResolvedValue({ id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' }),
+      createMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
   };
   const transaction = vi.fn(
@@ -816,6 +819,36 @@ describe('ProjectWorkflowService', () => {
     ).resolves.toBeUndefined();
     expect(database.stage.delete).toHaveBeenCalledWith({
       where: { id: stageId },
+    });
+  });
+
+  it('audits each safe Outcome deleted together with its parent Stage', async () => {
+    const emptyCounts = {
+      members: 0, submissions: 0, acceptances: 0,
+      revisionRequests: 0, dependents: 0, features: 0,
+    };
+    const database = createDatabase({
+      stageOutcomes: [
+        { id: outcomeId, title: 'First retired outcome', counts: emptyCounts },
+        { id: outcomeId2, title: 'Second retired outcome', counts: emptyCounts },
+      ],
+    });
+    const service = new ProjectWorkflowService(database);
+    await expect(service.deleteStage(lead, projectId, stageId)).resolves.toBeUndefined();
+    expect(database.activityLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ action: 'STAGE_DELETED', entityId: stageId }),
+    });
+    expect(database.activityLog.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          action: 'OUTCOME_DELETED', entityId: outcomeId,
+          metadata: { title: 'First retired outcome' },
+        }),
+        expect.objectContaining({
+          action: 'OUTCOME_DELETED', entityId: outcomeId2,
+          metadata: { title: 'Second retired outcome' },
+        }),
+      ],
     });
   });
 
