@@ -21,3 +21,9 @@ export function loadTeamRoute() {
     Component: module.TeamPage,
   }));
 }
+
+export function loadVisiWorkRoute() {
+  return import('../features/visiwork/VisiWorkPage').then((module) => ({
+    Component: module.VisiWorkPage,
+  }));
+}
