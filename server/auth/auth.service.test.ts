@@ -3,8 +3,15 @@ import type { Member } from '@prisma/client';
 import type { User } from '@supabase/supabase-js';
 import { describe, expect, it, vi } from 'vitest';
 import type { PrismaService } from '../database/prisma.service';
-import { serverEnvironment } from '../config/env';
 import { AuthService, type SupabaseAuthClient } from './auth.service';
+
+const TEST_SUPABASE_URL = 'https://test.supabase.co';
+
+vi.mock('../config/env', () => ({
+  serverEnvironment: {
+    supabaseUrl: 'https://test.supabase.co',
+  },
+}));
 
 const activeMember = {
   id: '44444444-4444-4444-8444-444444444444',
@@ -32,7 +39,7 @@ function supabase(
   const claims = user?.id
     ? {
         sub: user.id,
-        iss: `${serverEnvironment.supabaseUrl!.replace(/\/$/, '')}/auth/v1`,
+        iss: `${TEST_SUPABASE_URL}/auth/v1`,
         aud: 'authenticated',
         exp: Math.floor(Date.now() / 1_000) + 3_600,
         iat: Math.floor(Date.now() / 1_000),
