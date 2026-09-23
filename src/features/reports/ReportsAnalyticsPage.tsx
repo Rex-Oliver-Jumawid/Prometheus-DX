@@ -1,5 +1,4 @@
 import { useQueries, useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
 import { useAuth } from '../auth/auth-context';
 import {
   projectWorkflowQuery,
@@ -7,10 +6,7 @@ import {
 } from '../projects/project-queries';
 import { formatHours } from '../work-sessions/work-session-format';
 import { teamWorkSummaryQuery } from '../work-sessions/work-session-queries';
-import {
-  buildReportsAnalyticsModel,
-  type ReportsFilters,
-} from './reports-model';
+import { buildReportsAnalyticsModel } from './reports-model';
 import './reports.css';
 
 function formatWeek(start: string, end: string): string {
@@ -19,7 +15,7 @@ function formatWeek(start: string, end: string): string {
     month: 'short',
     day: 'numeric',
   });
-  return `${format.format(new Date(start))} - ${format.format(new Date(end))}`;
+  return `${format.format(new Date(start))}–${format.format(new Date(end))}`;
 }
 
 function MetricCard({
@@ -63,13 +59,131 @@ function ProgressRow({
   );
 }
 
+function SkeletonLine({
+  width = '100%',
+  height = 8,
+}: {
+  width?: string;
+  height?: number;
+}) {
+  return (
+    <span
+      className="reports-skeleton-line"
+      style={{ width, height }}
+      aria-hidden="true"
+    />
+  );
+}
+
+function ReportsSkeleton() {
+  return (
+    <section
+      className="reports-page reports-skeleton"
+      role="status"
+      aria-label="Loading Reports & Analytics"
+    >
+      <header className="reports-header">
+        <div className="reports-heading">
+          <SkeletonLine width="108px" height={7} />
+          <SkeletonLine width="218px" height={26} />
+          <SkeletonLine width="356px" height={10} />
+        </div>
+        <SkeletonLine width="127px" height={25} />
+      </header>
+
+      <div className="reports-metrics">
+        {Array.from({ length: 4 }, (_, index) => (
+          <article className="reports-metric-card" key={index}>
+            <SkeletonLine width="72px" height={7} />
+            <SkeletonLine width="42px" height={23} />
+            <SkeletonLine width="92px" height={7} />
+          </article>
+        ))}
+      </div>
+
+      <div className="reports-grid reports-grid-top">
+        <article className="reports-panel reports-project-health">
+          <div className="reports-panel-title">
+            <SkeletonLine width="72px" height={10} />
+            <SkeletonLine width="174px" height={7} />
+          </div>
+          <div className="reports-list">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div className="reports-progress-row" key={index}>
+                <div className="reports-row-heading">
+                  <SkeletonLine width="42%" height={8} />
+                  <SkeletonLine width="22px" height={7} />
+                </div>
+                <SkeletonLine width="100%" height={5} />
+                <SkeletonLine width="118px" height={6} />
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="reports-panel reports-pipeline">
+          <div className="reports-panel-title">
+            <SkeletonLine width="92px" height={10} />
+            <SkeletonLine width="144px" height={7} />
+          </div>
+          <div className="reports-pipeline-grid">
+            {Array.from({ length: 6 }, (_, index) => (
+              <div className="reports-pipeline-cell" key={index}>
+                <SkeletonLine width="18px" height={22} />
+                <SkeletonLine width="54px" height={7} />
+                <SkeletonLine width="76px" height={6} />
+              </div>
+            ))}
+          </div>
+        </article>
+      </div>
+
+      <div className="reports-grid reports-grid-bottom">
+        <article className="reports-panel reports-capacity">
+          <div className="reports-panel-title">
+            <SkeletonLine width="78px" height={10} />
+            <SkeletonLine width="164px" height={7} />
+          </div>
+          <div className="reports-list">
+            {Array.from({ length: 6 }, (_, index) => (
+              <div className="reports-progress-row" key={index}>
+                <div className="reports-row-heading">
+                  <SkeletonLine width="96px" height={8} />
+                  <SkeletonLine width="54px" height={7} />
+                </div>
+                <SkeletonLine width="100%" height={5} />
+                <SkeletonLine width="150px" height={6} />
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="reports-panel reports-departments">
+          <div className="reports-panel-title">
+            <SkeletonLine width="112px" height={10} />
+            <SkeletonLine width="180px" height={7} />
+          </div>
+          <div className="reports-list">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div className="reports-progress-row" key={index}>
+                <div className="reports-row-heading">
+                  <SkeletonLine width="92px" height={8} />
+                  <SkeletonLine width="50px" height={7} />
+                </div>
+                <SkeletonLine width="100%" height={5} />
+                <SkeletonLine width="156px" height={6} />
+              </div>
+            ))}
+          </div>
+        </article>
+      </div>
+    </section>
+  );
+}
+
 export function ReportsAnalyticsPage() {
   const { session } = useAuth();
   const accessToken = session?.access_token;
-  const [filters, setFilters] = useState<ReportsFilters>({
-    projectId: '',
-    departmentId: '',
-  });
 
   const projects = useQuery(projectsListQuery(accessToken));
   const team = useQuery(teamWorkSummaryQuery(accessToken));
@@ -83,34 +197,13 @@ export function ReportsAnalyticsPage() {
     query.data ? [query.data] : [],
   );
 
-  const departments = useMemo(() => {
-    const byId = new Map<string, { id: string; name: string }>();
-    (projects.data ?? []).forEach((project) =>
-      project.departments.forEach((department) =>
-        byId.set(department.id, {
-          id: department.id,
-          name: department.name,
-        }),
-      ),
-    );
-    return Array.from(byId.values()).sort((a, b) =>
-      a.name.localeCompare(b.name),
-    );
-  }, [projects.data]);
-
   const waitingForWorkflows =
     Boolean(projects.data?.length) &&
     workflowQueries.some((query) => query.isPending);
   const hasWorkflowError = workflowQueries.some((query) => query.isError);
 
   if (projects.isPending || team.isPending || waitingForWorkflows) {
-    return (
-      <section className="reports-state" role="status">
-        <span className="reports-state-kicker">OPERATING INTELLIGENCE</span>
-        <h1>Reports & Analytics</h1>
-        <p>Building the current company view from live project and work data...</p>
-      </section>
-    );
+    return <ReportsSkeleton />;
   }
 
   if (projects.isError || team.isError || hasWorkflowError || !team.data) {
@@ -142,14 +235,11 @@ export function ReportsAnalyticsPage() {
     projects.data ?? [],
     workflows,
     team.data,
-    filters,
-  );
-
-  const clearFilters = () =>
-    setFilters({
+    {
       projectId: '',
       departmentId: '',
-    });
+    },
+  );
 
   return (
     <section className="reports-page" aria-labelledby="reports-title">
@@ -162,56 +252,9 @@ export function ReportsAnalyticsPage() {
             activity in one view.
           </p>
         </div>
-        <div className="reports-header-actions">
-          <span className="reports-period">
-            {formatWeek(team.data.weekStart, team.data.weekEnd)} · Live
-          </span>
-          <div className="reports-filters" aria-label="Report filters">
-            <label>
-              <span>Project</span>
-              <select
-                value={filters.projectId}
-                onChange={(event) =>
-                  setFilters((current) => ({
-                    ...current,
-                    projectId: event.target.value,
-                  }))
-                }
-              >
-                <option value="">All projects</option>
-                {(projects.data ?? []).map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>Department</span>
-              <select
-                value={filters.departmentId}
-                onChange={(event) =>
-                  setFilters((current) => ({
-                    ...current,
-                    departmentId: event.target.value,
-                  }))
-                }
-              >
-                <option value="">All departments</option>
-                {departments.map((department) => (
-                  <option key={department.id} value={department.id}>
-                    {department.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {(filters.projectId || filters.departmentId) && (
-              <button type="button" onClick={clearFilters}>
-                Clear
-              </button>
-            )}
-          </div>
-        </div>
+        <span className="reports-period">
+          {formatWeek(team.data.weekStart, team.data.weekEnd)} · Live
+        </span>
       </header>
 
       <div className="reports-metrics" aria-label="Company reporting summary">
@@ -254,7 +297,7 @@ export function ReportsAnalyticsPage() {
                 />
               ))
             ) : (
-              <div className="reports-empty">No projects match these filters.</div>
+              <div className="reports-empty">No projects to report yet.</div>
             )}
           </div>
         </article>
@@ -302,7 +345,7 @@ export function ReportsAnalyticsPage() {
                 </div>
               ))
             ) : (
-              <div className="reports-empty">No team capacity data in this scope.</div>
+              <div className="reports-empty">No team capacity data yet.</div>
             )}
           </div>
         </article>
@@ -324,13 +367,13 @@ export function ReportsAnalyticsPage() {
                     <i style={{ width: `${department.share}%` }} />
                   </div>
                   <small>
-                    {department.open} open · {department.share}% of scoped
+                    {department.open} open · {department.share}% of company
                     outcome ownership
                   </small>
                 </div>
               ))
             ) : (
-              <div className="reports-empty">No department workload in this scope.</div>
+              <div className="reports-empty">No department workload yet.</div>
             )}
           </div>
         </article>
