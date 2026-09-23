@@ -34,18 +34,24 @@ function setup(options: {
   const project = options.project === undefined
     ? { id: projectId, leadMemberId: leadId, archivedAt: null, members: [{ memberId }] }
     : options.project;
-  const db = {
+  const transactionDb = {
+    $queryRaw: vi.fn().mockResolvedValue([{ id: projectId }]),
     project: { findUnique: vi.fn().mockResolvedValue(project) },
     projectMessage: {
       findFirst: vi.fn().mockImplementation((query: { where: { id: string } }) => {
         if (query.where.id === messageId)
-          return Promise.resolve(options.original === undefined ? { id: messageId, memberId } : options.original);
+          return Promise.resolve(options.original === undefined ? { id: messageId, memberId, createdAt: message.createdAt } : options.original);
         return Promise.resolve(options.parent === undefined ? { id: query.where.id } : options.parent);
       }),
       findMany: vi.fn().mockResolvedValue(options.rows ?? [message]),
       create: vi.fn().mockResolvedValue(message),
       update: vi.fn().mockResolvedValue({ ...message, body: 'Edited update', editedAt: new Date('2026-09-23T02:00:00Z') }),
     },
+  };
+  const db = {
+    ...transactionDb,
+    $transaction: vi.fn(async (operation: (client: typeof transactionDb) => Promise<unknown>) =>
+      operation(transactionDb)),
   };
   return { service: new ProjectChatService(db as unknown as PrismaService), db };
 }
