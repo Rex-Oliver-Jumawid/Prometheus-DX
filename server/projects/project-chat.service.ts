@@ -79,7 +79,11 @@ export class ProjectChatService {
       );
   }
 
-  private toMessage(record: MessageRecord, currentMemberId: string): ProjectMessage {
+  private toMessage(
+    record: MessageRecord,
+    currentMemberId: string,
+    canWrite = true,
+  ): ProjectMessage {
     return {
       id: record.id,
       projectId: record.projectId,
@@ -95,7 +99,7 @@ export class ProjectChatService {
       body: record.body,
       createdAt: record.createdAt.toISOString(),
       editedAt: record.editedAt?.toISOString() ?? null,
-      canEdit: record.memberId === currentMemberId,
+      canEdit: canWrite && record.memberId === currentMemberId,
     };
   }
 
@@ -133,7 +137,9 @@ export class ProjectChatService {
     const hasMore = records.length > PAGE_SIZE;
     const items = records.slice(0, PAGE_SIZE);
     return {
-      items: items.map((item) => this.toMessage(item, member.id)),
+      items: items.map((item) =>
+        this.toMessage(item, member.id, this.canWrite(member, project)),
+      ),
       nextCursor: hasMore ? items[items.length - 1].id : null,
       canWrite: this.canWrite(member, project),
     };
