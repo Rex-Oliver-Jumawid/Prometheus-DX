@@ -95,6 +95,27 @@ describe('ProjectActivityService', () => {
     expect(foreignCursor.db.activityLog.findMany).not.toHaveBeenCalled();
   });
 
+  it('preserves safe deletion labels without exposing unreviewed metadata', async () => {
+    const deleted = {
+      ...event,
+      outcomeId: null,
+      action: 'OUTCOME_DELETED',
+      metadata: { title: 'Retired outcome', content: 'Private submission' },
+    };
+    const unknown = {
+      ...event,
+      id: '66666666-6666-4666-8666-666666666666',
+      action: 'OUTCOME_PRIVATE_NOTE_CREATED',
+      metadata: { title: 'Do not expose', content: 'Private submission' },
+    };
+    const { service } = setup({ rows: [deleted, unknown] });
+    const response = await service.list(member, projectId);
+    expect(response.items[0].metadata).toEqual({ title: 'Retired outcome' });
+    expect(response.items[0].outcomeId).toBeNull();
+    expect(response.items[1].metadata).toEqual({});
+    expect(JSON.stringify(response)).not.toContain('Private submission');
+  });
+
   it('allows display-safe feature titles but does not leak arbitrary metadata', async () => {
     const row = { ...event, action: 'FEATURE_CREATED', metadata: { title: 'Design mockups', token: 'secret' } };
     const { service } = setup({ rows: [row] });
