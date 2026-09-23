@@ -571,7 +571,9 @@ Chat persists messages and replies in `project_messages`; authors may edit their
 All active authorized workspace Members can read general Project Chat, while only the Project Lead and Project Members can write.
 Archived Projects are read-only.
 Write transactions acquire the Project row lock before checking current membership and persisting the message, matching the Project membership-change lock order.
+Author edits require the displayed `expectedEditedAt` revision; stale editors receive a conflict instead of overwriting newer text.
 Older messages use immutable `created_at` and UUID keyset pagination.
+The Chat panel opens on the newest message and preserves the current viewport when earlier messages are prepended.
 Chat polls while the panel is mounted every eight seconds and also refetches on focus or reconnect.
 Polling is an intentional first-release trade-off, not push-based realtime; Supabase Realtime can be evaluated if measured collaboration needs justify its authorization and connection complexity.
 
