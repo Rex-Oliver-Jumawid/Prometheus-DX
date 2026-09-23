@@ -76,8 +76,9 @@ model Department {
   description String?
   createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
-  members     Member[]
-  projects    ProjectDepartment[]
+  members         Member[]            @relation("PrimaryDepartment")
+  visiworkMembers Member[]            @relation("VisiWorkDepartment")
+  projects        ProjectDepartment[]
   outcomes    OutcomeDepartment[]
 
   @@index([name])
@@ -90,7 +91,9 @@ model Member {
   email                       String
   fullName                    String                       @map("full_name")
   departmentId                String                       @map("department_id") @db.Uuid
-  department                  Department                   @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  department                  Department                   @relation("PrimaryDepartment", fields: [departmentId], references: [id], onDelete: Restrict)
+  visiworkDepartmentId        String?                      @map("visiwork_department_id") @db.Uuid
+  visiworkDepartment          Department?                  @relation("VisiWorkDepartment", fields: [visiworkDepartmentId], references: [id], onDelete: SetNull)
   workspaceRole               WorkspaceRole                @default(MEMBER) @map("workspace_role")
   status                      MemberStatus                 @default(INVITED)
   position                    String?
@@ -129,6 +132,7 @@ model Member {
   workSessionCorrections      WorkSessionCorrection[]
 
   @@index([departmentId])
+  @@index([visiworkDepartmentId])
   @@index([status])
   @@map("members")
 }

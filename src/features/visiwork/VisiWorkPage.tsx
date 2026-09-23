@@ -1,14 +1,21 @@
-import { useQueries, useQuery } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { OutcomeWorkSchema, type OutcomeWork } from '../../../shared/contracts/outcome-work';
+import {
+  SetVisiWorkPresenceRequestSchema,
+  VisiWorkPresenceResponseSchema,
+} from '../../../shared/contracts/visiwork';
 import { apiFetch } from '../../lib/api';
 import { useAuth } from '../auth/auth-context';
 import {
   projectWorkflowQuery,
   projectsListQuery,
 } from '../projects/project-queries';
-import { teamWorkSummaryQuery } from '../work-sessions/work-session-queries';
+import {
+  teamWorkKeys,
+  teamWorkSummaryQuery,
+} from '../work-sessions/work-session-queries';
 import {
   buildVisiWorkModel,
   departmentStages,
@@ -155,10 +162,18 @@ function BirdViewBreadcrumb({ projectView }: { projectView: boolean }) {
 function DepartmentCard({
   department,
   index,
+  joined,
+  joining,
+  joinError,
+  onJoin,
   onEnter,
 }: {
   department: VisiWorkDepartment;
   index: number;
+  joined: boolean;
+  joining: boolean;
+  joinError: string | null;
+  onJoin: () => void;
   onEnter: () => void;
 }) {
   const visibleMembers = department.members.slice(0, 3);
@@ -233,12 +248,14 @@ function DepartmentCard({
           {department.projects.length === 1 ? '' : 's'}
         </span>
         <button
-          className="visiwork-join-button"
+          className={joined ? 'visiwork-join-button joined' : 'visiwork-join-button'}
           type="button"
-          disabled
-          title="Department room membership will be enabled with collaboration."
+          disabled={joining || joined}
+          aria-pressed={joined}
+          title={joinError ?? (joined ? 'You are working in this department.' : undefined)}
+          onClick={onJoin}
         >
-          Join
+          {joining ? 'Joining...' : joined ? 'Joined' : 'Join'}
         </button>
         <button className="visiwork-enter-button" type="button" onClick={onEnter}>
           Enter {department.shortLabel} →
@@ -523,7 +540,8 @@ function VisiWorkSkeleton() {
 }
 
 export function VisiWorkPage() {
-  const { session } = useAuth();
+  const { member, session } = useAuth();
+  const queryClient = useQueryClient();
   const accessToken = session?.access_token;
   const [searchParams, setSearchParams] = useSearchParams();
   const projectView = searchParams.get('view') === 'projects';
@@ -533,6 +551,16 @@ export function VisiWorkPage() {
   const team = useQuery({
     ...teamWorkSummaryQuery(accessToken),
     refetchInterval: 30_000,
+  });
+  const joinDepartment = useMutation({
+    mutationFn: (departmentId: string) =>
+      apiFetch('/visiwork/presence', VisiWorkPresenceResponseSchema, {
+        accessToken,
+        method: 'PUT',
+        body: SetVisiWorkPresenceRequestSchema.parse({ departmentId }),
+      }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: teamWorkKeys.all }),
   });
   const workflowQueries = useQueries({
     queries: (projects.data ?? []).map((project) =>
@@ -621,12 +649,16 @@ export function VisiWorkPage() {
     );
   }
 
-  const allMembers: VisiWorkMember[] = team.data.members.map((member) => ({
-    id: member.id,
-    fullName: member.fullName,
-    position: member.position,
-    workingNow: member.workingNow,
+  const allMembers: VisiWorkMember[] = team.data.members.map((teamMember) => ({
+    id: teamMember.id,
+    fullName: teamMember.fullName,
+    position: teamMember.position,
+    workingNow: teamMember.workingNow,
   }));
+  const currentTeamMember = team.data.members.find(
+    (teamMember) => teamMember.id === member?.id,
+  );
+  const joinedDepartmentId = currentTeamMember?.visiworkDepartmentId ?? null;
 
   if (selectedDepartmentId) {
     if (!selectedDepartment) {
@@ -677,6 +709,18 @@ export function VisiWorkPage() {
                   key={department.id}
                   department={department}
                   index={index}
+                  joined={joinedDepartmentId === department.id}
+                  joining={
+                    joinDepartment.isPending &&
+                    joinDepartment.variables === department.id
+                  }
+                  joinError={
+                    joinDepartment.isError &&
+                    joinDepartment.variables === department.id
+                      ? joinDepartment.error.message
+                      : null
+                  }
+                  onJoin={() => joinDepartment.mutate(department.id)}
                   onEnter={() =>
                     setSearchParams({ department: department.id })
                   }

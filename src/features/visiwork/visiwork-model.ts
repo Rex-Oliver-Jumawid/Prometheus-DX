@@ -140,8 +140,17 @@ export function buildVisiWorkModel(
     const workflow = workflowsByProject.get(project.id);
     const participants = membersForWorkflow(project, workflow);
     const memberNames = participants.map((member) => member.fullName);
+    const projectDepartmentIds = new Set(
+      project.departments.map((department) => department.id),
+    );
     const workingMemberNames = participants
-      .filter((member) => teamById.get(member.id)?.workingNow)
+      .filter((member) => {
+        const teamMember = teamById.get(member.id);
+        if (!teamMember?.workingNow) return false;
+        const focusedDepartmentId =
+          teamMember.visiworkDepartmentId ?? teamMember.department.id;
+        return projectDepartmentIds.has(focusedDepartmentId);
+      })
       .map((member) => member.fullName);
     const metrics = project.metrics;
 
@@ -181,13 +190,27 @@ export function buildVisiWorkModel(
   const departments = [...departmentMap.values()]
     .map((department): VisiWorkDepartment => {
       const members = team.members
-        .filter((member) => member.department.id === department.id)
-        .map((member) => ({
-          id: member.id,
-          fullName: member.fullName,
-          position: member.position,
-          workingNow: member.workingNow,
-        }));
+        .filter(
+          (member) =>
+            member.department.id === department.id ||
+            member.visiworkDepartmentId === department.id,
+        )
+        .map((member) => {
+          const focusedDepartmentId =
+            member.visiworkDepartmentId ?? member.department.id;
+          return {
+            id: member.id,
+            fullName: member.fullName,
+            position: member.position,
+            workingNow:
+              member.workingNow && focusedDepartmentId === department.id,
+          };
+        })
+        .sort(
+          (left, right) =>
+            Number(right.workingNow) - Number(left.workingNow) ||
+            left.fullName.localeCompare(right.fullName),
+        );
       const departmentProjects = projectModels.filter(
         (project) =>
           project.status !== 'ARCHIVED' &&

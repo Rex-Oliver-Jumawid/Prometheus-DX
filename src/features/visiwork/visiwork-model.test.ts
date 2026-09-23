@@ -181,6 +181,7 @@ const team: TeamWorkSummaryResponse = {
       fullName: nico.fullName,
       position: 'Developer',
       department: rd,
+      visiworkDepartmentId: null,
       workingNow: true,
       scheduledMinutes: 1200,
       actualWorkedSeconds: 18000,
@@ -191,6 +192,7 @@ const team: TeamWorkSummaryResponse = {
       fullName: bea.fullName,
       position: 'Designer',
       department: creatives,
+      visiworkDepartmentId: null,
       workingNow: false,
       scheduledMinutes: 1200,
       actualWorkedSeconds: 18000,
@@ -231,6 +233,32 @@ describe('buildVisiWorkModel', () => {
     expect(stages[0].outcomes.map((outcome) => outcome.title)).toEqual([
       'Validated experiment brief',
     ]);
+  });
+
+  it('moves live presence to the explicitly joined department without changing the home department', () => {
+    const focusedTeam: TeamWorkSummaryResponse = {
+      ...team,
+      members: team.members.map((member) =>
+        member.id === nico.id
+          ? { ...member, visiworkDepartmentId: creatives.id }
+          : member,
+      ),
+    };
+    const model = buildVisiWorkModel(projects, workflows, focusedTeam);
+    const rdDepartment = model.departments.find((item) => item.id === rd.id);
+    const creativeDepartment = model.departments.find(
+      (item) => item.id === creatives.id,
+    );
+
+    expect(
+      rdDepartment?.members.find((member) => member.id === nico.id)?.workingNow,
+    ).toBe(false);
+    expect(
+      creativeDepartment?.members.find((member) => member.id === nico.id),
+    ).toMatchObject({
+      fullName: 'Nico Ramos',
+      workingNow: true,
+    });
   });
 
   it('groups department projects by their current project state', () => {

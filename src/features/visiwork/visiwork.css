@@ -77,6 +77,10 @@
 }
 
 .visiwork-breadcrumb {
+  position: fixed;
+  z-index: 65;
+  top: 30px;
+  right: 48px;
   display: inline-flex;
   min-height: 34px;
   flex: 0 0 auto;
@@ -373,7 +377,6 @@
 
 .visiwork-department-card > footer,
 .visiwork-project-card > footer {
-  display: flex;
   align-items: center;
   gap: 12px;
   margin-top: auto;
@@ -382,7 +385,16 @@
   font-size: 9px;
 }
 
-.visiwork-department-card > footer > span,
+.visiwork-department-card > footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 58px minmax(112px, auto);
+  width: 100%;
+}
+
+.visiwork-project-card > footer {
+  display: flex;
+}
+
 .visiwork-project-card > footer > span {
   margin-right: auto;
 }
@@ -399,12 +411,25 @@
 }
 
 .visiwork-join-button {
+  justify-self: center;
   color: #625750;
+}
+
+.visiwork-join-button.joined {
+  color: #4d8060;
+}
+
+.visiwork-enter-button {
+  justify-self: end;
 }
 
 .visiwork-join-button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
+}
+
+.visiwork-join-button.joined:disabled {
+  opacity: 1;
 }
 
 .visiwork-enter-button,
@@ -1129,6 +1154,10 @@
   .visiwork-page,
   .visiwork-department-view {
     padding: 20px;
+  }
+
+  .visiwork-breadcrumb {
+    position: static;
   }
 
   .visiwork-main-grid,
