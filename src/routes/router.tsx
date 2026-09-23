@@ -11,6 +11,7 @@ import { PlaceholderPage } from '../features/shell/PlaceholderPage';
 import {
   loadProjectOverviewRoute,
   loadRegistryRoute,
+  loadReportsAnalyticsRoute,
   loadScheduleRoute,
   loadTeamRoute,
 } from './route-modules';
@@ -44,6 +45,7 @@ export const router = createBrowserRouter([
           { path: '/visiwork', element: <PlaceholderPage title="VisiWork" /> },
           { path: '/schedule', lazy: loadScheduleRoute },
           { path: '/team', lazy: loadTeamRoute },
+          { path: '/reports', lazy: loadReportsAnalyticsRoute },
           {
             path: '/notifications',
             element: <PlaceholderPage title="Notifications" />,
