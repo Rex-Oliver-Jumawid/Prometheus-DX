@@ -147,7 +147,7 @@ test('member configures, refreshes, edits, removes, and returns from Shifts to T
   ).toBeVisible();
   await expect(
     page.getByRole('heading', {
-      name: 'You haven't set your schedule yet',
+      name: "You haven't set your schedule yet",
     }),
   ).toBeVisible();
   await expect(page.getByText('Schedule Teammate')).toBeVisible();
