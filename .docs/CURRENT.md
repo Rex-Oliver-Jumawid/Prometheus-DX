@@ -191,7 +191,11 @@ The user ran `pnpm lint` on 2026-09-23; ESLint completed successfully with no re
 
 The user reran `pnpm typecheck` after the regression fixes on 2026-09-23; all three TypeScript configurations completed successfully with no errors.
 
-Build and manual visual acceptance remain pending.
+The user ran `pnpm build` on 2026-09-23. Vite successfully built the production web bundle, including the lazy Notifications page; it emitted a non-fatal warning about a 756.20 kB main JavaScript chunk. The API TypeScript compiler started and emitted no error in the supplied log, but the terminal crash means the final build exit code was not captured.
+The user confirmed `phase-7-notifications` and `origin/phase-7-notifications` both pointed to `5a92b11` with no uncommitted changes before the GitHub-side documentation review.
+Manual comparison against Figma node `11:2301` at desktop, medium, and narrow/mobile viewports remains pending, as does the local API build exit confirmation.
+
+Next: verify the local API build completion if the previous terminal did not return an exit status, then perform the Phase 7 manual Notifications acceptance checklist in the phase journal. Compare sidebar placement, unread-count treatment, inbox states, responsive layout, accessible controls, and read persistence with Figma. The Figma mockup's Mentions and Projects tabs are outside the current All/Unread scope, as documented in the phase journal.
 
 Preserve the Figma sidebar placement for Notifications and its unread-count treatment.
 
