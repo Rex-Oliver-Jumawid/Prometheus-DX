@@ -161,6 +161,19 @@ export class ProjectWorkflowService {
           changedByMemberId: currentMember.id,
         },
       });
+      await transaction.activityLog.create({
+        data: {
+          projectId,
+          actorMemberId: currentMember.id,
+          entityType: 'ProjectMember',
+          entityId: memberId,
+          action: 'PROJECT_MEMBER_ACCESS_CHANGED',
+          metadata: {
+            previousAccess: existing.accessLevel,
+            newAccess: input.accessLevel,
+          },
+        },
+      });
     });
     const response = await this.getProjectMembers(currentMember, projectId);
     const updated = response.members.find(
@@ -182,7 +195,7 @@ export class ProjectWorkflowService {
         select: { position: true },
         orderBy: { position: 'desc' },
       });
-      return transaction.stage.create({
+      const created = await transaction.stage.create({
         data: {
           projectId,
           name: input.name,
@@ -191,6 +204,17 @@ export class ProjectWorkflowService {
         },
         include: stageInclude,
       });
+      await transaction.activityLog.create({
+        data: {
+          projectId,
+          actorMemberId: currentMember.id,
+          entityType: 'Stage',
+          entityId: created.id,
+          action: 'STAGE_CREATED',
+          metadata: { name: created.name },
+        },
+      });
+      return created;
     });
     return this.toStage(stage, currentMember.id);
   }
@@ -204,7 +228,7 @@ export class ProjectWorkflowService {
     const stage = await this.prisma.$transaction(async (transaction) => {
       await this.requireLead(transaction, projectId, currentMember.id);
       await this.requireStage(transaction, projectId, stageId);
-      return transaction.stage.update({
+      const updated = await transaction.stage.update({
         where: { id: stageId },
         data: {
           name: input.name,
@@ -212,6 +236,17 @@ export class ProjectWorkflowService {
         },
         include: stageInclude,
       });
+      await transaction.activityLog.create({
+        data: {
+          projectId,
+          actorMemberId: currentMember.id,
+          entityType: 'Stage',
+          entityId: stageId,
+          action: 'STAGE_UPDATED',
+          metadata: { name: updated.name },
+        },
+      });
+      return updated;
     });
     return this.toStage(stage, currentMember.id);
   }
@@ -269,6 +304,17 @@ export class ProjectWorkflowService {
           create: { projectId, memberId, accessLevel: 'CAN_VIEW' },
         });
       }
+      await transaction.activityLog.create({
+        data: {
+          projectId,
+          outcomeId: created.id,
+          actorMemberId: currentMember.id,
+          entityType: 'Outcome',
+          entityId: created.id,
+          action: 'OUTCOME_CREATED',
+          metadata: { title: created.title },
+        },
+      });
       return created;
     });
     return this.toOutcome(outcome, currentMember.id);
@@ -336,7 +382,7 @@ export class ProjectWorkflowService {
           });
         }
       }
-      return transaction.outcome.update({
+      const updated = await transaction.outcome.update({
         where: { id: outcomeId },
         data: {
           title: input.title,
@@ -368,6 +414,18 @@ export class ProjectWorkflowService {
         },
         include: outcomeInclude,
       });
+      await transaction.activityLog.create({
+        data: {
+          projectId,
+          outcomeId,
+          actorMemberId: currentMember.id,
+          entityType: 'Outcome',
+          entityId: outcomeId,
+          action: 'OUTCOME_UPDATED',
+          metadata: { title: updated.title },
+        },
+      });
+      return updated;
     });
     return this.toOutcome(outcome, currentMember.id);
   }
@@ -394,6 +452,12 @@ export class ProjectWorkflowService {
           'Accepted Outcomes are closed to new Members.',
         );
       }
+      const alreadyJoined = await transaction.outcomeMember.findUnique({
+        where: {
+          outcomeId_memberId: { outcomeId, memberId: currentMember.id },
+        },
+        select: { memberId: true },
+      });
       await transaction.outcomeMember.upsert({
         where: {
           outcomeId_memberId: { outcomeId, memberId: currentMember.id },
@@ -412,6 +476,19 @@ export class ProjectWorkflowService {
           accessLevel: 'CAN_VIEW',
         },
       });
+      if (!alreadyJoined) {
+        await transaction.activityLog.create({
+          data: {
+            projectId,
+            outcomeId,
+            actorMemberId: currentMember.id,
+            entityType: 'Outcome',
+            entityId: outcomeId,
+            action: 'OUTCOME_JOINED',
+            metadata: {},
+          },
+        });
+      }
     });
     const outcome = await this.prisma.outcome.findUniqueOrThrow({
       where: { id: outcomeId },
