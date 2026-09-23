@@ -117,6 +117,7 @@ model Member {
   outputDrafts                OutcomeOutputDraft[]
   submissions                 OutcomeSubmission[]
   activity                    ActivityLog[]
+  projectMessages             ProjectMessage[]
   submissionReviews           SubmissionReview[]
   requestedRevisions          OutcomeRevisionRequest[]     @relation("RevisionRequestedBy")
   resolvedRevisions           OutcomeRevisionRequest[]     @relation("RevisionResolvedBy")
@@ -213,6 +214,7 @@ model Project {
   members             ProjectMember[]
   memberAccessHistory ProjectMemberAccessHistory[]
   activity            ActivityLog[]
+  messages            ProjectMessage[]
 
   @@index([createdByMemberId])
   @@index([leadMemberId])
@@ -457,6 +459,25 @@ model OutcomeSubmission {
   @@index([submittedByMemberId])
   @@index([reviewStatus])
   @@map("outcome_submissions")
+}
+
+model ProjectMessage {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId       String           @map("project_id") @db.Uuid
+  memberId        String           @map("member_id") @db.Uuid
+  parentMessageId String?          @map("parent_message_id") @db.Uuid
+  body            String           @db.VarChar(4000)
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  editedAt        DateTime?        @map("edited_at") @db.Timestamptz(6)
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  member          Member           @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  parent          ProjectMessage?  @relation("ProjectMessageReplies", fields: [parentMessageId], references: [id], onDelete: Restrict)
+  replies         ProjectMessage[] @relation("ProjectMessageReplies")
+
+  @@index([projectId, createdAt, id])
+  @@index([memberId])
+  @@index([parentMessageId])
+  @@map("project_messages")
 }
 
 model ActivityLog {
