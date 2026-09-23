@@ -15,10 +15,19 @@ function safeMetadata(action: string, raw: unknown): Record<string, string> {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
   const fields = raw as Record<string, unknown>;
   const result: Record<string, string> = {};
-  if (/^(FEATURE|TASK|OUTCOME)_/.test(action) && typeof fields.title === 'string')
-    result.title = fields.title;
-  if (/^STAGE_/.test(action) && typeof fields.name === 'string')
-    result.title = fields.name;
+  // Only explicitly reviewed action types may disclose their display titles.
+  if (
+    [
+      'FEATURE_CREATED', 'FEATURE_UPDATED', 'FEATURE_DELETED',
+      'TASK_CREATED', 'TASK_UPDATED', 'TASK_COMPLETED',
+      'TASK_REOPENED', 'TASK_DELETED',
+      'OUTCOME_CREATED', 'OUTCOME_UPDATED', 'OUTCOME_DELETED',
+    ].includes(action) && typeof fields.title === 'string'
+  ) result.title = fields.title;
+  if (
+    ['STAGE_CREATED', 'STAGE_UPDATED', 'STAGE_DELETED'].includes(action) &&
+    typeof fields.name === 'string'
+  ) result.title = fields.name;
   if (action === 'PROJECT_CREATED' && typeof fields.name === 'string')
     result.title = fields.name;
   if (action === 'PROJECT_MEMBER_ACCESS_CHANGED') {
@@ -77,7 +86,6 @@ export class ProjectActivityService {
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: PAGE_SIZE + 1,
-
     });
     const hasMore = records.length > PAGE_SIZE;
     const items = records.slice(0, PAGE_SIZE);
