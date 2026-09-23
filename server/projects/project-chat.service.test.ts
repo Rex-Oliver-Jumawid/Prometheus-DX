@@ -145,9 +145,9 @@ describe('ProjectChatService', () => {
   it('restricts editing to the original author', async () => {
     const { service, db } = setup();
     await expect(
-      service.edit(lead, projectId, messageId, { body: 'Not my message' }),
+      service.edit(lead, projectId, messageId, { body: 'Not my message', expectedEditedAt: null }),
     ).rejects.toBeInstanceOf(ForbiddenException);
-    await expect(service.edit(member, projectId, messageId, { body: 'Edited update' }))
+    await expect(service.edit(member, projectId, messageId, { body: 'Edited update', expectedEditedAt: null }))
       .resolves.toMatchObject({ body: 'Edited update', canEdit: true, editedAt: '2026-09-23T02:00:00.000Z' });
     expect(db.projectMessage.update).toHaveBeenCalledTimes(1);
   });
