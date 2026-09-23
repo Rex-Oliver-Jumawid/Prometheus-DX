@@ -127,6 +127,42 @@ describe('ProjectOverviewPage status mutation', () => {
     );
   });
 
+  it('opens the Project Activity tab and loads persisted events', async () => {
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path.endsWith('/workflow'))
+        return Promise.resolve({ projectId, canManageStructure: false, stages: [] });
+      if (path === `/projects/${projectId}/members`)
+        return Promise.resolve(projectMembersResponse);
+      if (path === `/projects/${projectId}/activity`)
+        return Promise.resolve({
+          items: [{
+            id: '55555555-5555-4555-8555-555555555555',
+            actor: { id: projectMemberId, fullName: 'Project Member' },
+            outcomeId: null,
+            entityType: 'Feature',
+            entityId: '66666666-6666-4666-8666-666666666666',
+            action: 'FEATURE_CREATED',
+            metadata: { title: 'Design mockups' },
+            createdAt: '2026-09-19T13:00:00.000Z',
+          }],
+          nextCursor: null,
+        });
+      if (path === `/projects/${projectId}`) return Promise.resolve(project);
+      return Promise.resolve({});
+    });
+
+    renderPage();
+    fireEvent.click(await screen.findByRole('tab', { name: 'Activity' }));
+
+    expect(await screen.findByRole('heading', { name: 'Project activity' })).toBeVisible();
+    expect(await screen.findByText(/created a feature/)).toBeVisible();
+    expect(screen.getByText('Design mockups')).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Activity' })).toHaveAttribute('aria-selected', 'true');
+    fireEvent.click(screen.getByRole('tab', { name: 'Content' }));
+    expect(screen.getByRole('tab', { name: 'Content' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.queryByRole('heading', { name: 'Project activity' })).not.toBeInTheDocument();
+  });
+
   it('updates status immediately and rolls back a failed request', async () => {
     let rejectStatus!: (error: Error) => void;
     const statusRequest = new Promise((_, reject) => {
