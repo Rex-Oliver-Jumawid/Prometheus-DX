@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   ProjectStatusUpdateResponseSchema,
   UpdateProjectStatusRequestSchema,
@@ -9,6 +9,7 @@ import {
 import { useAuth } from '../auth/auth-context';
 import { ApiRequestError, apiFetch } from '../../lib/api';
 import { ProjectMembersPanel } from './ProjectMembersPanel';
+import { ProjectActivityPanel } from './ProjectActivityPanel';
 import { ProjectWorkflow } from './ProjectWorkflow';
 import {
   projectDetailQuery,
@@ -65,6 +66,16 @@ function withProjectStatus(
 
 export function ProjectOverviewPage() {
   const { projectId, outcomeId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') === 'activity' ? 'activity' : 'content';
+  const chooseTab = (tab: 'content' | 'activity') => {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      if (tab === 'content') next.delete('tab');
+      else next.set('tab', tab);
+      return next;
+    });
+  };
   const { session } = useAuth();
   const queryClient = useQueryClient();
   const accessToken = session?.access_token;
@@ -394,32 +405,58 @@ export function ProjectOverviewPage() {
         </div>
       </section>
 
-      <div className="tabs-wrap pw-tabs-wrap">
-        <nav className="tabs pw-tabs" aria-label="Project sections">
-          <button className="tab-btn active" type="button">
-            Content
-          </button>
-          <button className="tab-btn" type="button">
-            Chat <span className="tab-badge">10</span>
-          </button>
-          <button className="tab-btn" type="button">
-            Activity <span className="tab-badge">6</span>
-          </button>
-        </nav>
-      </div>
-
-      <ProjectWorkflow
-        projectId={projectId!}
-        outcomeId={outcomeId}
-        accessToken={accessToken}
-        isLead={value.lead.id === session?.user?.id || value.canChangeStatus}
-      />
-
       {!outcomeId && (
-        <ProjectMembersPanel
+        <div className="tabs-wrap pw-tabs-wrap">
+          <nav className="tabs pw-tabs" role="tablist" aria-label="Project sections">
+            <button
+              className={`tab-btn ${activeTab === 'content' ? 'active' : ''}`}
+              type="button"
+              role="tab"
+              id="pw-content-tab"
+              aria-selected={activeTab === 'content'}
+              aria-controls="pw-content-panel"
+              onClick={() => chooseTab('content')}
+            >
+              Content
+            </button>
+            <button className="tab-btn" type="button" disabled title="Project Chat is in development">
+              Chat
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'activity' ? 'active' : ''}`}
+              type="button"
+              role="tab"
+              id="pw-activity-tab"
+              aria-selected={activeTab === 'activity'}
+              aria-controls="pw-activity-panel"
+              onClick={() => chooseTab('activity')}
+            >
+              Activity
+            </button>
+          </nav>
+        </div>
+      )}
+
+      {outcomeId ? (
+        <ProjectWorkflow
           projectId={projectId!}
+          outcomeId={outcomeId}
           accessToken={accessToken}
+          isLead={value.lead.id === session?.user?.id || value.canChangeStatus}
         />
+      ) : activeTab === 'activity' ? (
+        <div id="pw-activity-panel" role="tabpanel" aria-labelledby="pw-activity-tab">
+          <ProjectActivityPanel projectId={projectId!} accessToken={accessToken} />
+        </div>
+      ) : (
+        <div id="pw-content-panel" role="tabpanel" aria-labelledby="pw-content-tab">
+          <ProjectWorkflow
+            projectId={projectId!}
+            accessToken={accessToken}
+            isLead={value.lead.id === session?.user?.id || value.canChangeStatus}
+          />
+          <ProjectMembersPanel projectId={projectId!} accessToken={accessToken} />
+        </div>
       )}
     </div>
   );
