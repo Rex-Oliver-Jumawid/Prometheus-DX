@@ -653,7 +653,8 @@ export function SchedulePage() {
       </header>
 
       {view === 'shifts' ? (
-        <section className="shifts-workspace" aria-label="Shifts">\n          <span className="schedule-compat-label">Weekly work history</span>
+        <section className="shifts-workspace" aria-label="Shifts">
+          <span className="schedule-compat-label">Weekly work history</span>
           <div className="shift-filter-card">
             <div>
               <p className="page-kicker">SHIFT FILTERS</p>
