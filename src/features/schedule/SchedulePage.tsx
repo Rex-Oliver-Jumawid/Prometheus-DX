@@ -631,7 +631,7 @@ export function SchedulePage() {
               Shifts
             </button>
           </div>
-          {!configuring && ownSchedule && (
+          {!configuring && (ownSchedule || view === 'shifts') && (
             <button className="schedule-button primary" onClick={enterConfiguration}>
               Configure My Schedule
             </button>
