@@ -10,8 +10,11 @@ export const homeKeys = {
 export function homeDashboardQuery(accessToken?: string) {
   return queryOptions({
     queryKey: homeKeys.dashboard,
-    queryFn: () =>
-      apiFetch('/home', HomeDashboardResponseSchema, { accessToken }),
+    queryFn: ({ signal }) =>
+      apiFetch('/home', HomeDashboardResponseSchema, {
+        accessToken,
+        signal,
+      }),
     staleTime: 10_000,
     refetchOnWindowFocus: true,
   });

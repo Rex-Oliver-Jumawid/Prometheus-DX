@@ -307,6 +307,115 @@ export function HomeDashboardView({
   );
 }
 
+
+function HomeDashboardSkeleton() {
+  return (
+    <div className="home-page home-skeleton" role="status" aria-live="polite">
+      <span className="home-skeleton-status">
+        Opening your command center. Loading current project and work activity.
+      </span>
+
+      <header className="home-header" aria-hidden="true">
+        <div className="home-skeleton-header-copy">
+          <span className="home-skeleton-block home-skeleton-kicker" />
+          <span className="home-skeleton-block home-skeleton-title" />
+          <span className="home-skeleton-block home-skeleton-subtitle" />
+        </div>
+        <span className="home-skeleton-date" />
+      </header>
+
+      <section className="home-summary-grid" aria-hidden="true">
+        {Array.from({ length: 4 }, (_, index) => (
+          <article
+            className="home-summary-card home-skeleton-summary"
+            key={index}
+          >
+            <span className="home-skeleton-block home-skeleton-summary-label" />
+            <span className="home-skeleton-block home-skeleton-summary-value" />
+            <span className="home-skeleton-block home-skeleton-summary-meta" />
+          </article>
+        ))}
+      </section>
+
+      <div className="home-dashboard-grid" aria-hidden="true">
+        <section className="home-panel home-projects-panel">
+          <div className="home-panel-heading">
+            <div className="home-skeleton-panel-heading">
+              <span className="home-skeleton-block home-skeleton-panel-title" />
+              <span className="home-skeleton-block home-skeleton-panel-copy" />
+            </div>
+          </div>
+
+          <div className="home-skeleton-projects">
+            <span className="home-skeleton-block home-skeleton-group-label" />
+            {Array.from({ length: 2 }, (_, index) => (
+              <div className="home-skeleton-project-row" key={`lead-${index}`}>
+                <div className="home-skeleton-project-copy">
+                  <span className="home-skeleton-block home-skeleton-project-name" />
+                  <span className="home-skeleton-block home-skeleton-project-meta" />
+                </div>
+                <span className="home-skeleton-block home-skeleton-progress" />
+              </div>
+            ))}
+            <span className="home-skeleton-block home-skeleton-group-label" />
+            <div className="home-skeleton-project-row">
+              <div className="home-skeleton-project-copy">
+                <span className="home-skeleton-block home-skeleton-project-name" />
+                <span className="home-skeleton-block home-skeleton-project-meta" />
+              </div>
+              <span className="home-skeleton-block home-skeleton-progress" />
+            </div>
+          </div>
+        </section>
+
+        <aside className="home-side-column">
+          <section className="home-panel home-side-panel">
+            <div className="home-skeleton-panel-heading home-skeleton-side-heading">
+              <span className="home-skeleton-block home-skeleton-panel-title" />
+              <span className="home-skeleton-block home-skeleton-panel-copy" />
+            </div>
+            <div className="home-skeleton-side-list">
+              {Array.from({ length: 2 }, (_, index) => (
+                <div className="home-skeleton-working-row" key={index}>
+                  <span className="home-skeleton-block home-skeleton-avatar" />
+                  <span className="home-skeleton-working-copy">
+                    <span className="home-skeleton-block home-skeleton-working-name" />
+                    <span className="home-skeleton-block home-skeleton-working-team" />
+                  </span>
+                  <span className="home-skeleton-block home-skeleton-dot" />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="home-panel home-side-panel">
+            <div className="home-skeleton-panel-heading home-skeleton-side-heading">
+              <span className="home-skeleton-block home-skeleton-panel-title" />
+              <span className="home-skeleton-block home-skeleton-panel-copy" />
+            </div>
+            <div className="home-skeleton-side-list">
+              <div className="home-skeleton-attention-row">
+                <span className="home-skeleton-block home-skeleton-attention-title" />
+                <span className="home-skeleton-block home-skeleton-attention-copy" />
+                <span className="home-skeleton-block home-skeleton-attention-badge" />
+              </div>
+            </div>
+          </section>
+
+          <section className="home-panel home-quick-panel">
+            <span className="home-skeleton-block home-skeleton-quick-title" />
+            <div className="home-skeleton-quick-grid">
+              {Array.from({ length: 4 }, (_, index) => (
+                <span className="home-skeleton-quick-item" key={index} />
+              ))}
+            </div>
+          </section>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
 export function HomePage() {
   const { member, session } = useAuth();
   const dashboard = useQuery(homeDashboardQuery(session?.access_token));
@@ -314,13 +423,7 @@ export function HomePage() {
   if (!member) return null;
 
   if (dashboard.isPending) {
-    return (
-      <section className="home-request-state" role="status" aria-live="polite">
-        <span className="spinner dark" aria-hidden="true" />
-        <h1>Opening your command center</h1>
-        <p>Loading current project and work activity.</p>
-      </section>
-    );
+    return <HomeDashboardSkeleton />;
   }
 
   if (dashboard.isError || !dashboard.data) {

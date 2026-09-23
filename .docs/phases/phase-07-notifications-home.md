@@ -253,6 +253,14 @@ Home now fills the available desktop workspace height.
 
 The main dashboard grid stretches vertically, Working Now and Needs Attention use flexible rows with internally scrolling content, Quick Access remains compact, and taller desktop viewports increase the inter-card gaps without changing the fixed-height scrolling behavior at the Figma reference size.
 
+A later visual refinement established one shared desktop Home right-edge gutter for the header, summary row, and lower dashboard so the My Week card and the three right-column panels stay on the same vertical boundary while clearing the outer glass edge and attendance handle.
+
+The Home loading state now renders a layout-preserving dashboard skeleton instead of a centered loading card.
+
+The skeleton mirrors the final header, four summary cards, project panel, Working Now, Needs Attention, and Quick Access geometry without displaying fake statistics.
+
+The Home query now forwards TanStack Query's AbortSignal to the API request so abandoned Home requests can be cancelled cleanly.
+
 Notifications remains a separate parallel slice and is not implemented or assumed by this Home branch.
 
 ### P7-D03 - Home uses a narrow derived read model
