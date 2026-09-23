@@ -96,6 +96,13 @@ describe('EditableTeamCalendar pointer gestures', () => {
     expect(s.container.querySelectorAll('.schedule-calendar-block')).toHaveLength(3);
   });
 
+  it('keeps a boundary block fully inside its day column', () => {
+    setup([{ weekday: 'MONDAY', startTime: '07:00', endTime: '10:00' }]);
+    const block = screen.getByRole('button', { name: /Select Monday schedule block, 7:00 AM to 10:00 AM/ });
+    expect(block).toHaveStyle({ top: '6px', height: '120px' });
+    expect((block as HTMLElement).style.width).toContain('- 12px');
+  });
+
   it('delegates rest-day header clicks to the draft owner', () => {
     const s = setup();
     fireEvent.click(screen.getByRole('button', { name: /Saturday: rest day/ }));

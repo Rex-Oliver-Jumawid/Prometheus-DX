@@ -348,7 +348,9 @@ export function SchedulePage() {
     nextRestDays?: ReadonlySet<Weekday>,
   ) => {
     form.setValue('blocks', next, { shouldDirty: true, shouldValidate: true });
-    if (nextRestDays) setRestDays(new Set(nextRestDays));
+    const allowedRestDays = new Set(nextRestDays ?? restDays);
+    for (const block of next) allowedRestDays.delete(block.weekday);
+    setRestDays(allowedRestDays);
     setFormError(null);
   };
 
@@ -474,6 +476,9 @@ export function SchedulePage() {
   const members = teamQuery.data?.members ?? [];
   const ownMember = members.find((item) => item.id === member?.id);
   const ownSchedule = mineQuery.data?.schedule ?? ownMember?.schedule ?? null;
+  // Rest preferences are not persisted independently. Infer only unscheduled
+  // days for the signed-in member, never hard-code weekends as rest.
+  const displayedRestDays = new Set(initialRestDays(ownSchedule?.blocks ?? []));
   const departments = Array.from(
     new Map(members.map((item) => [item.department.id, item.department])).values(),
   ).sort((left, right) => left.name.localeCompare(right.name));
@@ -858,19 +863,19 @@ export function SchedulePage() {
                 <div className="schedule-selected-actions" aria-label="Adjust selected schedule block">
                   <button type="button" className="schedule-button" disabled={!selectedBlock || mutation.isPending} onClick={() => adjustSelected('earlier')}>Earlier</button>
                   <button type="button" className="schedule-button" disabled={!selectedBlock || mutation.isPending} onClick={() => adjustSelected('later')}>Later</button>
-                  <button type="button" className="schedule-button" disabled={!selectedBlock} onClick={() => adjustSelected('shorter')}>− 1 hour</button>
-                  <button type="button" className="schedule-button" disabled={!selectedBlock} onClick={() => adjustSelected('longer')}>+ 1 hour</button>
+                  <button type="button" className="schedule-button" disabled={!selectedBlock || mutation.isPending} onClick={() => adjustSelected('shorter')}>− 1 hour</button>
+                  <button type="button" className="schedule-button" disabled={!selectedBlock || mutation.isPending} onClick={() => adjustSelected('longer')}>+ 1 hour</button>
                 </div>
               </div>
               {editorMessage && <p className="schedule-editor-message" role="status">{editorMessage}</p>}
               <div className="schedule-config-disclosures">
                 <details>
                   <summary>How to edit blocks</summary>
-                  <p>Drag a block to change its day or time. Resize it using the bottom handle, or use the adjustment buttons. Click day headers to toggle rest days.</p>
+                  <p>Drag a block to change its day or time. Resize it using the bottom handle, or use the adjustment buttons. Click a day header to change its rest status. A rest day cannot contain your planned blocks.</p>
                 </details>
                 <details>
                   <summary>How rest days are saved</summary>
-                  <p>Only recurring blocks and your weekly target are saved. Days without blocks are inferred as rest next time; empty workdays do not persist.</p>
+                  <p>Only recurring blocks and your weekly target are saved. Unscheduled days are inferred as rest next time; empty workdays do not persist. You can still Time In and record actual hours on any day, including a rest day.</p>
                 </details>
               </div>
               <div className="schedule-config-advanced">
@@ -899,19 +904,13 @@ export function SchedulePage() {
                           <span>Day</span>
                           <select
                             aria-label={'Day ' + (index + 1)}
-                            {...form.register(`blocks.${index}.weekday`, {
-                              onChange: (event) => {
-                                if (restDays.has(event.target.value as Weekday)) {
-                                  setRestDays((previous) => {
-                                    const next = new Set(previous);
-                                    next.delete(event.target.value as Weekday);
-                                    return next;
-                                  });
-                                }
-                              },
-                            })}
+                            {...form.register(`blocks.${index}.weekday`)}
                           >
-                            {WEEKDAYS.map((day) => <option key={day} value={day}>{DAY_LABELS[day]}</option>)}
+                            {WEEKDAYS.map((day) => (
+                              <option key={day} value={day} disabled={restDays.has(day)}>
+                                {DAY_LABELS[day]}{restDays.has(day) ? ' (rest day)' : ''}
+                              </option>
+                            ))}
                           </select>
                         </label>
                         <label>
@@ -989,7 +988,7 @@ export function SchedulePage() {
               <div className="schedule-legend" aria-label="Schedule legend">
                 <span><i className="mine" />Your movable schedule</span>
                 <span><i className="team" />Team schedule</span>
-                <span><i className="rest" />Rest day</span>
+                <span><i className="rest" />Your rest day</span>
               </div>
             </div>
 
@@ -1013,6 +1012,7 @@ export function SchedulePage() {
                 members={filteredMembers}
                 currentMemberId={member?.id}
                 dateLabels={currentWeekDateLabels()}
+                restDays={displayedRestDays}
               />
             )}
 
@@ -1137,10 +1137,12 @@ function TeamCalendar({
   members,
   currentMemberId,
   dateLabels,
+  restDays,
 }: {
   members: TeamScheduleResponse['members'];
   currentMemberId?: string;
   dateLabels: Record<Weekday, string>;
+  restDays: ReadonlySet<Weekday>;
 }) {
   const hours = Array.from(
     { length: (CALENDAR_END_MINUTES - CALENDAR_START_MINUTES) / 60 },
@@ -1157,13 +1159,13 @@ function TeamCalendar({
               <div
                 className={
                   'schedule-calendar-day-head' +
-                  (day === 'SATURDAY' || day === 'SUNDAY' ? ' rest-day' : '')
+                  (restDays.has(day) ? ' rest-day' : '')
                 }
                 key={day}
               >
                 <strong>{DAY_LABELS[day]}</strong>
                 <small>{dateLabels[day]}</small>
-                {(day === 'SATURDAY' || day === 'SUNDAY') && <span>Rest</span>}
+                {restDays.has(day) && <span title="Inferred from your unscheduled days">Rest</span>}
               </div>
             ))}
           </div>
@@ -1178,6 +1180,7 @@ function TeamCalendar({
                 day={day}
                 members={members}
                 currentMemberId={currentMemberId}
+                restDays={restDays}
                 key={day}
               />
             ))}
@@ -1202,7 +1205,7 @@ function TeamCalendar({
                   dayEntries.map(({ calendarMember, block }) => (
                     <div
                       className={calendarMember.id === currentMemberId ? 'mine' : ''}
-                      key={block.id}
+                      key={calendarMember.id + ':' + block.id}
                     >
                       <strong aria-label={calendarMember.fullName} data-label={calendarMember.fullName} />
                       <span
@@ -1227,10 +1230,12 @@ function CalendarDay({
   day,
   members,
   currentMemberId,
+  restDays,
 }: {
   day: Weekday;
   members: TeamScheduleResponse['members'];
   currentMemberId?: string;
+  restDays: ReadonlySet<Weekday>;
 }) {
   const entries = members
     .flatMap((calendarMember) =>
@@ -1271,7 +1276,7 @@ function CalendarDay({
       className={
         'schedule-calendar-day' +
         (entries.length === 0 ? ' empty' : '') +
-        (day === 'SATURDAY' || day === 'SUNDAY' ? ' rest-day' : '')
+        (restDays.has(day) ? ' rest-day' : '')
       }
       aria-label={DAY_LABELS[day]}
     >
@@ -1282,11 +1287,13 @@ function CalendarDay({
           ((visibleStart - CALENDAR_START_MINUTES) / 60) * CALENDAR_ROW_HEIGHT;
         const height = ((visibleEnd - visibleStart) / 60) * CALENDAR_ROW_HEIGHT;
         const width = 100 / laneCount;
+        // Inset every edge so the block border and selection outline stay
+        // wholly inside the day, even at 7 AM or at the end of the grid.
         const style = {
-          top,
-          height: Math.max(height, 18),
-          left: 'calc(' + lane * width + '% + 3px)',
-          width: 'calc(' + width + '% - 6px)',
+          top: top + 6,
+          height: Math.max(12, height - 12),
+          left: 'calc(' + lane * width + '% + 6px)',
+          width: 'calc(' + width + '% - 12px)',
         } satisfies CSSProperties;
 
         return (

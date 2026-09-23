@@ -633,3 +633,14 @@ The sole `Done configuring` action is in the draft footer next to `Cancel`, elim
 The footer states that modifications are drafts until submitted through `PUT /schedule/me`.
 Focused component and browser test selectors follow the footer action and expand the optional fine-tuning form when needed.
 The interaction and backend contracts remain unchanged; rest days are inferred from recurring blocks when configuration is reopened.
+
+## Schedule editor visual and rest-day consistency
+
+The configuration inputs and footer buttons use compact workspace-scale controls.
+The merged desktop week uses available horizontal space and retains a minimum scrollable grid width.
+Both editable and read-only schedule blocks are inset by six pixels at each edge and use opaque backgrounds so their borders and labels remain distinct from the hour grid.
+The normal Team Schedule infers rest markers from the signed-in member's unscheduled days rather than treating Saturday and Sunday as permanently rest, and the legend identifies them as personal.
+The fine-tuning dropdown disables rest-day destinations; changing a rest day to a workday via its header is required before assigning planned blocks there.
+All draft block updates reconcile the rest-day set, and final submission still validates against conflicting rest days.
+Time In remains independent of planned availability. A session recorded on an unscheduled or inferred rest day contributes to actual work in Shifts but never creates a planned block.
+These inferred labels do not represent independently persisted rest-day preferences.

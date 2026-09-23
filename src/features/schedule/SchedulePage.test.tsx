@@ -205,6 +205,53 @@ describe('SchedulePage', () => {
     expect(screen.getByText('9:00 AM - 5:00 PM')).toBeInTheDocument();
   });
 
+  it('shows an actual Sunday schedule as a workday, with its entire block inset from the grid edges', async () => {
+    const weekend: MemberSchedule = {
+      ...savedSchedule,
+      blocks: [{ ...savedSchedule.blocks[0], weekday: 'SUNDAY', startTime: '14:00', endTime: '17:00' }],
+    };
+    mockExistingSchedule(weekend);
+    const { container } = renderPage();
+    await screen.findByRole('heading', { name: 'Schedule', exact: true });
+
+    const sunday = container.querySelector('.schedule-calendar-day[aria-label="Sunday"]');
+    expect(sunday).not.toBeNull();
+    expect(sunday).not.toHaveClass('rest-day');
+    const sundayBlock = sunday!.querySelector('.schedule-calendar-block.mine');
+    expect(sundayBlock).not.toBeNull();
+    expect(sundayBlock).toHaveAttribute('title', 'Member One: 2:00 PM - 5:00 PM');
+    expect(sundayBlock).toHaveStyle({ top: '314px' });
+    expect((sundayBlock as HTMLElement).style.width).toContain('- 12px');
+    expect(container.querySelectorAll('.schedule-calendar-head-row .rest-day')).toHaveLength(2);
+    expect(container.querySelector('.schedule-calendar-day[aria-label="Saturday"]')).toHaveClass('rest-day');
+  });
+
+  it('turning a scheduled Sunday into rest removes its planned block before saving', async () => {
+    const user = userEvent.setup();
+    const weekend: MemberSchedule = {
+      ...savedSchedule,
+      blocks: [{ ...savedSchedule.blocks[0], weekday: 'SUNDAY', startTime: '14:00', endTime: '17:00' }],
+    };
+    mockExistingSchedule(weekend);
+    renderPage();
+    await screen.findByRole('heading', { name: 'Schedule', exact: true });
+    await user.click(screen.getByRole('button', { name: 'Configure My Schedule' }));
+    // Rest days are initially inferred as Friday and Saturday for this schedule.
+    await user.click(screen.getByRole('button', { name: 'Saturday: rest day, make workday' }));
+    await user.click(screen.getByRole('button', { name: 'Sunday: workday, make rest day' }));
+
+    expect(screen.queryByRole('button', { name: /Select Sunday schedule block/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sunday: rest day, make workday' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Done configuring' }));
+    await waitFor(() => {
+      const writes = mocks.apiFetch.mock.calls.filter(([path, , options]) =>
+        path === '/schedule/me' && options?.method === 'PUT');
+      expect(writes).toHaveLength(1);
+      const blocks = writes[0][2].body.blocks as MemberSchedule['blocks'];
+      expect(blocks.every((block) => block.weekday !== 'SUNDAY')).toBe(true);
+    });
+  });
+
   it('filters the merged calendar by people and department', async () => {
     const user = userEvent.setup();
     renderPage();
@@ -405,6 +452,19 @@ describe('SchedulePage', () => {
     await user.click(screen.getByRole('button', { name: /Tuesday: workday, make rest day/ }));
     expect(screen.getByRole('status')).toHaveTextContent('Unmark another rest day');
     expect(screen.getByText('Scheduled 20h / Target 20h')).toBeInTheDocument();
+  });
+
+  it('does not allow manual day selection onto an existing rest day', async () => {
+    const user = userEvent.setup();
+    mockExistingSchedule();
+    renderPage();
+    await screen.findByRole('heading', { name: 'Schedule', exact: true });
+    await user.click(screen.getByRole('button', { name: 'Configure My Schedule' }));
+    await user.click(screen.getByText('Fine-tune blocks using time inputs'));
+    const daySelect = screen.getByRole('combobox', { name: 'Day 1' });
+    expect(daySelect.querySelector('option[value="SATURDAY"]')).toBeDisabled();
+    expect(daySelect.querySelector('option[value="SUNDAY"]')).toBeDisabled();
+    expect(daySelect).toHaveValue('MONDAY');
   });
 
   it('recovers from a load error through the retry action', async () => {

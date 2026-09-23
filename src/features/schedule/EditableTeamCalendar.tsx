@@ -289,10 +289,10 @@ export function EditableTeamCalendar({
                 >
                   {placed.map((entry) => {
                     const style: CSSProperties = {
-                      top: ((Math.max(entry.start, EDITOR_START_MINUTES) - EDITOR_START_MINUTES) / 60) * ROW_HEIGHT,
-                      height: Math.max(18, ((Math.min(entry.end, 24 * 60) - Math.max(entry.start, EDITOR_START_MINUTES)) / 60) * ROW_HEIGHT),
-                      left: 'calc(' + ((100 / laneCount) * entry.lane) + '% + 3px)',
-                      width: 'calc(' + (100 / laneCount) + '% - 6px)',
+                      top: ((Math.max(entry.start, EDITOR_START_MINUTES) - EDITOR_START_MINUTES) / 60) * ROW_HEIGHT + 6,
+                      height: Math.max(12, ((Math.min(entry.end, 24 * 60) - Math.max(entry.start, EDITOR_START_MINUTES)) / 60) * ROW_HEIGHT - 12),
+                      left: 'calc(' + ((100 / laneCount) * entry.lane) + '% + 6px)',
+                      width: 'calc(' + (100 / laneCount) + '% - 12px)',
                     };
                     const own = entry.ownIndex !== null;
                     const isSelected = own && entry.ownIndex === selectedIndex;
