@@ -13,6 +13,7 @@ import {
   loadRegistryRoute,
   loadScheduleRoute,
   loadTeamRoute,
+  loadNotificationsRoute,
 } from './route-modules';
 
 export const router = createBrowserRouter([
@@ -44,10 +45,7 @@ export const router = createBrowserRouter([
           { path: '/visiwork', element: <PlaceholderPage title="VisiWork" /> },
           { path: '/schedule', lazy: loadScheduleRoute },
           { path: '/team', lazy: loadTeamRoute },
-          {
-            path: '/notifications',
-            element: <PlaceholderPage title="Notifications" />,
-          },
+          { path: '/notifications', lazy: loadNotificationsRoute },
           { path: '/registry', lazy: loadRegistryRoute },
         ],
       },

@@ -116,6 +116,9 @@ function createDatabase(
         .fn()
         .mockResolvedValue(options.updatedProject ?? projectRecord()),
     },
+    notification: {
+      createMany: vi.fn().mockResolvedValue({ count: 1 }),
+    },
   };
   const transaction = vi.fn(async (argument: unknown) => {
     if (Array.isArray(argument)) return Promise.all(argument);
@@ -242,6 +245,18 @@ describe('ProjectsService', () => {
         }),
       }),
     );
+    expect(database.notification.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          recipientMemberId: lead.id,
+          actorMemberId: creator.id,
+          projectId: projectRecord().id,
+          type: 'PROJECT_LEAD_ASSIGNED',
+          eventKey: `PROJECT_LEAD_ASSIGNED:${projectRecord().id}`,
+        }),
+      ],
+      skipDuplicates: true,
+    });
   });
 
   it('does not grant an Administrator automatic Project Lead authority', async () => {
@@ -262,6 +277,15 @@ describe('ProjectsService', () => {
         }),
       }),
     );
+  });
+
+  it('does not notify a creator who assigns themselves as Project Lead', async () => {
+    const database = createDatabase();
+    const service = new ProjectsService(database);
+
+    await service.createProject(lead as Member, input);
+
+    expect(database.notification.createMany).not.toHaveBeenCalled();
   });
 
   it('rejects an inactive Project Lead', async () => {

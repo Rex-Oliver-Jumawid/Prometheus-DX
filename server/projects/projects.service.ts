@@ -19,6 +19,7 @@ import type {
   UpdateProjectStatusRequest,
 } from '../../shared/contracts/project';
 import { PrismaService } from '../database/prisma.service';
+import { writeNotifications } from '../notifications/notification-writer';
 
 const projectInclude = {
   createdByMember: { select: { id: true, fullName: true, email: true } },
@@ -186,6 +187,14 @@ export class ProjectsService {
             },
           },
         },
+      });
+
+      await writeNotifications(transaction, {
+        type: 'PROJECT_LEAD_ASSIGNED',
+        sourceEventId: created.id,
+        actorMemberId: currentMember.id,
+        recipientMemberIds: [lead.id],
+        projectId: created.id,
       });
 
       return transaction.project.findUniqueOrThrow({

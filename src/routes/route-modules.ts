@@ -21,3 +21,11 @@ export function loadTeamRoute() {
     Component: module.TeamPage,
   }));
 }
+
+export function loadNotificationsRoute() {
+  return import('../features/notifications/NotificationsPage').then(
+    (module) => ({
+      Component: module.NotificationsPage,
+    }),
+  );
+}

@@ -105,6 +105,8 @@ function createDatabase(
 ) {
   const projectExists = options.projectExists ?? true;
   let projectAccessLevel = options.projectAccessLevel ?? 'CAN_VIEW';
+  let hasJoined = false;
+  let accessHistorySequence = 0;
   const database = {
     $queryRaw: vi.fn().mockResolvedValue([]),
     project: {
@@ -177,7 +179,10 @@ function createDatabase(
           lifecycleStatus: options.outcomeLifecycleStatus ?? 'OPEN',
           stageId,
           position: 0,
-          stage: { projectId: options.outcomeProjectId ?? projectId },
+          stage: {
+            projectId: options.outcomeProjectId ?? projectId,
+            project: { leadMemberId: options.leadMemberId ?? lead.id },
+          },
           _count: {
             members: options.outcomeMemberCount ?? 0,
             submissions: options.outcomeSubmissionCount ?? 0,
@@ -223,6 +228,11 @@ function createDatabase(
     outcomeDepartment: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
     outcomeMember: {
       upsert: vi.fn().mockResolvedValue({ outcomeId, memberId: member.id }),
+      createMany: vi.fn().mockImplementation(() => {
+        const count = hasJoined ? 0 : 1;
+        hasJoined = true;
+        return Promise.resolve({ count });
+      }),
       findUnique: vi.fn().mockResolvedValue(
         options.membershipProjectId === null
           ? null
@@ -288,12 +298,31 @@ function createDatabase(
             });
           },
         ),
+      updateMany: vi
+        .fn()
+        .mockImplementation(
+          ({ where, data }: {
+            where: { accessLevel: 'CAN_VIEW' | 'CAN_EDIT' };
+            data: { accessLevel: 'CAN_VIEW' | 'CAN_EDIT' };
+          }) => {
+            if (projectAccessLevel !== where.accessLevel)
+              return Promise.resolve({ count: 0 });
+            projectAccessLevel = data.accessLevel;
+            return Promise.resolve({ count: 1 });
+          },
+        ),
     },
     projectMemberAccessHistory: {
       create: vi
         .fn()
-        .mockResolvedValue({ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }),
+        .mockImplementation(() =>
+          Promise.resolve({
+            id: `aaaaaaaa-aaaa-4aaa-8aaa-${String(++accessHistorySequence).padStart(12, '0')}`,
+          }),
+        ),
     },
+    activityLog: { create: vi.fn().mockResolvedValue({ id: outcomeId }) },
+    notification: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
   };
   const transaction = vi.fn(
     async (operation: (client: typeof database) => unknown) =>
@@ -543,10 +572,9 @@ describe('ProjectWorkflowService', () => {
       await expect(
         service.joinOutcome(member, projectId, outcomeId),
       ).resolves.toMatchObject({ id: outcomeId, isJoined: true });
-      expect(database.outcomeMember.upsert).toHaveBeenCalledWith({
-        where: { outcomeId_memberId: { outcomeId, memberId: member.id } },
-        update: {},
-        create: { outcomeId, memberId: member.id },
+      expect(database.outcomeMember.createMany).toHaveBeenCalledWith({
+        data: [{ outcomeId, memberId: member.id }],
+        skipDuplicates: true,
       });
       expect(database.projectMember.upsert).toHaveBeenCalledWith({
         where: { projectId_memberId: { projectId, memberId: member.id } },
@@ -557,18 +585,32 @@ describe('ProjectWorkflowService', () => {
           accessLevel: 'CAN_VIEW',
         },
       });
+      expect(database.notification.createMany).toHaveBeenCalledWith({
+        data: [
+          expect.objectContaining({
+            recipientMemberId: lead.id,
+            actorMemberId: member.id,
+            type: 'OUTCOME_JOINED',
+            eventKey: `OUTCOME_JOINED:${outcomeId}:${member.id}`,
+            outcomeId,
+          }),
+        ],
+        skipDuplicates: true,
+      });
     },
   );
 
-  it('uses idempotent upserts so repeated joins cannot duplicate memberships', async () => {
+  it('does not duplicate membership, activity, or notifications on a repeated join', async () => {
     const database = createDatabase();
     const service = new ProjectWorkflowService(database);
 
     await service.joinOutcome(member, projectId, outcomeId);
     await service.joinOutcome(member, projectId, outcomeId);
 
-    expect(database.outcomeMember.upsert).toHaveBeenCalledTimes(2);
+    expect(database.outcomeMember.createMany).toHaveBeenCalledTimes(2);
     expect(database.projectMember.upsert).toHaveBeenCalledTimes(2);
+    expect(database.activityLog.create).toHaveBeenCalledTimes(1);
+    expect(database.notification.createMany).toHaveBeenCalledTimes(1);
   });
 
   it('denies joining an accepted Outcome before writing membership', async () => {
@@ -578,7 +620,7 @@ describe('ProjectWorkflowService', () => {
     await expect(
       service.joinOutcome(member, projectId, outcomeId),
     ).rejects.toThrow('Accepted Outcomes are closed to new Members.');
-    expect(database.outcomeMember.upsert).not.toHaveBeenCalled();
+    expect(database.outcomeMember.createMany).not.toHaveBeenCalled();
     expect(database.projectMember.upsert).not.toHaveBeenCalled();
   });
 
@@ -650,6 +692,42 @@ describe('ProjectWorkflowService', () => {
         },
       },
     );
+    expect(database.notification.createMany).toHaveBeenCalledTimes(2);
+    expect(database.notification.createMany).toHaveBeenNthCalledWith(1, {
+      data: [
+        expect.objectContaining({
+          eventKey: 'PROJECT_MEMBER_ACCESS_CHANGED:aaaaaaaa-aaaa-4aaa-8aaa-000000000001',
+        }),
+      ],
+      skipDuplicates: true,
+    });
+    expect(database.notification.createMany).toHaveBeenLastCalledWith({
+      data: [
+        expect.objectContaining({
+          recipientMemberId: member.id,
+          actorMemberId: lead.id,
+          type: 'PROJECT_MEMBER_ACCESS_CHANGED',
+          eventKey: 'PROJECT_MEMBER_ACCESS_CHANGED:aaaaaaaa-aaaa-4aaa-8aaa-000000000002',
+          data: { accessLevel: 'CAN_VIEW' },
+        }),
+      ],
+      skipDuplicates: true,
+    });
+  });
+
+  it('does not create another access event for a repeated access setting', async () => {
+    const database = createDatabase();
+    const service = new ProjectWorkflowService(database);
+
+    await service.updateProjectMemberAccess(lead, projectId, member.id, {
+      accessLevel: 'CAN_EDIT',
+    });
+    await service.updateProjectMemberAccess(lead, projectId, member.id, {
+      accessLevel: 'CAN_EDIT',
+    });
+
+    expect(database.projectMemberAccessHistory.create).toHaveBeenCalledTimes(1);
+    expect(database.notification.createMany).toHaveBeenCalledTimes(1);
   });
 
   it.each([
@@ -669,7 +747,7 @@ describe('ProjectWorkflowService', () => {
           accessLevel: 'CAN_VIEW',
         }),
       ).rejects.toBeInstanceOf(ForbiddenException);
-      expect(database.projectMember.update).not.toHaveBeenCalled();
+      expect(database.projectMember.updateMany).not.toHaveBeenCalled();
       expect(database.projectMemberAccessHistory.create).not.toHaveBeenCalled();
     },
   );

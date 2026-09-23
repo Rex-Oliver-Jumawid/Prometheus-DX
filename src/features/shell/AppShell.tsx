@@ -1,7 +1,8 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/auth-context';
+import { notificationUnreadCountQuery } from '../notifications/notification-queries';
 import {
   projectCreateOptionsQuery,
   projectsListQuery,
@@ -35,6 +36,11 @@ export function AppShell() {
   const setProfileOpen = useShellStore((state) => state.setProfileOpen);
   const accessToken = session?.access_token;
   const workspaceRole = member?.workspaceRole;
+  const unreadNotifications = useQuery({
+    ...notificationUnreadCountQuery(accessToken),
+    enabled: Boolean(accessToken && member),
+  });
+  const unreadCount = unreadNotifications.data?.count ?? 0;
 
   useEffect(() => {
     if (!accountMenuOpen) return undefined;
@@ -164,17 +170,27 @@ export function AppShell() {
               <NavLink
                 key={item.path}
                 to={item.path}
+                aria-label={
+                  item.icon === 'notifications' && unreadCount > 0
+                    ? `Notifications, ${unreadCount} unread`
+                    : item.label
+                }
                 onClick={() => setMobileOpen(false)}
                 onMouseEnter={() => prefetchNavigation(item.path)}
                 onFocus={() => prefetchNavigation(item.path)}
                 className={({ isActive }) =>
-                  `sidebar-utility${isActive ? ' active' : ''}`
+                  `sidebar-utility${isActive ? ' active' : ''}${item.icon === 'notifications' ? ' notification-utility' : ''}`
                 }
               >
                 <span className="nav-icon">
                   <NavIcon name={item.icon} />
                 </span>
                 <span className="utility-label">{item.label}</span>
+                {item.icon === 'notifications' && unreadCount > 0 && (
+                  <span className="sidebar-unread-badge" aria-hidden="true">
+                    {unreadCount}
+                  </span>
+                )}
               </NavLink>
             ))}
           </nav>

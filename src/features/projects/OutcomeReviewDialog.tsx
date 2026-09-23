@@ -36,6 +36,7 @@ export function OutcomeReviewDialog({
   const [reviewedData] = useState(data);
   const draftVersion = useRef(data.reviewDraft?.updatedAt ?? null);
   const busy = useRef(false);
+  const draftSave = useRef<Promise<void> | null>(null);
   const [notice, setNotice] = useState('');
   const { register, watch, setValue, getValues, handleSubmit } = useForm({
     defaultValues: {
@@ -45,26 +46,34 @@ export function OutcomeReviewDialog({
   });
   const checked = watch('criterionIds');
 
-  const saveDraft = async () => {
-    if (busy.current) return;
+  const saveDraft = () => {
+    if (draftSave.current) return draftSave.current;
+    if (busy.current) return Promise.resolve();
     busy.current = true;
-    try {
-      const saved = await act('review-draft', {
-        ...getValues(),
-        updatedAt: draftVersion.current,
-        submissionIds: reviewedData.submissions.map((item) => item.id),
-      });
-      draftVersion.current = saved.reviewDraft?.updatedAt ?? null;
-      setNotice('Review preparation saved.');
-    } catch {
-      /* Display the parent's mutation error and preserve the review. */
-    } finally {
-      busy.current = false;
-    }
+    const saving = (async () => {
+      try {
+        const saved = await act('review-draft', {
+          ...getValues(),
+          updatedAt: draftVersion.current,
+          submissionIds: reviewedData.submissions.map((item) => item.id),
+        });
+        draftVersion.current = saved.reviewDraft?.updatedAt ?? null;
+        setNotice('Review preparation saved.');
+      } catch {
+        /* Display the parent's mutation error and preserve the review. */
+      } finally {
+        busy.current = false;
+        draftSave.current = null;
+      }
+    })();
+    draftSave.current = saving;
+    return saving;
   };
 
   const decide = (action: 'accept' | 'request-revision') =>
     handleSubmit(async (values) => {
+      // A blur-triggered draft save must finish before a review decision.
+      if (draftSave.current) await draftSave.current;
       if (busy.current) return;
       if (action === 'request-revision' && !values.note.trim()) {
         setNotice('Explain what the team must revise.');
@@ -200,7 +209,16 @@ export function OutcomeReviewDialog({
             aria-label="Outcome review feedback"
             placeholder="Record what passed, or explain exactly what must be revised."
             {...register('note', {
-              onBlur: () => void saveDraft(),
+              onBlur: (event) => {
+                // The decision includes the current feedback; autosaving it on
+                // the same click can disable the button and lose that click.
+                if (
+                  event.relatedTarget instanceof HTMLElement &&
+                  event.relatedTarget.closest('.outcome-review-actions')
+                )
+                  return;
+                void saveDraft();
+              },
             })}
             disabled={pending}
           />

@@ -15,6 +15,7 @@ import type {
 } from '../../shared/contracts/outcome-delivery';
 import { CriteriaSnapshotSchema } from '../../shared/contracts/outcome-delivery';
 import { PrismaService } from '../database/prisma.service';
+import { writeNotifications } from '../notifications/notification-writer';
 
 const contextInclude = {
   stage: {
@@ -298,6 +299,14 @@ export class OutcomeDeliveryService {
           metadata: { content: input.content },
         },
       });
+      await writeNotifications(db, {
+        type: 'SUBMISSION_CREATED',
+        sourceEventId: submission.id,
+        actorMemberId: member.id,
+        recipientMemberIds: [outcome.stage.project.leadMemberId],
+        projectId,
+        outcomeId,
+      });
     });
   }
 
@@ -486,7 +495,7 @@ export class OutcomeDeliveryService {
         outcomeId,
         input.submissionIds,
       );
-      await db.outcomeRevisionRequest.create({
+      const revision = await db.outcomeRevisionRequest.create({
         data: {
           outcomeId,
           requestedByMemberId: member.id,
@@ -514,6 +523,14 @@ export class OutcomeDeliveryService {
         'REVISION_REQUESTED',
         { message: input.note },
       );
+      await writeNotifications(db, {
+        type: 'REVISION_REQUESTED',
+        sourceEventId: revision.id,
+        actorMemberId: member.id,
+        recipientMemberIds: outcome.members.map((item) => item.memberId),
+        projectId,
+        outcomeId,
+      });
     });
   }
 
@@ -600,6 +617,55 @@ export class OutcomeDeliveryService {
         acceptanceId: acceptance.id,
         creditedMembers: outcome.members.map((item) => item.memberId),
       });
+      await writeNotifications(db, {
+        type: 'OUTCOME_ACCEPTED',
+        sourceEventId: acceptance.id,
+        actorMemberId: member.id,
+        recipientMemberIds: outcome.members.map((item) => item.memberId),
+        projectId,
+        outcomeId,
+      });
+
+      const dependentEdges = await db.outcomeDependency.findMany({
+        where: {
+          prerequisiteOutcomeId: outcomeId,
+          overrideResolvedAt: null,
+          outcome: { is: { lifecycleStatus: { not: 'ACCEPTED' } } },
+        },
+        select: {
+          outcomeId: true,
+          outcome: {
+            select: {
+              members: { select: { memberId: true } },
+              prerequisites: {
+                select: {
+                  overrideResolvedAt: true,
+                  prerequisiteOutcome: {
+                    select: { lifecycleStatus: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      for (const edge of dependentEdges) {
+        const unlocked = edge.outcome.prerequisites.every(
+          (prerequisite) =>
+            prerequisite.overrideResolvedAt !== null ||
+            prerequisite.prerequisiteOutcome.lifecycleStatus === 'ACCEPTED',
+        );
+        if (!unlocked) continue;
+        await writeNotifications(db, {
+          type: 'DEPENDENCY_UNLOCKED',
+          sourceEventId: `ACCEPTANCE:${acceptance.id}`,
+          subjectId: edge.outcomeId,
+          actorMemberId: member.id,
+          recipientMemberIds: edge.outcome.members.map((item) => item.memberId),
+          projectId,
+          outcomeId: edge.outcomeId,
+        });
+      }
     });
   }
 
@@ -635,6 +701,14 @@ export class OutcomeDeliveryService {
       await this.record(db, member, projectId, outcomeId, 'OUTCOME_REOPENED', {
         acceptanceId: acceptance.id,
       });
+      await writeNotifications(db, {
+        type: 'OUTCOME_REOPENED',
+        sourceEventId: acceptance.id,
+        actorMemberId: member.id,
+        recipientMemberIds: outcome.members.map((item) => item.memberId),
+        projectId,
+        outcomeId,
+      });
     });
   }
 
@@ -653,6 +727,7 @@ export class OutcomeDeliveryService {
       if (!dependency)
         throw new NotFoundException('Dependency not found in this Outcome.');
       if (dependency.overrideResolvedAt) return;
+      const wasLocked = this.isLocked(outcome);
       await db.outcomeDependency.update({
         where: { id: dependencyId },
         data: {
@@ -669,6 +744,27 @@ export class OutcomeDeliveryService {
         'OUTCOME_DEPENDENCY_OVERRIDDEN',
         { dependencyId, reason },
       );
+      const nowUnlocked = outcome.prerequisites.every(
+        (item) =>
+          item.id === dependencyId ||
+          item.overrideResolvedAt !== null ||
+          item.prerequisiteOutcome.lifecycleStatus === 'ACCEPTED',
+      );
+      if (
+        wasLocked &&
+        nowUnlocked &&
+        outcome.lifecycleStatus !== 'ACCEPTED'
+      ) {
+        await writeNotifications(db, {
+          type: 'DEPENDENCY_UNLOCKED',
+          sourceEventId: `OVERRIDE:${dependencyId}`,
+          subjectId: outcomeId,
+          actorMemberId: member.id,
+          recipientMemberIds: outcome.members.map((item) => item.memberId),
+          projectId,
+          outcomeId,
+        });
+      }
     });
   }
 }
