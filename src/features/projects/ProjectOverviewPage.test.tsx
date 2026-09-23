@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Project } from '../../../shared/contracts/project';
 import { apiFetch } from '../../lib/api';
@@ -213,6 +213,58 @@ describe('ProjectOverviewPage status mutation', () => {
         }),
       ),
     );
+  });
+
+  it('resets unsent Chat drafts when navigating directly between Projects', async () => {
+    const otherProjectId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path.endsWith('/workflow'))
+        return Promise.resolve({ projectId, canManageStructure: false, stages: [] });
+      if (path.endsWith('/members'))
+        return Promise.resolve(projectMembersResponse);
+      if (path.endsWith('/messages'))
+        return Promise.resolve({ items: [], nextCursor: null, canWrite: true });
+      if (path === `/projects/${otherProjectId}`)
+        return Promise.resolve({ ...project, id: otherProjectId, name: 'Other Project' });
+      if (path === `/projects/${projectId}`) return Promise.resolve(project);
+      return Promise.resolve({});
+    });
+    function NavigateBetweenProjects() {
+      const navigate = useNavigate();
+      return (
+        <button type="button" onClick={() =>
+          navigate(`/projects/${otherProjectId}?tab=chat`)
+        }>
+          Switch Project
+        </button>
+      );
+    }
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={[`/projects/${projectId}?tab=chat`]}>
+          <Routes>
+            <Route path="/projects/:projectId" element={
+              <>
+                <NavigateBetweenProjects />
+                <ProjectOverviewPage />
+              </>
+            } />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    const input = await screen.findByRole('textbox', { name: 'Message' });
+    fireEvent.change(input, { target: { value: 'Unsent previous Project draft' } });
+    expect(input).toHaveValue('Unsent previous Project draft');
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }));
+    expect(await screen.findByRole('heading', { name: 'Other Project' })).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getByRole('textbox', { name: 'Message' })).toHaveValue(''),
+    );
+    expect(screen.queryByText('Unsent previous Project draft')).not.toBeInTheDocument();
   });
 
   it('updates status immediately and rolls back a failed request', async () => {
