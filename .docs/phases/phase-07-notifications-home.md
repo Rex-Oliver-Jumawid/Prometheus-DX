@@ -281,6 +281,20 @@ The final source review found no need to repeat the successful focused tests. Th
 A full browser suite is not warranted by this diff review; the accidental broad run used another worktree's servers and included uninstalled Firefox and WebKit browsers, so it is not reliable Phase 7 regression evidence.
 Manual comparison against Figma node `11:2301` remains pending.
 
+### Manual visual review: desktop empty inbox (2026-09-23)
+
+The user supplied a local Chrome responsive screenshot of `/notifications` at a 1244 × 682 viewport.
+The screen renders the authenticated sidebar, Notifications utility link, page heading, Mark all as read, All/Unread tabs, zero unread count, and the intentional empty-inbox state. The shell and main-panel geometry are broadly aligned with Figma node `11:2301`; there is no visible top-right notification bell.
+
+The screenshot does **not** establish populated-row fidelity, unread-badge appearance, read/navigation behavior, error/retry behavior, or mobile responsiveness because the inbox contains zero notifications and only desktop was shown.
+
+Visible differences compared with the live Figma reference:
+- The shared shell uses `/backgrounds/editorial-gradient.webp` (strong coral on the left and cool blue at the lower right), whereas the current Figma Notifications frame uses a substantially lighter, near-white `#f5f1ed` background with subtler warm surface tones. Treat this as an open design-fidelity decision; do not restyle the shared shell globally without checking its other approved page frames.
+- The Figma frame includes a Reports & Analytics primary navigation item, currently outside this branch's Phase 7 implementation scope.
+- The Figma sample contains Mentions and Projects filters and populated example rows; All/Unread only, with those additional filters intentionally deferred, is documented above.
+
+Do not mark manual visual acceptance complete until a populated inbox and narrow viewport have been reviewed and any material discrepancies resolved.
+
 ### Final manual acceptance checklist
 
 - Compare the authenticated Notifications screen at the Figma reference size (1244 × 682), a medium viewport, and a narrow/mobile viewport.
