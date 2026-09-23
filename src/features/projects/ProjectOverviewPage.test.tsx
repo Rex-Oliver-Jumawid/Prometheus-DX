@@ -156,7 +156,7 @@ describe('ProjectOverviewPage status mutation', () => {
 
     expect(await screen.findByRole('heading', { name: 'Project activity' })).toBeVisible();
     expect(await screen.findByText(/created a feature/)).toBeVisible();
-    expect(screen.getByText('Design mockups')).toBeVisible();
+    expect(screen.getByText(/Design mockups/)).toBeVisible();
     expect(screen.getByRole('tab', { name: 'Activity' })).toHaveAttribute('aria-selected', 'true');
     fireEvent.click(screen.getByRole('tab', { name: 'Content' }));
     expect(screen.getByRole('tab', { name: 'Content' })).toHaveAttribute('aria-selected', 'true');
