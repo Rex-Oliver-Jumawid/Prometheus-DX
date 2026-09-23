@@ -43,7 +43,7 @@ function setup(initial: ScheduleBlockInput[] = [monday], rest = new Set<(typeof 
   }
   const view = render(<Harness />);
   const stage = view.container.querySelector('.schedule-calendar-stage')!;
-  const mine = () => screen.getByRole('button', { name: /Select Monday schedule block/ });
+  const mine = () => screen.getByRole('button', { name: /Select Monday schedule block, 10:00 AM to 12:00 PM/ });
   return { ...view, stage, mine, changed, restChanges, toggleRest, message };
 }
 
@@ -94,6 +94,24 @@ describe('EditableTeamCalendar pointer gestures', () => {
     expect(s.changed).not.toHaveBeenCalled();
     expect(s.message).toHaveBeenCalledWith(expect.stringContaining('overlapping'));
     expect(s.container.querySelectorAll('.schedule-calendar-block')).toHaveLength(3);
+  });
+
+  it('restores the original draft after a valid preview followed by an overlapping destination', () => {
+    const s = setup([monday, { weekday: 'TUESDAY', startTime: '10:00', endTime: '12:00' }]);
+    fireEvent.pointerDown(s.mine(), { pointerId: 6, button: 0, clientX: 200, clientY: 200 });
+    fireEvent.pointerMove(s.stage, { pointerId: 6, clientX: 200, clientY: 244 });
+    expect(s.changed).toHaveBeenLastCalledWith([
+      { weekday: 'MONDAY', startTime: '11:00', endTime: '13:00' },
+      { weekday: 'TUESDAY', startTime: '10:00', endTime: '12:00' },
+    ]);
+    fireEvent.pointerMove(s.stage, { pointerId: 6, clientX: 327, clientY: 200 });
+    fireEvent.pointerUp(s.stage, { pointerId: 6 });
+    expect(s.changed).toHaveBeenLastCalledWith([
+      monday,
+      { weekday: 'TUESDAY', startTime: '10:00', endTime: '12:00' },
+    ]);
+    expect(s.message).toHaveBeenCalledWith(expect.stringContaining('unavailable'));
+    expect(s.mine()).toBeInTheDocument();
   });
 
   it('keeps a boundary block fully inside its day column', () => {
