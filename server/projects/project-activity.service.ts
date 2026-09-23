@@ -15,8 +15,18 @@ function safeMetadata(action: string, raw: unknown): Record<string, string> {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
   const fields = raw as Record<string, unknown>;
   const result: Record<string, string> = {};
-  if (/^(FEATURE|TASK)_/.test(action) && typeof fields.title === 'string')
+  if (/^(FEATURE|TASK|OUTCOME)_/.test(action) && typeof fields.title === 'string')
     result.title = fields.title;
+  if (/^STAGE_/.test(action) && typeof fields.name === 'string')
+    result.title = fields.name;
+  if (action === 'PROJECT_CREATED' && typeof fields.name === 'string')
+    result.title = fields.name;
+  if (action === 'PROJECT_MEMBER_ACCESS_CHANGED') {
+    if (typeof fields.previousAccess === 'string')
+      result.previousAccess = fields.previousAccess;
+    if (typeof fields.newAccess === 'string')
+      result.newAccess = fields.newAccess;
+  }
   if (action === 'PROJECT_STATUS_CHANGED') {
     if (typeof fields.fromStatus === 'string') result.fromStatus = fields.fromStatus;
     if (typeof fields.toStatus === 'string') result.toStatus = fields.toStatus;
