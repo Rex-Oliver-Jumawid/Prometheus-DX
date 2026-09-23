@@ -96,6 +96,7 @@ export function AppShell() {
   if (!member) return null;
 
   const isProjectSection = location.pathname.startsWith('/projects/');
+  const isReportsSection = location.pathname === '/reports';
   const breadcrumbs = isProjectSection
     ? []
     : breadcrumbsForPath(location.pathname);
@@ -285,7 +286,9 @@ export function AppShell() {
         </header>
         <main className="workspace-content">
           <div className="workspace-content-scroll">
-            <div className="workspace-content-inner">
+            <div
+              className={`workspace-content-inner${isReportsSection ? ' reports-content-inner' : ''}`}
+            >
               <Outlet />
             </div>
           </div>
