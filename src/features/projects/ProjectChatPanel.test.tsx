@@ -91,7 +91,7 @@ describe('ProjectChatPanel interactions', () => {
     await waitFor(() => expect(apiFetch).toHaveBeenCalledWith(
       '/projects/' + projectId + '/messages/' + messageId,
       expect.anything(),
-      expect.objectContaining({ method: 'PATCH', body: { body: 'Revised update' } }),
+      expect.objectContaining({ method: 'PATCH', body: { body: 'Revised update', expectedEditedAt: null } }),
     ));
   });
 
