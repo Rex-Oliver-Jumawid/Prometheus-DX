@@ -274,10 +274,10 @@ The user ran `pnpm lint` on 2026-09-23.
 ESLint completed successfully with no reported errors.
 The user reran `pnpm typecheck` after the browser-regression fixes on 2026-09-23.
 The app, server, and Node TypeScript configurations completed successfully with no errors.
-The user subsequently ran `pnpm build` on 2026-09-23. Vite reported a successful production web build (209 modules transformed, 2.15 seconds), including a separate Notifications page chunk. The API build invoked `tsc -p tsconfig.build.json` with no error in the supplied log, but its final process exit status was not captured because the user's terminal session crashed. The Vite warning about a 756.20 kB main JavaScript chunk is non-fatal and should be assessed separately as a performance concern; it is not specific to the 7.06 kB Notifications page chunk.
+The user subsequently ran `pnpm build` on 2026-09-23. Vite reported a successful production web build (209 modules transformed, 2.15 seconds), including a separate Notifications page chunk. The first API build's exit status was not captured because the terminal crashed. The user reran `pnpm build:api && echo "API BUILD PASSED"` in the clean `phase-7-notifications` worktree on 2026-09-23; `tsc -p tsconfig.build.json` completed and the explicit success marker appeared. The Vite warning about a 756.20 kB main JavaScript chunk is non-fatal and should be assessed separately as a performance concern; it is not specific to the 7.06 kB Notifications page chunk.
 The GitHub branch's Vercel deployment reported success for commit `5a92b11`, which does not independently establish local API build exit status or manual Figma fidelity.
 The user confirmed their local `phase-7-notifications` HEAD and `origin/phase-7-notifications` both point to `5a92b11` with a clean working tree.
-The final source review found no need to repeat the successful focused tests. Manual browser comparison and confirmation of the local API build exit status remain open.
+The final source review found no need to repeat the successful focused tests. The local API build exit status has since been confirmed; manual browser comparison remains open.
 A full browser suite is not warranted by this diff review; the accidental broad run used another worktree's servers and included uninstalled Firefox and WebKit browsers, so it is not reliable Phase 7 regression evidence.
 Manual comparison against Figma node `11:2301` remains pending.
 
@@ -290,7 +290,7 @@ Manual comparison against Figma node `11:2301` remains pending.
 - Verify navigation to a Project and an Outcome, browser Back/Forward, keyboard focus, and long-name wrapping.
 - Verify loading, filtered-empty, error/retry, and unavailable linked-context states without horizontal overflow or clipped controls.
 - Record screenshots, browser/viewport, discrepancies, and any accessibility defects here before merging.
-- Confirm the local API build exits successfully if the earlier terminal crash interrupted the final status.
+- Confirmed: the user reran `pnpm build:api && echo "API BUILD PASSED"` and received the explicit success marker.
 
 ## Security and Authorization
 
@@ -615,8 +615,8 @@ The user's read-only inspection found zero rows and an applied earlier Phase 7 m
 The user then reran schema validation and client generation, marked the failed migration attempt rolled back, and applied the revised migration successfully.
 The backend event tests passed through the first run and focused rerun described above.
 The Notifications backend event and API checks, nine inbox component tests, four shell/inbox component tests, one focused Chromium notification journey, and all targeted Chromium regressions described in Checkpoint H passed according to recorded user output.
-The user also reported successful lint and typechecking runs, and Vite built the web production bundle successfully. The local API build's final exit code was not captured.
-Manual Figma comparison and a final confirmation of the local API build exit status remain pending.
+The user also reported successful lint and typechecking runs, a successful Vite production web build, and a successful local API build rerun with the explicit `API BUILD PASSED` marker.
+Manual Figma comparison remains pending.
 
 No Phase 7 implementation should be considered delivered merely because this journal and the Figma references exist.
 
@@ -634,7 +634,7 @@ Mentions/replies await Phase 9, and the additional Figma Projects filter remains
 ## Recommendations and Next Approach
 
 The Notifications backend, API, inbox, and shared sidebar badge are implemented on `phase-7-notifications`.
-Confirm the local API production build exit status if the original terminal crashed before returning it, then complete the manual browser comparison against Figma node `11:2301` at desktop, medium, and narrow viewports.
+The local API production build exit status is confirmed. Next complete the manual browser comparison against Figma node `11:2301` at desktop, medium, and narrow viewports.
 Check All/Unread, Mark all as read, individual read/navigation, unread badge, empty/error states, keyboard focus, text wrapping, and overflow with realistic recipient data.
 Inspect and record intentional differences from the Figma sample: Mentions and Projects tabs are not part of the initial All/Unread scope; mentions/replies depend on Phase 9.
 Do not merge into `main` until manual acceptance and final review are recorded. Once integrated and stable, implement Home as a separate slice against Figma node `189:3`, aggregating canonical data.
