@@ -163,6 +163,58 @@ describe('ProjectOverviewPage status mutation', () => {
     expect(screen.queryByRole('heading', { name: 'Project activity' })).not.toBeInTheDocument();
   });
 
+  it('shows persistent Project Chat and sends a message for a writable member', async () => {
+    const existing = {
+      id: '55555555-5555-4555-8555-555555555555',
+      projectId,
+      author: { id: projectMemberId, fullName: 'Project Member', email: 'member@example.com' },
+      parentMessageId: null,
+      replyTo: null,
+      body: 'Initial project update',
+      createdAt: '2026-09-23T01:00:00.000Z',
+      editedAt: null,
+      canEdit: false,
+    };
+    vi.mocked(apiFetch).mockImplementation((path: string, _schema, options) => {
+      if (path.endsWith('/workflow'))
+        return Promise.resolve({ projectId, canManageStructure: false, stages: [] });
+      if (path === `/projects/${projectId}/members`)
+        return Promise.resolve(projectMembersResponse);
+      if (path === `/projects/${projectId}/messages` && options?.method === 'POST')
+        return Promise.resolve({
+          ...existing,
+          body: 'Hello project team',
+          id: '66666666-6666-4666-8666-666666666666',
+        });
+      if (path === `/projects/${projectId}/messages`)
+        return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
+      if (path === `/projects/${projectId}`) return Promise.resolve(project);
+      return Promise.resolve({});
+    });
+
+    renderPage();
+    fireEvent.click(await screen.findByRole('tab', { name: 'Chat' }));
+
+    expect(await screen.findByRole('heading', { name: 'Project chat' })).toBeVisible();
+    expect(screen.getByText('Initial project update')).toBeVisible();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), {
+      target: { value: 'Hello project team' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
+    await waitFor(() =>
+      expect(apiFetch).toHaveBeenCalledWith(
+        `/projects/${projectId}/messages`,
+        expect.anything(),
+        expect.objectContaining({
+          accessToken: 'token',
+          method: 'POST',
+          body: { body: 'Hello project team', parentMessageId: null },
+        }),
+      ),
+    );
+  });
+
   it('updates status immediately and rolls back a failed request', async () => {
     let rejectStatus!: (error: Error) => void;
     const statusRequest = new Promise((_, reject) => {
