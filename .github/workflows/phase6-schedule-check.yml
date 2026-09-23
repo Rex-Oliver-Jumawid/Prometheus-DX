@@ -1,0 +1,47 @@
+name: Phase 6 Schedule Check
+
+on:
+  push:
+    branches: [phase-6-schedule-figma]
+    paths:
+      - '.github/workflows/phase6-schedule-check.yml'
+      - 'src/features/schedule/**'
+      - 'src/test/setup.ts'
+      - 'server/work-sessions/**'
+      - 'shared/contracts/schedule.ts'
+      - 'pnpm-lock.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  schedule-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      VITE_API_BASE_URL: /api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm prisma:generate
+      - name: Check TypeScript
+        run: pnpm typecheck
+      - name: Schedule component tests
+        run: |
+          pnpm exec vitest run --config vitest.ui.config.ts \
+            src/features/schedule/SchedulePage.test.tsx \
+            src/features/schedule/EditableTeamCalendar.test.tsx
+      - name: Schedule editor and work session tests
+        run: |
+          pnpm exec vitest run \
+            src/features/schedule/schedule-editor.test.ts \
+            server/work-sessions/work-sessions.service.test.ts
+      - name: Web build
+        run: pnpm build:web
