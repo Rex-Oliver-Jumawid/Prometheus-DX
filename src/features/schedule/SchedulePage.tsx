@@ -239,6 +239,83 @@ function dayActualSeconds(
     .reduce((total, session) => total + session.durationSeconds, 0);
 }
 
+function SchedulePageSkeleton() {
+  const hours = Array.from(
+    { length: (CALENDAR_END_MINUTES - CALENDAR_START_MINUTES) / 60 },
+    (_, index) => CALENDAR_START_MINUTES + index * 60,
+  );
+
+  return (
+    <section className="schedule-page schedule-loading-page" role="status" aria-label="Loading Team Schedule" aria-busy="true">
+      <span className="schedule-visually-hidden">Loading Team Schedule...</span>
+      <div aria-hidden="true">
+        <header className="schedule-header">
+          <div className="schedule-skeleton-heading">
+            <span className="schedule-skeleton-line schedule-skeleton-eyebrow" />
+            <span className="schedule-skeleton-line schedule-skeleton-title" />
+            <span className="schedule-skeleton-line schedule-skeleton-subtitle" />
+          </div>
+          <div className="schedule-header-actions">
+            <span className="schedule-skeleton-line schedule-skeleton-tabs" />
+            <span className="schedule-skeleton-line schedule-skeleton-action" />
+          </div>
+        </header>
+        <section className="schedule-filters">
+          <div className="schedule-filterbar">
+            {['People', 'Department', 'View', 'Time range'].map((label, index) => (
+              <div key={label} className={index === 0 ? 'schedule-people-filter schedule-skeleton-filter' : 'schedule-filter-field schedule-skeleton-filter'}>
+                <span className="schedule-filter-control-label">{label}</span>
+                <span className="schedule-skeleton-line schedule-skeleton-control" />
+              </div>
+            ))}
+            <div className="schedule-filter-summary schedule-skeleton-filter">
+              <span>Showing</span>
+              <span className="schedule-skeleton-line schedule-skeleton-summary" />
+            </div>
+          </div>
+        </section>
+        <section className="schedule-panel team-panel schedule-skeleton-panel">
+          <div className="schedule-panel-heading">
+            <div className="schedule-skeleton-heading">
+              <span className="schedule-skeleton-line schedule-skeleton-eyebrow" />
+              <span className="schedule-skeleton-line schedule-skeleton-panel-title" />
+              <span className="schedule-skeleton-line schedule-skeleton-panel-copy" />
+            </div>
+            <span className="schedule-skeleton-line schedule-skeleton-legend" />
+          </div>
+          <div className="schedule-calendar-scroll">
+            <div className="schedule-calendar-stage">
+              <div className="schedule-calendar-head-row">
+                <div className="schedule-calendar-time-head">Time</div>
+                {WEEKDAYS.map((day) => (
+                  <div className="schedule-calendar-day-head" key={day}>
+                    <strong>{DAY_LABELS[day]}</strong>
+                    <span className="schedule-skeleton-line schedule-skeleton-date" />
+                  </div>
+                ))}
+              </div>
+              <div className="schedule-calendar-body">
+                <div className="schedule-time-axis">
+                  {hours.map((minutes) => (
+                    <div key={minutes}>{formatClock(minutesToClock(minutes))}</div>
+                  ))}
+                </div>
+                {WEEKDAYS.map((day, index) => (
+                  <div className="schedule-calendar-day schedule-skeleton-day" key={day}>
+                    {[0, 2, 4].includes(index) && (
+                      <span className={'schedule-skeleton-line schedule-skeleton-ghost schedule-skeleton-ghost-' + index} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  );
+}
+
 export function SchedulePage() {
   const { member, session } = useAuth();
   const queryClient = useQueryClient();
@@ -455,7 +532,7 @@ export function SchedulePage() {
     selectedBlockIndex === null ? null : watchedBlocks[selectedBlockIndex] ?? null;
 
   if (teamQuery.isPending || mineQuery.isPending) {
-    return <section className="schedule-state">Loading Team Schedule...</section>;
+    return <SchedulePageSkeleton />;
   }
 
   if (teamQuery.isError || mineQuery.isError) {
@@ -554,7 +631,11 @@ export function SchedulePage() {
               Shifts
             </button>
           </div>
-          {!configuring && <button className="schedule-button primary" onClick={enterConfiguration}>Configure My Schedule</button>}
+          {!configuring && ownSchedule && (
+            <button className="schedule-button primary" onClick={enterConfiguration}>
+              Configure My Schedule
+            </button>
+          )}
         </div>
       </header>
 
@@ -962,14 +1043,17 @@ export function SchedulePage() {
           )}
 
           {!ownSchedule && !configuring && (
-            <section className="schedule-empty hero">
+            <section className="schedule-empty hero schedule-setup-notice" aria-labelledby="schedule-setup-heading" role="status">
               <div className="schedule-empty-icon" aria-hidden="true">↔</div>
-              <h2>Your schedule is ready to configure</h2>
-              <p>
-                Generate a base schedule, mark rest days, then redistribute your hours
-                while keeping the team view visible.
-              </p>
-              <button className="schedule-button primary" onClick={enterConfiguration}>
+              <div className="schedule-setup-copy">
+                <p className="page-kicker">YOUR AVAILABILITY</p>
+                <h2 id="schedule-setup-heading">You haven't set your schedule yet</h2>
+                <p>
+                  Add your weekly hours and rest days so teammates know when you're available.
+                  You can still Time In without a schedule.
+                </p>
+              </div>
+              <button type="button" className="schedule-button primary" onClick={enterConfiguration}>
                 Configure My Schedule
               </button>
             </section>

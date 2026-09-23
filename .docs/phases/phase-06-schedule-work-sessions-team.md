@@ -644,3 +644,11 @@ The fine-tuning dropdown disables rest-day destinations; changing a rest day to 
 All draft block updates reconcile the rest-day set, and final submission still validates against conflicting rest days.
 Time In remains independent of planned availability. A session recorded on an unscheduled or inferred rest day contributes to actual work in Shifts but never creates a planned block.
 These inferred labels do not represent independently persisted rest-day preferences.
+
+## Figma-aligned page gutters, compact setup notice and loading skeleton
+
+The workspace content shell already supplies an approximately 42px gutter; Schedule no longer adds an additional 28px horizontal route gutter. This restores the close-to-frame left and right spacing of Team Schedule Figma frame `2:1948` while leaving other routes unchanged.
+
+For members without a saved schedule, a compact informational notice appears between the filters and merged Team Schedule table. It explains why setting planned availability helps teammates, offers one Configure My Schedule action and explicitly confirms that Time In remains available without a planned schedule. The header action appears for members with an existing schedule, avoiding duplicate setup actions for first-time members.
+
+While own and team schedule requests load, Schedule displays an accessible, reduced-motion-aware skeleton matching the page header, filters, seven-day calendar and grid dimensions instead of an isolated loading message. A setup notice is never shown until the own schedule request resolves. Browser acceptance coverage now targets the loading status rather than visible loading copy.

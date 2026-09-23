@@ -193,16 +193,43 @@ describe('SchedulePage', () => {
     );
   });
 
+  it('renders a full-sized Figma-shaped skeleton without premature empty-state messaging', () => {
+    mocks.apiFetch.mockImplementation((path: string) => {
+      if (path === '/schedule/team' || path === '/schedule/me') {
+        return new Promise(() => {});
+      }
+      throw new Error('Unexpected request: ' + path);
+    });
+    const { container } = renderPage();
+    expect(screen.getByRole('status', { name: 'Loading Team Schedule' })).toHaveAttribute('aria-busy', 'true');
+    expect(container.querySelectorAll('.schedule-skeleton-filter')).toHaveLength(5);
+    expect(container.querySelectorAll('.schedule-skeleton-day')).toHaveLength(7);
+    expect(container.querySelector('.schedule-calendar-stage')).not.toBeNull();
+    expect(screen.queryByRole('heading', { name: "You haven't set your schedule yet" })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Configure My Schedule' })).not.toBeInTheDocument();
+  });
+
   it('shows an intentional empty state and permitted teammate availability', async () => {
     renderPage();
 
     expect(
       await screen.findByRole('heading', {
-        name: 'Your schedule is ready to configure',
+        name: 'You haven't set your schedule yet',
       }),
     ).toBeInTheDocument();
     expect(screen.getByText('Member Two')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: /You haven't set your schedule yet/i })).toBeInTheDocument();
+    expect(screen.getByText(/You can still Time In without a schedule/)).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Configure My Schedule' })).toHaveLength(1);
     expect(screen.getByText('9:00 AM - 5:00 PM')).toBeInTheDocument();
+  });
+
+  it('does not display the setup notice once the signed-in member has a saved schedule', async () => {
+    mockExistingSchedule();
+    renderPage();
+    await screen.findByTitle('Member One: 9:00 AM - 5:00 PM');
+    expect(screen.queryByRole('status', { name: /You haven't set your schedule yet/i })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Configure My Schedule' })).toHaveLength(1);
   });
 
   it('shows an actual Sunday schedule as a workday, with its entire block inset from the grid edges', async () => {
@@ -257,7 +284,7 @@ describe('SchedulePage', () => {
     renderPage();
 
     await screen.findByRole('heading', {
-      name: 'Your schedule is ready to configure',
+      name: 'You haven't set your schedule yet',
     });
     expect(screen.getByText('Member Two')).toBeInTheDocument();
 
@@ -340,7 +367,7 @@ describe('SchedulePage', () => {
     renderPage();
 
     await screen.findByRole('heading', {
-      name: 'Your schedule is ready to configure',
+      name: 'You haven't set your schedule yet',
     });
     await user.click(
       screen.getAllByRole('button', { name: 'Configure My Schedule' })[0],
@@ -400,7 +427,7 @@ describe('SchedulePage', () => {
   it('shows a single completion action and keeps editing help collapsed', async () => {
     const user = userEvent.setup();
     renderPage();
-    await screen.findByRole('heading', { name: 'Your schedule is ready to configure' });
+    await screen.findByRole('heading', { name: 'You haven't set your schedule yet' });
     await user.click(screen.getAllByRole('button', { name: 'Configure My Schedule' })[0]);
 
     expect(screen.getAllByRole('button', { name: 'Done configuring' })).toHaveLength(1);
@@ -419,7 +446,7 @@ describe('SchedulePage', () => {
   it('generates a weekly draft, selects a block, adjusts it and cancels without saving', async () => {
     const user = userEvent.setup();
     renderPage();
-    await screen.findByRole('heading', { name: 'Your schedule is ready to configure' });
+    await screen.findByRole('heading', { name: 'You haven't set your schedule yet' });
     await user.click(screen.getAllByRole('button', { name: 'Configure My Schedule' })[0]);
     expect(screen.getByText('Select one of your schedule blocks.')).toBeInTheDocument();
     await user.clear(screen.getByRole('spinbutton', { name: 'Hours per week' }));
@@ -440,7 +467,7 @@ describe('SchedulePage', () => {
   it('toggles rest days and rejects exceeding the configured limit', async () => {
     const user = userEvent.setup();
     renderPage();
-    await screen.findByRole('heading', { name: 'Your schedule is ready to configure' });
+    await screen.findByRole('heading', { name: 'You haven't set your schedule yet' });
     await user.click(screen.getAllByRole('button', { name: 'Configure My Schedule' })[0]);
     await user.clear(screen.getByRole('spinbutton', { name: 'Hours per week' }));
     await user.type(screen.getByRole('spinbutton', { name: 'Hours per week' }), '20');

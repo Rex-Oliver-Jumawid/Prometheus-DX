@@ -170,7 +170,7 @@ test('Phase 6 loading, error, long-content, and correction visual states', async
     await route.continue();
   });
   await page.goto('/schedule');
-  await expect(page.getByText('Loading Team Schedule...')).toBeVisible();
+  await expect(page.getByRole('status', { name: 'Loading Team Schedule' })).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('schedule-loading.png'),
     fullPage: false,

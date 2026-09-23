@@ -315,3 +315,130 @@
   .schedule-config-drawer { padding: 12px; }
   .schedule-config-footer .schedule-form-actions { gap: 7px; }
 }
+
+/* Team Schedule Figma alignment: the shell already supplies ~42px gutters.
+   Avoid adding the previous extra 28px route-level padding. */
+.schedule-page {
+  padding-inline: 0;
+}
+.schedule-empty.hero.schedule-setup-notice {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  justify-items: initial;
+  gap: 12px;
+  padding: 13px 15px;
+  text-align: left;
+}
+.schedule-setup-notice .schedule-empty-icon {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  font-size: 16px;
+}
+.schedule-setup-copy {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+.schedule-setup-copy .page-kicker {
+  margin-bottom: 3px;
+}
+.schedule-empty.hero.schedule-setup-notice h2 {
+  margin: 0 0 3px;
+  font-size: 12px;
+  font-weight: 770;
+  line-height: 1.4;
+}
+.schedule-empty.hero.schedule-setup-notice .schedule-setup-copy > p:last-child {
+  max-width: none;
+  margin: 0;
+  font-size: 9px;
+  line-height: 1.55;
+}
+.schedule-setup-notice .schedule-button {
+  flex: 0 0 auto;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* Full-route skeleton keeps the Figma header, filters and merged table in
+   place while both own schedule and team schedule requests resolve. */
+.schedule-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.schedule-loading-page > [aria-hidden="true"] {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.schedule-skeleton-heading {
+  display: grid;
+  justify-items: start;
+  gap: 5px;
+  min-width: 0;
+}
+.schedule-skeleton-line {
+  display: block;
+  background: linear-gradient(
+    105deg,
+    rgba(161, 142, 131, .11) 0%,
+    rgba(255, 255, 255, .73) 45%,
+    rgba(161, 142, 131, .11) 85%
+  );
+  background-size: 220% 100%;
+  border-radius: 8px;
+  animation: schedule-skeleton-shimmer 1.7s ease-in-out infinite;
+}
+.schedule-skeleton-eyebrow { width: 96px; height: 7px; border-radius: 3px; }
+.schedule-skeleton-title { width: 151px; height: 28px; border-radius: 9px; }
+.schedule-skeleton-subtitle { width: min(330px, 75vw); max-width: 100%; height: 10px; }
+.schedule-skeleton-tabs { width: 112px; height: 30px; }
+.schedule-skeleton-action { width: 135px; height: 30px; }
+.schedule-skeleton-filter > span:first-child { display: block; }
+.schedule-skeleton-filter .schedule-skeleton-control { height: 36px; width: 100%; margin: 0; border-radius: 10px; }
+.schedule-skeleton-summary { height: 12px; width: 150px; max-width: 100%; margin-top: 10px; }
+.schedule-skeleton-panel-title { height: 13px; width: 125px; }
+.schedule-skeleton-panel-copy { height: 9px; width: min(370px, 68vw); max-width: 100%; }
+.schedule-skeleton-legend { height: 9px; width: 166px; max-width: 100%; }
+.schedule-skeleton-date { height: 6px; width: 36px; margin-top: 5px; }
+.schedule-skeleton-day { position: relative; }
+.schedule-skeleton-ghost {
+  position: absolute;
+  width: calc(100% - 12px);
+  left: 6px;
+  height: 176px;
+  top: 94px;
+  border: 1px solid rgba(116, 104, 94, .08);
+  border-radius: 8px;
+  opacity: .85;
+}
+.schedule-skeleton-ghost-2 { top: 50px; height: 126px; }
+.schedule-skeleton-ghost-4 { top: 181px; height: 212px; }
+@keyframes schedule-skeleton-shimmer {
+  from { background-position: 180% 0; }
+  to { background-position: -65% 0; }
+}
+@media (max-width: 980px) {
+  /* The loaded calendar uses the compact week at this breakpoint. The
+     skeleton retains scrollable day columns so its contents remain visible. */
+  .schedule-loading-page .schedule-calendar-stage { display: block; }
+  .schedule-loading-page .schedule-calendar-scroll { overflow-x: auto; }
+}
+@media (max-width: 640px) {
+  .schedule-page { padding-inline: 0; }
+  .schedule-empty.hero.schedule-setup-notice { align-items: flex-start; padding: 12px; }
+  .schedule-setup-notice .schedule-button { width: 100%; margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .schedule-skeleton-line { animation: none; background-size: 100% 100%; }
+}
