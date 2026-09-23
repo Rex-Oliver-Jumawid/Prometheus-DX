@@ -527,6 +527,7 @@ export class ProjectWorkflowService {
         select: {
           stageId: true,
           position: true,
+          title: true,
           stage: { select: { projectId: true } },
           _count: {
             select: {
