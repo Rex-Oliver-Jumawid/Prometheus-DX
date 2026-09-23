@@ -152,6 +152,26 @@ describe('ProjectChatService', () => {
     expect(db.projectMessage.update).toHaveBeenCalledTimes(1);
   });
 
+  it('rejects stale edits without overwriting a newer message', async () => {
+    const latestEdit = new Date('2026-09-23T02:00:00.000Z');
+    const { service, db } = setup({
+      original: { id: messageId, memberId, editedAt: latestEdit },
+    });
+    await expect(
+      service.edit(member, projectId, messageId, {
+        body: 'Overwrites newer text',
+        expectedEditedAt: null,
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(db.projectMessage.update).not.toHaveBeenCalled();
+    await expect(
+      service.edit(member, projectId, messageId, {
+        body: 'Edited update',
+        expectedEditedAt: latestEdit.toISOString(),
+      }),
+    ).resolves.toMatchObject({ body: 'Edited update' });
+  });
+
   it('rejects archived Project writes and nonexistent Project reads', async () => {
     const archived = setup({
       project: { id: projectId, leadMemberId: leadId, members: [], archivedAt: new Date() },
