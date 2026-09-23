@@ -217,7 +217,7 @@ The existing component loading test now checks four skeleton rows, the busy stat
 The user pulled commit `cb9dceb` and ran `pnpm exec vitest run --config vitest.ui.config.ts src/features/notifications/NotificationsPage.test.tsx` on 2026-09-23.
 The focused UI verification passed: one test file and all nine tests passed in 2.22 seconds, including the updated loading skeleton test.
 Vite displayed its existing CJS Node API deprecation warning; no tests failed.
-A production web build and throttled-network visual inspection of the new skeleton remain pending.
+The user ran `git pull --ff-only` and `pnpm build:web` on 2026-09-23 after the focused UI test. Vite 6.4.3 completed the production web build successfully (209 modules transformed, 2.27 seconds), including `NotificationsPage-6dp1ch8h.js` (8.15 kB, gzip 2.61 kB) and `NotificationsPage-0Q2Tbf9N.css` (7.15 kB, gzip 2.01 kB). The existing 756.20 kB main JavaScript chunk warning is non-fatal and separate from this UI-only change. Throttled-network desktop/mobile visual inspection of the new skeleton remains pending.
 
 ## Sidebar Unread Badge
 
