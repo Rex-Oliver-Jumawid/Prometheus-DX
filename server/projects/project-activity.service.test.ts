@@ -22,7 +22,12 @@ const event = {
 function setup(options: {
   project?: { id: string } | null;
   matchingCursor?: { id: string; createdAt: Date } | null;
-  rows?: typeof event[];
+  rows?: Array<
+    Omit<typeof event, 'outcomeId' | 'metadata'> & {
+      outcomeId: string | null;
+      metadata: Record<string, unknown>;
+    }
+  >;
 } = {}) {
   const db = {
     project: { findUnique: vi.fn().mockResolvedValue(options.project === undefined ? { id: projectId } : options.project) },
