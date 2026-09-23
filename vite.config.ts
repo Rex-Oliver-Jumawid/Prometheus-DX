@@ -1,25 +1,32 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
-const apiPort = Number(process.env.E2E_API_PORT ?? '3001');
-const webPort = Number(process.env.E2E_WEB_PORT ?? '5173');
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
 
-const apiProxy = {
-  '/api': {
-    target: `http://127.0.0.1:${apiPort}`,
-    changeOrigin: true,
-  },
-};
+  const webPort = Number(
+    process.env.E2E_WEB_PORT ?? env.VITE_DEV_PORT ?? 5173,
+  );
+  const apiPort = Number(process.env.E2E_API_PORT ?? env.PORT ?? 3001);
 
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: webPort,
-    strictPort: Boolean(process.env.E2E_WEB_PORT),
-    proxy: apiProxy,
-  },
-  preview: {
-    port: 4173,
-    proxy: apiProxy,
-  },
+  const apiProxy = {
+    '/api': {
+      target: `http://127.0.0.1:${apiPort}`,
+      changeOrigin: true,
+    },
+  };
+
+  return {
+    plugins: [react()],
+    server: {
+      port: webPort,
+      strictPort: true,
+      proxy: apiProxy,
+    },
+    preview: {
+      port: Number(env.VITE_PREVIEW_PORT || 4173),
+      strictPort: true,
+      proxy: apiProxy,
+    },
+  };
 });
