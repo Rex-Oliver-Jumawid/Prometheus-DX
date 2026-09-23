@@ -30,6 +30,7 @@ export const CreateProjectMessageSchema = z.object({
 
 export const EditProjectMessageSchema = z.object({
   body: z.string().trim().min(1, 'Enter a message.').max(4000),
+  expectedEditedAt: z.string().datetime().nullable(),
 }).strict();
 
 export type ProjectMessage = z.infer<typeof ProjectMessageSchema>;
