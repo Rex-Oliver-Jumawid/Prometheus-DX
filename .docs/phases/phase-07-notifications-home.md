@@ -179,7 +179,7 @@ The API contract, controller, service, and database integration tests have been 
 They cover query validation, authenticated member forwarding, recipient isolation, joined display context, deterministic tie ordering, unread counts, idempotent single and bulk reads, and zero unread state.
 The user ran `RUN_DATABASE_INTEGRATION=1 pnpm exec vitest run shared/contracts/notification.test.ts server/notifications/notifications.controller.test.ts server/notifications/notifications.service.test.ts server/notifications/notifications.service.integration.test.ts` on 2026-09-22.
 All four test files passed, with 12 tests passing in total.
-Checkpoint D focused API verification is satisfied; typechecking and broader regression remain pending.
+Checkpoint D focused API verification passed at that stage; typechecking and related regressions were subsequently completed as recorded in Checkpoint H.
 
 ## Notifications Inbox UI
 
@@ -205,7 +205,7 @@ Exact visual parity and responsive quality remain pending manual browser compari
 The user ran `pnpm exec vitest run --config vitest.ui.config.ts src/features/notifications/NotificationsPage.test.tsx` on 2026-09-22.
 The focused UI run passed: one test file and all nine tests passed.
 Checkpoint E focused component verification is satisfied.
-Browser journey, typechecking, broader regression, and manual visual comparison remain pending.
+The browser journey, typechecking, and targeted regressions subsequently passed as recorded below; manual visual comparison remains pending.
 
 ## Sidebar Unread Badge
 
@@ -220,14 +220,14 @@ The existing utility navigation function still owns Registry visibility, and no 
 The user ran `pnpm exec vitest run --config vitest.ui.config.ts src/features/shell/AppShell.notifications.test.tsx` on 2026-09-22.
 The focused shell run passed: one test file and all four tests passed.
 Checkpoint F focused component verification is satisfied.
-Typechecking, broader regression, and manual visual comparison remain pending.
+Typechecking and the targeted regression suite subsequently passed as recorded below; manual visual comparison remains pending.
 
 ## Focused Browser Journey
 
 `tests/e2e/phase7-notifications.spec.ts` now covers one isolated Chromium journey with separate authenticated Worker and Project Lead accounts.
 The test creates a Project and Outcome fixture, submits output through the Worker UI, checks the Lead's unread sidebar badge and notification, opens the canonical Outcome route, uses browser Back, and reloads the inbox to confirm persisted read state.
 The fixture removes its notifications before deleting its members because notification recipient and actor foreign keys intentionally restrict Member deletion.
-Checkpoint G browser verification is pending the user's focused Playwright run.
+Checkpoint G browser verification was pending at test creation; the isolated-port focused rerun below subsequently passed.
 The first user invocation of `pnpm test:e2e:focused -- tests/e2e/phase7-notifications.spec.ts -g "submission notification opens Outcome"` unexpectedly selected 297 tests because the focused runner forwarded pnpm's literal leading `--` to Playwright.
 That broad run reported 38 passed, 42 failed, and 217 not run; Firefox and WebKit were not installed, and several unrelated Chromium tests also failed.
 The Phase 7 Chromium case failed while waiting for the unread badge.
@@ -274,9 +274,23 @@ The user ran `pnpm lint` on 2026-09-23.
 ESLint completed successfully with no reported errors.
 The user reran `pnpm typecheck` after the browser-regression fixes on 2026-09-23.
 The app, server, and Node TypeScript configurations completed successfully with no errors.
-The production build, final diff review, and manual visual comparison remain pending.
+The user subsequently ran `pnpm build` on 2026-09-23. Vite reported a successful production web build (209 modules transformed, 2.15 seconds), including a separate Notifications page chunk. The API build invoked `tsc -p tsconfig.build.json` with no error in the supplied log, but its final process exit status was not captured because the user's terminal session crashed. The Vite warning about a 756.20 kB main JavaScript chunk is non-fatal and should be assessed separately as a performance concern; it is not specific to the 7.06 kB Notifications page chunk.
+The GitHub branch's Vercel deployment reported success for commit `5a92b11`, which does not independently establish local API build exit status or manual Figma fidelity.
+The user confirmed their local `phase-7-notifications` HEAD and `origin/phase-7-notifications` both point to `5a92b11` with a clean working tree.
+The final source review found no need to repeat the successful focused tests. Manual browser comparison and confirmation of the local API build exit status remain open.
 A full browser suite is not warranted by this diff review; the accidental broad run used another worktree's servers and included uninstalled Firefox and WebKit browsers, so it is not reliable Phase 7 regression evidence.
 Manual comparison against Figma node `11:2301` remains pending.
+
+### Final manual acceptance checklist
+
+- Compare the authenticated Notifications screen at the Figma reference size (1244 × 682), a medium viewport, and a narrow/mobile viewport.
+- Confirm lower-sidebar Notifications placement, orange unread badge, profile placement, and no duplicate top-right notification control.
+- Check the glass panel, header, All/Unread tabs, notification rows, read/unread accents, and responsive spacing against Figma.
+- Exercise a real account with no notifications and one with unread records; mark one and all as read, refresh, and confirm server-backed persistence.
+- Verify navigation to a Project and an Outcome, browser Back/Forward, keyboard focus, and long-name wrapping.
+- Verify loading, filtered-empty, error/retry, and unavailable linked-context states without horizontal overflow or clipped controls.
+- Record screenshots, browser/viewport, discrepancies, and any accessibility defects here before merging.
+- Confirm the local API build exits successfully if the earlier terminal crash interrupted the final status.
 
 ## Security and Authorization
 
@@ -600,8 +614,9 @@ The first migration application failed with `P3018` / `42710` because the target
 The user's read-only inspection found zero rows and an applied earlier Phase 7 migration absent from this branch.
 The user then reran schema validation and client generation, marked the failed migration attempt rolled back, and applied the revised migration successfully.
 The backend event tests passed through the first run and focused rerun described above.
-API, UI, browser, typecheck, broader regression, and manual acceptance verification remain pending.
-No backend notification creation, API, or frontend feature has been implemented yet.
+The Notifications backend event and API checks, nine inbox component tests, four shell/inbox component tests, one focused Chromium notification journey, and all targeted Chromium regressions described in Checkpoint H passed according to recorded user output.
+The user also reported successful lint and typechecking runs, and Vite built the web production bundle successfully. The local API build's final exit code was not captured.
+Manual Figma comparison and a final confirmation of the local API build exit status remain pending.
 
 No Phase 7 implementation should be considered delivered merely because this journal and the Figma references exist.
 
@@ -611,19 +626,18 @@ Phase 5 remains independently open for final acceptance and regression.
 
 ## Technical Debt
 
-None introduced by the Phase 7 planning and UI-source-of-truth update.
-
-Any notification event that cannot be created atomically with its source domain transition should be documented explicitly when implemented.
+The inbox currently returns the full recipient list without pagination; consider cursor pagination before notification volume makes unbounded retrieval costly.
+The recorded database contains a legacy applied migration (`20260918020000_phase_07_notifications`) absent from this branch. The additive new migration deployed successfully, but reconcile migration history before running `prisma migrate dev` against that database or using it as the baseline for other branches.
+Vite reports a 756.20 kB main JavaScript chunk; investigate separately if optimizing application startup performance. The Notifications page itself builds as a separate, substantially smaller chunk.
+Mentions/replies await Phase 9, and the additional Figma Projects filter remains intentionally deferred from the initial All/Unread implementation.
 
 ## Recommendations and Next Approach
 
-Start with the Notifications backend foundation and event creation.
-
-Then implement the Figma-aligned Notifications inbox and sidebar unread state.
-
-Verify notification navigation and read-state persistence before beginning the Home slice.
-
-After Notifications is stable, build Home as an aggregation surface over canonical data and compare it directly against Figma node `189:3`.
+The Notifications backend, API, inbox, and shared sidebar badge are implemented on `phase-7-notifications`.
+Confirm the local API production build exit status if the original terminal crashed before returning it, then complete the manual browser comparison against Figma node `11:2301` at desktop, medium, and narrow viewports.
+Check All/Unread, Mark all as read, individual read/navigation, unread badge, empty/error states, keyboard focus, text wrapping, and overflow with realistic recipient data.
+Inspect and record intentional differences from the Figma sample: Mentions and Projects tabs are not part of the initial All/Unread scope; mentions/replies depend on Phase 9.
+Do not merge into `main` until manual acceptance and final review are recorded. Once integrated and stable, implement Home as a separate slice against Figma node `189:3`, aggregating canonical data.
 
 ## Phase Exit Result
 
