@@ -294,6 +294,9 @@ function createDatabase(
         .fn()
         .mockResolvedValue({ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }),
     },
+    activityLog: {
+      create: vi.fn().mockResolvedValue({ id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' }),
+    },
   };
   const transaction = vi.fn(
     async (operation: (client: typeof database) => unknown) =>
@@ -353,6 +356,12 @@ describe('ProjectWorkflowService', () => {
     await expect(
       service.updateStage(lead, projectId, stageId, { name: 'Research' }),
     ).resolves.toMatchObject({ name: 'Research' });
+    expect(database.activityLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ projectId, action: 'STAGE_CREATED', entityId: stageId }),
+    });
+    expect(database.activityLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ projectId, action: 'STAGE_UPDATED', entityId: stageId }),
+    });
   });
 
   it.each([
