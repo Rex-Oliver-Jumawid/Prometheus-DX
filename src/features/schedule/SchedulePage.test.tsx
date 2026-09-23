@@ -313,6 +313,9 @@ describe('SchedulePage', () => {
       'true',
     );
     expect(await screen.findByText('Weekly work history')).toBeInTheDocument();
+    // A literal escaped newline in JSX previously appeared as visible "\\n" below the header.
+    expect(document.querySelector('.shifts-workspace')?.firstElementChild).toHaveClass('schedule-compat-label');
+    expect(document.querySelector('.shifts-workspace')?.firstChild?.nodeType).toBe(Node.ELEMENT_NODE);
     expect(screen.getAllByText('5h').length).toBeGreaterThan(0);
 
     await user.click(
