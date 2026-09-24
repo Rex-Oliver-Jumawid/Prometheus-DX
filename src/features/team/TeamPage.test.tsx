@@ -75,7 +75,7 @@ describe('TeamPage', () => {
         'People, availability, current work status, and weekly commitment at a glance.',
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText('Member One')).toBeInTheDocument();
+    expect(await screen.findByText('Member One')).toBeInTheDocument();
     expect(screen.getByText('Designer / Creative')).toBeInTheDocument();
     expect(screen.getByText('Working Now')).toBeInTheDocument();
     expect(screen.getByText(/9:00 AM.*1:00 PM/)).toBeInTheDocument();
