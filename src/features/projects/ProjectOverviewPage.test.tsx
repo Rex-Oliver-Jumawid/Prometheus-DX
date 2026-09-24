@@ -108,15 +108,18 @@ describe('ProjectOverviewPage status mutation', () => {
     });
   });
 
-  it('loads the Project Members surface on the Project overview', async () => {
+  it('shows the Project Members sidebar only on Project Chat', async () => {
     renderPage();
+
+    expect(screen.queryByRole('heading', { name: 'Project Members' })).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('tab', { name: 'Chat' }));
 
     expect(
       await screen.findByRole('heading', { name: 'Project Members' }),
     ).toBeVisible();
-    expect(
-      await screen.findByLabelText('Project access for Project Member'),
-    ).toHaveValue('CAN_VIEW');
+    expect(await screen.findByLabelText('Project access for Project Member')).toHaveValue('CAN_VIEW');
+    expect(screen.getByText('Project Lead', { selector: '.pw-chat-member-role' })).toBeVisible();
+    expect(screen.getByText('Project Member')).toBeVisible();
 
     await waitFor(() =>
       expect(apiFetch).toHaveBeenCalledWith(
@@ -125,6 +128,8 @@ describe('ProjectOverviewPage status mutation', () => {
         expect.objectContaining({ accessToken: 'token' }),
       ),
     );
+    fireEvent.click(screen.getByRole('tab', { name: 'Content' }));
+    expect(screen.queryByRole('heading', { name: 'Project Members' })).not.toBeInTheDocument();
   });
 
   it('opens the Project Activity tab and loads persisted events', async () => {
