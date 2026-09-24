@@ -1902,9 +1902,10 @@ Project Lead may grant CAN_EDIT
 
 Outcome Membership determines where a Member may work.
 
-Project Member access determines additional project-level editing capability.
+Project Member access determines project-level editing capability.
+A Project Member with `CAN_EDIT` is a Project editor for the actions defined in `.context/authorization.md`.
 
-Project Lead determines Project-management authority.
+Project Lead determines the remaining Lead-only authority, including Project Member access management and announcement pinning.
 
 Administrator determines organization-level administrative authority.
 
