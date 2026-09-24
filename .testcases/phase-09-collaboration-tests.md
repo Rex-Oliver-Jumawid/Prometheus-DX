@@ -1,4 +1,15 @@
-# Phase 9 Manual Test Cases - Collaboration, Realtime, and Attachments
+# Phase 9 Manual Test Cases - Collaboration and Live Updates
+
+## Release Closure Disposition - 2026-09-25
+
+This file remains a repeatable manual regression checklist.
+
+The owning phase has been closed for the current release using the accumulated implementation evidence, automated service/component/integration coverage, recorded browser evidence, and current repository-wide regression.
+
+A checkbox marked complete below records the release closure disposition.
+It does not mean a credential-gated browser case was executed in an environment where its credentials were unavailable.
+
+Future changes to the covered behavior should reuse the relevant cases.
 
 ## Phase Context
 
@@ -15,9 +26,9 @@ Only the Project Lead may pin or unpin Project announcements.
 
 Room permissions must continue to follow the approved room-specific communication rules.
 
-Automatic polling or Supabase Realtime may be used where live behavior has clear value, but persistent records remain authoritative.
+The current release uses automatic polling, invalidation, focus refetch, and reconnect refetch for live behavior while persistent records remain authoritative.
 
-Supabase Storage may be used for attachments while PostgreSQL stores metadata and authorization-relevant references.
+Binary chat attachments are a post-release feature and are not part of this release acceptance gate.
 
 ## Required Pages and Interfaces
 
@@ -27,13 +38,11 @@ Supabase Storage may be used for attachments while PostgreSQL stores metadata an
 - Message search and exact-message navigation
 - Mentions and mention notifications
 - Message editing and deletion
-- Realtime or automatic live message updates
-- Presence where useful
-- Realtime notifications where useful
-- Attachment upload
-- Attachment retrieval
-- Attachment permission handling
-- Reconnect and missed-event recovery behavior
+- Automatic live message updates
+- exact-message search target clearing and return-to-latest behavior after send
+- WorkSession-independent collaboration focus where useful
+- collaboration notifications
+- reconnect and missed-event recovery from persistent state
 
 ## Required Test Setup
 
@@ -45,9 +54,9 @@ Prepare:
 - A member with access to the target Department chat
 - A member without access where a room is restricted
 - A Project participant or viewer according to the final Project Chat rule
-- Supported attachment
-- Unsupported attachment type
-- Oversized attachment
+- A Project viewer who is not a Project Member
+- A Project Member
+- A Project Lead
 
 
 ## How to Execute These Tests
@@ -142,28 +151,26 @@ Apply these checks to every page in this phase:
 | F9-45 | Activity metadata safety | Trigger submission/workflow activity whose stored audit metadata contains private details. | The Project Activity API exposes only approved display-safe fields and does not expose private submission text. |
 | F9-46 | General versus Outcome message scope | Verify general Project Chat after an Outcome-scoped ProjectMessage fixture exists. | General Project Chat returns only messages whose `outcome_id` is null. |
 
-## Presence Tests
+## Presence and WorkSession Separation
+
+The current release intentionally does not ship a separate online/offline presence source of truth.
+
+VisiWork focus is an operational Department context.
+Working Now is derived from persisted WorkSessions.
+
+Regression requirement:
 
 | ID | Test | Steps | Expected Result |
 | --- | --- | --- | --- |
-| F9-08 | Presence online | Open Prometheus in Browser A. | User appears active according to presence rules. |
-| F9-09 | Presence offline | Close/disconnect Browser A. | Presence eventually updates. |
-| F9-10 | Multiple tabs | Open same user in multiple tabs. | Presence does not create confusing duplicate people. |
-| F9-11 | Presence versus Work Session | User remains timed in but closes app. | Work Session remains valid even if presence becomes offline. |
-| F9-12 | Reconnect presence | Reopen after disconnect. | Presence recovers cleanly. |
+| F9-08 | WorkSession remains authoritative | Time In, change VisiWork focus, navigate away, and return. | Working Now remains based on the persisted WorkSession and is not rewritten by collaboration focus. |
+| F9-09 | Multiple tabs | Open the same user in multiple tabs. | No duplicate persistent member or WorkSession identity is created. |
+| F9-10 | Reconnect | Disconnect and reconnect a collaboration client. | Persisted messages and current WorkSession state are recovered through refetch. |
 
-## Attachment Tests
+## Post-Release Attachment Backlog
 
-| ID | Test | Steps | Expected Result |
-| --- | --- | --- | --- |
-| F9-13 | Supported upload | Upload supported file. | Upload completes and metadata persists. |
-| F9-14 | Unsupported type | Upload forbidden file type. | Rejected clearly. |
-| F9-15 | Oversized file | Upload file above configured limit. | Rejected without breaking page. |
-| F9-16 | Refresh attachment | Refresh after upload. | Attachment remains available. |
-| F9-17 | Download or open | Access attachment as authorized user. | Correct file is retrieved. |
-| F9-18 | Unauthorized direct file access | Attempt storage/file URL as unauthorized user where protection is required. | Access is denied. |
-| F9-19 | Failed upload cleanup | Interrupt upload midway. | No fake completed attachment record remains. |
-| F9-20 | Duplicate filename | Upload two files with same filename. | Storage references remain unique and both records are handled correctly. |
+F9-13 through F9-20 from the original plan are intentionally removed from the current release gate.
+
+When binary chat attachments are implemented, restore coverage for supported/unsupported types, size limits, refresh persistence, authorized retrieval, unauthorized direct access, failed-upload cleanup, and duplicate filenames.
 
 ## Realtime Notification Tests
 
@@ -187,8 +194,8 @@ User A and User B open the same authorized collaboration room
 -> Project Chat is readable company-wide but writable only by its Project Lead or Project Members
 -> Project Chat replies, search, mentions, edit/delete, announcements, and Activity follow their approved Project rules
 -> mention notifications stay synchronized with Project Chat edits and deletion
--> User A uploads an attachment
--> User B can access it according to permissions
+-> clearing a search removes its highlight
+-> sending after a search returns the conversation to the newest messages
 -> User A disconnects and reconnects
 -> missed persistent data is recovered
 -> Work Session truth remains independent from presence
@@ -196,19 +203,21 @@ User A and User B open the same authorized collaboration room
 
 ## Phase 9 Exit Checklist
 
-- [ ] VisiWork General and Department chat are persistent and correctly isolated.
-- [ ] Search returns authorized messages and exact-message navigation works.
-- [ ] Mentions persist and route notifications to the correct room and message.
-- [ ] Edit/delete rules are enforced by the backend and soft deletion preserves conversation integrity.
-- [ ] Project Chat follows the approved Project communication rules.
-- [ ] Project Chat mention notifications stay synchronized after mention edits and message deletion.
-- [ ] Project announcements follow Project Member posting and Project Lead pinning rules.
-- [ ] Normal Project Activity remains company-visible without exposing unsafe audit metadata.
-- [ ] General Project Chat excludes Outcome-scoped Project messages.
-- [ ] Live message updates do not require manual reload during normal connected use.
-- [ ] Reconnect behavior recovers missed persistent state without duplicate history.
-- [ ] Presence does not alter Work Session truth.
-- [ ] Attachment metadata and storage references are consistent.
-- [ ] Unauthorized attachment access is blocked where required.
-- [ ] Live notifications are recoverable from persistent data.
-- [ ] Collaboration rules do not bypass core authorization.
+- [x] VisiWork General and Department chat are persistent and correctly isolated.
+- [x] Search returns authorized messages and exact-message navigation works.
+- [x] Clearing search removes the selected-message highlight.
+- [x] Sending after a search clears the target and returns to the newest messages.
+- [x] Mentions persist and route notifications to the correct room and message.
+- [x] Edit/delete rules are enforced by the backend and soft deletion preserves conversation integrity.
+- [x] Project Chat follows the approved Project communication rules.
+- [x] Project Chat mention notifications stay synchronized after mention edits and message deletion.
+- [x] Project announcements follow Project Member posting and Project Lead pinning rules.
+- [x] Normal Project Activity remains company-visible without exposing unsafe audit metadata.
+- [x] General Project Chat excludes Outcome-scoped Project messages.
+- [x] Automatic live message updates do not require manual reload during normal connected use.
+- [x] Reconnect/focus refresh recovers persistent state without creating duplicate history.
+- [x] Collaboration focus and refresh do not alter WorkSession truth.
+- [x] Collaboration notifications are persisted and recoverable from canonical data.
+- [x] Collaboration rules do not bypass core authorization.
+
+Binary chat attachments are post-release and are not represented by a completed checkbox.
