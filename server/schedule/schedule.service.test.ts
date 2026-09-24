@@ -10,6 +10,7 @@ const member = (overrides: Partial<Member> = {}): Member => ({
   email: 'member@example.com',
   fullName: 'Member One',
   departmentId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+  visiworkDepartmentId: null,
   workspaceRole: 'MEMBER',
   status: 'ACTIVE',
   position: null,
