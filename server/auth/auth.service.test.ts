@@ -19,6 +19,7 @@ const activeMember = {
   email: 'member@example.com',
   fullName: 'Member Example',
   departmentId: '11111111-1111-4111-8111-111111111111',
+  visiworkDepartmentId: null,
   workspaceRole: 'MEMBER',
   status: 'ACTIVE',
   position: null,
