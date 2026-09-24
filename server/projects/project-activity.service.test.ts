@@ -6,6 +6,7 @@ import { ProjectActivityService } from './project-activity.service';
 
 const projectId = '11111111-1111-4111-8111-111111111111';
 const member = { id: '22222222-2222-4222-8222-222222222222' } as Member;
+const contributor = { id: '66666666-6666-4666-8666-666666666666' } as Member;
 const cursor = '33333333-3333-4333-8333-333333333333';
 const event = {
   id: cursor,
@@ -20,17 +21,18 @@ const event = {
 };
 
 function setup(options: {
-  project?: { id: string } | null;
+  project?: { id: string; leadMemberId: string } | null;
   matchingCursor?: { id: string; createdAt: Date } | null;
   rows?: Array<
     Omit<typeof event, 'outcomeId' | 'metadata'> & {
       outcomeId: string | null;
       metadata: Record<string, unknown>;
+      outcome?: { title: string } | null;
     }
   >;
 } = {}) {
   const db = {
-    project: { findUnique: vi.fn().mockResolvedValue(options.project === undefined ? { id: projectId } : options.project) },
+    project: { findUnique: vi.fn().mockResolvedValue(options.project === undefined ? { id: projectId, leadMemberId: member.id } : options.project) },
     activityLog: {
       findFirst: vi.fn().mockResolvedValue(options.matchingCursor === undefined ? { id: cursor, createdAt: event.createdAt } : options.matchingCursor),
       findMany: vi.fn().mockResolvedValue(options.rows ?? [event]),
@@ -48,6 +50,7 @@ describe('ProjectActivityService', () => {
         id: cursor,
         actor: event.actorMember,
         outcomeId: event.outcomeId,
+        outcomeTitle: null,
         entityType: 'OutcomeSubmission',
         entityId: event.entityId,
         action: 'SUBMISSION_CREATED',
@@ -55,6 +58,7 @@ describe('ProjectActivityService', () => {
         createdAt: '2026-09-19T13:00:00.000Z',
       }],
       nextCursor: null,
+      scope: 'PROJECT',
     });
     expect(db.activityLog.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -63,6 +67,39 @@ describe('ProjectActivityService', () => {
         take: 26,
       }),
     );
+  });
+
+  it('limits non-leads to their own events and scopes pagination cursors to their identity', async () => {
+    const { db, service } = setup({
+      project: { id: projectId, leadMemberId: member.id },
+      rows: [{ ...event, actorMember: { id: contributor.id, fullName: 'Contributor' } }],
+    });
+    const response = await service.list(contributor, projectId, cursor);
+    expect(response.scope).toBe('PERSONAL');
+    expect(response.items[0].outcomeTitle).toBeNull();
+    expect(db.activityLog.findFirst).toHaveBeenCalledWith({
+      where: { id: cursor, projectId, actorMemberId: contributor.id },
+      select: { id: true, createdAt: true },
+    });
+    expect(db.activityLog.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          projectId,
+          actorMemberId: contributor.id,
+          OR: [
+            { createdAt: { lt: event.createdAt } },
+            { createdAt: event.createdAt, id: { lt: cursor } },
+          ],
+        },
+      }),
+    );
+    const foreignCursor = setup({
+      project: { id: projectId, leadMemberId: member.id },
+      matchingCursor: null,
+    });
+    await expect(foreignCursor.service.list(contributor, projectId, cursor))
+      .rejects.toBeInstanceOf(BadRequestException);
+    expect(foreignCursor.db.activityLog.findMany).not.toHaveBeenCalled();
   });
 
   it('paginates using a cursor belonging to this project', async () => {
@@ -119,6 +156,12 @@ describe('ProjectActivityService', () => {
     expect(response.items[0].outcomeId).toBeNull();
     expect(response.items[1].metadata).toEqual({});
     expect(JSON.stringify(response)).not.toContain('Private submission');
+  });
+
+  it('includes the referenced Outcome label when available', async () => {
+    const { service } = setup({ rows: [{ ...event, outcome: { title: 'Opportunity decision' } }] });
+    const response = await service.list(member, projectId);
+    expect(response.items[0].outcomeTitle).toBe('Opportunity decision');
   });
 
   it('allows display-safe feature titles but does not leak arbitrary metadata', async () => {

@@ -47,25 +47,27 @@ function safeMetadata(action: string, raw: unknown): Record<string, string> {
   return result;
 }
 
-/** Project activity is visible to every active authorized workspace member. */
+/** Leads receive the project audit trail; other members receive only their own events. */
 @Injectable()
 export class ProjectActivityService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async list(
-    _member: Member,
+    member: Member,
     projectId: string,
     cursor?: string,
   ): Promise<ProjectActivityPage> {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
-      select: { id: true },
+      select: { id: true, leadMemberId: true },
     });
     if (!project) throw new NotFoundException('Project not found.');
+    const scope = project.leadMemberId === member.id ? 'PROJECT' : 'PERSONAL';
+    const actorFilter = scope === 'PERSONAL' ? { actorMemberId: member.id } : {};
 
     const previous = cursor
       ? await this.prisma.activityLog.findFirst({
-          where: { id: cursor, projectId },
+          where: { id: cursor, projectId, ...actorFilter },
           select: { id: true, createdAt: true },
         })
       : null;
@@ -76,6 +78,7 @@ export class ProjectActivityService {
     const records = await this.prisma.activityLog.findMany({
       where: {
         projectId,
+        ...actorFilter,
         ...(previous
           ? {
               OR: [
@@ -87,6 +90,7 @@ export class ProjectActivityService {
       },
       include: {
         actorMember: { select: { id: true, fullName: true } },
+        outcome: { select: { title: true } },
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: PAGE_SIZE + 1,
@@ -98,6 +102,7 @@ export class ProjectActivityService {
         id: record.id,
         actor: record.actorMember,
         outcomeId: record.outcomeId,
+        outcomeTitle: record.outcome?.title ?? null,
         entityType: record.entityType,
         entityId: record.entityId,
         action: record.action,
@@ -105,6 +110,7 @@ export class ProjectActivityService {
         createdAt: record.createdAt.toISOString(),
       })),
       nextCursor: hasMore ? items[items.length - 1].id : null,
+      scope,
     };
   }
 }

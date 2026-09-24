@@ -7,6 +7,7 @@ export const ProjectActivitySchema = z.object({
     fullName: z.string(),
   }).nullable(),
   outcomeId: z.string().uuid().nullable(),
+  outcomeTitle: z.string().nullable(),
   entityType: z.string(),
   entityId: z.string().uuid(),
   action: z.string(),
@@ -17,6 +18,7 @@ export const ProjectActivitySchema = z.object({
 export const ProjectActivityPageSchema = z.object({
   items: z.array(ProjectActivitySchema),
   nextCursor: z.string().uuid().nullable(),
+  scope: z.enum(['PROJECT', 'PERSONAL']),
 });
 
 export type ProjectActivity = z.infer<typeof ProjectActivitySchema>;
