@@ -7,6 +7,7 @@ import { ProjectsModule } from './projects/projects.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { TeamModule } from './team/team.module';
 import { WorkSessionsModule } from './work-sessions/work-sessions.module';
+import { HomeModule } from './home/home.module';
 import { VisiWorkModule } from './visiwork/visiwork.module';
 
 @Module({
@@ -19,6 +20,7 @@ import { VisiWorkModule } from './visiwork/visiwork.module';
     ScheduleModule,
     WorkSessionsModule,
     TeamModule,
+    HomeModule,
     VisiWorkModule,
   ],
 })

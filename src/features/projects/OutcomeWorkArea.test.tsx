@@ -449,7 +449,9 @@ describe('Outcome Workspace - Empty State', () => {
       /No features have been defined yet\./,
     );
 
-    const addFeatureBtn = screen.getByRole('button', { name: '＋ Add feature' });
+    const addFeatureBtn = screen.getByRole('button', {
+      name: 'Add a feature to this outcome',
+    });
     fireEvent.click(addFeatureBtn);
 
     const nameInput = screen.getByPlaceholderText('Feature name');

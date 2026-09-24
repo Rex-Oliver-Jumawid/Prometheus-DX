@@ -147,7 +147,7 @@ test('member configures, refreshes, edits, removes, and returns from Shifts to T
   ).toBeVisible();
   await expect(
     page.getByRole('heading', {
-      name: 'Your schedule is ready to configure',
+      name: "You haven't set your schedule yet",
     }),
   ).toBeVisible();
   await expect(page.getByText('Schedule Teammate')).toBeVisible();
@@ -156,11 +156,12 @@ test('member configures, refreshes, edits, removes, and returns from Shifts to T
     .getByRole('button', { name: 'Configure My Schedule' })
     .first()
     .click();
+  await page.getByText('Fine-tune blocks using time inputs').click();
   await page.getByRole('button', { name: 'Add Block' }).click();
-  await page.getByLabel('Target hours per week').fill('4');
+  await page.getByRole('spinbutton', { name: 'Hours per week' }).fill('4');
   await page.getByLabel('Start', { exact: true }).fill('08:00');
   await page.getByLabel('End', { exact: true }).fill('12:00');
-  await page.getByRole('button', { name: 'Save Schedule' }).click();
+  await page.getByRole('button', { name: 'Done configuring' }).click();
   await expect(
     page.getByRole('heading', { name: 'Configure My Schedule' }),
   ).toHaveCount(0);
@@ -186,8 +187,9 @@ test('member configures, refreshes, edits, removes, and returns from Shifts to T
     page.getByRole('heading', { name: 'Configure My Schedule' }),
   ).toBeVisible();
 
+  await page.getByText('Fine-tune blocks using time inputs').click();
   await page.getByLabel('End', { exact: true }).fill('13:00');
-  await page.getByRole('button', { name: 'Save Schedule' }).click();
+  await page.getByRole('button', { name: 'Done configuring' }).click();
   await expect(
     page.getByRole('heading', { name: 'Configure My Schedule' }),
   ).toHaveCount(0);
@@ -198,8 +200,9 @@ test('member configures, refreshes, edits, removes, and returns from Shifts to T
     .getByRole('button', { name: 'Configure My Schedule' })
     .first()
     .click();
+  await page.getByText('Fine-tune blocks using time inputs').click();
   await page.getByRole('button', { name: 'Remove block 1' }).click();
-  await page.getByRole('button', { name: 'Save Schedule' }).click();
+  await page.getByRole('button', { name: 'Done configuring' }).click();
   await expect(
     page.getByRole('heading', { name: 'Configure My Schedule' }),
   ).toHaveCount(0);

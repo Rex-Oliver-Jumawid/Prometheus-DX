@@ -819,6 +819,8 @@ Schedule
 
 Members may view permitted team schedule information.
 
+Configure My Schedule opens a draft editor above the merged team calendar. Members can generate initial blocks, select and adjust their own blocks, drag or resize them, and toggle rest days. Editing guidance and the limitation that empty-day preferences are not persisted are available in collapsed help sections. Members finish with the single Done configuring button or discard draft changes with Cancel.
+
 Members should not modify another user's schedule unless a separate authorization rule is introduced.
 
 ---

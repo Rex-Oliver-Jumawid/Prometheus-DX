@@ -15,38 +15,109 @@ function initials(name: string): string {
     .toUpperCase();
 }
 
+function memberSubtitle(
+  position: string | null | undefined,
+  departmentName: string,
+): string {
+  return [position?.trim(), departmentName.trim()].filter(Boolean).join(' / ');
+}
+
+function TeamHeader() {
+  return (
+    <header className="team-header">
+      <p className="page-kicker">PEOPLE</p>
+      <h1 id="team-title">Team</h1>
+      <p>
+        People, availability, current work status, and weekly commitment at a
+        glance.
+      </p>
+    </header>
+  );
+}
+
+function TeamLoadingState() {
+  return (
+    <section
+      className="team-page team-page-loading"
+      aria-labelledby="team-title"
+      aria-busy="true"
+    >
+      <TeamHeader />
+      <div className="team-summary" aria-hidden="true">
+        {Array.from({ length: 3 }, (_, index) => (
+          <article key={index}>
+            <span className="team-skeleton team-skeleton-label" />
+            <span className="team-skeleton team-skeleton-value" />
+          </article>
+        ))}
+      </div>
+      <div className="team-grid" aria-hidden="true">
+        {Array.from({ length: 6 }, (_, index) => (
+          <article className="team-card team-card-skeleton" key={index}>
+            <div className="team-card-head">
+              <div className="team-person">
+                <span className="team-skeleton team-skeleton-avatar" />
+                <div>
+                  <span className="team-skeleton team-skeleton-name" />
+                  <span className="team-skeleton team-skeleton-copy" />
+                </div>
+              </div>
+              <span className="team-skeleton team-skeleton-status" />
+            </div>
+            <div className="team-plan">
+              <span className="team-skeleton team-skeleton-label" />
+              <span className="team-skeleton team-skeleton-plan" />
+            </div>
+            <div className="team-metrics">
+              <div>
+                <span className="team-skeleton team-skeleton-label" />
+                <span className="team-skeleton team-skeleton-metric" />
+              </div>
+              <div>
+                <span className="team-skeleton team-skeleton-label" />
+                <span className="team-skeleton team-skeleton-metric" />
+              </div>
+            </div>
+            <span className="team-skeleton team-skeleton-button" />
+          </article>
+        ))}
+      </div>
+      <span className="team-loading-copy" role="status">
+        Loading Team...
+      </span>
+    </section>
+  );
+}
+
 export function TeamPage() {
   const { session } = useAuth();
   const navigate = useNavigate();
   const team = useQuery(teamWorkSummaryQuery(session?.access_token));
 
   if (team.isPending) {
-    return <section className="team-state">Loading Team...</section>;
+    return <TeamLoadingState />;
   }
+
   if (team.isError) {
     return (
-      <section className="team-state error" role="alert">
-        <h1>Team could not be loaded</h1>
-        <p>{team.error.message}</p>
-        <button onClick={() => void team.refetch()}>Try again</button>
+      <section className="team-page" aria-labelledby="team-title">
+        <TeamHeader />
+        <div className="team-state error" role="alert">
+          <strong>Team could not be loaded</strong>
+          <p>{team.error.message}</p>
+          <button type="button" onClick={() => void team.refetch()}>
+            Try again
+          </button>
+        </div>
       </section>
     );
   }
 
   const data = team.data;
+
   return (
     <section className="team-page" aria-labelledby="team-title">
-      <header className="team-header">
-        <div>
-          <p className="page-kicker">PEOPLE</p>
-          <h1 id="team-title">Team</h1>
-          <p>
-            Registry identity, planned availability, and actual weekly work at a
-            glance.
-          </p>
-        </div>
-        <span className="team-timezone">UTC+08:00 · Asia/Manila</span>
-      </header>
+      <TeamHeader />
 
       <div className="team-summary" aria-label="Team summary">
         <article>
@@ -63,12 +134,17 @@ export function TeamPage() {
             {formatHours(data.summary.actualWorkedSeconds)} /{' '}
             {formatHours(data.summary.scheduledMinutes * 60)}
           </strong>
-          <small>Actual / scheduled</small>
         </article>
       </div>
 
       {data.members.length === 0 ? (
-        <div className="team-empty">No active Registry members.</div>
+        <div className="team-empty">
+          <strong>No active Registry members.</strong>
+          <p>
+            Active members will appear here with their schedule and recorded
+            work totals.
+          </p>
+        </div>
       ) : (
         <div className="team-grid">
           {data.members.map((member) => (
@@ -79,9 +155,16 @@ export function TeamPage() {
                     {initials(member.fullName)}
                   </span>
                   <div>
-                    <strong>{member.fullName}</strong>
-                    <span>{member.position || 'Position not set'}</span>
-                    <small>{member.department.name}</small>
+                    <strong title={member.fullName}>{member.fullName}</strong>
+                    <span
+                      className="team-person-subtitle"
+                      title={memberSubtitle(
+                        member.position,
+                        member.department.name,
+                      )}
+                    >
+                      {memberSubtitle(member.position, member.department.name)}
+                    </span>
                   </div>
                 </div>
                 <span
@@ -98,7 +181,7 @@ export function TeamPage() {
                     ? member.todaySchedule
                         .map(
                           (block) =>
-                            `${formatClock(block.startTime)} - ${formatClock(block.endTime)}`,
+                            `${formatClock(block.startTime)}–${formatClock(block.endTime)}`,
                         )
                         .join(', ')
                     : 'Rest day / no schedule'}
@@ -116,8 +199,9 @@ export function TeamPage() {
                 </div>
               </div>
 
-              <button onClick={() => navigate('/schedule')}>
-                View Schedule
+              <button type="button" onClick={() => navigate('/schedule')}>
+                <span>View Schedule</span>
+                <span aria-hidden="true">→</span>
               </button>
             </article>
           ))}

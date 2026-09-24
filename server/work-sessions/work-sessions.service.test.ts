@@ -38,6 +38,30 @@ describe('WorkSessionsService', () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
+  it('allows Time In with no planned schedule, including an unscheduled rest day', async () => {
+    // Intentionally expose only WorkSession queries. A new schedule lookup
+    // would fail this test rather than quietly blocking unscheduled work.
+    const create = vi.fn().mockResolvedValue(session());
+    const prisma = {
+      workSession: {
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        findFirst: vi.fn().mockResolvedValue(null),
+        create,
+      },
+    } as unknown as PrismaService;
+
+    const result = await new WorkSessionsService(prisma).timeIn(currentMember);
+
+    expect(create).toHaveBeenCalledWith({
+      data: {
+        memberId: currentMember.id,
+        timeIn: new Date('2026-09-18T04:00:00.000Z'),
+        status: 'OPEN',
+      },
+    });
+    expect(result.session).not.toBeNull();
+  });
+
   it('atomically completes only the authenticated member active session', async () => {
     const completed = session({
       timeOut: new Date('2026-09-18T04:00:00.000Z'),

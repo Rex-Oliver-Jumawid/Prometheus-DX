@@ -21,5 +21,6 @@ import { OutcomeDeliveryService } from './outcome-delivery.service';
     OutcomeWorkService,
     OutcomeDeliveryService,
   ],
+  exports: [ProjectsService],
 })
 export class ProjectsModule {}
