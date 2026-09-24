@@ -464,6 +464,7 @@ export function ProjectOverviewPage() {
               key={projectId}
               projectId={projectId!}
               projectName={value.name}
+              projectLead={value.lead}
               accessToken={accessToken}
             />
             <aside className="pw-chat-sidebar" aria-label="Project chat sidebar">
