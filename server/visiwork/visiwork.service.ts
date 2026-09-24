@@ -98,7 +98,18 @@ export class VisiWorkService {
     const mentionedMembers = uniqueMentionIds.length
       ? (
           await this.prisma.member.findMany({
-            where: { id: { in: uniqueMentionIds }, status: 'ACTIVE' },
+            where: {
+              id: { in: uniqueMentionIds },
+              status: 'ACTIVE',
+              ...(departmentId
+                ? {
+                    OR: [
+                      { departmentId },
+                      { visiworkDepartmentId: departmentId },
+                    ],
+                  }
+                : {}),
+            },
             select: { id: true, fullName: true },
           })
         ).filter((mentioned) =>

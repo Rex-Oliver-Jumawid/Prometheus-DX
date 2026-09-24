@@ -735,6 +735,14 @@
   line-height: 14px;
 }
 
+.visiwork-message-mention {
+  padding: 0 2px;
+  border-radius: 4px;
+  background: rgba(203, 77, 34, 0.09);
+  color: #b74420;
+  font-weight: 750;
+}
+
 .visiwork-room-empty {
   display: grid;
   place-items: center;
@@ -1327,8 +1335,7 @@
   margin-right: 2px;
 }
 
-.visiwork-room-header-actions > button,
-.visiwork-room-settings-wrap > button {
+.visiwork-room-header-actions > button {
   width: 28px;
   height: 28px;
   display: grid;
@@ -1342,9 +1349,7 @@
 }
 
 .visiwork-room-header-actions > button:hover,
-.visiwork-room-settings-wrap > button:hover,
-.visiwork-room-header-actions > button.active,
-.visiwork-room-settings-wrap > button.active {
+.visiwork-room-header-actions > button.active {
   border-color: #e7ddd6;
   background: #faf6f2;
   color: #cb4d22;
@@ -1359,43 +1364,6 @@
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-.visiwork-room-settings-wrap {
-  position: relative;
-}
-
-.visiwork-room-settings-menu {
-  position: absolute;
-  z-index: 30;
-  top: 34px;
-  right: 0;
-  width: 150px;
-  display: grid;
-  gap: 3px;
-  padding: 6px;
-  border: 1px solid #e3d9d2;
-  border-radius: 11px;
-  background: #fffdfa;
-  box-shadow: 0 14px 32px rgba(58, 41, 33, 0.12);
-}
-
-.visiwork-room-settings-menu button {
-  width: 100%;
-  min-height: 30px;
-  padding: 0 9px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: #564b45;
-  font-size: 9px;
-  font-weight: 700;
-  text-align: left;
-  cursor: pointer;
-}
-
-.visiwork-room-settings-menu button:hover {
-  background: #f7f1ed;
 }
 
 .visiwork-chat-search {

@@ -92,6 +92,38 @@ function chatError(value: unknown): string {
   return value instanceof Error ? value.message : 'Please try again.';
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^$()|[\]\\]/g, '\\$&');
+}
+
+function MessageBody({ message }: { message: VisiWorkMessage }) {
+  const names = message.mentions
+    .map((mention) => mention.fullName)
+    .sort((left, right) => right.length - left.length);
+  if (!names.length) return <>{message.body}</>;
+
+  const matcher = new RegExp(
+    '(@(?:' + names.map(escapeRegExp).join('|') + '))',
+    'gi',
+  );
+
+  return (
+    <>
+      {message.body.split(matcher).map((part, index) => {
+        const isMention = names.some(
+          (name) => part.toLowerCase() === '@' + name.toLowerCase(),
+        );
+        return isMention ? (
+          <mark className="visiwork-message-mention" key={index}>
+            {part}
+          </mark>
+        ) : (
+          part
+        );
+      })}
+    </>
+  );
+}
 function RoomPanel({
   roomType,
   title,
@@ -116,7 +148,6 @@ function RoomPanel({
     Array<{ id: string; fullName: string }>
   >([]);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const feedRef = useRef<HTMLDivElement>(null);
   const pinnedToBottom = useRef(true);
@@ -190,7 +221,10 @@ function RoomPanel({
   });
 
   const loaded = messages.data?.pages.flatMap((page) => page.items) ?? [];
-  const contextual = context.data?.items ?? [];
+  const contextual =
+    context.data?.departmentId === (departmentId ?? null)
+      ? context.data.items
+      : [];
   const unique = new Map(
     [...loaded, ...contextual].map((message) => [message.id, message]),
   );
@@ -226,12 +260,21 @@ function RoomPanel({
   }, [ordered.length, latestMessageId]);
 
   useLayoutEffect(() => {
-    if (!targetMessageId || !context.data) return;
-    const element = feedRef.current?.querySelector<HTMLElement>(
-      '[data-message-id="' + targetMessageId + '"]',
-    );
-    element?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  }, [targetMessageId, context.data]);
+    if (
+      !targetMessageId ||
+      !context.data ||
+      context.data.departmentId !== (departmentId ?? null)
+    ) {
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => {
+      const element = feedRef.current?.querySelector<HTMLElement>(
+        '[data-message-id="' + targetMessageId + '"]',
+      );
+      element?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [departmentId, targetMessageId, context.data]);
 
   function updateBody(value: string) {
     setBody(value);
@@ -267,14 +310,15 @@ function RoomPanel({
     });
   }
 
-  function jumpToMessage(messageId: string) {
+  function jumpToMessage(message: VisiWorkMessage) {
     const next = new URLSearchParams(searchParams);
-    next.set('message', messageId);
-    if (departmentId) next.set('department', departmentId);
+    next.set('message', message.id);
+    if (message.departmentId) next.set('department', message.departmentId);
     else next.delete('department');
+    next.delete('view');
+    pinnedToBottom.current = false;
     setSearchParams(next);
     setSearchOpen(false);
-    setSettingsOpen(false);
   }
 
   return (
@@ -292,55 +336,13 @@ function RoomPanel({
             className={searchOpen ? 'active' : ''}
             aria-label={'Search ' + title}
             title="Search messages"
-            onClick={() => {
-              setSearchOpen((current) => !current);
-              setSettingsOpen(false);
-            }}
+            onClick={() => setSearchOpen((current) => !current)}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="6.5" />
               <path d="m16 16 4 4" />
             </svg>
           </button>
-          <div className="visiwork-room-settings-wrap">
-            <button
-              type="button"
-              className={settingsOpen ? 'active' : ''}
-              aria-label={'Settings for ' + title}
-              title="Chat settings"
-              onClick={() => {
-                setSettingsOpen((current) => !current);
-                setSearchOpen(false);
-              }}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.06.06-2.12 2.12-.06-.06a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.08 1.64V20.5h-3v-.08A1.8 1.8 0 0 0 10.5 18.8a1.8 1.8 0 0 0-1.98.36l-.06.06-2.12-2.12.06-.06A1.8 1.8 0 0 0 6.76 15a1.8 1.8 0 0 0-1.64-1.08H5v-3h.12A1.8 1.8 0 0 0 6.76 9.8a1.8 1.8 0 0 0-.36-1.98l-.06-.06 2.12-2.12.06.06a1.8 1.8 0 0 0 1.98.36A1.8 1.8 0 0 0 11.58 4.4V4.3h3v.1a1.8 1.8 0 0 0 1.08 1.64 1.8 1.8 0 0 0 1.98-.36l.06-.06 2.12 2.12-.06.06a1.8 1.8 0 0 0-.36 1.98 1.8 1.8 0 0 0 1.64 1.08h.1v3h-.1A1.8 1.8 0 0 0 19.4 15Z" />
-              </svg>
-            </button>
-            {settingsOpen && (
-              <div className="visiwork-room-settings-menu">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSettingsOpen(false);
-                    setSearchOpen(true);
-                  }}
-                >
-                  Search messages
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSettingsOpen(false);
-                    void messages.refetch();
-                  }}
-                >
-                  Refresh conversation
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </header>
 
@@ -377,7 +379,7 @@ function RoomPanel({
                   key={result.id}
                   type="button"
                   className="visiwork-chat-search-result"
-                  onClick={() => jumpToMessage(result.id)}
+                  onClick={() => jumpToMessage(result)}
                 >
                   <span>
                     <strong>{result.author.fullName}</strong>
@@ -461,7 +463,7 @@ function RoomPanel({
                     {' · '}
                     {messageTime(message.createdAt)}
                   </small>
-                  <p>{message.body}</p>
+                  <p><MessageBody message={message} /></p>
                 </div>
               </div>
             );
@@ -492,6 +494,15 @@ function RoomPanel({
               maxLength={2000}
               disabled={send.isPending}
               onChange={(event) => updateBody(event.target.value)}
+              onKeyDown={(event) => {
+                if (
+                  mentionSuggestions.length > 0 &&
+                  (event.key === 'Enter' || event.key === 'Tab')
+                ) {
+                  event.preventDefault();
+                  selectMention(mentionSuggestions[0]);
+                }
+              }}
             />
             {mentionSuggestions.length > 0 && (
               <div className="visiwork-mention-menu" role="listbox">
