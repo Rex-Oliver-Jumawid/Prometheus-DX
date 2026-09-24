@@ -243,6 +243,24 @@ test('Search results focus the actual older chat message without scrolling the w
     }, rootMessageId);
   }).toBe(true);
   expect(await page.evaluate(() => window.scrollY)).toBe(before);
+
+  await page.getByRole('button', { name: 'Search project conversation' }).click();
+  await page.getByRole('button', { name: 'Clear' }).click();
+  await expect(page.locator('.pw-chat-message--targeted')).toHaveCount(0);
+
+  await page.getByRole('textbox', { name: 'Search project messages' }).fill('Initial project update');
+  await page.locator('.pw-chat-search-result').filter({ hasText: 'Initial project update' }).click();
+  await expect(page.locator('.pw-chat-message--targeted')).toHaveCount(1);
+
+  const sentBody = 'Search return to latest ' + Date.now();
+  await page.getByRole('textbox', { name: 'Message' }).fill(sentBody);
+  await page.getByRole('textbox', { name: 'Message' }).press('Enter');
+  await expect(page.getByText(sentBody, { exact: true })).toBeVisible();
+  await expect(page.locator('.pw-chat-message--targeted')).toHaveCount(0);
+  await expect.poll(
+    () => page.getByRole('list', { name: 'Project messages' }).evaluate((thread) =>
+      thread.scrollHeight - thread.clientHeight - thread.scrollTop),
+  ).toBeLessThan(4);
 });
 
 test('The announcements and members rail fits its contents without stretching to chat height', async ({ page }) => {

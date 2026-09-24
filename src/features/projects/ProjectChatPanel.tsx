@@ -135,9 +135,10 @@ export function ProjectChatPanel({
     // Active chats still poll for updates without flashing a loading screen.
     staleTime: 60_000,
     gcTime: 15 * 60_000,
-    refetchInterval: 15_000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    refetchInterval: 3_000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 
   const members = useQuery({
@@ -197,6 +198,9 @@ export function ProjectChatPanel({
       setBody('');
       setSelectedMentions([]);
       setReplyTo(null);
+      setSearchTerm('');
+      setSearchOpen(false);
+      setTargetMessageId(null);
       pinnedToBottom.current = true;
       await queryClient.invalidateQueries({ queryKey });
     },
@@ -450,6 +454,11 @@ export function ProjectChatPanel({
     sendMessage();
   }
 
+  function clearSearchSelection() {
+    setSearchTerm('');
+    setTargetMessageId(null);
+  }
+
   function jumpToMessage(message: ProjectMessage) {
     pinnedToBottom.current = false;
     setTargetMessageId(message.id);
@@ -494,7 +503,7 @@ export function ProjectChatPanel({
               aria-label="Search project messages"
             />
             {searchTerm && (
-              <button type="button" onClick={() => setSearchTerm('')}>Clear</button>
+              <button type="button" onClick={clearSearchSelection}>Clear</button>
             )}
           </div>
           <div className="pw-chat-search-results">

@@ -1182,6 +1182,7 @@
   grid-template-columns: minmax(0, 1fr) 242px;
   gap: 12px;
   align-items: start;
+  padding-bottom: 14px;
 }
 
 .pw-chat-side-stack {
@@ -1236,8 +1237,8 @@
 .pw-chat-loading,
 .pw-chat-load-error {
   box-sizing: border-box;
-  min-height: clamp(330px, 48vh, 470px);
-  max-height: clamp(390px, 56vh, 540px);
+  min-height: clamp(300px, 44vh, 430px);
+  max-height: clamp(350px, 51vh, 500px);
   border: 1px solid rgba(216, 206, 199, .9);
   border-top: 0;
   border-radius: 0;
@@ -2143,8 +2144,8 @@
   display: grid;
   place-items: center;
   box-sizing: border-box;
-  min-height: clamp(330px, 48vh, 470px);
-  max-height: clamp(390px, 56vh, 540px);
+  min-height: clamp(300px, 44vh, 430px);
+  max-height: clamp(350px, 51vh, 500px);
   margin: 0;
   padding: 24px;
   border: 1px solid rgba(216, 206, 199, .9);
