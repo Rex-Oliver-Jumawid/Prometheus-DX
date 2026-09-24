@@ -42,6 +42,29 @@ function renderPanel() {
 describe('ProjectAnnouncementsPanel', () => {
   beforeEach(() => { vi.mocked(apiFetch).mockReset(); });
 
+  it('shows announcement-card skeletons while the API is loading', () => {
+    vi.mocked(apiFetch).mockImplementation(() => new Promise(() => {}));
+    const { container } = renderPanel();
+    expect(screen.getByRole('status', { name: 'Loading announcements' })).toBeVisible();
+    expect(container.querySelectorAll('.pw-announcement-skeleton-card')).toHaveLength(2);
+  });
+
+  it('retries a failed announcement fetch in place', async () => {
+    let reads = 0;
+    vi.mocked(apiFetch).mockImplementation(() => {
+      reads += 1;
+      return reads === 1
+        ? Promise.reject(new Error('Simulated announcement API failure'))
+        : Promise.resolve({ items: [], canManage: true });
+    });
+    renderPanel();
+    expect(await screen.findByText('Announcements could not be loaded.')).toBeVisible();
+    expect(screen.getByText('Simulated announcement API failure')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('No announcements yet.')).toBeVisible();
+    expect(reads).toBe(2);
+  });
+
   it('lets the Project Lead post an announcement', async () => {
     vi.mocked(apiFetch).mockImplementation((path, _schema, options) => {
       if (options?.method === 'POST')
