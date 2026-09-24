@@ -420,21 +420,6 @@ export function ProjectChatPanel({
 
   return (
     <section className="pw-collaboration-panel pw-chat-panel" aria-label="Project chat">
-      <header className="pw-collaboration-heading">
-        <div>
-          <h2>Project chat</h2>
-          <p>Local conversation for {projectName}.</p>
-        </div>
-        <button
-          className="projects-secondary-button"
-          type="button"
-          onClick={() => void messages.refetch()}
-          disabled={messages.isFetching}
-        >
-          {messages.isFetching ? 'Refreshing…' : 'Refresh'}
-        </button>
-      </header>
-
       <div className="pw-chat-channel-heading">
         <div>
           <strong>{projectName}</strong>
@@ -503,12 +488,17 @@ export function ProjectChatPanel({
       )}
 
       {messages.isPending ? (
-        <p role="status" className="pw-collaboration-state">Loading project messages…</p>
+        <div role="status" className="pw-chat-loading" aria-label="Loading project messages">
+          <span />
+          <span />
+          <span />
+          <span />
+        </div>
       ) : messages.isError && ordered.length === 0 ? (
-        <div className="pw-collaboration-state" role="alert">
+        <div className="pw-chat-load-error" role="alert">
           <strong>Project chat could not be loaded.</strong>
           <p>{errorMessage(messages.error)}</p>
-          <button type="button" onClick={() => void messages.refetch()}>Retry</button>
+          <button type="button" onClick={() => void messages.refetch()}>Try again</button>
         </div>
       ) : (
         <>
