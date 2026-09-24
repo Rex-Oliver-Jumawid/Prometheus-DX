@@ -48,6 +48,15 @@ function setup(options: {
           }
         : null)),
     },
+    member: {
+      findMany: vi.fn().mockResolvedValue([{ id: leadId, fullName: 'Project Lead' }]),
+    },
+    projectMember: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    notification: {
+      createMany: vi.fn().mockResolvedValue({ count: 1 }),
+    },
     projectMessage: {
       findFirst: vi.fn().mockImplementation((query: { where: { id: string } }) => {
         if (query.where.id === messageId)
@@ -95,6 +104,49 @@ describe('ProjectChatService', () => {
         data: { projectId, memberId, body: 'Member update', parentMessageId: null },
       }),
     );
+  });
+
+  it('sends a notification for an authorized Project Lead mention', async () => {
+    const { service, db } = setup();
+    await service.send(member, projectId, {
+      body: 'Please review @Project Lead',
+      parentMessageId: null,
+      mentionMemberIds: [leadId],
+    });
+    expect(db.projectMessage.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          mentions: { create: [{ memberId: leadId }] },
+        }),
+      }),
+    );
+    expect(db.notification.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          type: 'PROJECT_CHAT_MENTION',
+          eventKey: 'PROJECT_CHAT_MENTION:' + messageId,
+          actorMemberId: memberId,
+          recipientMemberId: leadId,
+          projectId,
+          data: {
+            messageId,
+            preview: 'Please review @Project Lead',
+          },
+        }),
+      ],
+      skipDuplicates: true,
+    });
+  });
+
+  it('rejects mentions of people who are not part of the Project', async () => {
+    const { service, db } = setup();
+    await expect(service.send(member, projectId, {
+      body: 'Hello @Outside Member',
+      parentMessageId: null,
+      mentionMemberIds: [viewerId],
+    })).rejects.toBeInstanceOf(BadRequestException);
+    expect(db.projectMessage.create).not.toHaveBeenCalled();
+    expect(db.notification.createMany).not.toHaveBeenCalled();
   });
 
   it('checks permissions after locking the Project, so a revoked Member cannot post', async () => {
