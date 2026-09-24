@@ -12,7 +12,10 @@ const decision = {
   outcomeUpdatedAt: version,
 };
 
-function fixture(role: 'ADMINISTRATOR' | 'MEMBER' = 'MEMBER') {
+function fixture(
+  role: 'ADMINISTRATOR' | 'MEMBER' = 'MEMBER',
+  accessLevel: 'CAN_VIEW' | 'CAN_EDIT' | null = null,
+) {
   const outcome = {
     id: 'outcome',
     stage: { projectId: 'project', project: { leadMemberId: 'lead' } },
@@ -25,6 +28,11 @@ function fixture(role: 'ADMINISTRATOR' | 'MEMBER' = 'MEMBER') {
   const db = {
     $queryRaw: vi.fn().mockResolvedValue([]),
     outcome: { findUnique: vi.fn().mockResolvedValue(outcome) },
+    projectMember: {
+      findUnique: vi.fn().mockResolvedValue(
+        accessLevel ? { accessLevel } : null,
+      ),
+    },
   };
   const prisma = {
     ...db,
@@ -34,7 +42,7 @@ function fixture(role: 'ADMINISTRATOR' | 'MEMBER' = 'MEMBER') {
     prisma as unknown as PrismaService,
   );
   const member = { id: 'not-lead', workspaceRole: role } as Member;
-  return { service, member, outcome };
+  return { service, member, outcome, db };
 }
 
 describe('Outcome delivery authority', () => {
@@ -85,6 +93,41 @@ describe('Outcome delivery authority', () => {
       );
     });
   }
+
+  it('grants review authority to CAN_EDIT without making the Member Project Lead', async () => {
+    const { service, member, outcome, db } = fixture('MEMBER', 'CAN_EDIT');
+    const guard = service as unknown as {
+      requireProjectEditor: (
+        database: typeof db,
+        currentOutcome: typeof outcome,
+        currentMember: Member,
+      ) => Promise<void>;
+    };
+
+    await expect(
+      guard.requireProjectEditor(db, outcome, member),
+    ).resolves.toBeUndefined();
+    expect(outcome.stage.project.leadMemberId).not.toBe(member.id);
+  });
+
+  it('keeps CAN_VIEW and unrelated Administrators out of Project editor actions', async () => {
+    for (const [role, accessLevel] of [
+      ['MEMBER', 'CAN_VIEW'],
+      ['ADMINISTRATOR', null],
+    ] as const) {
+      const { service, member, outcome, db } = fixture(role, accessLevel);
+      const guard = service as unknown as {
+        requireProjectEditor: (
+          database: typeof db,
+          currentOutcome: typeof outcome,
+          currentMember: Member,
+        ) => Promise<void>;
+      };
+      await expect(
+        guard.requireProjectEditor(db, outcome, member),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    }
+  });
 
   it('does not grant Outcome work to the persisted Lead without membership', async () => {
     const { service, member } = fixture();

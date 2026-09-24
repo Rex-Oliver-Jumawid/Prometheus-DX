@@ -313,7 +313,7 @@ test('F5-14 F5-15 F5-16: parallel pending entries coexist and duplicate retries 
   expect(history.hasForReview).toBe(true);
 });
 
-test('F5-18 F5-19 F5-40: non-Lead and CAN_EDIT cannot review, accept, reopen or override dependencies', async ({
+test('F5-18 F5-19 F5-40: non-editor cannot review, accept, reopen or override dependencies', async ({
   page,
 }) => {
   await signIn(page);
@@ -347,11 +347,6 @@ test('F5-18 F5-19 F5-40: non-Lead and CAN_EDIT cannot review, accept, reopen or 
       )
     ).status,
   ).toBe(403);
-  await prisma.projectMember.update({
-    where: { projectId_memberId: { projectId, memberId } },
-    data: { accessLevel: 'CAN_EDIT' },
-  });
-  expect((await request(page, '/accept', 'POST', decision)).status).toBe(403);
   await prisma.project.update({
     where: { id: projectId },
     data: { leadMemberId: memberId },

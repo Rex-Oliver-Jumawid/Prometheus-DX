@@ -119,9 +119,19 @@ function createDatabase(
                 ? {
                     id: projectId,
                     leadMemberId: options.leadMemberId ?? lead.id,
+                    members:
+                      options.projectMemberExists === false
+                        ? []
+                        : [{ accessLevel: projectAccessLevel }],
                     stages: [stageRecord()],
                   }
-                : { leadMemberId: options.leadMemberId ?? lead.id }
+                : {
+                    leadMemberId: options.leadMemberId ?? lead.id,
+                    members:
+                      options.projectMemberExists === false
+                        ? []
+                        : [{ accessLevel: projectAccessLevel }],
+                  }
               : null,
           ),
         ),
@@ -356,6 +366,23 @@ describe('ProjectWorkflowService', () => {
         stages: [{ id: stageId, name: 'Discovery' }],
       },
     );
+  });
+
+  it('lets a CAN_EDIT Project Member manage workflow structure', async () => {
+    const database = createDatabase({
+      leadMemberId: lead.id,
+      projectAccessLevel: 'CAN_EDIT',
+    });
+    const service = new ProjectWorkflowService(database);
+
+    await expect(service.getWorkflow(member, projectId)).resolves.toMatchObject({
+      projectId,
+      canManageStructure: true,
+    });
+    await expect(
+      service.createStage(member, projectId, { name: 'Editable Stage' }),
+    ).resolves.toMatchObject({ name: 'Discovery' });
+    expect(database.stage.create).toHaveBeenCalled();
   });
 
   it('returns a controlled error for an absent Project workflow', async () => {

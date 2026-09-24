@@ -238,7 +238,7 @@ test('F4-28 F4-29: Lead grants and revokes persisted Project Member access', asy
   ]);
 });
 
-test('F4-30 F4-32 F4-33 F4-34 F4-35 F4-36: CAN_EDIT changes status but cannot exercise Lead-only authority', async ({
+test('F4-30 F4-32 F4-33 F4-34 F4-35 F4-36: CAN_EDIT changes status and workflow structure but not member access', async ({
   page,
 }) => {
   test.skip(!hasCredentials, 'Requires E2E member credentials.');
@@ -273,27 +273,23 @@ test('F4-30 F4-32 F4-33 F4-34 F4-35 F4-36: CAN_EDIT changes status but cannot ex
     }),
   ).toBe(1);
 
-  await expect(page.getByRole('button', { name: '+ Add Stage' })).toHaveCount(
-    0,
-  );
+  await expect(page.getByRole('button', { name: '+ Add Stage' })).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Edit Stage Access Stage' }),
-  ).toHaveCount(0);
-  await expect(page.getByRole('button', { name: '+ Add Outcome' })).toHaveCount(
-    0,
-  );
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: '+ Add Outcome' })).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Edit Outcome Access Outcome' }),
-  ).toHaveCount(0);
+  ).toBeVisible();
   await expect(page.locator('.project-member-access select')).toHaveCount(0);
 
   expect(
     (
       await authenticatedApi(page, `/projects/${projectId}/stages`, 'POST', {
-        name: 'Forbidden Stage',
+        name: 'CAN_EDIT Stage',
       })
     ).status,
-  ).toBe(403);
+  ).toBe(201);
   expect(
     (
       await authenticatedApi(
@@ -301,15 +297,15 @@ test('F4-30 F4-32 F4-33 F4-34 F4-35 F4-36: CAN_EDIT changes status but cannot ex
         `/projects/${projectId}/stages/${stageId}/outcomes`,
         'POST',
         {
-          title: 'Forbidden Outcome',
+          title: 'CAN_EDIT Outcome',
           description: null,
           departmentIds: [departmentId],
-          acceptanceCriteria: ['Must not be created.'],
+          acceptanceCriteria: ['Editable Project Member can create this.'],
           prerequisiteOutcomeIds: [],
         },
       )
     ).status,
-  ).toBe(403);
+  ).toBe(201);
   expect(
     (
       await authenticatedApi(
@@ -398,7 +394,7 @@ test('F4-31: CAN_VIEW Project Member cannot change Project status', async ({
   ).toMatchObject({ status: 'IN_PROGRESS' });
 });
 
-test('Phase 4 main E2E flow: Lead builds workflow, Member joins, Lead grants CAN_EDIT, and Lead-only authority stays isolated', async ({
+test('Phase 4 main E2E flow: Lead builds workflow, Member joins, Lead grants CAN_EDIT, and Project editor authority activates', async ({
   page,
 }) => {
   test.skip(!hasCredentials, 'Requires E2E member credentials.');
@@ -550,12 +546,8 @@ test('Phase 4 main E2E flow: Lead builds workflow, Member joins, Lead grants CAN
   await page.getByLabel('Project status').selectOption('IN_PROGRESS');
   expect((await statusResponse).status()).toBe(200);
   await expect(page.getByLabel('Project status')).toHaveValue('IN_PROGRESS');
-  await expect(page.getByRole('button', { name: '+ Add Stage' })).toHaveCount(
-    0,
-  );
-  await expect(page.getByRole('button', { name: '+ Add Outcome' })).toHaveCount(
-    0,
-  );
+  await expect(page.getByRole('button', { name: '+ Add Stage' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '+ Add Outcome' })).toBeVisible();
   await expect(page.locator('.project-member-access select')).toHaveCount(0);
   expect(
     (
@@ -563,10 +555,10 @@ test('Phase 4 main E2E flow: Lead builds workflow, Member joins, Lead grants CAN
         page,
         `/projects/${mainFlowProjectId}/stages`,
         'POST',
-        { name: 'Forbidden Main Flow Stage' },
+        { name: 'Editable Main Flow Stage' },
       )
     ).status,
-  ).toBe(403);
+  ).toBe(201);
   expect(
     (
       await authenticatedApi(
@@ -574,15 +566,15 @@ test('Phase 4 main E2E flow: Lead builds workflow, Member joins, Lead grants CAN
         `/projects/${mainFlowProjectId}/stages/${mainStage.id}/outcomes`,
         'POST',
         {
-          title: 'Forbidden Main Flow Outcome',
+          title: 'Editable Main Flow Outcome',
           description: null,
           departmentIds: [departmentId],
-          acceptanceCriteria: ['This mutation must remain forbidden.'],
+          acceptanceCriteria: ['CAN_EDIT workflow authority is active.'],
           prerequisiteOutcomeIds: [],
         },
       )
     ).status,
-  ).toBe(403);
+  ).toBe(201);
   expect(
     (
       await authenticatedApi(

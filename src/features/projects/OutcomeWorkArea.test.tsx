@@ -68,6 +68,7 @@ const emptyDeliveryData = {
   activity: [] as Array<Record<string, unknown>>,
   canSubmit: true,
   isLead: false,
+  canManageDelivery: false,
   hasForReview: false,
   lifecycleStatus: 'OPEN',
   outcomeUpdatedAt: '2026-09-18T00:00:00.000Z',
