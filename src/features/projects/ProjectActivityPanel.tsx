@@ -177,7 +177,10 @@ export function ProjectActivityPanel({
   const [memberId, setMemberId] = useState('all');
   const feed = useInfiniteQuery({
     // Prevent a cached Lead's project-wide history from leaking to another signed-in member.
-    queryKey: ['projects', projectId, 'activity', currentMemberId ?? 'unresolved'],
+    queryKey: [
+      'projects', projectId, 'activity',
+      currentMemberId ?? 'unresolved', isLead ? 'lead' : 'member',
+    ],
     queryFn: ({ pageParam }) =>
       apiFetch(
         '/projects/' + projectId + '/activity' +
