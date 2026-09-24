@@ -96,6 +96,7 @@ function renderWorkspace(
 
   const fixture = {
     ...workflowFixture,
+    canManageStructure: isLead,
     stages: workflowFixture.stages.map((stage) => ({
       ...stage,
       outcomes: stage.outcomes.map((o) =>
@@ -112,7 +113,18 @@ function renderWorkspace(
       return workPromise ?? Promise.resolve(workData);
     }
     if (path.startsWith(`/projects/${projectId}/outcomes/${outcomeId}/delivery`)) {
-      return deliveryPromise ?? Promise.resolve(deliveryData);
+      return (
+        deliveryPromise ??
+        Promise.resolve(
+          isLead && deliveryData === emptyDeliveryData
+            ? {
+                ...emptyDeliveryData,
+                isLead: true,
+                canManageDelivery: true,
+              }
+            : deliveryData,
+        )
+      );
     }
     return Promise.resolve({ success: true });
   });

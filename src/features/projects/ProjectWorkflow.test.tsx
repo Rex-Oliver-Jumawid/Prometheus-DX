@@ -283,7 +283,7 @@ describe('ProjectWorkflow Stage & Outcome Deletion', () => {
 
     expect(await screen.findByText('SKIPPED')).toBeInTheDocument();
     expect(screen.queryByText('RESOLVED')).not.toBeInTheDocument();
-    expect(screen.getByText(/Skipped by Project Lead/)).toBeInTheDocument();
+    expect(screen.getByText(/Skipped by Project editor/)).toBeInTheDocument();
 
     const prerequisiteCard = screen.getByRole('link', {
       name: prerequisiteTitle,
