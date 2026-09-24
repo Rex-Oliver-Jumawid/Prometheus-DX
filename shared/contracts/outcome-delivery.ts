@@ -150,6 +150,7 @@ export const OutcomeDeliverySchema = z.object({
   draft: OutputDraftSchema.nullable(),
   canSubmit: z.boolean(),
   isLead: z.boolean(),
+  canManageDelivery: z.boolean(),
   hasForReview: z.boolean(),
   activity: z.array(ActivitySchema),
 });

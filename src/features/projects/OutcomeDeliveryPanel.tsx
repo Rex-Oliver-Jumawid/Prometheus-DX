@@ -94,7 +94,7 @@ function OutputForm({
           </strong>
         </div>
         <small className="pw-output-current-help">
-          Prepare the output you want the Project Lead to verify.
+          Prepare the output you want a project reviewer to verify.
         </small>
       </div>
       <form
@@ -129,7 +129,7 @@ function OutputForm({
           <textarea
             className="field-textarea"
             aria-label="Submission notes"
-            placeholder="Explain what you produced, what changed since the previous version, and what the Project Lead should verify."
+            placeholder="Explain what you produced, what changed since the previous version, and what a project reviewer should verify."
             {...register('note', {
               onChange: () => {
                 requestId.current = null;
@@ -328,7 +328,7 @@ export function OutcomeDeliveryPanel({
                 ? 'Accepted Outcome'
                 : isContributor
                   ? 'My Outputs & Feedback'
-                  : data.isLead
+                  : data.canManageDelivery
                     ? 'Outcome Submissions'
                     : 'Submitted Outputs'}
             </h3>
@@ -336,11 +336,11 @@ export function OutcomeDeliveryPanel({
               {accepted
                 ? `This outcome is final. ${data.submissions.length} team submission${data.submissions.length === 1 ? ' was' : 's were'} preserved as the evidence behind the decision.`
                 : isContributor
-                  ? 'Your submission is added to the shared outcome record. The Project Lead reviews all team submissions together.'
-                  : data.isLead
+                  ? 'Your submission is added to the shared outcome record. Project editors review all team submissions together.'
+                  : data.canManageDelivery
                     ? (data.submissions.length > 0
                         ? 'Review all team submissions together, verify the acceptance criteria, then make one decision for the outcome.'
-                        : 'No submitted work is available for Project Lead review yet.')
+                        : 'No submitted work is available for review yet.')
                     : 'Every member submission is preserved and reviewed as part of the outcome.'}
             </p>
           </div>
@@ -366,14 +366,14 @@ export function OutcomeDeliveryPanel({
           <div>
             <strong>Outcome accepted - submissions are closed</strong>
             <p>
-              The Project Lead accepted the combined work for this outcome.
+              A Project editor accepted the combined work for this outcome.
               Members can still view the work and submission history, but no new
               drafts or submissions can be added.
             </p>
           </div>
         </div>
       )}
-      {data.isLead && data.lifecycleStatus === 'NEEDS_REVISION' && (
+      {data.canManageDelivery && data.lifecycleStatus === 'NEEDS_REVISION' && (
         <div className="outcome-work-actions">
           <button
             className="projects-secondary-button"
@@ -435,7 +435,7 @@ export function OutcomeDeliveryPanel({
               {data.submissions.length} submission
               {data.submissions.length === 1 ? '' : 's'}
             </span>
-            {data.isLead && !accepted && data.submissions.length > 0 && (
+            {data.canManageDelivery && !accepted && data.submissions.length > 0 && (
               <button
                 className="projects-primary-button pw-review-outcome-jump"
                 type="button"
@@ -451,8 +451,8 @@ export function OutcomeDeliveryPanel({
         </div>
         {!data.submissions.length && (
           <div className="empty-submissions">
-            {data.isLead
-              ? 'No output has been submitted for Project Lead verification yet.'
+            {data.canManageDelivery
+              ? 'No output has been submitted for review yet.'
               : 'No submissions yet.'}
           </div>
         )}
@@ -489,7 +489,7 @@ export function OutcomeDeliveryPanel({
                 </strong>
                 <span className="outcome-sub-meta">
                   {accepted
-                    ? `Accepted by ${currentAcceptance?.acceptedBy.fullName ?? 'Project Lead'}`
+                    ? `Accepted by ${currentAcceptance?.acceptedBy.fullName ?? 'Project reviewer'}`
                     : (
                         <>
                           Submitted by {submission.submitter.fullName} ·{' '}
@@ -511,7 +511,7 @@ export function OutcomeDeliveryPanel({
         >
           <div className="outcome-acceptance-history-head">
             <h4>Review history</h4>
-            {data.isLead && accepted && (
+            {data.canManageDelivery && accepted && (
               <button
                 className="projects-secondary-button outcome-reopen-button"
                 type="button"
@@ -552,7 +552,7 @@ export function OutcomeDeliveryPanel({
           ))}
         </section>
       )}
-      {data.isLead && unresolvedDependencies.length > 0 && (
+      {data.canManageDelivery && unresolvedDependencies.length > 0 && (
         <section
           className="outcome-dependency-actions"
           aria-label="Dependency actions"
@@ -689,12 +689,12 @@ export function OutcomeDeliveryPanel({
               </div>
               <p>
                 Individual submissions are not accepted or rejected
-                independently. The Project Lead makes one outcome-level
+                independently. A Project editor makes one outcome-level
                 decision from the combined submission set.
               </p>
             </div>
 
-            {data.isLead && !accepted && (
+            {data.canManageDelivery && !accepted && (
               <div className="submission-record-actions">
                 <button
                   className="projects-primary-button"
@@ -752,7 +752,7 @@ export function OutcomeDeliveryPanel({
       {overrideId && overrideDependency && (
         <ProjectDialog
           title="Skip dependency"
-          eyebrow="Project Lead override"
+          eyebrow="Project editor override"
           tag="Dependency override"
           pending={mutation.isPending}
           className="dependency-override-dialog"

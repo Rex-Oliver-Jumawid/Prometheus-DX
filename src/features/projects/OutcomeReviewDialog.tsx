@@ -111,7 +111,7 @@ export function OutcomeReviewDialog({
     <ProjectDialog
       title="Review all member submissions together against the expected outcome."
       ariaLabel="Review Outcome"
-      eyebrow="Project Lead verification"
+      eyebrow="Project review"
       tag="Outcome review"
       pending={pending}
       className="outcome-review-dialog"

@@ -754,7 +754,7 @@ function OutcomeDialog({
                   <label>
                     Acceptance criteria{' '}
                     <span className="pw-field-hint">
-                      Checklist for Project Lead review
+                      Checklist for project review
                     </span>
                   </label>
                   <p>
@@ -1226,7 +1226,7 @@ export function ProjectWorkflow({
                 {joinOutcome.isPending ? 'Joining...' : '+ Join outcome'}
               </button>
             )}
-            {isLead ? (
+            {workflow.data.canManageStructure ? (
               <button
                 type="button"
                 className="pw-workspace-tag pw-outcome-details-trigger"
@@ -1255,7 +1255,7 @@ export function ProjectWorkflow({
           </p>
         )}
 
-        {!selectedOutcome.isJoined && !isLead && (
+        {!selectedOutcome.isJoined && !workflow.data.canManageStructure && (
           <div className="pw-readonly-note">
             {selectedOutcome.lifecycleStatus === 'ACCEPTED'
               ? 'This outcome is accepted and closed. You can inspect its work and submission history, but joining and new contributions are disabled.'
@@ -1301,7 +1301,7 @@ export function ProjectWorkflow({
                     ? 'For Review'
                     : lifecycleLabel(selectedOutcome.lifecycleStatus)}
               </span>
-              {isLead && (
+              {workflow.data.canManageStructure && (
                 <button
                   type="button"
                   className="projects-secondary-button pw-outcome-detail-delete-btn"
@@ -1523,7 +1523,7 @@ export function ProjectWorkflow({
               <p>
                 {workflow.data.canManageStructure
                   ? 'This project is blank. Create the first stage, then add outcomes inside it.'
-                  : 'The Project Lead has not added workflow structure yet.'}
+                  : 'No workflow structure has been added yet.'}
               </p>
               {workflow.data.canManageStructure && (
                 <button
@@ -1652,7 +1652,7 @@ export function ProjectWorkflow({
                               dependencyResolution === 'ACCEPTED'
                                 ? 'Accepted'
                                 : dependencySkipped
-                                  ? 'Skipped by Project Lead'
+                                  ? 'Skipped by Project editor'
                                   : prereqOutcome?.hasForReview
                                     ? 'For Review'
                                     : prereqOutcome
@@ -1797,7 +1797,10 @@ export function ProjectWorkflow({
                         }
 
                         const stateBadge = getOutcomeBadge(outcome);
-                        const actionText = getOutcomeAction(outcome, isLead);
+                        const actionText = getOutcomeAction(
+                          outcome,
+                          workflow.data.canManageStructure,
+                        );
 
                         return (
                           <article
@@ -1983,7 +1986,7 @@ export function ProjectWorkflow({
       {dependencyOverride && (
         <ProjectDialog
           title="Skip dependency"
-          eyebrow="Project Lead override"
+          eyebrow="Project editor override"
           tag="Dependency override"
           pending={overrideDependency.isPending}
           className="dependency-override-dialog"
@@ -2004,7 +2007,7 @@ export function ProjectWorkflow({
                   reason,
                 });
               } catch {
-                /* Preserve the reason so the Project Lead can retry. */
+                /* Preserve the reason so the Project editor can retry. */
               }
             })}
           >

@@ -76,6 +76,11 @@ export class ProjectWorkflowService {
       select: {
         id: true,
         leadMemberId: true,
+        members: {
+          where: { memberId: currentMember.id },
+          select: { accessLevel: true },
+          take: 1,
+        },
         stages: {
           include: stageInclude,
           orderBy: [{ position: 'asc' }, { id: 'asc' }],
@@ -85,7 +90,9 @@ export class ProjectWorkflowService {
     if (!project) throw new NotFoundException('Project not found.');
     return {
       projectId: project.id,
-      canManageStructure: project.leadMemberId === currentMember.id,
+      canManageStructure:
+        project.leadMemberId === currentMember.id ||
+        project.members[0]?.accessLevel === 'CAN_EDIT',
       stages: project.stages.map((stage) =>
         this.toStage(stage, currentMember.id),
       ),
@@ -203,7 +210,7 @@ export class ProjectWorkflowService {
     input: CreateStageRequest,
   ): Promise<Stage> {
     const stage = await this.prisma.$transaction(async (transaction) => {
-      await this.requireLead(transaction, projectId, currentMember.id);
+      await this.requireProjectEditor(transaction, projectId, currentMember.id);
       const lastStage = await transaction.stage.findFirst({
         where: { projectId },
         select: { position: true },
@@ -240,7 +247,7 @@ export class ProjectWorkflowService {
     input: UpdateStageRequest,
   ): Promise<Stage> {
     const stage = await this.prisma.$transaction(async (transaction) => {
-      await this.requireLead(transaction, projectId, currentMember.id);
+      await this.requireProjectEditor(transaction, projectId, currentMember.id);
       await this.requireStage(transaction, projectId, stageId);
       const updated = await transaction.stage.update({
         where: { id: stageId },
@@ -272,7 +279,7 @@ export class ProjectWorkflowService {
     input: CreateOutcomeRequest,
   ): Promise<Outcome> {
     const outcome = await this.prisma.$transaction(async (transaction) => {
-      await this.requireLead(transaction, projectId, currentMember.id);
+      await this.requireProjectEditor(transaction, projectId, currentMember.id);
       await this.requireStage(transaction, projectId, stageId);
       await this.validateOutcomeReferences(transaction, projectId, null, input);
       const lastOutcome = await transaction.outcome.findFirst({
@@ -356,7 +363,7 @@ export class ProjectWorkflowService {
     input: UpdateOutcomeRequest,
   ): Promise<Outcome> {
     const outcome = await this.prisma.$transaction(async (transaction) => {
-      await this.requireLead(transaction, projectId, currentMember.id);
+      await this.requireProjectEditor(transaction, projectId, currentMember.id);
       const existing = await transaction.outcome.findUnique({
         where: { id: outcomeId },
         select: { id: true, stage: { select: { projectId: true } } },
@@ -539,7 +546,7 @@ export class ProjectWorkflowService {
     outcomeId: string,
   ): Promise<void> {
     await this.prisma.$transaction(async (transaction) => {
-      await this.requireLead(transaction, projectId, currentMember.id);
+      await this.requireProjectEditor(transaction, projectId, currentMember.id);
 
       const outcome = await transaction.outcome.findUnique({
         where: { id: outcomeId },
@@ -614,7 +621,7 @@ export class ProjectWorkflowService {
     stageId: string,
   ): Promise<void> {
     await this.prisma.$transaction(async (transaction) => {
-      await this.requireLead(transaction, projectId, currentMember.id);
+      await this.requireProjectEditor(transaction, projectId, currentMember.id);
       const stage = await transaction.stage.findUnique({
         where: { id: stageId },
         select: {
@@ -700,6 +707,34 @@ export class ProjectWorkflowService {
         }
       }
     });
+  }
+
+  private async requireProjectEditor(
+    transaction: Prisma.TransactionClient,
+    projectId: string,
+    memberId: string,
+  ) {
+    await transaction.$queryRaw`SELECT id FROM projects WHERE id = ${projectId}::uuid FOR UPDATE`;
+    const project = await transaction.project.findUnique({
+      where: { id: projectId },
+      select: {
+        leadMemberId: true,
+        members: {
+          where: { memberId },
+          select: { accessLevel: true },
+          take: 1,
+        },
+      },
+    });
+    if (!project) throw new NotFoundException('Project not found.');
+    if (
+      project.leadMemberId !== memberId &&
+      project.members[0]?.accessLevel !== 'CAN_EDIT'
+    ) {
+      throw new ForbiddenException(
+        'Only the assigned Project Lead or a Project Member with CAN_EDIT may manage workflow structure.',
+      );
+    }
   }
 
   private async requireLead(

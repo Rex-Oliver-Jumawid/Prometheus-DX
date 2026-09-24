@@ -82,6 +82,18 @@ export class OutcomeDeliveryService {
     outcomeId: string,
   ): Promise<OutcomeDelivery> {
     const outcome = await this.context(this.prisma, projectId, outcomeId);
+    const projectMember =
+      outcome.stage.project.leadMemberId === member.id
+        ? null
+        : await this.prisma.projectMember.findUnique({
+            where: {
+              projectId_memberId: { projectId, memberId: member.id },
+            },
+            select: { accessLevel: true },
+          });
+    const canManageDelivery =
+      outcome.stage.project.leadMemberId === member.id ||
+      projectMember?.accessLevel === 'CAN_EDIT';
     const [submissions, draft, activity, reviewDraft, revisions, acceptances] =
       await Promise.all([
         this.prisma.outcomeSubmission.findMany({
@@ -103,7 +115,7 @@ export class OutcomeDeliveryService {
           include: { actorMember: { select: { fullName: true } } },
           orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         }),
-        outcome.stage.project.leadMemberId === member.id
+        canManageDelivery
           ? this.prisma.outcomeReviewDraft.findUnique({
               where: { outcomeId_memberId: { outcomeId, memberId: member.id } },
             })
@@ -193,6 +205,7 @@ export class OutcomeDeliveryService {
         !this.isLocked(outcome) &&
         outcome.members.some((item) => item.memberId === member.id),
       isLead: outcome.stage.project.leadMemberId === member.id,
+      canManageDelivery,
       hasForReview: submissions.some(
         (item) => item.reviewStatus === 'FOR_REVIEW',
       ),
@@ -310,11 +323,26 @@ export class OutcomeDeliveryService {
     });
   }
 
-  private requireLead(outcome: Context, member: Member) {
-    if (outcome.stage.project.leadMemberId !== member.id)
+  private async requireProjectEditor(
+    db: Prisma.TransactionClient,
+    outcome: Context,
+    member: Member,
+  ) {
+    if (outcome.stage.project.leadMemberId === member.id) return;
+    const projectMember = await db.projectMember.findUnique({
+      where: {
+        projectId_memberId: {
+          projectId: outcome.stage.projectId,
+          memberId: member.id,
+        },
+      },
+      select: { accessLevel: true },
+    });
+    if (projectMember?.accessLevel !== 'CAN_EDIT') {
       throw new ForbiddenException(
-        'Only the assigned Project Lead may review, accept, reopen, or resolve dependencies.',
+        'Only the assigned Project Lead or a Project Member with CAN_EDIT may review, accept, reopen, or resolve dependencies.',
       );
+    }
   }
 
   private requireVersion(outcome: Context, updatedAt: string) {
@@ -391,7 +419,7 @@ export class OutcomeDeliveryService {
     input: ReviewDraftInput,
   ) {
     return this.mutate(member, projectId, outcomeId, async (db, outcome) => {
-      this.requireLead(outcome, member);
+      await this.requireProjectEditor(db, outcome, member);
       if (outcome.lifecycleStatus === 'ACCEPTED')
         throw new ConflictException(
           'Reopen the Outcome before reviewing new work.',
@@ -444,7 +472,7 @@ export class OutcomeDeliveryService {
     input: ReviewDecisionInput,
   ) {
     return this.mutate(member, projectId, outcomeId, async (db, outcome) => {
-      this.requireLead(outcome, member);
+      await this.requireProjectEditor(db, outcome, member);
       this.requireVersion(outcome, input.outcomeUpdatedAt);
       if (outcome.lifecycleStatus === 'ACCEPTED')
         throw new ConflictException('This Outcome has already been accepted.');
@@ -482,7 +510,7 @@ export class OutcomeDeliveryService {
     input: ReviewDecisionInput,
   ) {
     return this.mutate(member, projectId, outcomeId, async (db, outcome) => {
-      this.requireLead(outcome, member);
+      await this.requireProjectEditor(db, outcome, member);
       this.requireVersion(outcome, input.outcomeUpdatedAt);
       if (outcome.lifecycleStatus === 'ACCEPTED')
         throw new ConflictException(
@@ -541,7 +569,7 @@ export class OutcomeDeliveryService {
     updatedAt: string,
   ) {
     return this.mutate(member, projectId, outcomeId, async (db, outcome) => {
-      this.requireLead(outcome, member);
+      await this.requireProjectEditor(db, outcome, member);
       this.requireVersion(outcome, updatedAt);
       if (outcome.lifecycleStatus !== 'NEEDS_REVISION')
         throw new ConflictException('This Outcome has no revision to resolve.');
@@ -564,7 +592,7 @@ export class OutcomeDeliveryService {
     input: ReviewDecisionInput,
   ) {
     return this.mutate(member, projectId, outcomeId, async (db, outcome) => {
-      this.requireLead(outcome, member);
+      await this.requireProjectEditor(db, outcome, member);
       this.requireVersion(outcome, input.outcomeUpdatedAt);
       this.requireOpen(outcome);
       const submissions = await this.requireHistory(
@@ -676,7 +704,7 @@ export class OutcomeDeliveryService {
     updatedAt: string,
   ) {
     return this.mutate(member, projectId, outcomeId, async (db, outcome) => {
-      this.requireLead(outcome, member);
+      await this.requireProjectEditor(db, outcome, member);
       this.requireVersion(outcome, updatedAt);
       if (outcome.lifecycleStatus !== 'ACCEPTED')
         throw new ConflictException(
@@ -720,7 +748,7 @@ export class OutcomeDeliveryService {
     reason: string,
   ) {
     return this.mutate(member, projectId, outcomeId, async (db, outcome) => {
-      this.requireLead(outcome, member);
+      await this.requireProjectEditor(db, outcome, member);
       const dependency = outcome.prerequisites.find(
         (item) => item.id === dependencyId,
       );
