@@ -320,21 +320,22 @@ export class ProjectChatService {
       // A stale editor must not replace another tab's more recent changes.
       if ((original.editedAt?.toISOString() ?? null) !== input.expectedEditedAt)
         throw new ConflictException('This message was edited elsewhere. Cancel and reopen the editor.');
-      const mentions = input.mentionMemberIds === undefined
-        ? undefined
-        : await this.validatedMentions(
-            db,
-            member,
-            project,
-            projectId,
-            input.body,
-            input.mentionMemberIds,
-          );
+      const requestedMentionIds =
+        input.mentionMemberIds ??
+        original.mentions.map((mention) => mention.memberId);
+      const mentions = await this.validatedMentions(
+        db,
+        member,
+        project,
+        projectId,
+        input.body,
+        requestedMentionIds,
+      );
       const previousMentionIds = new Set(
         original.mentions.map((mention) => mention.memberId),
       );
       const nextMentionIds = new Set(
-        mentions?.map((mention) => mention.id) ?? previousMentionIds,
+        mentions.map((mention) => mention.id),
       );
       const removedMentionIds = [...previousMentionIds].filter(
         (id) => !nextMentionIds.has(id),
@@ -342,7 +343,7 @@ export class ProjectChatService {
       const retainedMentionIds = [...nextMentionIds].filter((id) =>
         previousMentionIds.has(id),
       );
-      const addedMembers = (mentions ?? []).filter(
+      const addedMembers = mentions.filter(
         (mention) => !previousMentionIds.has(mention.id),
       );
       const notificationData = {
@@ -354,42 +355,43 @@ export class ProjectChatService {
         data: {
           body: input.body,
           editedAt: new Date(),
-          ...(mentions ? { mentions: { deleteMany: {}, create: mentions.map((person) => ({ memberId: person.id })) } } : {}),
+          mentions: {
+            deleteMany: {},
+            create: mentions.map((person) => ({ memberId: person.id })),
+          },
         },
         include: messageInclude,
       });
 
-      if (mentions !== undefined) {
-        const eventKey = 'PROJECT_CHAT_MENTION:' + messageId;
-        if (removedMentionIds.length) {
-          await db.notification.deleteMany({
-            where: {
-              recipientMemberId: { in: removedMentionIds },
-              type: 'PROJECT_CHAT_MENTION',
-              eventKey,
-            },
-          });
-        }
-        if (retainedMentionIds.length) {
-          await db.notification.updateMany({
-            where: {
-              recipientMemberId: { in: retainedMentionIds },
-              type: 'PROJECT_CHAT_MENTION',
-              eventKey,
-            },
-            data: { data: notificationData },
-          });
-        }
-        if (addedMembers.length) {
-          await writeNotifications(db, {
+      const eventKey = 'PROJECT_CHAT_MENTION:' + messageId;
+      if (removedMentionIds.length) {
+        await db.notification.deleteMany({
+          where: {
+            recipientMemberId: { in: removedMentionIds },
             type: 'PROJECT_CHAT_MENTION',
-            sourceEventId: messageId,
-            actorMemberId: member.id,
-            recipientMemberIds: addedMembers.map((mention) => mention.id),
-            projectId,
-            data: notificationData,
-          });
-        }
+            eventKey,
+          },
+        });
+      }
+      if (retainedMentionIds.length) {
+        await db.notification.updateMany({
+          where: {
+            recipientMemberId: { in: retainedMentionIds },
+            type: 'PROJECT_CHAT_MENTION',
+            eventKey,
+          },
+          data: { data: notificationData },
+        });
+      }
+      if (addedMembers.length) {
+        await writeNotifications(db, {
+          type: 'PROJECT_CHAT_MENTION',
+          sourceEventId: messageId,
+          actorMemberId: member.id,
+          recipientMemberIds: addedMembers.map((mention) => mention.id),
+          projectId,
+          data: notificationData,
+        });
       }
 
       return this.toMessage(updated, member.id);
