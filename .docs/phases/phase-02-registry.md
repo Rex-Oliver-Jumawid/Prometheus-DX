@@ -2,10 +2,11 @@
 
 ## Status
 
-**In progress**
+**Complete.**
 
-This document is the live implementation journal for Phase 2.
-It should be updated during implementation and finalized before Phase 2 is marked complete.
+This file preserves the detailed Phase 2 implementation journal.
+
+The final closure evidence and acceptance disposition are recorded in `.docs/phases/phase-02-registry-closure.md`, which supersedes older interim wording in the historical sections below.
 
 ## Objective
 
