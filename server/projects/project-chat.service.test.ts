@@ -81,7 +81,14 @@ function setup(options: {
                   deletedAt: null,
                   mentions: [],
                 }
-              : options.original,
+              : options.original
+                ? {
+                    editedAt: null,
+                    deletedAt: null,
+                    mentions: [],
+                    ...options.original,
+                  }
+                : null,
           );
         return Promise.resolve(options.parent === undefined ? { id: query.where.id } : options.parent);
       }),
