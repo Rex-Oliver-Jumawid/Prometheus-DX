@@ -576,7 +576,7 @@ export function ProjectChatPanel({
                         {message.editedAt && !message.deletedAt && (
                           <span className="pw-chat-edited">Edited</span>
                         )}
-                        {(message.canEdit || message.canDelete) && !message.deletedAt && (
+                        {canWrite && (message.canEdit || message.canDelete) && !message.deletedAt && (
                           <div className="pw-chat-message-options">
                             <button
                               type="button"
