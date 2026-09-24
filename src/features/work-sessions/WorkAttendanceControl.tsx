@@ -6,6 +6,7 @@ import {
 } from '../../../shared/contracts/work-session';
 import { apiFetch } from '../../lib/api';
 import { useAuth } from '../auth/auth-context';
+import { homeKeys } from '../home/home-queries';
 import { scheduleKeys } from '../schedule/schedule-queries';
 import {
   formatDuration,
@@ -73,6 +74,7 @@ export function WorkAttendanceControl() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: workSessionKeys.all }),
       queryClient.invalidateQueries({ queryKey: teamWorkKeys.all }),
+      queryClient.invalidateQueries({ queryKey: homeKeys.all }),
       queryClient.invalidateQueries({ queryKey: scheduleKeys.team }),
     ]);
   };

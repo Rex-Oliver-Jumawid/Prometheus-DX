@@ -25,8 +25,11 @@ export function currentWorkSessionQuery(accessToken?: string) {
       apiFetch('/work-sessions/current', CurrentWorkSessionResponseSchema, {
         accessToken,
       }),
-    staleTime: 10_000,
-    refetchOnWindowFocus: true,
+    staleTime: 2_000,
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 }
 
@@ -52,6 +55,10 @@ export function teamWorkSummaryQuery(accessToken?: string, week?: string) {
         TeamWorkSummaryResponseSchema,
         { accessToken },
       ),
-    staleTime: 10_000,
+    staleTime: 2_000,
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 }
