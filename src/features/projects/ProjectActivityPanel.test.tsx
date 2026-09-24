@@ -99,7 +99,7 @@ describe('ProjectActivityPanel', () => {
 
   it('loads older events and does not duplicate overlapping event IDs', async () => {
     vi.mocked(apiFetch).mockImplementation((path) => {
-      if (path.endsWith('?cursor=' + eventId))
+      if (typeof path === 'string' && path.endsWith('?cursor=' + eventId))
         return Promise.resolve({
           items: [
             event,
