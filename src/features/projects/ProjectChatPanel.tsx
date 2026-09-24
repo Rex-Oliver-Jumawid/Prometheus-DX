@@ -25,9 +25,11 @@ function errorMessage(value: unknown) {
 
 export function ProjectChatPanel({
   projectId,
+  projectName,
   accessToken,
 }: {
   projectId: string;
+  projectName: string;
   accessToken?: string;
 }) {
   const queryClient = useQueryClient();
@@ -142,9 +144,8 @@ export function ProjectChatPanel({
     <section className="pw-collaboration-panel pw-chat-panel" aria-label="Project chat">
       <header className="pw-collaboration-heading">
         <div>
-          <span className="pw-collaboration-eyebrow">TEAM CONVERSATION</span>
           <h2>Project chat</h2>
-          <p>Share updates and discuss project work with your team.</p>
+          <p>Local conversation for {projectName}.</p>
         </div>
         <button
           className="projects-secondary-button"
@@ -155,6 +156,11 @@ export function ProjectChatPanel({
           {messages.isFetching ? 'Refreshing…' : 'Refresh'}
         </button>
       </header>
+
+      <div className="pw-chat-channel-heading">
+        <strong>{projectName}</strong>
+        <span>Project channel</span>
+      </div>
 
       {messages.isPending ? (
         <p role="status" className="pw-collaboration-state">Loading project messages…</p>
@@ -298,7 +304,7 @@ export function ProjectChatPanel({
               <label htmlFor="pw-chat-input">Message</label>
               <textarea
                 id="pw-chat-input"
-                placeholder="Write a message to your project team…"
+                placeholder="Message the project..."
                 rows={3}
                 maxLength={4000}
                 value={body}
