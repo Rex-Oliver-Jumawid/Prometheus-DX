@@ -85,6 +85,17 @@ export function presentNotification(
         category: 'Outcome',
         icon: 'project',
       };
+    case 'PROJECT_CHAT_MENTION': {
+      const mention = notification.projectChatMention;
+      return {
+        title: 'You were mentioned in Project Chat',
+        description: mention
+          ? `${actor ?? 'A teammate'} mentioned you in ${project ?? 'a project'}: “${mention.preview}”`
+          : `${actor ?? 'A teammate'} mentioned you in Project Chat.`,
+        category: 'Mention',
+        icon: 'participant',
+      };
+    }
     case 'VISIWORK_MENTION': {
       const mention = notification.visiworkMention;
       return {
@@ -108,6 +119,14 @@ export function notificationPath(notification: Notification): string | null {
       params.set('department', notification.visiworkMention.departmentId);
     }
     return `/visiwork?${params.toString()}`;
+  }
+  if (notification.type === 'PROJECT_CHAT_MENTION') {
+    if (!notification.project || !notification.projectChatMention) return null;
+    const params = new URLSearchParams({
+      tab: 'chat',
+      message: notification.projectChatMention.messageId,
+    });
+    return `/projects/${notification.project.id}?${params.toString()}`;
   }
   if (!notification.project) return null;
   if (notification.outcome)
