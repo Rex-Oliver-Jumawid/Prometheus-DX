@@ -92,6 +92,40 @@ describe('ProjectChatPanel interactions', () => {
     expect(reads).toBe(2);
   });
 
+  it('sends on Enter but reserves Shift+Enter for composing multiline messages', async () => {
+    vi.mocked(apiFetch).mockImplementation((path, _schema, options) => {
+      if (options?.method === 'POST')
+        return Promise.resolve({ ...existing, id: olderId, body: 'First line\\nSecond line' });
+      if (typeof path === 'string' && path.endsWith('/messages'))
+        return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
+      if (typeof path === 'string' && path.endsWith('/members'))
+        return Promise.resolve({ projectId, members: [], canManageAccess: false });
+      return Promise.reject(new Error('Unexpected API request: ' + path));
+    });
+    renderChat();
+    const input = await screen.findByRole('textbox', { name: 'Message' });
+    fireEvent.change(input, { target: { value: 'First line' } });
+    expect(fireEvent.keyDown(input, { key: 'Enter', shiftKey: true })).toBe(true);
+    expect(vi.mocked(apiFetch).mock.calls.filter(([, , opts]) => opts?.method === 'POST')).toHaveLength(0);
+    fireEvent.change(input, { target: { value: 'First line\\nSecond line' } });
+    expect(fireEvent.keyDown(input, { key: 'Enter' })).toBe(false);
+    await waitFor(() =>
+      expect(apiFetch).toHaveBeenCalledWith(
+        '/projects/' + projectId + '/messages',
+        expect.anything(),
+        expect.objectContaining({
+          method: 'POST',
+          body: {
+            body: 'First line\\nSecond line',
+            parentMessageId: null,
+            mentionMemberIds: [],
+          },
+        }),
+      ),
+    );
+    expect(vi.mocked(apiFetch).mock.calls.filter(([, , opts]) => opts?.method === 'POST')).toHaveLength(1);
+  });
+
   it('sends replies with their original Project message ID', async () => {
     vi.mocked(apiFetch).mockImplementation((path, _schema, options) => {
       if (options?.method === 'POST') return Promise.resolve({
@@ -261,6 +295,17 @@ describe('ProjectChatPanel interactions', () => {
     });
 
     renderChat();
+    const thread = await screen.findByRole('list', { name: 'Project messages' });
+    Object.defineProperty(thread, 'clientHeight', { configurable: true, value: 200 });
+    const defaultRect = HTMLElement.prototype.getBoundingClientRect;
+    const rectSpy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        const bounds = defaultRect.call(this);
+        if (this === thread) return { ...bounds, top: 100, height: 200 } as DOMRect;
+        if (this.dataset.messageId === contextualId)
+          return { ...bounds, top: 350, height: 40 } as DOMRect;
+        return bounds;
+      });
     fireEvent.click(await screen.findByRole('button', { name: 'Search project conversation' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Search project messages' }), {
       target: { value: 'Launch' },
@@ -272,6 +317,10 @@ describe('ProjectChatPanel interactions', () => {
       expect.anything(),
       expect.anything(),
     ));
+    await waitFor(() => expect(thread.scrollTop).toBe(170));
+    expect(thread.querySelector('[data-message-id="' + contextualId + '"]'))
+      .toHaveClass('pw-chat-message--targeted');
+    rectSpy.mockRestore();
   });
 
   it('mentions a project member from the composer', async () => {
