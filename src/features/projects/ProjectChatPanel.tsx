@@ -129,8 +129,11 @@ export function ProjectChatPanel({
     initialPageParam: null as string | null,
     getNextPageParam: (page) => page.nextCursor ?? undefined,
     enabled: Boolean(accessToken),
-    staleTime: 3_000,
-    refetchInterval: 8_000,
+    // Keep the conversation warm when switching between Project tabs.
+    // Active chats still poll for updates without flashing a loading screen.
+    staleTime: 60_000,
+    gcTime: 15 * 60_000,
+    refetchInterval: 15_000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
   });
@@ -143,7 +146,8 @@ export function ProjectChatPanel({
       }),
     enabled: Boolean(accessToken),
     retry: false,
-    staleTime: 30_000,
+    staleTime: 60_000,
+    gcTime: 15 * 60_000,
   });
 
   const search = useQuery({
@@ -497,16 +501,41 @@ export function ProjectChatPanel({
       )}
 
       {messages.isPending ? (
-        <div role="status" className="pw-chat-loading" aria-label="Loading project messages">
-          <span />
-          <span />
-          <span />
-          <span />
+        <div
+          role="status"
+          className="pw-chat-loading pw-chat-loading--conversation"
+          aria-label="Loading project messages"
+        >
+          <span className="sr-only">Loading project messages...</span>
+          <div className="pw-chat-skeleton-message">
+            <span className="pw-chat-skeleton-line pw-chat-skeleton-name" />
+            <span className="pw-chat-skeleton-line pw-chat-skeleton-body" />
+            <span className="pw-chat-skeleton-line pw-chat-skeleton-body pw-chat-skeleton-body--short" />
+            <span className="pw-chat-skeleton-line pw-chat-skeleton-time" />
+          </div>
+          <div className="pw-chat-skeleton-message pw-chat-skeleton-message--own">
+            <span className="pw-chat-skeleton-line pw-chat-skeleton-name" />
+            <span className="pw-chat-skeleton-line pw-chat-skeleton-body" />
+            <span className="pw-chat-skeleton-line pw-chat-skeleton-time" />
+          </div>
+          <div className="pw-chat-skeleton-message pw-chat-skeleton-message--third">
+            <span className="pw-chat-skeleton-line pw-chat-skeleton-name" />
+            <span className="pw-chat-skeleton-line pw-chat-skeleton-body" />
+            <span className="pw-chat-skeleton-line pw-chat-skeleton-body pw-chat-skeleton-body--short" />
+            <span className="pw-chat-skeleton-line pw-chat-skeleton-time" />
+          </div>
+          <div className="pw-chat-skeleton-composer" aria-hidden="true">
+            <span className="pw-chat-skeleton-line pw-chat-skeleton-input" />
+            <span className="pw-chat-skeleton-line pw-chat-skeleton-send" />
+          </div>
         </div>
       ) : messages.isError && ordered.length === 0 ? (
         <div className="pw-chat-load-error" role="alert">
           <strong>Project chat could not be loaded.</strong>
           <p>{errorMessage(messages.error)}</p>
+          <p className="pw-chat-load-hint">
+            If the API reports a server error, check its terminal and regenerate the Prisma Client after switching branches.
+          </p>
           <button type="button" onClick={() => void messages.refetch()}>Try again</button>
         </div>
       ) : (
