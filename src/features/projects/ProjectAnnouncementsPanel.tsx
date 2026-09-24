@@ -116,7 +116,7 @@ export function ProjectAnnouncementsPanel({
           <h2>Announcements</h2>
           <p>Project-wide updates. Pinned announcements stay visible at the top.</p>
         </div>
-        {announcements.data?.canManage && (
+        {announcements.data?.canPost && (
           <button
             type="button"
             className="pw-announce-button"
