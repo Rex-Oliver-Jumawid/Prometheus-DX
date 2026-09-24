@@ -106,6 +106,9 @@ describe('ProjectOverviewPage status mutation', () => {
       if (path === `/projects/${projectId}/messages`) {
         return Promise.resolve({ items: [], nextCursor: null, canWrite: true });
       }
+      if (path === `/projects/${projectId}/announcements`) {
+        return Promise.resolve({ items: [], canManage: true });
+      }
       if (path === `/projects/${projectId}`) return Promise.resolve(project);
       return Promise.resolve({});
     });
@@ -131,7 +134,8 @@ describe('ProjectOverviewPage status mutation', () => {
         expect.objectContaining({ accessToken: 'token' }),
       ),
     );
-    fireEvent.click(screen.getByRole('tab', { name: 'Content' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Fast Project' }));
+    expect(await screen.findByRole('tab', { name: 'Content' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.queryByRole('heading', { name: 'Project Members' })).not.toBeInTheDocument();
   });
 
@@ -162,13 +166,13 @@ describe('ProjectOverviewPage status mutation', () => {
     renderPage();
     fireEvent.click(await screen.findByRole('tab', { name: 'Activity' }));
 
-    expect(await screen.findByRole('heading', { name: 'Project activity' })).toBeVisible();
+    expect(await screen.findByRole('heading', { name: 'Project Activity' })).toBeVisible();
     expect(await screen.findByText(/created a feature/)).toBeVisible();
     expect(screen.getByText(/Design mockups/)).toBeVisible();
     expect(screen.getByRole('tab', { name: 'Activity' })).toHaveAttribute('aria-selected', 'true');
     fireEvent.click(screen.getByRole('tab', { name: 'Content' }));
     expect(screen.getByRole('tab', { name: 'Content' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.queryByRole('heading', { name: 'Project activity' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Project Activity' })).not.toBeInTheDocument();
   });
 
   it('shows persistent Project Chat and sends a message for a writable member', async () => {
@@ -196,6 +200,8 @@ describe('ProjectOverviewPage status mutation', () => {
         });
       if (path === `/projects/${projectId}/messages`)
         return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
+      if (path === `/projects/${projectId}/announcements`)
+        return Promise.resolve({ items: [], canManage: true });
       if (path === `/projects/${projectId}`) return Promise.resolve(project);
       return Promise.resolve({});
     });
@@ -217,7 +223,7 @@ describe('ProjectOverviewPage status mutation', () => {
         expect.objectContaining({
           accessToken: 'token',
           method: 'POST',
-          body: { body: 'Hello project team', parentMessageId: null },
+          body: { body: 'Hello project team', parentMessageId: null, mentionMemberIds: [] },
         }),
       ),
     );
@@ -232,6 +238,8 @@ describe('ProjectOverviewPage status mutation', () => {
         return Promise.resolve(projectMembersResponse);
       if (path.endsWith('/messages'))
         return Promise.resolve({ items: [], nextCursor: null, canWrite: true });
+      if (path.endsWith('/announcements'))
+        return Promise.resolve({ items: [], canManage: true });
       if (path === `/projects/${otherProjectId}`)
         return Promise.resolve({ ...project, id: otherProjectId, name: 'Other Project' });
       if (path === `/projects/${projectId}`) return Promise.resolve(project);
@@ -268,7 +276,7 @@ describe('ProjectOverviewPage status mutation', () => {
     fireEvent.change(input, { target: { value: 'Unsent previous Project draft' } });
     expect(input).toHaveValue('Unsent previous Project draft');
     fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }));
-    expect(await screen.findByRole('heading', { name: 'Other Project' })).toBeVisible();
+    expect(await screen.findByRole('link', { name: 'Other Project' })).toBeVisible();
     await waitFor(() =>
       expect(screen.getByRole('textbox', { name: 'Message' })).toHaveValue(''),
     );
