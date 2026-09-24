@@ -36,10 +36,7 @@ function project(
   overrides: Partial<Project> & Pick<Project, 'id' | 'name' | 'status'>,
 ): Project {
   return {
-    id: overrides.id,
-    name: overrides.name,
     description: 'Project description',
-    status: overrides.status,
     lead: nico,
     creator: nico,
     departments: [rd],
