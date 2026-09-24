@@ -461,6 +461,8 @@ Add durable collaboration across VisiWork and Projects after the core authorizat
 - VisiWork General chat
 - VisiWork Department chat
 - Project Chat
+- Project announcements and Project Lead pinning
+- Project Activity / audit view
 - Message search and exact-message navigation
 - Mentions and collaboration notifications
 - Message editing and deletion
@@ -483,7 +485,10 @@ Search, mentions, edits, deletions, deep links, and notifications must preserve 
 
 Users may mutate only messages they are authorized to mutate under the final approved collaboration rules.
 
-Project Chat permissions must follow the final approved Project communication rules.
+Project Chat and Project announcements must follow the approved Project communication rules.
+
+Normal Project activity intended for company-wide visibility remains readable by all active authorized Prometheus users.
+Any Lead-only activity detail must be additive rather than replacing the company-visible activity trail.
 
 Attachment authorization must not rely only on possession of a storage URL.
 
