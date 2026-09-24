@@ -139,6 +139,30 @@ describe('ProjectOverviewPage status mutation', () => {
     expect(screen.queryByRole('heading', { name: 'Project Members' })).not.toBeInTheDocument();
   });
 
+  it('retains the project summary and reuses cached chat when returning from Content', async () => {
+    renderPage();
+    expect(await screen.findByRole('heading', { name: 'Fast Project' })).toBeVisible();
+    expect(screen.getByRole('combobox', { name: 'Project status' })).toBeVisible();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Chat' }));
+    expect(await screen.findByRole('heading', { name: 'Project chat' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Fast Project' })).toBeVisible();
+    expect(screen.getByRole('combobox', { name: 'Project status' })).toBeVisible();
+    expect(await screen.findByText('No messages yet. Start the conversation.')).toBeVisible();
+
+    const messageReads = () => vi.mocked(apiFetch).mock.calls.filter(
+      ([path]) => path === `/projects/${projectId}/messages`,
+    ).length;
+    expect(messageReads()).toBe(1);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Content' }));
+    expect(screen.getByRole('heading', { name: 'Fast Project' })).toBeVisible();
+    fireEvent.click(screen.getByRole('tab', { name: 'Chat' }));
+    expect(screen.getByRole('heading', { name: 'Fast Project' })).toBeVisible();
+    expect(await screen.findByText('No messages yet. Start the conversation.')).toBeVisible();
+    expect(messageReads()).toBe(1);
+  });
+
   it('opens the Project Activity tab and loads persisted events', async () => {
     vi.mocked(apiFetch).mockImplementation((path: string) => {
       if (path.endsWith('/workflow'))
