@@ -459,7 +459,23 @@ export function ProjectOverviewPage() {
         />
       ) : activeTab === 'chat' ? (
         <div id="pw-chat-panel" role="tabpanel" aria-labelledby="pw-chat-tab">
-          <ProjectChatPanel key={projectId} projectId={projectId!} accessToken={accessToken} />
+          <div className="pw-chat-workspace">
+            <ProjectChatPanel
+              key={projectId}
+              projectId={projectId!}
+              projectName={value.name}
+              accessToken={accessToken}
+            />
+            <aside className="pw-chat-sidebar" aria-label="Project chat sidebar">
+              <ProjectMembersPanel
+                key={projectId}
+                projectId={projectId!}
+                projectLead={value.lead}
+                accessToken={accessToken}
+                compact
+              />
+            </aside>
+          </div>
         </div>
       ) : activeTab === 'activity' ? (
         <div id="pw-activity-panel" role="tabpanel" aria-labelledby="pw-activity-tab">
@@ -472,7 +488,6 @@ export function ProjectOverviewPage() {
             accessToken={accessToken}
             isLead={workflow.data?.canManageStructure ?? false}
           />
-          <ProjectMembersPanel projectId={projectId!} accessToken={accessToken} />
         </div>
       )}
     </div>
