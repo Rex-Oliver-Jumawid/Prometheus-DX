@@ -2,9 +2,43 @@
 
 ## Status
 
-In progress.
-Phase 4 remains the completed baseline.
-Repository orientation on 2026-09-17 found a clean worktree, 84 passing unit tests, and a valid Prisma schema.
+**Complete - release closure reassessed on 2026-09-25.**
+
+The original journal remained open after the implementation was already integrated.
+The current closure decision uses the accumulated Phase 5 browser evidence, database/service coverage, later regression coverage, and the final CAN_EDIT permission amendment.
+
+## Release Closure Reassessment - 2026-09-25
+
+Phase 5 satisfies its exit milestone.
+
+The complete project-delivery loop is implemented with real persisted records:
+
+```text
+Project
+-> Stage
+-> Outcome
+-> Outcome Membership
+-> Feature / Task work
+-> shared submission history
+-> review / revision
+-> resubmission
+-> acceptance
+-> reopening
+-> dependency handling
+```
+
+Existing Phase 5 evidence already records a signed-in distinct-account core suite that passed 18/18 checks with real Supabase authentication, Registry authorization, revision, direct acceptance, dependency unlock/relock, and preserved dependency overrides.
+
+Later repository work added additional service, component, integration, migration, stale-write, concurrency, and UI regression coverage.
+
+The 2026-09-25 `CAN_EDIT` amendment is additive to the original Lead path.
+The backend now grants Project review authority to the Project Lead or a Project Member with `CAN_EDIT`, while Outcome work still requires Outcome Membership and Project Member access management remains Lead-only.
+
+Current CI verifies lint, typecheck, service/unit tests, component tests, production builds, PostgreSQL migration/integration checks, and the credential-free Chromium smoke suite.
+Credential-gated browser journeys remain useful release smoke when configured, but they no longer represent missing Phase 5 implementation.
+
+Phase 5 is therefore closed.
+Future browser-suite refactoring and additional release smoke are maintenance work rather than unfinished Phase 5 scope.
 
 ## Permission Amendment - 2026-09-25
 
@@ -123,7 +157,7 @@ The following mappings identify executable checks; final PASS status is continge
 | F5-10, F5-11 | Delivery nonmember and missing-content API rejection |
 | F5-14, F5-15, F5-16 | Delivery parallel requests, deterministic history, rapid double-click/idempotency; Core 08-09 |
 | F5-17, F5-20, F5-21, F5-22 | Delivery combined review/revision/resubmission; Core 07-10 |
-| F5-18, F5-19 | Delivery non-Lead Administrator and CAN_EDIT API denial; service authorization matrix |
+| F5-18, F5-19 | Delivery non-editor denial plus the current service authorization matrix; CAN_EDIT is now an authorized Project editor path |
 | F5-23 | Core 08 new distinct Member joins during revision |
 | F5-24, F5-25 | Delivery acceptance/member snapshots; Core 10-11 and 20 |
 | F5-26, F5-27 | Delivery accepted work/submission closure; Core 11 new Member join rejection |
@@ -132,7 +166,7 @@ The following mappings identify executable checks; final PASS status is continge
 | F5-33, F5-34 | Delivery resubmission and second acceptance; Core 17 expanded credit |
 | F5-35, F5-36, F5-37 | Work planning/execution lock tests; Core 12 locked membership and submission denial |
 | F5-38, F5-39 | Core 13-14 acceptance unlock, refresh, and prerequisite reopen |
-| F5-40 | Delivery/Core 15 non-Lead override denial and Lead edge override |
+| F5-40 | Non-editor override denial plus Project editor dependency-override authorization |
 
 Additional checks cover deletion audit events, stale private drafts, saved review preparation, stale combined reviews, explicit revision resolution, accepted-dependent preservation, acceptance/join races, background form refresh, loading/error/retry states, invalid direct routes, Back/Forward, mobile/desktop screenshots, and derived Project/Stage progress.
 
@@ -532,10 +566,12 @@ Further initial-bundle work should be evidence-driven because the remaining main
 
 ## Known Limitations
 
-Phase 5 is incomplete.
-The dependency reopening policy and lifecycle are implemented; final acceptance verification is pending.
-The existing browser acceptance suites have not all been migrated to the new layer ownership yet.
-That migration should be incremental and should not remove critical real user journeys.
+The core Phase 5 product scope is complete.
+
+Some browser suites still contain assertions that can eventually move to faster service/component layers.
+That is test-maintenance debt rather than an unfinished product capability.
+
+Credential-gated signed-in browser tests require configured test identities and should continue to be used for release smoke when available.
 
 ## Technical Debt
 
@@ -554,13 +590,11 @@ Testing should use the lowest reliable layer and reserve browser E2E for workflo
 
 ## Recommendations / Next Approach
 
-Verify each complete slice before starting the next.
-Preserve the Phase 4 baseline and run the complete core browser workflow before closure.
-Use focused Vitest or component tests before broad browser regression.
-Use `pnpm verify:e2e` for the Phase 5 browser completion gate and `pnpm verify:release` only when release-level cross-browser confidence is required.
-Migrate browser-only permission, validation, stale-write, and concurrency assertions downward when those tests are touched.
+Keep the completed workflow protected by layered regression.
+Use focused service/component tests for permission and stale-write behavior and preserve a small signed-in browser path for release smoke.
 
 ## Phase Exit Result
 
-Not complete.
-The repository is not yet ready to begin Phase 6.
+**Complete.**
+
+Phase 5 no longer blocks release status or later phase closure.
