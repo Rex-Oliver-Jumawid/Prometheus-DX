@@ -107,13 +107,28 @@ function eventCategory(action: string) {
 }
 
 function eventTime(date: string) {
-  return new Date(date).toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
+  const value = new Date(date);
+  const now = new Date();
+  const time = new Intl.DateTimeFormat('en-PH', {
     hour: 'numeric',
     minute: '2-digit',
-  });
+  }).format(value);
+  if (
+    value.getFullYear() === now.getFullYear() &&
+    value.getMonth() === now.getMonth() &&
+    value.getDate() === now.getDate()
+  ) {
+    return 'Today · ' + time;
+  }
+  return (
+    new Intl.DateTimeFormat('en-PH', {
+      month: 'short',
+      day: 'numeric',
+      year: value.getFullYear() === now.getFullYear() ? undefined : 'numeric',
+    }).format(value) +
+    ' · ' +
+    time
+  );
 }
 
 export function ProjectActivityPanel({
