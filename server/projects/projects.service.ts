@@ -189,6 +189,17 @@ export class ProjectsService {
         },
       });
 
+      await transaction.activityLog.create({
+        data: {
+          projectId: created.id,
+          actorMemberId: currentMember.id,
+          entityType: 'Project',
+          entityId: created.id,
+          action: 'PROJECT_CREATED',
+          metadata: { name: created.name },
+        },
+      });
+
       await writeNotifications(transaction, {
         type: 'PROJECT_LEAD_ASSIGNED',
         sourceEventId: created.id,
@@ -274,6 +285,28 @@ export class ProjectsService {
           FROM updated_project
           RETURNING project_id
         )
+        activity_history AS (
+          INSERT INTO activity_logs (
+            project_id,
+            actor_member_id,
+            entity_type,
+            entity_id,
+            action,
+            metadata
+          )
+          SELECT
+            updated_project.id,
+            ${currentMember.id}::uuid,
+            'Project',
+            updated_project.id,
+            'PROJECT_STATUS_CHANGED',
+            jsonb_build_object(
+              'fromStatus', updated_project."fromStatus"::text,
+              'toStatus', updated_project.status::text
+            )
+          FROM updated_project
+          RETURNING id
+        )
         SELECT
           updated_project.id,
           updated_project.status,
@@ -281,6 +314,7 @@ export class ProjectsService {
           updated_project."updatedAt"
         FROM updated_project
         CROSS JOIN (SELECT count(*) FROM status_history) AS history_write
+        CROSS JOIN (SELECT count(*) FROM activity_history) AS activity_write
         UNION ALL
         SELECT
           authorized_project.id,
