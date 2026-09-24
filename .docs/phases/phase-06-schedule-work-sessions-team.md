@@ -557,6 +557,25 @@ Post-completion Figma alignment verification performed on 2026-09-18:
 - The apparent post-implementation visual mismatch was traced to Vite and Nest processes still running from the separate `Prometheus-phase-6` worktree.
 - Restarting both development processes from `Prometheus-integration` loaded the updated Team Schedule, and the focused authenticated Schedule journey passed again.
 
+## Post-Phase Maintenance - Automatic WorkSession Refresh
+
+Phase 6 remains complete.
+
+Later Home and VisiWork integration added automatic visibility refresh so Time In and Time Out changes appear across already-open WorkSession-backed surfaces without requiring a manual page reload.
+
+The integrated application uses TanStack Query invalidation and automatic refetching across Home Working Now, Team, VisiWork working-member state, and the global attendance control.
+
+The architectural rule remains:
+
+```text
+WorkSession = source of truth
+polling / refetch = visibility mechanism only
+```
+
+Presence and client-only state never replace persisted WorkSession records.
+
+This maintenance is reflected in `.context/derived-metrics.md` and `.docs/DEVELOPMENT.md`.
+
 ## Known Limitations
 
 Date-specific schedule overrides are not implemented.
