@@ -55,7 +55,7 @@ function renderChat() {
 }
 
 describe('ProjectChatPanel interactions', () => {
-  beforeEach(() => vi.mocked(apiFetch).mockReset());
+  beforeEach(() => { vi.mocked(apiFetch).mockReset(); });
 
   it('sends replies with their original Project message ID', async () => {
     vi.mocked(apiFetch).mockImplementation((path, _schema, options) => {
