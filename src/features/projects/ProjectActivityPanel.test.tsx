@@ -70,7 +70,7 @@ describe('ProjectActivityPanel', () => {
     expect(await screen.findByText('No activity has been recorded yet.')).toBeVisible();
   });
 
-  it('shows only personal actions, compact filters, and the Outcome context in Member Activity', async () => {
+  it('shows company-visible Project Activity to a non-lead viewer', async () => {
     const teammate = { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', fullName: 'Teammate' };
     vi.mocked(apiFetch).mockResolvedValue({
       items: [
@@ -80,37 +80,30 @@ describe('ProjectActivityPanel', () => {
           actor: teammate, action: 'TASK_COMPLETED', metadata: { title: 'Unrelated task' } },
       ],
       nextCursor: null,
-      scope: 'PERSONAL',
+      scope: 'PROJECT',
     });
-    const { container } = renderActivity({ isLead: false, currentMemberId: actor.id });
-    expect(await screen.findByRole('heading', { name: 'My Activity' })).toBeVisible();
-    expect(screen.getByText('PERSONAL PROJECT HISTORY')).toBeVisible();
-    expect(screen.getByText('Actions performed by Project Lead inside this project.')).toBeVisible();
-    expect(await screen.findByText('Added feature: Search')).toBeVisible();
-    expect(screen.getByText('Opportunity decision · Project Lead')).toBeVisible();
+    renderActivity({ isLead: false, currentMemberId: actor.id });
+    expect(await screen.findByRole('heading', { name: 'Project Activity' })).toBeVisible();
+    expect(screen.getByText('PROJECT AUDIT TRAIL')).toBeVisible();
+    expect(await screen.findByText(/created a feature/)).toBeVisible();
+    expect(screen.getByText(/completed a task/)).toBeVisible();
+    expect(screen.getByRole('combobox', { name: 'Member' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reviews' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'View outcome' })).toHaveAttribute(
       'href', '/projects/' + projectId + '/outcomes/' + outcomeId,
     );
-    expect(screen.queryByText('Unrelated task')).not.toBeInTheDocument();
-    expect(screen.queryByRole('combobox', { name: 'Member' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Reviews' })).not.toBeInTheDocument();
-    expect(screen.getByText('actions logged')).toBeVisible();
-    expect(screen.getByText('1')).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Outputs' }));
-    expect(screen.getByText('No activity matches the selected filters.')).toBeVisible();
-    expect(container.querySelector('.pw-activity-empty-state')).toBeInTheDocument();
   });
 
-  it('uses the Figma empty-history card when a member has no recorded actions', async () => {
+  it('uses the empty-history card when Project Activity has no recorded actions', async () => {
     vi.mocked(apiFetch).mockResolvedValue({
       items: [],
       nextCursor: null,
-      scope: 'PERSONAL',
+      scope: 'PROJECT',
     });
     const { container } = renderActivity({ isLead: false });
     expect(await screen.findByText('No activity has been recorded yet.')).toBeVisible();
     expect(container.querySelector('.pw-activity-empty-state')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'My Activity' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Project Activity' })).toBeVisible();
     expect(screen.getByText('0')).toBeVisible();
   });
 
