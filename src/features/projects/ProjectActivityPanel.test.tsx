@@ -140,7 +140,7 @@ describe('ProjectActivityPanel', () => {
     expect(screen.getByText(/requested revisions/)).toBeVisible();
     expect(screen.queryByText(/submitted output for review/)).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'All', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
     fireEvent.change(screen.getByRole('combobox', { name: 'Member' }), {
       target: { value: actor.id },
     });
