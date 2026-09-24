@@ -11,6 +11,7 @@ export const NotificationTypeSchema = z.enum([
   'OUTCOME_REOPENED',
   'DEPENDENCY_UNLOCKED',
   'VISIWORK_MENTION',
+  'PROJECT_CHAT_MENTION',
 ]);
 
 export const NotificationListQuerySchema = z
@@ -41,6 +42,13 @@ export const NotificationSchema = z.object({
   project: NotificationProjectSchema.nullable(),
   outcome: NotificationOutcomeSchema.nullable(),
   newAccessLevel: ProjectAccessLevelSchema.nullable(),
+  projectChatMention: z
+    .object({
+      messageId: z.string().uuid(),
+      preview: z.string(),
+    })
+    .nullable()
+    .optional(),
   visiworkMention: z
     .object({
       messageId: z.string().uuid(),
