@@ -290,15 +290,10 @@ export function HomeDashboardView({
                 <span>Team</span>
                 <span aria-hidden="true">→</span>
               </Link>
-              <button
-                type="button"
-                disabled
-                aria-disabled="true"
-                title="Reports & Analytics is not implemented yet"
-              >
+              <Link to="/reports">
                 <span>Reports</span>
                 <span aria-hidden="true">→</span>
-              </button>
+              </Link>
             </div>
           </section>
         </aside>
