@@ -11,6 +11,7 @@ import { ApiRequestError, apiFetch } from '../../lib/api';
 import { ProjectMembersPanel } from './ProjectMembersPanel';
 import { ProjectActivityPanel } from './ProjectActivityPanel';
 import { ProjectChatPanel } from './ProjectChatPanel';
+import { ProjectAnnouncementsPanel } from './ProjectAnnouncementsPanel';
 import { ProjectWorkflow } from './ProjectWorkflow';
 import {
   projectDetailQuery,
@@ -229,6 +230,63 @@ export function ProjectOverviewPage() {
   const statusError = updateStatus.isError
     ? errorMessage(updateStatus.error)
     : null;
+
+  if (!outcomeId && activeTab === 'chat') {
+    return (
+      <div
+        id="pwProjectPage"
+        className="pw-project-page pw-project-page--chat"
+        aria-labelledby="pwChatPageTitle"
+      >
+        <div className="pw-chat-page-heading">
+          <div>
+            <h1 id="pwChatPageTitle">Project chat</h1>
+            <p>Local conversation for {value.name}.</p>
+          </div>
+          <nav className="pw-breadcrumb-pill" aria-label="Breadcrumb">
+            <Link to="/projects" className="pw-breadcrumb-link">
+              Projects
+            </Link>
+            <span className="pw-breadcrumb-sep" aria-hidden="true">/</span>
+            <Link
+              to={`/projects/${projectId}`}
+              className="pw-breadcrumb-current pw-chat-project-link"
+              title={value.name}
+            >
+              {value.name}
+            </Link>
+          </nav>
+        </div>
+
+        <div id="pw-chat-panel" role="tabpanel" aria-label="Project chat">
+          <div className="pw-chat-workspace">
+            <ProjectChatPanel
+              key={projectId}
+              projectId={projectId!}
+              projectName={value.name}
+              projectLead={value.lead}
+              accessToken={accessToken}
+            />
+            <aside className="pw-chat-side-stack" aria-label="Project chat sidebar">
+              <ProjectAnnouncementsPanel
+                projectId={projectId!}
+                accessToken={accessToken}
+              />
+              <div className="pw-chat-sidebar">
+                <ProjectMembersPanel
+                  key={projectId}
+                  projectId={projectId!}
+                  projectLead={value.lead}
+                  accessToken={accessToken}
+                  compact
+                />
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -457,27 +515,6 @@ export function ProjectOverviewPage() {
           accessToken={accessToken}
           isLead={workflow.data?.canManageStructure ?? false}
         />
-      ) : activeTab === 'chat' ? (
-        <div id="pw-chat-panel" role="tabpanel" aria-labelledby="pw-chat-tab">
-          <div className="pw-chat-workspace">
-            <ProjectChatPanel
-              key={projectId}
-              projectId={projectId!}
-              projectName={value.name}
-              projectLead={value.lead}
-              accessToken={accessToken}
-            />
-            <aside className="pw-chat-sidebar" aria-label="Project chat sidebar">
-              <ProjectMembersPanel
-                key={projectId}
-                projectId={projectId!}
-                projectLead={value.lead}
-                accessToken={accessToken}
-                compact
-              />
-            </aside>
-          </div>
-        </div>
       ) : activeTab === 'activity' ? (
         <div id="pw-activity-panel" role="tabpanel" aria-labelledby="pw-activity-tab">
           <ProjectActivityPanel key={projectId} projectId={projectId!} accessToken={accessToken} />
