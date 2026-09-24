@@ -107,6 +107,7 @@ export function ProjectChatPanel({
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [targetMessageId, setTargetMessageId] = useState<string | null>(initialMessageId ?? null);
+  const [jumpRevision, setJumpRevision] = useState(0);
   const threadRef = useRef<HTMLOListElement>(null);
   const pinnedToBottom = useRef(true);
   const initiallyScrolled = useRef(false);
@@ -341,16 +342,28 @@ export function ProjectChatPanel({
     initiallyScrolled.current = true;
   }, [pageCount, ordered.length, firstMessageId, lastMessageId]);
 
+  // A result may already be in the cached page, or its context may arrive before
+  // the initial conversation. Wait for the actual row and scroll only the chat
+  // viewport so selecting a search result never jumps the entire workspace.
   useLayoutEffect(() => {
-    if (!targetMessageId || !context.data) return;
+    if (!targetMessageId || messages.isPending) return;
+    if (!ordered.some((message) => message.id === targetMessageId)) return;
     const frame = window.requestAnimationFrame(() => {
-      const target = threadRef.current?.querySelector<HTMLElement>(
+      const thread = threadRef.current;
+      const target = thread?.querySelector<HTMLElement>(
         '[data-message-id="' + targetMessageId + '"]',
       );
-      target?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+      if (!thread || !target) return;
+      pinnedToBottom.current = false;
+      const threadBounds = thread.getBoundingClientRect();
+      const messageBounds = target.getBoundingClientRect();
+      const centeredOffset =
+        messageBounds.top - threadBounds.top -
+        (thread.clientHeight - messageBounds.height) / 2;
+      thread.scrollTop += centeredOffset;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [context.data, targetMessageId]);
+  }, [targetMessageId, messages.isPending, ordered.length, context.data, jumpRevision]);
 
   function updateBody(value: string) {
     setBody(value);
@@ -415,8 +428,7 @@ export function ProjectChatPanel({
     });
   }
 
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function sendMessage() {
     if (!body.trim() || body.length > 4000 || !canWrite || send.isPending) return;
     send.mutate({
       body,
@@ -425,9 +437,15 @@ export function ProjectChatPanel({
     });
   }
 
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    sendMessage();
+  }
+
   function jumpToMessage(message: ProjectMessage) {
     pinnedToBottom.current = false;
     setTargetMessageId(message.id);
+    setJumpRevision((current) => current + 1);
     setSearchOpen(false);
   }
 
@@ -768,12 +786,20 @@ export function ProjectChatPanel({
                     value={body}
                     onChange={(event) => updateBody(event.target.value)}
                     onKeyDown={(event) => {
+                      if (event.nativeEvent.isComposing) return;
                       if (
                         mentionSuggestions.length > 0 &&
+                        !event.shiftKey &&
                         (event.key === 'Enter' || event.key === 'Tab')
                       ) {
                         event.preventDefault();
                         selectMention(mentionSuggestions[0]);
+                        return;
+                      }
+                      // Enter sends; Shift+Enter deliberately inserts a newline.
+                      if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        if (!event.repeat) sendMessage();
                       }
                     }}
                     disabled={send.isPending}
