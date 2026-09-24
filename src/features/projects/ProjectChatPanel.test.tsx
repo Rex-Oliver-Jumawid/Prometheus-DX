@@ -12,6 +12,12 @@ const author = {
   fullName: 'Project Member',
   email: 'member@example.com',
 };
+const projectLead = {
+  id: '22222222-2222-4222-8222-222222222222',
+  fullName: 'Project Lead',
+  email: 'lead@example.com',
+};
+
 const existing = {
   id: messageId,
   projectId,
@@ -19,9 +25,12 @@ const existing = {
   parentMessageId: null,
   replyTo: null,
   body: 'Initial update',
+  mentions: [],
+  deletedAt: null,
   createdAt: '2026-09-23T01:00:00.000Z',
   editedAt: null,
   canEdit: true,
+  canDelete: true,
 };
 
 vi.mock('../../lib/api', async (importOriginal) => ({
@@ -35,7 +44,12 @@ function renderChat() {
   });
   return render(
     <QueryClientProvider client={client}>
-      <ProjectChatPanel projectId={projectId} projectName="Example Project" accessToken="token" />
+      <ProjectChatPanel
+        projectId={projectId}
+        projectName="Example Project"
+        projectLead={projectLead}
+        accessToken="token"
+      />
     </QueryClientProvider>,
   );
 }
@@ -66,7 +80,7 @@ describe('ProjectChatPanel interactions', () => {
       expect.anything(),
       expect.objectContaining({
         method: 'POST',
-        body: { body: 'Please review', parentMessageId: messageId },
+        body: { body: 'Please review', parentMessageId: messageId, mentionMemberIds: [] },
       }),
     ));
   });
@@ -83,7 +97,8 @@ describe('ProjectChatPanel interactions', () => {
       return Promise.reject(new Error('Unexpected API request'));
     });
     renderChat();
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Message options' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit message' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Edit message' }), {
       target: { value: 'Revised update' },
     });
@@ -91,7 +106,7 @@ describe('ProjectChatPanel interactions', () => {
     await waitFor(() => expect(apiFetch).toHaveBeenCalledWith(
       '/projects/' + projectId + '/messages/' + messageId,
       expect.anything(),
-      expect.objectContaining({ method: 'PATCH', body: { body: 'Revised update', expectedEditedAt: null } }),
+      expect.objectContaining({ method: 'PATCH', body: { body: 'Revised update', expectedEditedAt: null, mentionMemberIds: [] } }),
     ));
   });
 
@@ -115,7 +130,8 @@ describe('ProjectChatPanel interactions', () => {
       return Promise.reject(new Error('Unexpected API request'));
     });
     renderChat();
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Message options' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit message' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Edit message' }), {
       target: { value: 'My stale change' },
     });
@@ -124,7 +140,8 @@ describe('ProjectChatPanel interactions', () => {
     await waitFor(() => expect(reads).toBeGreaterThan(1));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(await screen.findByText('Updated in another tab')).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Message options' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit message' }));
     expect(screen.getByRole('textbox', { name: 'Edit message' }))
       .toHaveValue('Updated in another tab');
   });
@@ -160,6 +177,100 @@ describe('ProjectChatPanel interactions', () => {
     expect(await screen.findByText('Initial update')).toBeVisible();
     expect(screen.queryByRole('textbox', { name: 'Message' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Reply' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Message options' })).not.toBeInTheDocument();
+  });
+
+  it('searches project chat and loads context for the selected result', async () => {
+    const contextualId = '66666666-6666-4666-8666-666666666666';
+    const result = { ...existing, id: contextualId, body: 'Launch checklist' };
+    vi.mocked(apiFetch).mockImplementation((path) => {
+      if (path.includes('/messages/search?q=Launch'))
+        return Promise.resolve({ items: [result] });
+      if (path.endsWith('/messages/' + contextualId + '/context'))
+        return Promise.resolve({ targetMessageId: contextualId, items: [result] });
+      if (path.endsWith('/messages'))
+        return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
+      if (path.endsWith('/members'))
+        return Promise.resolve({ projectId, members: [], canManageAccess: false });
+      return Promise.reject(new Error('Unexpected API request: ' + path));
+    });
+
+    renderChat();
+    fireEvent.click(await screen.findByRole('button', { name: 'Search project conversation' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search project messages' }), {
+      target: { value: 'Launch' },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: /Project Member/ }));
+    expect(await screen.findByText('Launch checklist')).toBeVisible();
+    await waitFor(() => expect(apiFetch).toHaveBeenCalledWith(
+      '/projects/' + projectId + '/messages/' + contextualId + '/context',
+      expect.anything(),
+      expect.anything(),
+    ));
+  });
+
+  it('mentions a project member from the composer', async () => {
+    vi.mocked(apiFetch).mockImplementation((path, _schema, options) => {
+      if (options?.method === 'POST') return Promise.resolve(existing);
+      if (path.endsWith('/messages'))
+        return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
+      if (path.endsWith('/members'))
+        return Promise.resolve({
+          projectId,
+          canManageAccess: false,
+          members: [{
+            member: author,
+            accessLevel: 'CAN_EDIT',
+            outcomes: [],
+          }],
+        });
+      return Promise.reject(new Error('Unexpected API request: ' + path));
+    });
+
+    renderChat();
+    const input = await screen.findByRole('textbox', { name: 'Message' });
+    fireEvent.change(input, { target: { value: '@Project L' } });
+    fireEvent.click(await screen.findByRole('option', { name: /Project Lead/ }));
+    expect(input).toHaveValue('@Project Lead ');
+    fireEvent.change(input, { target: { value: '@Project Lead please review' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
+    await waitFor(() => expect(apiFetch).toHaveBeenCalledWith(
+      '/projects/' + projectId + '/messages',
+      expect.anything(),
+      expect.objectContaining({
+        method: 'POST',
+        body: {
+          body: '@Project Lead please review',
+          parentMessageId: null,
+          mentionMemberIds: [projectLead.id],
+        },
+      }),
+    ));
+  });
+
+  it('shows delete in the message menu and confirms tombstone deletion', async () => {
+    vi.mocked(apiFetch).mockImplementation((path, _schema, options) => {
+      if (options?.method === 'DELETE')
+        return Promise.resolve({ ...existing, body: '[Message deleted]', deletedAt: '2026-09-23T03:00:00.000Z', canEdit: false, canDelete: false });
+      if (path.endsWith('/messages'))
+        return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
+      if (path.endsWith('/members'))
+        return Promise.resolve({ projectId, members: [], canManageAccess: false });
+      return Promise.reject(new Error('Unexpected API request: ' + path));
+    });
+
+    renderChat();
+    fireEvent.click(await screen.findByRole('button', { name: 'Message options' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete message' }));
+    expect(screen.getByRole('dialog', { name: 'Delete message?' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    await waitFor(() => expect(apiFetch).toHaveBeenCalledWith(
+      '/projects/' + projectId + '/messages/' + messageId,
+      expect.anything(),
+      expect.objectContaining({
+        method: 'DELETE',
+        body: { expectedEditedAt: null },
+      }),
+    ));
   });
 });
