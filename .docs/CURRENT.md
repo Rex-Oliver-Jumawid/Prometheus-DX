@@ -19,8 +19,9 @@ Phase 8 - VisiWork and Reports & Analytics - is in progress.
 Both VisiWork and Reports & Analytics are implemented on `main`, but the formal Phase 8 implementation journal and acceptance closure are still required.
 
 Phase 9 - Collaboration, Realtime, and Attachments - is in progress.
-VisiWork collaboration already includes persisted General and Department chat, search with message deep links, mentions and mention notifications, message editing and deletion, and automatic refresh behavior.
-Project Chat, final realtime transport and reconnect behavior, attachments, and Phase 9 acceptance remain pending.
+VisiWork collaboration and Project Chat now include persisted messaging, search with exact-message navigation, mentions and mention notifications, message editing and soft deletion, and automatic refresh behavior.
+Project Chat also includes replies, Project announcements, and Project Activity.
+Final realtime transport and reconnect behavior, attachments, and Phase 9 acceptance remain pending.
 
 ## Canonical Status
 
@@ -64,7 +65,9 @@ The recent `main` baseline includes:
 - VisiWork message search and exact-message navigation.
 - @mention persistence and Notifications integration.
 - VisiWork message editing and soft deletion.
+- Project Chat with replies, search, exact-message navigation, mentions, synchronized mention notifications, author edit/delete, announcements, and Project Activity.
 - Automatic live Work Session refresh across Home, Team, and VisiWork.
+- Home Quick Access navigation to Reports & Analytics.
 - Registry department reference counts and removal diagnostics.
 
 These features being present on `main` do not by themselves mark their phases complete.
@@ -73,9 +76,9 @@ Phase completion still requires the matching acceptance gate, required regressio
 ## Next Actions
 
 1. Finish Phase 7 manual visual and acceptance closure and reconcile the journal with the integrated Home and Notifications state.
-2. Re-enable or otherwise reconcile the Home Reports Quick Access control now that `/reports` exists.
-3. Execute the Phase 8 acceptance checklist against the integrated VisiWork and Reports & Analytics implementation, then record the actual evidence in the Phase 8 journal.
-4. Continue Phase 9 with Project Chat and the remaining realtime and attachment scope while preserving the already delivered VisiWork collaboration behavior.
+2. Execute the Phase 8 acceptance checklist against the integrated VisiWork and Reports & Analytics implementation, then record the actual evidence in the Phase 8 journal.
+3. Complete signed-in multi-user Project Chat acceptance, then continue Phase 9 with the remaining realtime/reconnect and attachment scope.
+4. Keep Project Chat mention-notification synchronization, company-visible Project Activity, and general-versus-Outcome message scope covered by regression tests.
 5. Keep Phase 5 independently open until its own final acceptance and regression work is complete.
 
 ## Current Testing Workflow
