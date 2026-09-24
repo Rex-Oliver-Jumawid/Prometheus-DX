@@ -64,7 +64,7 @@ describe('ProjectChatPanel interactions', () => {
         id: olderId,
         parentMessageId: messageId,
       });
-      if (path.endsWith('/messages'))
+      if (typeof path === 'string' && path.endsWith('/messages'))
         return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
       return Promise.reject(new Error('Unexpected API request'));
     });
@@ -92,7 +92,7 @@ describe('ProjectChatPanel interactions', () => {
         body: 'Revised update',
         editedAt: '2026-09-23T02:00:00.000Z',
       });
-      if (path.endsWith('/messages'))
+      if (typeof path === 'string' && path.endsWith('/messages'))
         return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
       return Promise.reject(new Error('Unexpected API request'));
     });
@@ -115,7 +115,7 @@ describe('ProjectChatPanel interactions', () => {
     vi.mocked(apiFetch).mockImplementation((path, _schema, options) => {
       if (options?.method === 'PATCH')
         return Promise.reject(new Error('This message was edited elsewhere.'));
-      if (path.endsWith('/messages')) {
+      if (typeof path === 'string' && path.endsWith('/messages')) {
         const latest = reads++ > 0;
         return Promise.resolve({
           items: [{
@@ -148,7 +148,7 @@ describe('ProjectChatPanel interactions', () => {
 
   it('loads earlier messages using the returned pagination cursor', async () => {
     vi.mocked(apiFetch).mockImplementation((path) => {
-      if (path.endsWith('?cursor=' + messageId))
+      if (typeof path === 'string' && path.endsWith('?cursor=' + messageId))
         return Promise.resolve({
           items: [{ ...existing, id: olderId, body: 'Earlier update' }],
           nextCursor: null,
@@ -184,13 +184,13 @@ describe('ProjectChatPanel interactions', () => {
     const contextualId = '66666666-6666-4666-8666-666666666666';
     const result = { ...existing, id: contextualId, body: 'Launch checklist' };
     vi.mocked(apiFetch).mockImplementation((path) => {
-      if (path.includes('/messages/search?q=Launch'))
+      if (typeof path === 'string' && path.includes('/messages/search?q=Launch'))
         return Promise.resolve({ items: [result] });
-      if (path.endsWith('/messages/' + contextualId + '/context'))
+      if (typeof path === 'string' && path.endsWith('/messages/' + contextualId + '/context'))
         return Promise.resolve({ targetMessageId: contextualId, items: [result] });
-      if (path.endsWith('/messages'))
+      if (typeof path === 'string' && path.endsWith('/messages'))
         return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
-      if (path.endsWith('/members'))
+      if (typeof path === 'string' && path.endsWith('/members'))
         return Promise.resolve({ projectId, members: [], canManageAccess: false });
       return Promise.reject(new Error('Unexpected API request: ' + path));
     });
@@ -212,9 +212,9 @@ describe('ProjectChatPanel interactions', () => {
   it('mentions a project member from the composer', async () => {
     vi.mocked(apiFetch).mockImplementation((path, _schema, options) => {
       if (options?.method === 'POST') return Promise.resolve(existing);
-      if (path.endsWith('/messages'))
+      if (typeof path === 'string' && path.endsWith('/messages'))
         return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
-      if (path.endsWith('/members'))
+      if (typeof path === 'string' && path.endsWith('/members'))
         return Promise.resolve({
           projectId,
           canManageAccess: false,
@@ -252,9 +252,9 @@ describe('ProjectChatPanel interactions', () => {
     vi.mocked(apiFetch).mockImplementation((path, _schema, options) => {
       if (options?.method === 'DELETE')
         return Promise.resolve({ ...existing, body: '[Message deleted]', deletedAt: '2026-09-23T03:00:00.000Z', canEdit: false, canDelete: false });
-      if (path.endsWith('/messages'))
+      if (typeof path === 'string' && path.endsWith('/messages'))
         return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
-      if (path.endsWith('/members'))
+      if (typeof path === 'string' && path.endsWith('/members'))
         return Promise.resolve({ projectId, members: [], canManageAccess: false });
       return Promise.reject(new Error('Unexpected API request: ' + path));
     });
