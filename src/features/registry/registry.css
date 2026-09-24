@@ -132,9 +132,17 @@
 .registry-content-grid {
   display: grid;
   grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.48fr);
+  grid-auto-rows: 560px;
   gap: 12px;
-  align-items: start;
+  align-items: stretch;
   margin-top: 14px;
+}
+
+.registry-content-grid > .registry-panel {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .registry-panel {
@@ -241,6 +249,13 @@
   margin-top: 18px;
 }
 
+.registry-content-grid > .registry-panel .registry-department-list {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
 .registry-department-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 34px;
@@ -278,12 +293,7 @@
 }
 
 .registry-members-panel {
-  display: flex;
   min-width: 0;
-  height: 560px;
-  min-height: 0;
-  flex-direction: column;
-  overflow: hidden;
 }
 
 .registry-members-panel .registry-panel-header > div:first-child {
@@ -993,6 +1003,16 @@
 @media (max-width: 980px) {
   .registry-content-grid {
     grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+  }
+
+  .registry-content-grid > .registry-panel {
+    min-height: 0;
+    height: auto;
+  }
+
+  .registry-content-grid > .registry-panel .registry-department-list {
+    overflow-y: visible;
   }
 
   .registry-summary-grid {
@@ -1006,7 +1026,11 @@
 
 @media (max-width: 680px) {
   .registry-members-panel {
-    height: 500px;
+    height: auto;
+  }
+
+  .registry-table-wrap {
+    max-height: 500px;
   }
 
   .registry-assignment-alert {
