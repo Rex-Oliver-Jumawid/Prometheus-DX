@@ -69,23 +69,22 @@ describe('ProjectActivityService', () => {
     );
   });
 
-  it('limits non-leads to their own events and scopes pagination cursors to their identity', async () => {
+  it('returns the same display-safe Project activity to non-leads', async () => {
     const { db, service } = setup({
       project: { id: projectId, leadMemberId: member.id },
       rows: [{ ...event, actorMember: { id: contributor.id, fullName: 'Contributor' } }],
     });
     const response = await service.list(contributor, projectId, cursor);
-    expect(response.scope).toBe('PERSONAL');
+    expect(response.scope).toBe('PROJECT');
     expect(response.items[0].outcomeTitle).toBeNull();
     expect(db.activityLog.findFirst).toHaveBeenCalledWith({
-      where: { id: cursor, projectId, actorMemberId: contributor.id },
+      where: { id: cursor, projectId },
       select: { id: true, createdAt: true },
     });
     expect(db.activityLog.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
           projectId,
-          actorMemberId: contributor.id,
           OR: [
             { createdAt: { lt: event.createdAt } },
             { createdAt: event.createdAt, id: { lt: cursor } },
