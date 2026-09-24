@@ -78,11 +78,13 @@ export function ProjectChatPanel({
   projectId,
   projectName,
   projectLead,
+  currentMemberId,
   accessToken,
 }: {
   projectId: string;
   projectName: string;
   projectLead?: { id: string; fullName: string; email: string };
+  currentMemberId?: string;
   accessToken?: string;
 }) {
   const queryClient = useQueryClient();
@@ -270,6 +272,7 @@ export function ProjectChatPanel({
       : memberChoices
           .filter(
             (candidate) =>
+              candidate.id !== currentMemberId &&
               candidate.fullName.toLowerCase().includes(mentionQuery) &&
               !selectedMentions.some((selected) => selected.id === candidate.id),
           )
@@ -283,6 +286,7 @@ export function ProjectChatPanel({
       : memberChoices
           .filter(
             (candidate) =>
+              candidate.id !== currentMemberId &&
               candidate.fullName.toLowerCase().includes(editMentionQuery) &&
               !editing.mentions.some((selected) => selected.id === candidate.id),
           )
