@@ -58,6 +58,40 @@ function renderChat(initialMessageId?: string) {
 describe('ProjectChatPanel interactions', () => {
   beforeEach(() => { vi.mocked(apiFetch).mockReset(); });
 
+  it('renders the conversation skeleton while the first message request is pending', () => {
+    vi.mocked(apiFetch).mockImplementation((path) => {
+      if (path.endsWith('/members'))
+        return Promise.resolve({ projectId, members: [], canManageAccess: false });
+      if (path.endsWith('/messages')) return new Promise(() => {});
+      return Promise.reject(new Error('Unexpected API request'));
+    });
+    const { container } = renderChat();
+    expect(screen.getByRole('status', { name: 'Loading project messages' })).toBeVisible();
+    expect(container.querySelectorAll('.pw-chat-skeleton-message')).toHaveLength(3);
+    expect(container.querySelector('.pw-chat-skeleton-composer')).toBeInTheDocument();
+  });
+
+  it('offers a retry after the initial chat request fails and recovers without reloading', async () => {
+    let reads = 0;
+    vi.mocked(apiFetch).mockImplementation((path) => {
+      if (path.endsWith('/members'))
+        return Promise.resolve({ projectId, members: [], canManageAccess: false });
+      if (path.endsWith('/messages')) {
+        reads += 1;
+        return reads === 1
+          ? Promise.reject(new Error('Simulated API failure'))
+          : Promise.resolve({ items: [], nextCursor: null, canWrite: true });
+      }
+      return Promise.reject(new Error('Unexpected API request'));
+    });
+    renderChat();
+    expect(await screen.findByText('Project chat could not be loaded.')).toBeVisible();
+    expect(screen.getByText('Simulated API failure')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('No messages yet. Start the conversation.')).toBeVisible();
+    expect(reads).toBe(2);
+  });
+
   it('sends replies with their original Project message ID', async () => {
     vi.mocked(apiFetch).mockImplementation((path, _schema, options) => {
       if (options?.method === 'POST') return Promise.resolve({
