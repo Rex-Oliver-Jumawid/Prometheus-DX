@@ -30,6 +30,15 @@ Both slices are now present on `main`.
 The remaining Phase 7 work is acceptance and closure rather than feature implementation.
 Historical branch-specific notes below are retained where they explain implementation decisions made before the two slices were integrated.
 
+## Post-Integration Updates
+
+Later Phase 9 collaboration work added persisted VisiWork mentions, Mentions and Projects notification filters, and deep links from mention notifications back to the referenced room and message.
+
+Earlier notes in this journal that describe mention and reply support as deferred are historical records of the original Phase 7 branch boundary rather than the current integrated product state.
+
+Reports & Analytics is also now implemented under Phase 8.
+The Home Reports Quick Access control remains disabled in the current source and should be reconciled as an integration follow-up.
+
 ## UI Reference
 
 The current Prometheus Figma file is the source of truth for Phase 7 layout and visual design.
