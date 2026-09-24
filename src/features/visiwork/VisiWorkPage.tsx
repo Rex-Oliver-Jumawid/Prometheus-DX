@@ -16,6 +16,7 @@ import { OutcomeWorkSchema, type OutcomeWork } from '../../../shared/contracts/o
 import {
   CreateVisiWorkMessageSchema,
   SetVisiWorkPresenceRequestSchema,
+  UpdateVisiWorkMessageSchema,
   VisiWorkMessageContextResponseSchema,
   VisiWorkMessagePageSchema,
   VisiWorkMessageSchema,
@@ -149,6 +150,12 @@ function RoomPanel({
   >([]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [messageMenuId, setMessageMenuId] = useState<string | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editBody, setEditBody] = useState('');
+  const [editMentions, setEditMentions] = useState<
+    Array<{ id: string; fullName: string }>
+  >([]);
   const feedRef = useRef<HTMLDivElement>(null);
   const pinnedToBottom = useRef(true);
   const initiallyScrolled = useRef(false);
@@ -220,6 +227,46 @@ function RoomPanel({
     },
   });
 
+  const editMessage = useMutation({
+    mutationFn: (input: {
+      messageId: string;
+      body: string;
+      mentionMemberIds: string[];
+    }) =>
+      apiFetch(
+        '/visiwork/messages/' + input.messageId,
+        VisiWorkMessageSchema,
+        {
+          accessToken,
+          method: 'PATCH',
+          body: UpdateVisiWorkMessageSchema.parse({
+            body: input.body,
+            mentionMemberIds: input.mentionMemberIds,
+          }),
+        },
+      ),
+    onSuccess: async () => {
+      setEditingMessageId(null);
+      setEditBody('');
+      setEditMentions([]);
+      setMessageMenuId(null);
+      await queryClient.invalidateQueries({ queryKey: ['visiwork'] });
+    },
+  });
+
+  const deleteMessage = useMutation({
+    mutationFn: (messageId: string) =>
+      apiFetch('/visiwork/messages/' + messageId, VisiWorkMessageSchema, {
+        accessToken,
+        method: 'DELETE',
+      }),
+    onSuccess: async () => {
+      setMessageMenuId(null);
+      setEditingMessageId(null);
+      await queryClient.invalidateQueries({ queryKey: ['visiwork'] });
+    },
+  });
+
   const loaded = messages.data?.pages.flatMap((page) => page.items) ?? [];
   const contextual =
     context.data?.departmentId === (departmentId ?? null)
@@ -247,6 +294,21 @@ function RoomPanel({
               candidate.id !== currentMemberId &&
               candidate.fullName.toLowerCase().includes(mentionQuery) &&
               !selectedMentions.some((selected) => selected.id === candidate.id),
+          )
+          .slice(0, 6);
+
+  const editMentionMatch = editBody.match(/(?:^|\s)@([^@\n]*)$/);
+  const editMentionQuery =
+    editMentionMatch?.[1]?.trim().toLowerCase() ?? null;
+  const editMentionSuggestions =
+    editMentionQuery === null
+      ? []
+      : mentionMembers
+          .filter(
+            (candidate) =>
+              candidate.id !== currentMemberId &&
+              candidate.fullName.toLowerCase().includes(editMentionQuery) &&
+              !editMentions.some((selected) => selected.id === candidate.id),
           )
           .slice(0, 6);
 
@@ -296,6 +358,58 @@ function RoomPanel({
       body.slice(match.index + match[0].length);
     setBody(next);
     setSelectedMentions((current) => [...current, mention]);
+  }
+
+  function updateEditBody(value: string) {
+    setEditBody(value);
+    setEditMentions((current) =>
+      current.filter((mention) => value.includes('@' + mention.fullName)),
+    );
+  }
+
+  function selectEditMention(mention: { id: string; fullName: string }) {
+    const match = editBody.match(/(?:^|\s)@([^@\n]*)$/);
+    if (!match || match.index === undefined) return;
+    const prefixLength = match[0].startsWith(' ') ? 1 : 0;
+    const start = match.index + prefixLength;
+    const next =
+      editBody.slice(0, start) +
+      '@' +
+      mention.fullName +
+      ' ' +
+      editBody.slice(match.index + match[0].length);
+    setEditBody(next);
+    setEditMentions((current) => [...current, mention]);
+  }
+
+  function beginEdit(message: VisiWorkMessage) {
+    setEditingMessageId(message.id);
+    setEditBody(message.body);
+    setEditMentions(message.mentions);
+    setMessageMenuId(null);
+  }
+
+  function cancelEdit() {
+    setEditingMessageId(null);
+    setEditBody('');
+    setEditMentions([]);
+  }
+
+  function submitEdit(event: FormEvent<HTMLFormElement>, messageId: string) {
+    event.preventDefault();
+    const trimmed = editBody.trim();
+    if (!trimmed || trimmed.length > 2000 || editMessage.isPending) return;
+    editMessage.mutate({
+      messageId,
+      body: trimmed,
+      mentionMemberIds: editMentions.map((mention) => mention.id),
+    });
+  }
+
+  function requestDelete(message: VisiWorkMessage) {
+    setMessageMenuId(null);
+    if (!window.confirm('Delete this message?')) return;
+    deleteMessage.mutate(message.id);
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -457,13 +571,115 @@ function RoomPanel({
                     {initials(message.author.fullName)}
                   </span>
                 )}
-                <div>
-                  <small>
-                    {ownMessage ? 'You' : message.author.fullName}
-                    {' · '}
-                    {messageTime(message.createdAt)}
-                  </small>
-                  <p><MessageBody message={message} /></p>
+                <div className={message.deletedAt ? 'deleted' : ''}>
+                  <div className="visiwork-message-meta">
+                    <small>
+                      {ownMessage ? 'You' : message.author.fullName}
+                      {' · '}
+                      {messageTime(message.createdAt)}
+                      {message.editedAt && !message.deletedAt ? ' · edited' : ''}
+                    </small>
+                    {ownMessage && !message.deletedAt && (
+                      <div className="visiwork-message-actions">
+                        <button
+                          type="button"
+                          aria-label="Message options"
+                          aria-expanded={messageMenuId === message.id}
+                          onClick={() =>
+                            setMessageMenuId((current) =>
+                              current === message.id ? null : message.id,
+                            )
+                          }
+                        >
+                          ⋯
+                        </button>
+                        {messageMenuId === message.id && (
+                          <div className="visiwork-message-menu">
+                            <button
+                              type="button"
+                              onClick={() => beginEdit(message)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="danger"
+                              disabled={deleteMessage.isPending}
+                              onClick={() => requestDelete(message)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {editingMessageId === message.id ? (
+                    <form
+                      className="visiwork-message-edit-form"
+                      onSubmit={(event) => submitEdit(event, message.id)}
+                    >
+                      <div className="visiwork-message-edit-input">
+                        <textarea
+                          autoFocus
+                          value={editBody}
+                          maxLength={2000}
+                          disabled={editMessage.isPending}
+                          onChange={(event) => updateEditBody(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (
+                              editMentionSuggestions.length > 0 &&
+                              event.key === 'Tab'
+                            ) {
+                              event.preventDefault();
+                              selectEditMention(editMentionSuggestions[0]);
+                            }
+                            if (event.key === 'Escape') cancelEdit();
+                          }}
+                        />
+                        {editMentionSuggestions.length > 0 && (
+                          <div className="visiwork-mention-menu" role="listbox">
+                            {editMentionSuggestions.map((candidate) => (
+                              <button
+                                key={candidate.id}
+                                type="button"
+                                role="option"
+                                onClick={() => selectEditMention(candidate)}
+                              >
+                                <span>{initials(candidate.fullName)}</span>
+                                <strong>{candidate.fullName}</strong>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="visiwork-message-edit-actions">
+                        <button type="button" onClick={cancelEdit}>
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={editMessage.isPending || !editBody.trim()}
+                        >
+                          {editMessage.isPending ? 'Saving...' : 'Save'}
+                        </button>
+                      </div>
+                      {editMessage.isError && (
+                        <small className="visiwork-chat-send-error" role="alert">
+                          {chatError(editMessage.error)}
+                        </small>
+                      )}
+                    </form>
+                  ) : (
+                    <p>
+                      {message.deletedAt ? (
+                        <em>Message deleted</em>
+                      ) : (
+                        <MessageBody message={message} />
+                      )}
+                    </p>
+                  )}
                 </div>
               </div>
             );

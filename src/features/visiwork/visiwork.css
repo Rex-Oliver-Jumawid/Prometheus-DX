@@ -1559,3 +1559,154 @@
     max-height: 150px;
   }
 }
+
+
+/* VisiWork message editing and deletion */
+.visiwork-room-message > div {
+  position: relative;
+}
+
+.visiwork-message-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.visiwork-message-meta > small {
+  min-width: 0;
+}
+
+.visiwork-message-actions {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.visiwork-message-actions > button {
+  width: 22px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  padding: 0 0 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #9c8f88;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.visiwork-message-actions > button:hover,
+.visiwork-message-actions > button[aria-expanded='true'] {
+  background: rgba(116, 95, 84, 0.08);
+  color: #665951;
+}
+
+.visiwork-message-menu {
+  position: absolute;
+  z-index: 45;
+  top: 24px;
+  right: 0;
+  min-width: 92px;
+  display: grid;
+  gap: 2px;
+  padding: 5px;
+  border: 1px solid #e2d7d0;
+  border-radius: 9px;
+  background: #fffdfa;
+  box-shadow: 0 12px 28px rgba(56, 39, 31, 0.14);
+}
+
+.visiwork-message-menu button {
+  min-height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #584c45;
+  font-size: 8.5px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.visiwork-message-menu button:hover {
+  background: #f7f0eb;
+}
+
+.visiwork-message-menu button.danger {
+  color: #b5462c;
+}
+
+.visiwork-room-message > div.deleted {
+  border-style: dashed;
+  background: rgba(248, 245, 242, 0.72);
+}
+
+.visiwork-room-message > div.deleted p {
+  color: #9d928c;
+}
+
+.visiwork-room-message > div.deleted p em {
+  font-style: italic;
+}
+
+.visiwork-message-edit-form {
+  display: grid;
+  gap: 7px;
+  margin-top: 6px;
+}
+
+.visiwork-message-edit-input {
+  position: relative;
+}
+
+.visiwork-message-edit-input textarea {
+  width: 100%;
+  min-height: 62px;
+  resize: vertical;
+  padding: 8px 9px;
+  border: 1px solid #d8cbc4;
+  border-radius: 8px;
+  background: #fff;
+  color: #554c47;
+  font: inherit;
+  font-size: 10px;
+  line-height: 14px;
+  outline: none;
+}
+
+.visiwork-message-edit-input textarea:focus {
+  border-color: #d99c86;
+  box-shadow: 0 0 0 3px rgba(203, 77, 34, 0.08);
+}
+
+.visiwork-message-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.visiwork-message-edit-actions button {
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid #d9cec7;
+  border-radius: 8px;
+  background: #fff;
+  color: #655951;
+  font-size: 8px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.visiwork-message-edit-actions button[type='submit'] {
+  border-color: #cb4d22;
+  background: #cb4d22;
+  color: #fff;
+}
+
+.visiwork-message-edit-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

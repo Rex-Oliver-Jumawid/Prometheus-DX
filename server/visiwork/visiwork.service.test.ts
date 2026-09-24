@@ -38,6 +38,8 @@ function storedMessage(overrides: Record<string, unknown> = {}) {
     departmentId: null,
     memberId,
     body: 'Morning team',
+    editedAt: null,
+    deletedAt: null,
     createdAt: new Date('2026-09-24T01:00:00.000Z'),
     member: { id: memberId, fullName: 'Member One' },
     mentions: [],
@@ -162,6 +164,7 @@ describe('VisiWorkService', () => {
       expect.objectContaining({
         where: {
           departmentId: null,
+          deletedAt: null,
           body: { contains: 'quotation', mode: 'insensitive' },
         },
       }),
@@ -202,6 +205,124 @@ describe('VisiWorkService', () => {
       'Morning team',
       'After',
     ]);
+  });
+
+  it('edits an owned message and records the edited timestamp', async () => {
+    const existing = storedMessage();
+    const update = vi.fn().mockImplementation(({ data }) =>
+      Promise.resolve(
+        storedMessage({
+          body: data.body,
+          editedAt: data.editedAt,
+        }),
+      ),
+    );
+    const prisma = {
+      visiWorkMessage: {
+        findUnique: vi.fn().mockResolvedValue(existing),
+      },
+      member: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      $transaction: vi.fn().mockImplementation(async (callback) =>
+        callback({
+          visiWorkMessage: { update },
+          notification: {
+            deleteMany: vi.fn(),
+            updateMany: vi.fn(),
+            createMany: vi.fn(),
+          },
+        }),
+      ),
+    } as unknown as PrismaService;
+
+    const result = await new VisiWorkService(prisma).updateMessage(
+      member(),
+      existing.id,
+      { body: 'Updated message', mentionMemberIds: [] },
+    );
+
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: existing.id },
+        data: expect.objectContaining({
+          body: 'Updated message',
+          editedAt: expect.any(Date),
+        }),
+      }),
+    );
+    expect(result.body).toBe('Updated message');
+    expect(result.editedAt).toBeTruthy();
+    expect(result.deletedAt).toBeNull();
+  });
+
+  it('soft deletes an owned message, clears mentions, and removes mention notifications', async () => {
+    const existing = storedMessage({
+      mentions: [
+        {
+          memberId: mentionedMemberId,
+          member: { id: mentionedMemberId, fullName: 'Oliver' },
+        },
+      ],
+    });
+    const deleteMany = vi.fn().mockResolvedValue({ count: 1 });
+    const update = vi.fn().mockImplementation(({ data }) =>
+      Promise.resolve(
+        storedMessage({
+          body: data.body,
+          deletedAt: data.deletedAt,
+          mentions: [],
+        }),
+      ),
+    );
+    const prisma = {
+      visiWorkMessage: {
+        findUnique: vi.fn().mockResolvedValue(existing),
+      },
+      $transaction: vi.fn().mockImplementation(async (callback) =>
+        callback({
+          visiWorkMessage: { update },
+          notification: { deleteMany },
+        }),
+      ),
+    } as unknown as PrismaService;
+
+    const result = await new VisiWorkService(prisma).deleteMessage(
+      member(),
+      existing.id,
+    );
+
+    expect(result.body).toBe('Message deleted');
+    expect(result.deletedAt).toBeTruthy();
+    expect(result.mentions).toEqual([]);
+    expect(deleteMany).toHaveBeenCalledWith({
+      where: {
+        eventKey: { startsWith: `visiwork-mention:${existing.id}:` },
+      },
+    });
+  });
+
+  it('does not allow another member to edit or delete someone else’s message', async () => {
+    const existing = storedMessage();
+    const prisma = {
+      visiWorkMessage: {
+        findUnique: vi.fn().mockResolvedValue(existing),
+      },
+    } as unknown as PrismaService;
+    const other = member({
+      id: '99999999-9999-4999-8999-999999999999',
+    });
+    const service = new VisiWorkService(prisma);
+
+    await expect(
+      service.updateMessage(other, existing.id, {
+        body: 'Not mine',
+        mentionMemberIds: [],
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      service.deleteMessage(other, existing.id),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('blocks department-room sending until the member belongs to or joins it', async () => {

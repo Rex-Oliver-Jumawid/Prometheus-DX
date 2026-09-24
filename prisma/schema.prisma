@@ -159,6 +159,8 @@ model VisiWorkMessage {
   departmentId String?     @map("department_id") @db.Uuid
   memberId     String      @map("member_id") @db.Uuid
   body         String      @db.VarChar(2000)
+  editedAt     DateTime?   @map("edited_at") @db.Timestamptz(6)
+  deletedAt    DateTime?   @map("deleted_at") @db.Timestamptz(6)
   createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   department   Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   member       Member      @relation(fields: [memberId], references: [id], onDelete: Restrict)
