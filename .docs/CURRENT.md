@@ -29,7 +29,7 @@ They are not represented as implemented.
 
 Use `.docs/phases/README.md` as the canonical high-level phase status index.
 
-Use these implementation journals for the active later phases:
+Use these implementation journals for the completed later phases:
 
 - `.docs/phases/phase-07-notifications-home.md`
 - `.docs/phases/phase-08-visiwork-reporting.md`
@@ -53,8 +53,9 @@ Home, Reports & Analytics, VisiWork, notifications, and collaboration views must
 Work Session state remains the source of truth for Time In and Time Out.
 Live presence or polling must not replace Work Sessions.
 
-Collaboration messaging is now broader than Project Chat alone.
-Phase 9 covers VisiWork General and Department chat together with Project Chat, search and deep links, mentions, message mutation behavior, realtime delivery, reconnect behavior, notifications, and attachments.
+Collaboration messaging is broader than Project Chat alone.
+The current release covers VisiWork General and Department chat together with Project Chat, search and deep links, mentions, message mutation behavior, automatic live delivery, reconnect recovery, notifications, announcements, and Project Activity.
+Binary chat attachments and a dedicated Outcome-specific discussion interface are post-release.
 
 ## Recent Integrated Work
 
