@@ -107,4 +107,45 @@ describe('ProjectActivityPanel', () => {
       expect.anything(),
     );
   });
+  it('filters Figma audit categories and members using loaded safe activity', async () => {
+    const secondActor = { id: '77777777-7777-4777-8777-777777777777', fullName: 'Design Member' };
+    vi.mocked(apiFetch).mockResolvedValue({
+      items: [
+        event,
+        {
+          ...event,
+          id: '88888888-8888-4888-8888-888888888888',
+          actor: secondActor,
+          action: 'SUBMISSION_CREATED',
+          metadata: {},
+        },
+        {
+          ...event,
+          id: '99999999-9999-4999-8999-999999999999',
+          actor: secondActor,
+          action: 'REVISION_REQUESTED',
+          metadata: {},
+        },
+      ],
+      nextCursor: null,
+    });
+
+    renderActivity();
+    expect(await screen.findByText(/created an outcome/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Outputs' }));
+    expect(screen.getByText(/submitted output for review/)).toBeVisible();
+    expect(screen.queryByText(/created an outcome/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Needs Revision' }));
+    expect(screen.getByText(/requested revisions/)).toBeVisible();
+    expect(screen.queryByText(/submitted output for review/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'All', exact: true }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Member' }), {
+      target: { value: actor.id },
+    });
+    expect(screen.getByText(/created an outcome/)).toBeVisible();
+    expect(screen.queryByText(/requested revisions/)).not.toBeInTheDocument();
+  });
+
 });
