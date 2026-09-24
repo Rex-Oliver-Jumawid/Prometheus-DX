@@ -151,6 +151,8 @@ function RoomPanel({
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [messageMenuId, setMessageMenuId] = useState<string | null>(null);
+  const [pendingDeleteMessage, setPendingDeleteMessage] =
+    useState<VisiWorkMessage | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editBody, setEditBody] = useState('');
   const [editMentions, setEditMentions] = useState<
@@ -178,10 +180,11 @@ function RoomPanel({
     initialPageParam: null as string | null,
     getNextPageParam: (page) => page.nextCursor ?? undefined,
     enabled: Boolean(accessToken),
-    staleTime: 2_000,
-    refetchInterval: 4_000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    staleTime: 750,
+    refetchInterval: 1_500,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 
   const context = useQuery({
@@ -193,7 +196,11 @@ function RoomPanel({
         { accessToken },
       ),
     enabled: Boolean(accessToken && targetMessageId),
-    staleTime: 15_000,
+    staleTime: 750,
+    refetchInterval: targetMessageId ? 1_500 : false,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
     retry: false,
   });
 
@@ -262,6 +269,7 @@ function RoomPanel({
       }),
     onSuccess: async () => {
       setMessageMenuId(null);
+      setPendingDeleteMessage(null);
       setEditingMessageId(null);
       await queryClient.invalidateQueries({ queryKey: ['visiwork'] });
     },
@@ -273,7 +281,7 @@ function RoomPanel({
       ? context.data.items
       : [];
   const unique = new Map(
-    [...loaded, ...contextual].map((message) => [message.id, message]),
+    [...contextual, ...loaded].map((message) => [message.id, message]),
   );
   const ordered = [...unique.values()].sort(
     (left, right) =>
@@ -408,8 +416,12 @@ function RoomPanel({
 
   function requestDelete(message: VisiWorkMessage) {
     setMessageMenuId(null);
-    if (!window.confirm('Delete this message?')) return;
-    deleteMessage.mutate(message.id);
+    setPendingDeleteMessage(message);
+  }
+
+  function confirmDelete() {
+    if (!pendingDeleteMessage || deleteMessage.isPending) return;
+    deleteMessage.mutate(pendingDeleteMessage.id);
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -751,6 +763,58 @@ function RoomPanel({
       ) : (
         <div className="visiwork-chat-readonly">
           Join this department to send messages.
+        </div>
+      )}
+
+      {pendingDeleteMessage && (
+        <div
+          className="visiwork-delete-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !deleteMessage.isPending) {
+              setPendingDeleteMessage(null);
+            }
+          }}
+        >
+          <div
+            className="visiwork-delete-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="visiwork-delete-title"
+            aria-describedby="visiwork-delete-description"
+          >
+            <span className="visiwork-delete-modal-icon" aria-hidden="true">
+              ×
+            </span>
+            <div>
+              <h2 id="visiwork-delete-title">Delete message?</h2>
+              <p id="visiwork-delete-description">
+                This will remove the message for everyone in this chat.
+              </p>
+            </div>
+            <div className="visiwork-delete-modal-actions">
+              <button
+                type="button"
+                disabled={deleteMessage.isPending}
+                onClick={() => setPendingDeleteMessage(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="danger"
+                disabled={deleteMessage.isPending}
+                onClick={confirmDelete}
+              >
+                {deleteMessage.isPending ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+            {deleteMessage.isError && (
+              <small className="visiwork-delete-modal-error" role="alert">
+                {chatError(deleteMessage.error)}
+              </small>
+            )}
+          </div>
         </div>
       )}
     </aside>
