@@ -36,7 +36,8 @@ export function ProjectMembersPanel({
         accessToken,
       }),
     retry: false,
-    staleTime: 30_000,
+    staleTime: 60_000,
+    gcTime: 15 * 60_000,
   });
   const updateAccess = useMutation({
     mutationFn: ({
@@ -116,8 +117,18 @@ export function ProjectMembersPanel({
         </div>
       )}
       {members.isPending ? (
-        <div className="project-members-loading" role="status">
-          Loading Project Members...
+        <div className="pw-members-skeleton" role="status" aria-label="Loading Project Members">
+          <span className="sr-only">Loading Project Members...</span>
+          {[0, 1, 2].map((index) => (
+            <div className="pw-members-skeleton-row" key={index} aria-hidden="true">
+              <span className="pw-chat-skeleton-line pw-chat-skeleton-avatar" />
+              <div className="pw-members-skeleton-copy">
+                <span className="pw-chat-skeleton-line" />
+                <span className="pw-chat-skeleton-line" />
+              </div>
+              <span className="pw-chat-skeleton-line pw-chat-skeleton-pill" />
+            </div>
+          ))}
         </div>
       ) : members.isError || !members.data ? (
         <div className="projects-state-card" role="alert">
