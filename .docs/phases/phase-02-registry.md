@@ -968,10 +968,10 @@ The Department entity is a useful first persistence boundary because later membe
 - That slice must preserve Project Lead as project-specific, prevent Administrator or creator status from automatically granting Lead authority, and allow every active authorized Member to view and create Projects.
 - After direct database connectivity returns and literal F2-21 can execute against that relationship, rerun the complete Phase 2 gate before marking the phase complete.
 
-## Phase Exit Result
+## Historical Interim Exit Result
 
-**Not complete.**
+At this checkpoint, Phase 2 had not yet been closed because F2-21 required a persisted non-admin Project Lead that did not exist until Phase 3 introduced the Project relationship.
 
-The Department invariant and F2-16 are complete.
+That blocker was later resolved and verified during Phase 3.
 
-Phase 2 remains in progress because the phase test specification literally requires F2-21 against a persisted non-admin Project Lead, which cannot exist before the Phase 3 Project relationship.
+The final Phase 2 disposition is **Complete** and is recorded in `.docs/phases/phase-02-registry-closure.md`.
