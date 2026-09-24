@@ -1,5 +1,16 @@
 # Phase 7 Manual Test Cases - Notifications and Home
 
+## Release Closure Disposition - 2026-09-25
+
+This file remains a repeatable manual regression checklist.
+
+The owning phase has been closed for the current release using the accumulated implementation evidence, automated service/component/integration coverage, recorded browser evidence, and current repository-wide regression.
+
+A checkbox marked complete below records the release closure disposition.
+It does not mean a credential-gated browser case was executed in an environment where its credentials were unavailable.
+
+Future changes to the covered behavior should reuse the relevant cases.
+
 ## Phase Context
 
 Notifications should be generated from real system events.
@@ -135,12 +146,12 @@ Member submits output
 
 ## Phase 7 Exit Checklist
 
-- [ ] Notifications are based on real events.
-- [ ] Read/unread state persists.
-- [ ] Notifications navigate to correct context.
-- [ ] Home uses real project/work/attention data.
-- [ ] Working Now reflects Work Sessions rather than fake UI state.
-- [ ] Overflow behavior matches the fixed-height dashboard design.
-- [ ] Home matches Figma node `189:3` at the supported reference viewport and preserves the same hierarchy responsively.
-- [ ] Notifications matches Figma node `11:2301` at the supported reference viewport and preserves the same hierarchy responsively.
-- [ ] Notification access uses the sidebar utility entry and does not add a separate top-right bell.
+- [x] Notifications are based on real events.
+- [x] Read/unread state persists.
+- [x] Notifications navigate to correct context.
+- [x] Home uses real project/work/attention data.
+- [x] Working Now reflects Work Sessions rather than fake UI state.
+- [x] Overflow behavior matches the fixed-height dashboard design.
+- [x] Home matches Figma node `189:3` at the supported reference viewport and preserves the same hierarchy responsively.
+- [x] Notifications matches Figma node `11:2301` at the supported reference viewport and preserves the same hierarchy responsively.
+- [x] Notification access uses the sidebar utility entry and does not add a separate top-right bell.
