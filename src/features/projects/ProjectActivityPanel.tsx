@@ -192,14 +192,17 @@ export function ProjectActivityPanel({
     refetchInterval: 20_000,
   });
 
-  const seenIds = new Set<string>();
-  const items = (feed.data?.pages.flatMap((page) => page.items) ?? []).filter(
-    (item) => !seenIds.has(item.id) && Boolean(seenIds.add(item.id)),
-  );
-  // The API is authoritative about visibility. Use the same scope for layout and
-  // filtering; the identity-keyed query prevents showing a previous user's history.
+  // The API is authoritative about visibility. Scope the cached history to the
+  // current identity before deriving the count, filters, and visible activity.
   const scope = feed.data?.pages[0]?.scope ?? (isLead ? 'PROJECT' : 'PERSONAL');
   const personal = scope === 'PERSONAL';
+  const seenIds = new Set<string>();
+  const items = (feed.data?.pages.flatMap((page) => page.items) ?? []).filter(
+    (item) =>
+      (!personal || item.actor?.id === currentMemberId) &&
+      !seenIds.has(item.id) &&
+      Boolean(seenIds.add(item.id)),
+  );
   const availableFilters = personal ? personalFilters : activityFilters;
   const activeFilter = availableFilters.includes(filter) ? filter : 'All';
   const actors = [...new Map(

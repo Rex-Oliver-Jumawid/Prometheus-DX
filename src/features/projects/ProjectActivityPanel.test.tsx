@@ -67,7 +67,7 @@ describe('ProjectActivityPanel', () => {
     expect(screen.queryByText('0')).not.toBeInTheDocument();
 
     resolveFeed({ items: [], nextCursor: null });
-    expect(await screen.findByText('No project activity has been recorded yet.')).toBeVisible();
+    expect(await screen.findByText('No activity has been recorded yet.')).toBeVisible();
   });
 
   it('shows only personal actions, compact filters, and the Outcome context in Member Activity', async () => {
@@ -86,7 +86,7 @@ describe('ProjectActivityPanel', () => {
     expect(await screen.findByRole('heading', { name: 'My Activity' })).toBeVisible();
     expect(screen.getByText('PERSONAL PROJECT HISTORY')).toBeVisible();
     expect(screen.getByText('Actions performed by Project Lead inside this project.')).toBeVisible();
-    expect(screen.getByText('Added feature: Search')).toBeVisible();
+    expect(await screen.findByText('Added feature: Search')).toBeVisible();
     expect(screen.getByText('Opportunity decision · Project Lead')).toBeVisible();
     expect(screen.getByRole('link', { name: 'View outcome' })).toHaveAttribute(
       'href', '/projects/' + projectId + '/outcomes/' + outcomeId,
@@ -95,6 +95,7 @@ describe('ProjectActivityPanel', () => {
     expect(screen.queryByRole('combobox', { name: 'Member' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Reviews' })).not.toBeInTheDocument();
     expect(screen.getByText('actions logged')).toBeVisible();
+    expect(screen.getByText('1')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Outputs' }));
     expect(screen.getByText('No activity matches the selected filters.')).toBeVisible();
     expect(container.querySelector('.pw-activity-empty-state')).toBeInTheDocument();
