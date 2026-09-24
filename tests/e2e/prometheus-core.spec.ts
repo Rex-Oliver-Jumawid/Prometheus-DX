@@ -114,9 +114,7 @@ test.beforeAll(async ({ browser }) => {
   for (let i = 0; i < 3; i++)
     authFixtures.push(await createAuthFixture(prisma, `${runId}-${i}`));
   for (let i = 0; i < 4; i++)
-    contexts.push(
-      await browser.newContext({ baseURL: 'http://127.0.0.1:5173' }),
-    );
+    contexts.push(await browser.newContext());
   [admin, lead, worker, newcomer] = await Promise.all(
     contexts.map((context) => context.newPage()),
   );
@@ -124,8 +122,11 @@ test.beforeAll(async ({ browser }) => {
     page.on('pageerror', (error) => browserErrors.push(error.message));
 });
 test.afterAll(async () => {
-  await Promise.all(contexts.map((context) => context.close()));
+  // A stopped Playwright worker may have already closed its browser contexts.
+  // Still clean up the database fixtures after a failed serial test.
+  await Promise.allSettled(contexts.map((context) => context.close()));
   if (projectId) {
+    await prisma.notification.deleteMany({ where: { projectId } });
     await prisma.outcomeDependency.deleteMany({
       where: { outcome: { stage: { projectId } } },
     });
@@ -228,8 +229,27 @@ test('Core 04: Lead creates Stage and Outcome through the workflow UI', async ()
 
 test('Core 05: another Member joins Outcome and creates a Feature', async () => {
   await open(worker);
-  await worker.getByRole('button', { name: '+ Join Outcome' }).click();
-  await worker.getByRole('button', { name: '+ Add Feature' }).click();
+  const joining = worker.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/outcomes/${outcomeId}/join`) &&
+      response.request().method() === 'POST',
+  );
+  await worker
+    .getByRole('button', { name: '+ Join outcome', exact: true })
+    .click();
+  expect((await joining).status()).toBe(201);
+  await expect(
+    worker.getByText('✓ Joined outcome', { exact: true }),
+  ).toBeVisible();
+  await expect(worker).toHaveURL(
+    new RegExp(`/projects/${projectId}/outcomes/${outcomeId}$`),
+  );
+  await worker
+    .getByRole('button', {
+      name: 'Add a feature to this outcome',
+      exact: true,
+    })
+    .click();
   await worker
     .getByLabel('Feature title', { exact: true })
     .fill('Evidence package');
@@ -246,21 +266,34 @@ test('Core 05: another Member joins Outcome and creates a Feature', async () => 
 
 test('Core 06: Outcome Member creates and completes a Task', async () => {
   await worker
-    .getByLabel('Task title', { exact: true })
+    .getByLabel('Add a task to Evidence package', { exact: true })
     .fill('Document evidence');
+  const created = worker.waitForResponse(
+    (response) =>
+      response.url().endsWith('/tasks') &&
+      response.url().includes('/work/features/') &&
+      response.request().method() === 'POST',
+  );
   await worker.getByRole('button', { name: 'Add task', exact: true }).click();
-  const response = worker.waitForResponse(
+  expect((await created).status()).toBe(201);
+
+  const checkbox = worker.getByRole('checkbox', {
+    name: 'Complete Document evidence',
+  });
+  await expect(checkbox).toBeVisible();
+  const updated = worker.waitForResponse(
     (response) =>
       response.url().endsWith('/state') &&
       response.request().method() === 'PATCH',
   );
-  await worker
-    .getByRole('checkbox', { name: 'Complete Document evidence' })
-    .check();
-  expect((await response).status()).toBe(200);
+  // Completion is persisted asynchronously; .check() expects the controlled
+  // checkbox to remain checked immediately after the click.
+  await checkbox.click();
+  expect((await updated).status()).toBe(200);
+  await expect(checkbox).toBeChecked();
   await expect(
-    worker.getByText('100% work progress', { exact: true }),
-  ).toBeVisible();
+    worker.getByRole('progressbar', { name: 'Work progress' }),
+  ).toHaveAttribute('aria-valuenow', '100');
 });
 
 test('Core 07: Member submits Output and Lead requests revision', async () => {
@@ -278,7 +311,7 @@ test('Core 07: Member submits Output and Lead requests revision', async () => {
   expect((await submitted).status()).toBe(201);
   await open(lead);
   await lead
-    .getByRole('button', { name: 'Review Outcome', exact: true })
+    .getByRole('button', { name: 'Review outcome', exact: true })
     .click();
   await lead
     .getByLabel('Outcome review feedback')
@@ -343,7 +376,7 @@ test('Core 09 F5-14: original Member resubmits while another submission remains 
 test('Core 10a: Lead verifies combined work and saves review preparation', async () => {
   await open(lead);
   await lead
-    .getByRole('button', { name: 'Review Outcome', exact: true })
+    .getByRole('button', { name: 'Review outcome', exact: true })
     .click();
   const dialog = lead.getByRole('dialog', { name: 'Review Outcome' });
   await expect(
@@ -369,7 +402,7 @@ test('Core 10a: Lead verifies combined work and saves review preparation', async
 test('Core 10b: saved review preparation survives reload and Lead accepts Outcome', async () => {
   await open(lead);
   await lead
-    .getByRole('button', { name: 'Review Outcome', exact: true })
+    .getByRole('button', { name: 'Review outcome', exact: true })
     .click();
   const dialog = lead.getByRole('dialog', { name: 'Review Outcome' });
   await expect(
@@ -401,7 +434,7 @@ test('Core 10b: saved review preparation survives reload and Lead accepts Outcom
 test('Core 11: accepted state survives direct navigation and grants every current Outcome Member credit', async () => {
   await open(worker);
   await expect(
-    worker.getByRole('region', { name: 'Acceptance history' }),
+    worker.getByRole('region', { name: 'Review history' }),
   ).toBeVisible();
   await expect(
     worker.getByRole('button', { name: 'Submit for review' }),
@@ -494,7 +527,7 @@ test('Core 15 F5-40: Lead overrides only the selected dependency; non-Lead canno
     .click();
   const dialog = lead.getByRole('dialog', { name: 'Skip dependency' });
   await dialog
-    .getByLabel('Reason for dependency override')
+    .getByLabel('Reason for override', { exact: true })
     .fill('Independent evidence makes this prerequisite unnecessary.');
   const response = lead.waitForResponse(
     (response) =>
@@ -582,7 +615,10 @@ test('Core 18b: background history refresh preserves an unsaved output', async (
     (await submit(worker, 'Another window contribution', dependentId)).status,
   ).toBe(201);
   await worker
-    .getByRole('button', { name: '+ Add Feature', exact: true })
+    .getByRole('button', {
+      name: 'Add a feature to this outcome',
+      exact: true,
+    })
     .click();
   await worker
     .getByLabel('Feature title', { exact: true })

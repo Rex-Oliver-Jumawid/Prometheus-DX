@@ -1,8 +1,30 @@
 import { spawnSync } from 'node:child_process';
 
 const args = process.argv.slice(2);
+if (args[0] === '--') args.shift();
+if (args.includes('--')) {
+  console.error('Place -- only before the spec file and Playwright options.');
+  process.exit(2);
+}
 const specPattern = /(?:^|\/)[^/]+\.spec\.[cm]?[jt]sx?$/;
-const specFiles = args.filter((arg) => specPattern.test(arg));
+const firstOptionIndex = args.findIndex((arg) => arg.startsWith('-'));
+const selectors =
+  firstOptionIndex === -1 ? args : args.slice(0, firstOptionIndex);
+const unexpectedSelectors = selectors.filter((arg) => !specPattern.test(arg));
+
+if (unexpectedSelectors.length > 0) {
+  console.error(
+    [
+      'Focused Playwright accepts explicit spec files only.',
+      `Unexpected selector: ${unexpectedSelectors[0]}`,
+      '',
+      'Keep each spec path intact on one shell command line.',
+    ].join('\n'),
+  );
+  process.exit(2);
+}
+
+const specFiles = selectors;
 
 if (specFiles.length === 0) {
   console.error(

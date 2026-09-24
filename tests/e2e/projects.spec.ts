@@ -83,8 +83,15 @@ test.afterAll(async () => {
     unrelatedProjectId,
     leadProjectId,
   ].filter((id): id is string => Boolean(id));
-  if (projectIds.length)
+  if (projectIds.length) {
+    await prisma.notification.deleteMany({
+      where: { projectId: { in: projectIds } },
+    });
     await prisma.project.deleteMany({ where: { id: { in: projectIds } } });
+  }
+  await prisma.notification.deleteMany({
+    where: { project: { name: { startsWith: `Browser Project ${runId}` } } },
+  });
   await prisma.project.deleteMany({
     where: { name: { startsWith: `Browser Project ${runId}` } },
   });
