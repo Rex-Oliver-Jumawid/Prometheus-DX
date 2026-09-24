@@ -437,9 +437,21 @@ An Administrator who is not the Project Lead has no organization-level override 
 
 `CAN_EDIT` grants project-level editing capabilities explicitly made available to editable Project Members.
 
-At minimum, `CAN_EDIT` allows the Project Member to change the project's status.
+`CAN_EDIT` grants Project editor authority.
 
-`CAN_EDIT` does not automatically grant Project Lead-only actions such as creating project stages, creating project outcomes, managing Project Member access, reviewing submissions, accepting outcomes, or resolving dependencies.
+A Project Member with `CAN_EDIT` may:
+
+- Change Project status.
+- Create, edit, and delete Stages when normal deletion safeguards allow it.
+- Create, edit, and delete Outcomes when normal deletion safeguards allow it.
+- Review submissions and save review preparation.
+- Request or resolve revision state.
+- Accept or reopen Outcomes.
+- Override individual Outcome dependencies where the product permits it.
+
+`CAN_EDIT` does not make the Member the Project Lead.
+
+Managing another Project Member's `CAN_VIEW` / `CAN_EDIT` access remains Project Lead-only.
 
 ---
 
@@ -666,7 +678,7 @@ The shared history shall remain available to Outcome Members and the Project Lea
 
 # 18. Output Review and Outcome Acceptance
 
-The Project Lead may inspect multiple submissions in an outcome's shared submission history.
+The Project Lead or a Project Member with `CAN_EDIT` may inspect and review multiple submissions in an outcome's shared submission history.
 
 Outcome acceptance is an outcome-level decision rather than ownership of a single person's submission.
 
@@ -690,10 +702,11 @@ Continue work              ACCEPTED
 
 Outcome Members may continue submitting additional work while other submissions are still for review, as long as the outcome has not been accepted and submission is not blocked by a dependency.
 
-The Project Lead may determine that the combined reviewed submissions satisfy the outcome and accept the outcome.
+The Project Lead or a Project Member with `CAN_EDIT` may determine that the combined reviewed submissions satisfy the outcome and accept the outcome.
 Once the outcome is accepted, new submissions stop until the outcome is reopened.
 
-An Administrator who is not the Project Lead does not receive review or acceptance authority.
+Administrator status alone does not provide review or acceptance authority.
+A Project Member with `CAN_EDIT` receives that authority through the Project relationship.
 
 ---
 
@@ -709,7 +722,7 @@ The system shall preserve the Outcome Member list and acceptance history for aud
 
 Accepted Outcome Members remain Outcome Members permanently.
 
-The Project Lead may reopen an accepted outcome.
+The Project Lead or a Project Member with `CAN_EDIT` may reopen an accepted outcome.
 
 Reopening an outcome does not remove existing Outcome Members and does not erase previous submissions or acceptance history.
 
@@ -721,7 +734,7 @@ A later acceptance shall preserve the current Outcome Member list for that accep
 
 # 20. Revision Flow
 
-When the Project Lead requests a revision, the outcome remains active.
+When the Project Lead or a Project Member with `CAN_EDIT` requests a revision, the outcome remains active.
 
 ```text
 Project Lead requests revision
@@ -906,9 +919,10 @@ Recorded work may be compared against scheduled working hours.
 | Submit to joined outcome | No until joined | If Outcome Member | If Outcome Member | Yes while not accepted | Yes if Outcome Member | Yes if Outcome Member |
 | Change project status | No | No | Yes | Based on project access | Yes | Only through project role |
 | Manage Project Member CAN_EDIT access | No | No | No | No | Yes | Only if also Project Lead |
-| Create stages/outcomes | No | No | No | No | Yes | Only if also Project Lead |
-| Review submissions | No | No | No | No | Yes | Only if also Project Lead |
-| Accept or reopen outcomes | No | No | No | No | Yes | Only if also Project Lead |
+| Create stages/outcomes | No | No | Yes | Based on project access | Yes | Only through Project role |
+| Review submissions | No | No | Yes | Based on project access | Yes | Only through Project role |
+| Accept or reopen outcomes | No | No | Yes | Based on project access | Yes | Only through Project role |
+| Override dependencies | No | No | Yes | Based on project access | Yes | Only through Project role |
 | View Project communication | Yes | Yes | Yes | Yes | Yes | Yes |
 | Post general Project Chat | No | Yes | Yes | If also Project Member | Yes | Only through Project role |
 | Post Project announcement | No | Yes | Yes | If also Project Member | Yes | Only through Project role |
@@ -937,7 +951,8 @@ The effective permission is the combination of the user's organization role, Pro
 11. Every Project Member defaults to `CAN_VIEW`.
 12. Only the Project Lead may grant or revoke `CAN_EDIT` for Project Members.
 13. Administrator status alone does not permit project-member access management.
-14. The Project Lead and Project Members with `CAN_EDIT` may change project status.
+14. The Project Lead and Project Members with `CAN_EDIT` may change Project status and perform Project editor workflow actions.
+15. Project Member access management remains Project Lead-only.
 15. Manual project states are `PLANNING`, `IN_PROGRESS`, and `DONE`.
 16. A project may be set to `DONE` even when some outcomes are not accepted.
 17. A project that remains `DONE` for 14 days automatically becomes `ARCHIVED`.
@@ -949,10 +964,10 @@ The effective permission is the combination of the user's organization role, Pro
 23. Each outcome has one shared submission history.
 24. Multiple submissions may be `FOR_REVIEW` at the same time.
 25. Outcome Members may continue submitting while previous submissions are for review, provided the outcome is not accepted and submission is not otherwise blocked.
-26. Outcome acceptance is an outcome-level Project Lead decision that may be based on multiple submissions.
+26. Outcome acceptance is an outcome-level Project editor decision that may be made by the Project Lead or a Project Member with `CAN_EDIT`.
 27. All Outcome Members receive credit when the outcome is accepted.
 28. Accepted outcomes stop new submissions and new joins while accepted.
-29. The Project Lead may reopen an accepted outcome.
+29. The Project Lead or a Project Member with `CAN_EDIT` may reopen an accepted outcome.
 30. Reopening preserves existing Outcome Membership, submission history, and acceptance history.
 31. After reopening, users may join and Outcome Members may submit again.
 32. Important authorization and lifecycle rules must be enforced by the backend and not only through frontend visibility.

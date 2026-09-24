@@ -429,9 +429,9 @@ Only the Project Lead may change a Project Member's access level.
 
 Administrator status does not provide a project-level override.
 
-At minimum, `CAN_EDIT` allows the Project Member to change Project status.
+`CAN_EDIT` grants Project editor authority to change Project status, manage Stages and Outcomes, review submissions, manage revision decisions, accept or reopen Outcomes, and override dependencies.
 
-`CAN_EDIT` does not grant Project Lead-only operations.
+`CAN_EDIT` does not grant authority to manage another Project Member's access level and does not make the Member the Project Lead.
 
 When a Member joins their first Outcome in a Project, `OutcomeMember` and the missing `ProjectMember` row must be created in the same transaction.
 
@@ -471,7 +471,7 @@ created_at
 updated_at
 ```
 
-Only the Project Lead may create and manage Stages under the current rules.
+The Project Lead or a Project Member with `CAN_EDIT` may create and manage Stages.
 
 ---
 
@@ -617,9 +617,9 @@ outcome_id != prerequisite_outcome_id
 
 Dependencies should reference Outcomes belonging to the same Project.
 
-A dependency is resolved when the prerequisite is currently `ACCEPTED` or a Project Lead override has resolved the dependency.
+A dependency is resolved when the prerequisite is currently `ACCEPTED` or a Project editor override has resolved the dependency.
 
-Reopening an accepted prerequisite relocks unfinished dependent Outcomes unless their dependency edge has an explicit Project Lead override.
+Reopening an accepted prerequisite relocks unfinished dependent Outcomes unless their dependency edge has an explicit Project editor override.
 Accepted dependent Outcomes retain their acceptance and credit history; reopening a prerequisite never automatically reopens them.
 If an accepted dependent Outcome is itself later reopened, its unresolved prerequisites block execution and submission again.
 Overrides apply to individual dependency edges and do not change the prerequisite Outcome's lifecycle.
@@ -639,7 +639,7 @@ created_at
 updated_at
 ```
 
-Only the Project Lead manages Acceptance Criteria under the current permission model.
+The Project Lead or a Project Member with `CAN_EDIT` may manage Acceptance Criteria as part of Outcome editing.
 
 ---
 
@@ -783,7 +783,7 @@ criteria_snapshot
 created_at
 ```
 
-Only the Project Lead may create review records.
+The Project Lead or a Project Member with `CAN_EDIT` may create review records.
 
 Reviewing a Submission may change its `review_status` to `REVIEWED` without accepting the Outcome.
 
@@ -796,7 +796,7 @@ Reviewed and unreviewed Submissions may coexist in the same Outcome history.
 `OutcomeReviewDraft` stores `outcome_id`, `member_id`, `criterion_ids`, `note`, and `updated_at`, uniquely per Outcome and reviewing Lead.
 It persists the prototype's review checklist and feedback as unfinished review preparation.
 It grants no authority and does not change submission status or Outcome lifecycle.
-Only the current persisted Project Lead may read or change review preparation.
+The current Project Lead or a Project Member with `CAN_EDIT` may read or change their own review preparation.
 Acceptance revalidates the current criteria, Outcome version, and submission set against canonical records.
 
 ---
@@ -815,7 +815,7 @@ resolved_at
 resolved_by_member_id
 ```
 
-Only the Project Lead may request or resolve a revision state.
+The Project Lead or a Project Member with `CAN_EDIT` may request or resolve a revision state.
 
 Creating an unresolved request sets:
 
@@ -831,7 +831,7 @@ When the Project Lead marks the revision addressed without accepting the Outcome
 
 ```text
 resolved_at = now()
-resolved_by_member_id = Project Lead
+resolved_by_member_id = Project Lead or CAN_EDIT Project Member
 Outcome.lifecycle_status = OPEN
 ```
 

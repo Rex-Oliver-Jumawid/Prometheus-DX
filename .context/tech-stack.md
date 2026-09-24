@@ -265,7 +265,7 @@ Current business rules that belong in NestJS include:
 - Project Membership is derived from Outcome Membership.
 - Project Members default to `CAN_VIEW`.
 - Only the Project Lead may grant or revoke `CAN_EDIT` for Project Members.
-- Project Leads and Project Members with `CAN_EDIT` may change project status.
+- Project Leads and Project Members with `CAN_EDIT` may change Project status and manage Project workflow structure.
 - A project may be marked `DONE` without every outcome being accepted.
 - A project that remains `DONE` for 14 days becomes `ARCHIVED`.
 - Any active authorized user may join a locked outcome or an outcome that is `FOR_REVIEW` or `NEEDS_REVISION`.
@@ -274,7 +274,7 @@ Current business rules that belong in NestJS include:
 - Each outcome has one shared submission history.
 - Multiple submissions may be `FOR_REVIEW` at the same time.
 - Outcome Members may continue submitting while the outcome is not accepted and submission is not blocked by dependency rules.
-- Only the Project Lead may accept or reopen an outcome.
+- Project Leads and Project Members with `CAN_EDIT` may review submissions, request or resolve revisions, accept or reopen Outcomes, and override dependencies.
 - Reopening preserves Outcome Membership, submission history, and acceptance history.
 - Output review and acceptance must be enforced by the backend.
 
@@ -626,7 +626,7 @@ Member activates account
         |
 Authorized user creates project
         |
-Project Lead creates stage and outcome
+Project Lead or CAN_EDIT Project Member creates stage and outcome
         |
 Member joins outcome
         |
@@ -636,14 +636,14 @@ Project Lead optionally grants CAN_EDIT
         |
 Outcome Members submit multiple entries
         |
-Project Lead reviews shared submission history
+Project editor reviews shared submission history
         |
-Project Lead requests revision or accepts outcome
+Project editor requests revision or accepts outcome
         |
-Project Lead may later reopen outcome
+Project editor may later reopen outcome
 ```
 
-A separate test should verify that a Project Member with `CAN_EDIT` may change project status but may not perform Project Lead-only operations.
+A separate test should verify that a Project Member with `CAN_EDIT` may change Project status, manage Stages and Outcomes, review submissions, accept/reopen Outcomes, and override dependencies while remaining unable to manage Project Member access.
 
 A separate test should verify that an Administrator who is not the Project Lead receives no project-level override.
 

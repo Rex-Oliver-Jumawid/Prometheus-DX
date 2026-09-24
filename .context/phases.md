@@ -252,7 +252,7 @@ Implement stages, outcomes, outcome membership, derived project membership, and 
 
 ### Core rules
 
-Only the Project Lead may create and manage stages and outcomes.
+The Project Lead or a Project Member with `CAN_EDIT` may create and manage stages and outcomes.
 
 Any active authorized user may join a non-accepted outcome.
 
@@ -304,7 +304,7 @@ Each outcome has one shared submission history.
 
 Multiple submissions may be under review at the same time.
 
-Only the Project Lead may perform Project Lead review actions.
+The Project Lead or a Project Member with `CAN_EDIT` may perform Project review actions, accept/reopen Outcomes, and override dependencies.
 
 Outcome acceptance is an outcome-level decision.
 

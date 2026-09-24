@@ -247,19 +247,19 @@ Administrator status shall not provide an override.
 
 A Project Member with `CAN_EDIT` shall be permitted to use project-level edit capabilities explicitly granted to editable Project Members.
 
-At minimum, `CAN_EDIT` shall allow the Project Member to change project status.
+`CAN_EDIT` shall grant Project editor capabilities including:
 
-`CAN_EDIT` shall not automatically grant Project Lead-only capabilities including:
+- Changing Project status.
+- Creating, editing, and deleting Stages subject to normal deletion safeguards.
+- Creating, editing, and deleting Outcomes subject to normal deletion safeguards.
+- Reviewing submissions and saving review preparation.
+- Requesting or resolving revision state.
+- Accepting and reopening Outcomes.
+- Overriding individual dependencies where the product permits it.
 
-- Creating stages.
-- Creating outcomes.
-- Managing Project Member access.
-- Reviewing submissions.
-- Accepting outcomes.
-- Reopening outcomes.
-- Resolving dependencies.
+Managing Project Member access shall remain Project Lead-only.
 
-Additional `CAN_EDIT` capabilities remain subject to future product decisions.
+`CAN_EDIT` shall not make a Project Member the Project Lead.
 
 ---
 
@@ -307,11 +307,11 @@ The system shall retain the date and time when the project entered `DONE` so the
 
 ## FR-13 Stage Management
 
-Only the Project Lead shall be able to create and manage stages within the project they lead.
+The Project Lead or a Project Member with `CAN_EDIT` shall be able to create and manage stages within that Project.
 
 ## FR-14 Outcome Management
 
-Only the Project Lead shall be able to create and manage project outcomes.
+The Project Lead or a Project Member with `CAN_EDIT` shall be able to create and manage project outcomes.
 
 An outcome may contain:
 
@@ -440,15 +440,15 @@ Multiple submissions may therefore be under review simultaneously for the same o
 
 ## FR-23 Submission Review
 
-Only the Project Lead shall have authority to perform Project Lead review actions for outcomes in the project they lead.
+The Project Lead or a Project Member with `CAN_EDIT` shall have authority to perform Project review actions.
 
-The Project Lead shall be able to inspect multiple submissions in the outcome's shared submission history.
+Project editors shall be able to inspect multiple submissions in the outcome's shared submission history.
 
 Administrator status alone shall not grant review authority.
 
 ## FR-24 Revision Requests
 
-The Project Lead may request revision of outcome work.
+The Project Lead or a Project Member with `CAN_EDIT` may request revision of outcome work.
 
 While an outcome is in `NEEDS_REVISION`:
 
@@ -461,7 +461,7 @@ While an outcome is in `NEEDS_REVISION`:
 
 Outcome acceptance shall be an outcome-level decision rather than an acceptance of only one user's submission.
 
-The Project Lead may determine that one or more submissions collectively satisfy the outcome and accept the outcome.
+The Project Lead or a Project Member with `CAN_EDIT` may determine that one or more submissions collectively satisfy the outcome and accept the outcome.
 
 When an outcome is accepted:
 
@@ -482,7 +482,7 @@ An outcome may depend on another outcome.
 
 A dependent outcome may be locked until its prerequisite is resolved.
 
-Only the Project Lead may perform Project Lead dependency decisions such as resolving or skipping a prerequisite where the product permits it.
+The Project Lead or a Project Member with `CAN_EDIT` may resolve or skip an individual prerequisite where the product permits it.
 
 Outcome Membership may still be created while an outcome is locked.
 
@@ -638,7 +638,7 @@ Each outcome shall have one shared submission history and may contain multiple s
 
 ## BR-10 Outcome Acceptance
 
-Only the Project Lead may accept or reopen an outcome.
+The Project Lead or a Project Member with `CAN_EDIT` may accept or reopen an outcome.
 
 All Outcome Members receive credit when the outcome is accepted.
 
