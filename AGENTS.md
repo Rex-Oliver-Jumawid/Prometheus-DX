@@ -87,9 +87,15 @@ Do not copy the full skill procedures back into this file.
 
 Implement Prometheus incrementally according to `.context/phases.md`.
 
+Phases 0 through 9 are complete for the current release boundary recorded in `.docs/phases/README.md` and `.docs/PROJECT-CLOSURE.md`.
+
+Future feature work is maintenance or newly scoped post-release work unless the release boundary is explicitly revised.
+
+Do not reopen a completed phase merely because new work touches the same route, service, or data model.
+
 Do not substantially implement later-phase product functionality unless it is required infrastructure for the active phase.
 
-When implementation state is unclear, determine the earliest incomplete phase from repository evidence.
+When implementation state is unclear, read the canonical phase status index and closure record before inferring an incomplete phase.
 
 Every phase must have a live implementation journal under `.docs/phases/`.
 
