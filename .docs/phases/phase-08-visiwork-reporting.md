@@ -6,7 +6,7 @@
 
 The core VisiWork and Reports & Analytics product surfaces are implemented and integrated on `main`.
 
-Phase 8 remains open until the manual acceptance gate, integrated regression, visual verification, and final closure record are complete.
+Earlier open-status notes are superseded by the release closure reassessment below.
 
 Later collaboration work layered onto VisiWork belongs to Phase 9 and does not change the Phase 8 acceptance boundary.
 
