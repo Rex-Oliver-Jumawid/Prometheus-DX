@@ -21,6 +21,13 @@ This document defines phase scope, ordering, dependencies, and exit criteria.
 
 Live implementation status is tracked in `.docs/phases/README.md`, with detailed evidence in the matching phase journal under `.docs/phases/`.
 
+As of 2026-09-25, Phases 0 through 9 are complete for the current release boundary.
+
+The explicit post-release backlog is recorded in `.docs/PROJECT-CLOSURE.md`.
+
+Do not reopen a completed phase merely because a future enhancement touches the same screen or domain.
+Only change phase status when the release decision itself is intentionally revised.
+
 Do not infer that a phase is complete merely because some or all of its planned code exists.
 
 ## Canonical Project Context
