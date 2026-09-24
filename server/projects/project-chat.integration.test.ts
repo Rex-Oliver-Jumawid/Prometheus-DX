@@ -172,6 +172,82 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
     expect(persisted.editedAt).not.toBeNull();
   });
 
+  it('keeps Project Chat mention notifications synchronized through edits and deletion', async () => {
+    const created = await chat.send(participant, projectId, {
+      body: '@lead please review this',
+      parentMessageId: null,
+      mentionMemberIds: [lead.id],
+    });
+    const eventKey = 'PROJECT_CHAT_MENTION:' + created.id;
+
+    let notification = await db.notification.findFirst({
+      where: {
+        recipientMemberId: lead.id,
+        type: 'PROJECT_CHAT_MENTION',
+        eventKey,
+      },
+    });
+    expect(notification).not.toBeNull();
+    expect(notification?.data).toMatchObject({
+      messageId: created.id,
+      preview: '@lead please review this',
+    });
+
+    const retained = await chat.edit(participant, projectId, created.id, {
+      body: '@lead updated review request',
+      expectedEditedAt: null,
+      mentionMemberIds: [lead.id],
+    });
+    notification = await db.notification.findFirst({
+      where: {
+        recipientMemberId: lead.id,
+        type: 'PROJECT_CHAT_MENTION',
+        eventKey,
+      },
+    });
+    expect(notification?.data).toMatchObject({
+      messageId: created.id,
+      preview: '@lead updated review request',
+    });
+
+    const removed = await chat.edit(participant, projectId, created.id, {
+      body: 'No mention remains',
+      expectedEditedAt: retained.editedAt,
+      mentionMemberIds: [],
+    });
+    expect(await db.notification.count({
+      where: {
+        recipientMemberId: lead.id,
+        type: 'PROJECT_CHAT_MENTION',
+        eventKey,
+      },
+    })).toBe(0);
+
+    const readded = await chat.edit(participant, projectId, created.id, {
+      body: '@lead mention restored',
+      expectedEditedAt: removed.editedAt,
+      mentionMemberIds: [lead.id],
+    });
+    expect(await db.notification.count({
+      where: {
+        recipientMemberId: lead.id,
+        type: 'PROJECT_CHAT_MENTION',
+        eventKey,
+      },
+    })).toBe(1);
+
+    await chat.remove(participant, projectId, created.id, {
+      expectedEditedAt: readded.editedAt,
+    });
+    expect(await db.notification.count({
+      where: {
+        recipientMemberId: lead.id,
+        type: 'PROJECT_CHAT_MENTION',
+        eventKey,
+      },
+    })).toBe(0);
+  });
+
   it('paginates deterministically even if a newer message arrives', async () => {
     await db.projectMessage.createMany({
       data: Array.from({ length: 32 }, (_, i) => ({
@@ -208,21 +284,31 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
     }
   });
 
-  it('keeps direct browser roles from accessing the message table', async () => {
-    const [{ rls }] = await db.$queryRaw<Array<{ rls: boolean }>>`
-      SELECT relrowsecurity AS rls FROM pg_class
-      WHERE oid = 'public.project_messages'::regclass
-    `;
-    expect(rls).toBe(true);
+  it('keeps direct browser roles from accessing Project collaboration tables', async () => {
+    const tables = [
+      'public.project_messages',
+      'public.project_message_mentions',
+      'public.project_announcements',
+    ];
     const roles = await db.$queryRaw<Array<{ rolname: string }>>`
       SELECT rolname FROM pg_roles WHERE rolname IN ('anon', 'authenticated')
     `;
-    for (const { rolname } of roles) {
-      const [permissions] = await db.$queryRaw<Array<{ readable: boolean; writable: boolean }>>`
-        SELECT has_table_privilege(${rolname}, 'public.project_messages', 'SELECT') AS readable,
-               has_table_privilege(${rolname}, 'public.project_messages', 'INSERT,UPDATE,DELETE') AS writable
+
+    for (const table of tables) {
+      const [security] = await db.$queryRaw<Array<{ rls: boolean }>>`
+        SELECT relrowsecurity AS rls
+        FROM pg_class
+        WHERE oid = ${table}::regclass
       `;
-      expect(permissions).toEqual({ readable: false, writable: false });
+      expect(security.rls).toBe(true);
+
+      for (const { rolname } of roles) {
+        const [permissions] = await db.$queryRaw<Array<{ readable: boolean; writable: boolean }>>`
+          SELECT has_table_privilege(${rolname}, ${table}, 'SELECT') AS readable,
+                 has_table_privilege(${rolname}, ${table}, 'INSERT,UPDATE,DELETE') AS writable
+        `;
+        expect(permissions).toEqual({ readable: false, writable: false });
+      }
     }
   });
 });
