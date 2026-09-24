@@ -2015,3 +2015,28 @@
     animation: none;
   }
 }
+
+/* An actionable retry stays inside the announcements card on API failures. */
+.pw-announcement-state strong {
+  display: block;
+  color: #5b4940;
+  font-size: 9px;
+}
+.pw-announcement-state p {
+  margin: 6px 0 10px;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+.pw-announce-retry {
+  padding: 6px 10px;
+  border: 1px solid #e4d7cd;
+  border-radius: 8px;
+  background: #fff;
+  color: #b7502c;
+  font-size: 9px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.pw-announce-retry:hover {
+  background: #fff4ed;
+}
