@@ -99,7 +99,7 @@ export const TeamWorkMemberSchema = z.object({
     name: z.string(),
     shortLabel: z.string(),
   }),
-  visiworkDepartmentId: z.string().uuid().nullable().default(null),
+  visiworkDepartmentId: z.string().uuid().nullable(),
   workingNow: z.boolean(),
   scheduledMinutes: z.number().int().nonnegative(),
   actualWorkedSeconds: z.number().int().nonnegative(),
