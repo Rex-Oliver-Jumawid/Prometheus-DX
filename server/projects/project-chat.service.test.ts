@@ -17,18 +17,27 @@ const message = {
   id: messageId,
   projectId,
   memberId,
+  outcomeId: null,
   parentMessageId: null,
   parent: null,
   body: 'Weekly update',
   createdAt: new Date('2026-09-23T01:00:00Z'),
   editedAt: null,
+  deletedAt: null,
+  mentions: [],
   member: { id: memberId, fullName: 'Project Member', email: 'member@example.com' },
 };
 
 function setup(options: {
   project?: { id: string; leadMemberId: string; archivedAt: Date | null; members: { memberId: string }[] } | null;
   parent?: { id: string } | null;
-  original?: { id: string; memberId: string; editedAt?: Date | null } | null;
+  original?: {
+    id: string;
+    memberId: string;
+    editedAt?: Date | null;
+    deletedAt?: Date | null;
+    mentions?: Array<{ memberId: string }>;
+  } | null;
   rows?: typeof message[];
 } = {}) {
   const project = options.project === undefined
@@ -56,11 +65,24 @@ function setup(options: {
     },
     notification: {
       createMany: vi.fn().mockResolvedValue({ count: 1 }),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     projectMessage: {
       findFirst: vi.fn().mockImplementation((query: { where: { id: string } }) => {
         if (query.where.id === messageId)
-          return Promise.resolve(options.original === undefined ? { id: messageId, memberId, createdAt: message.createdAt } : options.original);
+          return Promise.resolve(
+            options.original === undefined
+              ? {
+                  id: messageId,
+                  memberId,
+                  createdAt: message.createdAt,
+                  editedAt: null,
+                  deletedAt: null,
+                  mentions: [],
+                }
+              : options.original,
+          );
         return Promise.resolve(options.parent === undefined ? { id: query.where.id } : options.parent);
       }),
       findMany: vi.fn().mockResolvedValue(options.rows ?? [message]),
@@ -101,7 +123,13 @@ describe('ProjectChatService', () => {
     expect(db.projectMessage.create).toHaveBeenCalledTimes(2);
     expect(db.projectMessage.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: { projectId, memberId, body: 'Member update', parentMessageId: null },
+        data: {
+          projectId,
+          outcomeId: null,
+          memberId,
+          body: 'Member update',
+          parentMessageId: null,
+        },
       }),
     );
   });
@@ -172,6 +200,7 @@ describe('ProjectChatService', () => {
       expect.objectContaining({
         where: {
           projectId,
+          outcomeId: null,
           OR: [
             { createdAt: { lt: message.createdAt } },
             { createdAt: message.createdAt, id: { lt: messageId } },
@@ -188,7 +217,12 @@ describe('ProjectChatService', () => {
       service.send(member, projectId, { body: 'Reply', parentMessageId }),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(db.projectMessage.findFirst).toHaveBeenCalledWith({
-      where: { id: parentMessageId, projectId, deletedAt: null },
+      where: {
+        id: parentMessageId,
+        projectId,
+        outcomeId: null,
+        deletedAt: null,
+      },
       select: { id: true },
     });
     expect(db.projectMessage.create).not.toHaveBeenCalled();
@@ -222,6 +256,90 @@ describe('ProjectChatService', () => {
         expectedEditedAt: latestEdit.toISOString(),
       }),
     ).resolves.toMatchObject({ body: 'Edited update' });
+  });
+
+  it('synchronizes mention notifications when an author edits mentions', async () => {
+    const added = setup();
+    await added.service.edit(member, projectId, messageId, {
+      body: 'Please review @Project Lead',
+      expectedEditedAt: null,
+      mentionMemberIds: [leadId],
+    });
+    expect(added.db.notification.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          type: 'PROJECT_CHAT_MENTION',
+          recipientMemberId: leadId,
+          eventKey: 'PROJECT_CHAT_MENTION:' + messageId,
+          data: {
+            messageId,
+            preview: 'Please review @Project Lead',
+          },
+        }),
+      ],
+      skipDuplicates: true,
+    });
+
+    const retained = setup({
+      original: {
+        id: messageId,
+        memberId,
+        editedAt: null,
+        deletedAt: null,
+        mentions: [{ memberId: leadId }],
+      },
+    });
+    await retained.service.edit(member, projectId, messageId, {
+      body: 'Updated note for @Project Lead',
+      expectedEditedAt: null,
+      mentionMemberIds: [leadId],
+    });
+    expect(retained.db.notification.updateMany).toHaveBeenCalledWith({
+      where: {
+        recipientMemberId: { in: [leadId] },
+        type: 'PROJECT_CHAT_MENTION',
+        eventKey: 'PROJECT_CHAT_MENTION:' + messageId,
+      },
+      data: {
+        data: {
+          messageId,
+          preview: 'Updated note for @Project Lead',
+        },
+      },
+    });
+
+    const removed = setup({
+      original: {
+        id: messageId,
+        memberId,
+        editedAt: null,
+        deletedAt: null,
+        mentions: [{ memberId: leadId }],
+      },
+    });
+    await removed.service.edit(member, projectId, messageId, {
+      body: 'No mention now',
+      expectedEditedAt: null,
+      mentionMemberIds: [],
+    });
+    expect(removed.db.notification.deleteMany).toHaveBeenCalledWith({
+      where: {
+        recipientMemberId: { in: [leadId] },
+        type: 'PROJECT_CHAT_MENTION',
+        eventKey: 'PROJECT_CHAT_MENTION:' + messageId,
+      },
+    });
+  });
+
+  it('removes Project Chat mention notifications when the author deletes a message', async () => {
+    const { service, db } = setup();
+    await service.remove(member, projectId, messageId, { expectedEditedAt: null });
+    expect(db.notification.deleteMany).toHaveBeenCalledWith({
+      where: {
+        type: 'PROJECT_CHAT_MENTION',
+        eventKey: 'PROJECT_CHAT_MENTION:' + messageId,
+      },
+    });
   });
 
   it('rejects archived Project writes and nonexistent Project reads', async () => {
