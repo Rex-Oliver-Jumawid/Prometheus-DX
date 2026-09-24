@@ -589,42 +589,57 @@ function RoomPanel({
                       {ownMessage ? 'You' : message.author.fullName}
                       {' · '}
                       {messageTime(message.createdAt)}
-                      {message.editedAt && !message.deletedAt ? ' · edited' : ''}
                     </small>
-                    {ownMessage && !message.deletedAt && (
-                      <div className="visiwork-message-actions">
-                        <button
-                          type="button"
-                          aria-label="Message options"
-                          aria-expanded={messageMenuId === message.id}
-                          onClick={() =>
-                            setMessageMenuId((current) =>
-                              current === message.id ? null : message.id,
-                            )
+                    <div className="visiwork-message-meta-right">
+                      {message.editedAt && !message.deletedAt && (
+                        <span
+                          className="visiwork-message-edited"
+                          title={
+                            'Edited ' +
+                            new Intl.DateTimeFormat('en-PH', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            }).format(new Date(message.editedAt))
                           }
                         >
-                          ⋯
-                        </button>
-                        {messageMenuId === message.id && (
-                          <div className="visiwork-message-menu">
-                            <button
-                              type="button"
-                              onClick={() => beginEdit(message)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              className="danger"
-                              disabled={deleteMessage.isPending}
-                              onClick={() => requestDelete(message)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          Edited
+                        </span>
+                      )}
+                      {ownMessage && !message.deletedAt && (
+                        <div className="visiwork-message-actions">
+                          <button
+                            type="button"
+                            aria-label="Message options"
+                            aria-expanded={messageMenuId === message.id}
+                            onClick={() =>
+                              setMessageMenuId((current) =>
+                                current === message.id ? null : message.id,
+                              )
+                            }
+                          >
+                            ⋯
+                          </button>
+                          {messageMenuId === message.id && (
+                            <div className="visiwork-message-menu">
+                              <button
+                                type="button"
+                                onClick={() => beginEdit(message)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                className="danger"
+                                disabled={deleteMessage.isPending}
+                                onClick={() => requestDelete(message)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {editingMessageId === message.id ? (

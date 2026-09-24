@@ -1577,6 +1577,29 @@
   min-width: 0;
 }
 
+.visiwork-message-meta-right {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+}
+
+.visiwork-message-edited {
+  flex: 0 0 auto;
+  padding: 2px 5px;
+  border: 1px solid #e2d6cf;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #7f726a;
+  font-family: Menlo, Monaco, Consolas, monospace;
+  font-size: 6.8px;
+  font-weight: 800;
+  line-height: 9px;
+  letter-spacing: 0.15px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .visiwork-message-actions {
   position: relative;
   flex: 0 0 auto;
