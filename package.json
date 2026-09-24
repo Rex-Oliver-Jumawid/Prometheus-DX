@@ -34,7 +34,8 @@
     "verify": "pnpm project:doctor && pnpm check",
     "verify:e2e": "pnpm verify && pnpm test:e2e",
     "verify:release": "pnpm verify:e2e && pnpm test:e2e:cross-browser",
-    "test:e2e:focused": "node scripts/run-focused-playwright.mjs"
+    "test:e2e:focused": "node scripts/run-focused-playwright.mjs",
+    "predev:api": "prisma generate"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.0",
