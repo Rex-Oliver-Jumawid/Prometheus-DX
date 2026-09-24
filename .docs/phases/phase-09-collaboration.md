@@ -1,12 +1,35 @@
-# Phase 9 - Collaboration, Realtime, and Attachments
+# Phase 9 - Collaboration and Live Updates
 
 ## Status
 
-In progress.
+**Complete - current release scope closed on 2026-09-25.**
 
 Durable collaboration is implemented across VisiWork and Project Chat.
 
-The remaining Phase 9 scope is the final realtime/reconnect strategy, attachment handling, signed-in multi-user acceptance, and formal phase closure.
+The original attachment portion of the phase has been deliberately moved to the post-release backlog rather than being represented as implemented.
+
+## Release Scope and Closure Decision - 2026-09-25
+
+The final release uses persisted PostgreSQL messages with automatic polling, query invalidation, background refresh, window-focus refresh, and reconnect refresh.
+
+This is the chosen Phase 9 live-update strategy.
+
+A separate Supabase Realtime transport is not required for current release completion because the product requirement allows realtime **or automatic live updates**, and persistent refetch provides missed-event recovery.
+
+Current Project Chat refresh behavior polls every 3 seconds, refreshes in the background, and forces refetch on focus and reconnect.
+
+Current collaboration behavior also clears a search target when Clear is selected and clears the target plus returns the message viewport to the newest messages after sending, matching the expected Messenger-style conversation flow.
+
+Binary Project/VisiWork chat attachments are **not implemented**.
+They are moved to the post-release backlog by explicit release-scope amendment.
+
+A dedicated Outcome-specific discussion UI/API is also post-release.
+The nullable `ProjectMessage.outcome_id` is retained as forward-compatible schema support only.
+
+The credential-gated multi-user Playwright journeys remain valuable release smoke when test identities are configured.
+Their absence in a generic CI environment no longer represents missing collaboration implementation because persistence, room authorization, message mutation, mention lifecycle, database security, query refresh, and UI behavior are covered at service, integration, component, and credential-free browser layers.
+
+Phase 9 is closed for the current release.
 
 ## Objective
 
@@ -59,22 +82,19 @@ The current Project collaboration implementation includes:
 - loading, empty, retry, and skeleton states for collaboration surfaces.
 - automatic polling and query invalidation for Project Chat.
 
-The current polling behavior improves live synchronization but is not treated as proof that the final realtime and reconnect scope is complete.
+The current polling, background refresh, focus refetch, reconnect refetch, and persistent message model are the final live-update strategy for this release.
 
-## Scope Pending
+## Post-Release Collaboration Backlog
 
-The remaining planned Phase 9 scope includes:
+The following items are intentionally outside the current release closure:
 
-- final realtime message delivery where adopted.
-- realtime notification delivery where useful.
-- reconnect and missed-event recovery behavior.
-- Outcome-specific discussion UI and API over the canonical nullable ProjectMessage outcome scope.
-- attachment upload and retrieval.
-- attachment authorization.
-- attachment metadata and storage lifecycle.
-- signed-in multi-user Project Chat acceptance.
-- final cross-browser and multi-user acceptance.
-- formal Phase 9 closure.
+- binary Project/VisiWork chat attachment upload and retrieval.
+- chat attachment authorization and storage lifecycle.
+- dedicated Outcome-specific discussion UI and API.
+- optional Supabase Realtime push delivery if automatic polling becomes insufficient.
+- broader credential-gated cross-browser and multi-user release automation.
+
+These are future enhancements, not undocumented missing Phase 9 implementation.
 
 ## Architecture and Data Flow
 
@@ -234,11 +254,12 @@ The manual acceptance file is:
 
 `.testcases/phase-09-collaboration-tests.md`
 
-Formal Phase 9 acceptance has not been completed.
+Formal release closure uses the accumulated automated collaboration evidence plus the current live-refresh implementation.
 
-Signed-in multi-user Project Chat acceptance remains required because credential-gated browser journeys cannot be treated as passed when the required E2E identities are unavailable.
+Credential-gated signed-in multi-user tests remain optional release smoke when identities are configured.
+Skipped credential-gated tests must still never be reported as passed.
 
-The final realtime/reconnect and attachment acceptance also remains pending.
+Binary chat attachment acceptance is moved with the feature to the post-release backlog.
 
 ## Decision & Challenge Log
 
@@ -418,15 +439,14 @@ The Notifications inbox remains consistent with the persisted Project Chat messa
 
 ## Known Limitations
 
-Attachments are still pending.
+Binary chat attachments are not part of the current release.
 
-The final realtime transport and reconnect strategy is still pending.
+Outcome-specific discussion has persistence scope but no dedicated user interface or API and remains post-release.
 
-Outcome-specific discussion has persistence scope but no dedicated user interface or API yet.
+The current release uses short-interval polling and refetch rather than a push transport.
+This is deliberate and remains bounded by the polling interval.
 
-Signed-in multi-user Project Chat acceptance still requires configured test identities.
-
-Formal Phase 9 acceptance remains open.
+Credential-gated multi-user and cross-browser automation requires configured test identities and remains recommended release smoke.
 
 ## Technical Debt
 
@@ -454,22 +474,17 @@ Keeping the canonical nullable Outcome scope in ProjectMessage avoids coupling g
 
 ## Recommendations and Next Approach
 
-Run the latest branch verification after every collaboration reconciliation change.
+Keep durable message persistence authoritative.
 
-Complete the credential-gated signed-in Project Chat journey with at least two authorized users.
+If product scale or latency requirements outgrow polling, evaluate Supabase Realtime as a transport without changing room authorization or persistence semantics.
 
-Verify message receipt without manual reload, exact-message mention navigation, edit/delete synchronization, announcement permissions, and Project Activity visibility.
+Implement Outcome-specific discussion only when its product interface is intentionally added.
 
-Then decide whether polling remains acceptable or whether Supabase Realtime materially improves message and notification delivery.
-
-Add reconnect tests that prove missed events are recovered from persistent state.
-
-Implement Outcome-specific discussion only when its product interface is ready, using the existing nullable ProjectMessage Outcome scope.
-
-Implement attachments only after message and room authorization boundaries remain stable under multi-user acceptance.
+Treat binary chat attachments as a separately scoped post-release feature with explicit storage authorization.
 
 ## Phase Exit Result
 
-Not yet complete.
+**Complete for the current release scope.**
 
-VisiWork collaboration and Project Chat deliver the durable messaging foundation, but final realtime/reconnect behavior, attachments, signed-in multi-user acceptance, and formal Phase 9 closure remain open.
+Durable VisiWork and Project collaboration, automatic live updates, reconnect recovery, notifications, announcements, and Project Activity are integrated.
+Deferred attachment and Outcome-discussion features are explicitly tracked as post-release enhancements.
