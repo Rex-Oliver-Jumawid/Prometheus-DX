@@ -73,9 +73,10 @@ Phase completion still requires the matching acceptance gate, required regressio
 ## Next Actions
 
 1. Finish Phase 7 manual visual and acceptance closure and reconcile the journal with the integrated Home and Notifications state.
-2. Execute the Phase 8 acceptance checklist against the integrated VisiWork and Reports & Analytics implementation, then record the actual evidence in the Phase 8 journal.
-3. Continue Phase 9 with Project Chat and the remaining realtime and attachment scope while preserving the already delivered VisiWork collaboration behavior.
-4. Keep Phase 5 independently open until its own final acceptance and regression work is complete.
+2. Re-enable or otherwise reconcile the Home Reports Quick Access control now that `/reports` exists.
+3. Execute the Phase 8 acceptance checklist against the integrated VisiWork and Reports & Analytics implementation, then record the actual evidence in the Phase 8 journal.
+4. Continue Phase 9 with Project Chat and the remaining realtime and attachment scope while preserving the already delivered VisiWork collaboration behavior.
+5. Keep Phase 5 independently open until its own final acceptance and regression work is complete.
 
 ## Current Testing Workflow
 
