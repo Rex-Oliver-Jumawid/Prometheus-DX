@@ -236,13 +236,13 @@ The inbox uses the shell's existing responsive scroll container and includes nar
 The Figma mockup includes Mentions and Projects tabs, example mention/reply records, and static counts.
 This slice implements the required All and Unread filters against real records; mention and reply records depend on Phase 9 collaboration work and are deferred.
 The Projects tab is deferred from this slice's initial API/UI scope; Project and Outcome event rows still appear in All and Unread.
-Exact visual parity and responsive quality remain pending manual browser comparison against node `11:2301`.
+At that checkpoint, exact visual parity and responsive quality had not yet received manual browser comparison against node `11:2301`.
 
 `src/features/notifications/NotificationsPage.test.tsx` was added for loading, empty states, filter switching, unread treatment, navigation, read mutations, rollback, missing context, and retry.
 The user ran `pnpm exec vitest run --config vitest.ui.config.ts src/features/notifications/NotificationsPage.test.tsx` on 2026-09-22.
 The focused UI run passed: one test file and all nine tests passed.
 Checkpoint E focused component verification is satisfied.
-The browser journey, typechecking, and targeted regressions subsequently passed as recorded below; manual visual comparison remains pending.
+The browser journey, typechecking, and targeted regressions subsequently passed as recorded below; manual visual comparison was still outstanding at that checkpoint.
 
 ### Loading skeleton follow-up
 
@@ -254,7 +254,7 @@ The existing component loading test now checks four skeleton rows, the busy stat
 The user pulled commit `cb9dceb` and ran `pnpm exec vitest run --config vitest.ui.config.ts src/features/notifications/NotificationsPage.test.tsx` on 2026-09-23.
 The focused UI verification passed: one test file and all nine tests passed in 2.22 seconds, including the updated loading skeleton test.
 Vite displayed its existing CJS Node API deprecation warning; no tests failed.
-The user ran `git pull --ff-only` and `pnpm build:web` on 2026-09-23 after the focused UI test. Vite 6.4.3 completed the production web build successfully (209 modules transformed, 2.27 seconds), including `NotificationsPage-6dp1ch8h.js` (8.15 kB, gzip 2.61 kB) and `NotificationsPage-0Q2Tbf9N.css` (7.15 kB, gzip 2.01 kB). The existing 756.20 kB main JavaScript chunk warning is non-fatal and separate from this UI-only change. Throttled-network desktop/mobile visual inspection of the new skeleton remains pending.
+The user ran `git pull --ff-only` and `pnpm build:web` on 2026-09-23 after the focused UI test. Vite 6.4.3 completed the production web build successfully (209 modules transformed, 2.27 seconds), including `NotificationsPage-6dp1ch8h.js` (8.15 kB, gzip 2.61 kB) and `NotificationsPage-0Q2Tbf9N.css` (7.15 kB, gzip 2.01 kB). The existing 756.20 kB main JavaScript chunk warning is non-fatal and separate from this UI-only change. Throttled-network desktop/mobile visual inspection of the new skeleton had not yet been recorded at that checkpoint.
 
 ## Sidebar Unread Badge
 
@@ -269,7 +269,7 @@ The existing utility navigation function still owns Registry visibility, and no 
 The user ran `pnpm exec vitest run --config vitest.ui.config.ts src/features/shell/AppShell.notifications.test.tsx` on 2026-09-22.
 The focused shell run passed: one test file and all four tests passed.
 Checkpoint F focused component verification is satisfied.
-Typechecking and the targeted regression suite subsequently passed as recorded below; manual visual comparison remains pending.
+Typechecking and the targeted regression suite subsequently passed as recorded below; manual visual comparison was still outstanding at that checkpoint.
 
 ## Focused Browser Journey
 
@@ -326,9 +326,9 @@ The app, server, and Node TypeScript configurations completed successfully with 
 The user subsequently ran `pnpm build` on 2026-09-23. Vite reported a successful production web build (209 modules transformed, 2.15 seconds), including a separate Notifications page chunk. The first API build's exit status was not captured because the terminal crashed. The user reran `pnpm build:api && echo "API BUILD PASSED"` in the clean `phase-7-notifications` worktree on 2026-09-23; `tsc -p tsconfig.build.json` completed and the explicit success marker appeared. The Vite warning about a 756.20 kB main JavaScript chunk is non-fatal and should be assessed separately as a performance concern; it is not specific to the 7.06 kB Notifications page chunk.
 The GitHub branch's Vercel deployment reported success for commit `5a92b11`, which does not independently establish local API build exit status or manual Figma fidelity.
 The user confirmed their local `phase-7-notifications` HEAD and `origin/phase-7-notifications` both point to `5a92b11` with a clean working tree.
-The final source review found no need to repeat the successful focused tests. The local API build exit status has since been confirmed; manual browser comparison remains open.
+The final source review found no need to repeat the successful focused tests. The local API build exit status was confirmed; manual browser comparison had not yet been recorded at that checkpoint.
 A full browser suite is not warranted by this diff review; the accidental broad run used another worktree's servers and included uninstalled Firefox and WebKit browsers, so it is not reliable Phase 7 regression evidence.
-Manual comparison against Figma node `11:2301` remains pending.
+Manual comparison against Figma node `11:2301` had not yet been recorded at that checkpoint; later release closure supersedes this interim status.
 
 ### Manual visual review: desktop empty inbox (2026-09-23)
 
