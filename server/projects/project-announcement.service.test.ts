@@ -27,7 +27,8 @@ const record = {
   updatedAt: new Date('2026-09-24T11:00:00.000Z'),
 };
 
-function setup(member = lead) {
+function setup(member = lead, isProjectMember = false) {
+  const members = isProjectMember || member.id === lead.id ? [{ memberId: member.id }] : [];
   const tx = {
     $queryRaw: vi.fn().mockResolvedValue([]),
     project: {
@@ -35,6 +36,7 @@ function setup(member = lead) {
         id: projectId,
         leadMemberId: lead.id,
         archivedAt: null,
+        members,
       }),
     },
     projectAnnouncement: {
@@ -60,6 +62,7 @@ function setup(member = lead) {
         id: projectId,
         leadMemberId: lead.id,
         archivedAt: null,
+        members,
       }),
     },
     projectAnnouncement: {
@@ -78,14 +81,36 @@ describe('ProjectAnnouncementService', () => {
     const leadSetup = setup(lead);
     await expect(leadSetup.service.list(lead, projectId)).resolves.toMatchObject({
       canManage: true,
+      canPost: true,
       items: [{ id: announcementId, title: record.title }],
     });
 
     const otherSetup = setup(other);
     await expect(otherSetup.service.list(other, projectId)).resolves.toMatchObject({
       canManage: false,
+      canPost: false,
       items: [{ id: announcementId }],
     });
+  });
+
+  it('lets Project Members announce without giving them Lead-only pin access', async () => {
+    const { service, tx } = setup(other, true);
+    await expect(service.list(other, projectId)).resolves.toMatchObject({
+      canPost: true,
+      canManage: false,
+    });
+    await expect(service.create(other, projectId, {
+      title: record.title,
+      body: record.body,
+    })).resolves.toMatchObject({ id: announcementId });
+    expect(tx.projectAnnouncement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ memberId: other.id }),
+      }),
+    );
+    await expect(service.setPinned(other, projectId, announcementId, { pinned: true }))
+      .rejects.toBeInstanceOf(ForbiddenException);
+    expect(tx.projectAnnouncement.update).not.toHaveBeenCalled();
   });
 
   it('posts an announcement and writes a safe activity event atomically', async () => {
@@ -117,7 +142,7 @@ describe('ProjectAnnouncementService', () => {
     });
   });
 
-  it('prevents non-leads from posting announcements', async () => {
+  it('prevents nonmembers from posting announcements', async () => {
     const { service, tx } = setup(other);
     await expect(
       service.create(other, projectId, {
