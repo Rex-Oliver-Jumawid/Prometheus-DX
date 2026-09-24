@@ -108,7 +108,8 @@ test('Chat persists a reply and author edit across reload', async ({ page }) => 
   await expect(page.getByText('Persistent reply')).toBeVisible();
   await expect(page.getByText(/Reply to/)).toBeVisible();
   const reply = page.getByRole('listitem').filter({ hasText: 'Persistent reply' });
-  await reply.getByRole('button', { name: 'Edit' }).click();
+  await reply.getByRole('button', { name: 'Message options' }).click();
+  await reply.getByRole('button', { name: 'Edit message' }).click();
   await reply.getByRole('textbox', { name: 'Edit message' }).fill('Persistent edited reply');
   await reply.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Persistent edited reply')).toBeVisible();
@@ -121,11 +122,31 @@ test('Chat persists a reply and author edit across reload', async ({ page }) => 
   expect(stored.editedAt).not.toBeNull();
 });
 
+test('Project Lead can announce, pin, and surface the change in Activity', async ({ page }) => {
+  test.skip(!hasCredentials, 'Requires E2E credentials.');
+  await signIn(page);
+  await page.goto('/projects/' + projectId + '?tab=chat');
+  await page.getByRole('button', { name: 'Announce' }).click();
+  await page.getByRole('textbox', { name: 'Announcement title' }).fill('Release guidance');
+  await page.getByRole('textbox', { name: 'Announcement details' }).fill(
+    'Keep output notes specific so review can move faster.',
+  );
+  await page.getByRole('button', { name: 'Post' }).click();
+  await expect(page.getByText('Release guidance')).toBeVisible();
+  await page.getByRole('button', { name: 'Pin announcement' }).click();
+  await expect(page.getByRole('button', { name: 'Unpin announcement' })).toBeVisible();
+
+  await page.goto('/projects/' + projectId + '?tab=activity');
+  await expect(page.getByText('Posted announcement')).toBeVisible();
+  await expect(page.getByText('Pinned announcement')).toBeVisible();
+  await expect(page.getByText('Release guidance').first()).toBeVisible();
+});
+
 test('Activity links to Outcomes but never returns private submission content', async ({ page }) => {
   test.skip(!hasCredentials, 'Requires E2E credentials.');
   await signIn(page);
   await page.goto('/projects/' + projectId + '?tab=activity');
-  await expect(page.getByRole('heading', { name: 'Project activity' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Project Activity' })).toBeVisible();
   await expect(page.getByText(/created an outcome/)).toBeVisible();
   await expect(page.getByRole('link', { name: 'View outcome' }).first()).toHaveAttribute(
     'href', '/projects/' + projectId + '/outcomes/' + outcomeId,
