@@ -7,6 +7,8 @@ export const RegistryDepartmentSchema = z.object({
   shortLabel: z.string().min(1).max(12),
   description: z.string().nullable(),
   memberCount: z.number().int().nonnegative(),
+  projectCount: z.number().int().nonnegative(),
+  outcomeCount: z.number().int().nonnegative(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
