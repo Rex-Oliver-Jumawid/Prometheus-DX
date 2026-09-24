@@ -202,6 +202,110 @@ Phase 7 requirements and acceptance documentation now match the current Figma sh
 - `.context/phases.md`
 - `.testcases/phase-07-notifications-home-tests.md`
 
+## Home Branch Delivery - feat/homepage-figma
+
+The Home slice has been implemented independently on `feat/homepage-figma` against Figma node `189:3`.
+
+The branch replaces the root placeholder with the real Company Command Center while preserving the existing authenticated shell, sidebar utility placement, profile control, and attendance control.
+
+Home now exposes a narrow authenticated `GET /api/home` read model.
+
+The read model derives project relationships and progress from the existing Projects service, actual weekly work from WorkSession history, planned commitment from the member schedule, active workers from open WorkSession records, and attention items from canonical submission and revision records.
+
+No dashboard persistence table or duplicated business state was added.
+
+Review attention is restricted to projects where the signed-in member is the Project Lead and a non-accepted Outcome has a `FOR_REVIEW` submission.
+
+Revision attention is restricted to `NEEDS_REVISION` Outcomes where the signed-in member is an Outcome Member and an unresolved revision request exists.
+
+This keeps another member's non-actionable workflow details out of the Home aggregation.
+
+The UI implements the four Figma summary cards, Leading and Participating project groups, project status and progress, fixed-height Working Now and Needs Attention lists with internal scrolling, and Quick Access for Projects, Schedule, and Team.
+
+The Figma Reports shortcut remains visible but disabled because this baseline does not contain an implemented Reports route.
+
+No fake Reports destination was introduced.
+
+Responsive rules preserve the desktop composition at the Figma reference size and progressively reflow summary cards, the main dashboard columns, and side panels for narrower screens.
+
+Intentional loading, error with retry, and per-section empty states are included.
+
+Focused Home service and React Testing Library coverage was added for project grouping, summary values, authorization-shaped attention queries, empty states, error handling, and navigation targets.
+
+The Treehouse worktree path supplied for the implementation session was not available in the execution environment, so implementation was performed through the connected GitHub repository rather than a local checkout.
+
+Focused local verification was subsequently run by the user from the supplied Treehouse worktree after generating the Prisma Client.
+
+Verification evidence:
+
+- `pnpm exec vitest run server/home/home.service.test.ts`: 2/2 Home service tests passed.
+- `pnpm exec vitest run src/features/home/HomePage.test.tsx --config vitest.ui.config.ts`: 4/4 Home React Testing Library tests passed.
+- `pnpm typecheck`: passed after `pnpm prisma:generate`.
+- The earlier Prisma import failures were caused by a missing generated Prisma Client in the worktree rather than by the Home implementation.
+
+Live Chromium and Figma comparison remain to be verified at 1244x682, 1440x900, 900x900, and 390x844.
+
+A subsequent desktop visual review identified two layout issues in the first Home rendering: the main glass workspace started 6px lower than the sidebar, and the right-side Working Now / Needs Attention / Quick Access stack stayed at fixed compact heights on taller viewports.
+
+The shell now uses the same 12px top and bottom inset for both sidebar and main workspace.
+
+Home now fills the available desktop workspace height.
+
+The main dashboard grid stretches vertically, Working Now and Needs Attention use flexible rows with internally scrolling content, Quick Access remains compact, and taller desktop viewports increase the inter-card gaps without changing the fixed-height scrolling behavior at the Figma reference size.
+
+A later visual refinement established one shared desktop Home right-edge gutter for the header, summary row, and lower dashboard so the My Week card and the three right-column panels stay on the same vertical boundary while clearing the outer glass edge and attendance handle.
+
+The Home loading state now renders a layout-preserving dashboard skeleton instead of a centered loading card.
+
+The skeleton mirrors the final header, four summary cards, project panel, Working Now, Needs Attention, and Quick Access geometry without displaying fake statistics.
+
+The Home query now forwards TanStack Query's AbortSignal to the API request so abandoned Home requests can be cancelled cleanly.
+
+Notifications remains a separate parallel slice and is not implemented or assumed by this Home branch.
+
+### P7-D03 - Home uses a narrow derived read model
+
+**Status:** Accepted
+
+**Area:** Backend / Frontend
+
+**Impact:** High
+
+#### Root cause / constraint
+
+The Figma Home screen combines Projects, WorkSessions, Schedule, and review workflow data.
+
+Fetching every Project workflow independently from the browser would create N+1 requests and would make it easy to expose review or revision details that are not actionable for the current member.
+
+#### Decision
+
+Expose one authenticated `GET /api/home` endpoint whose response is derived from canonical records and existing Projects and WorkSession service logic.
+
+Do not persist Home-specific counters, project summaries, work-presence state, or attention rows.
+
+#### Authorization decision
+
+Pending review items are selected only from Projects led by the current member.
+
+Pending revision items are selected only from Outcomes joined by the current member.
+
+The endpoint remains guarded by the existing Supabase authentication guard.
+
+#### Result
+
+The browser receives one stable Home contract while PostgreSQL and existing domain services remain the source of truth.
+
+Working Now continues to mean an active WorkSession rather than realtime presence.
+
+Actual weekly hours remain distinct from the schedule's planned weekly commitment.
+
+#### Integration note
+
+The separate Notifications branch may later add unread-count behavior to the shared sidebar.
+
+Home does not import, duplicate, or depend on unmerged Notifications implementation.
+
+
 ## Known Limitations
 
 No Phase 7 implementation should be considered delivered merely because this journal and the Figma references exist.
