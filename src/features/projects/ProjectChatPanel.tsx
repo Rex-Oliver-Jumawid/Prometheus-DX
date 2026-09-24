@@ -20,12 +20,10 @@ import { apiFetch } from '../../lib/api';
 import './project-collaboration.css';
 
 function messageTime(date: string) {
-  return new Date(date).toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
+  return new Intl.DateTimeFormat('en-PH', {
     hour: 'numeric',
     minute: '2-digit',
-  });
+  }).format(new Date(date));
 }
 
 function errorMessage(value: unknown) {
