@@ -40,7 +40,7 @@ function renderPanel() {
 }
 
 describe('ProjectAnnouncementsPanel', () => {
-  beforeEach(() => vi.mocked(apiFetch).mockReset());
+  beforeEach(() => { vi.mocked(apiFetch).mockReset(); });
 
   it('lets the Project Lead post an announcement', async () => {
     vi.mocked(apiFetch).mockImplementation((path, _schema, options) => {
