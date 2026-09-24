@@ -2,7 +2,8 @@
 
 ## Prometheus Centralized Workflow Management System
 
-**Version:** 0.1 Draft  
+**Version:** 1.0 - Current Release  
+**Release Status:** Current release scope complete as of 2026-09-25  
 **Organization:** Prometheus Software Company  
 **Document Type:** Software Requirements Specification
 
