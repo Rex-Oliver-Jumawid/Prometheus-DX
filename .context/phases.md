@@ -450,7 +450,20 @@ Management metrics can be reconciled with their underlying source records.
 
 ---
 
-## Phase 9 - Collaboration, Realtime, and Attachments
+## Phase 9 - Collaboration and Live Updates
+
+### Release-scope amendment - 2026-09-25
+
+The original phase title included binary chat attachments before the final collaboration product had stabilized.
+
+For the current Prometheus release, the phase closes around durable messaging, search, mentions, mutation behavior, announcements, activity, notifications, automatic live updates, and reconnect recovery.
+
+Binary chat attachments are explicitly deferred to a post-release enhancement.
+
+Outcome submission evidence remains a separate workflow and must not be confused with chat attachments.
+
+A dedicated Outcome-specific discussion interface is also deferred.
+The nullable Project-message Outcome scope is preserved so this can be added later without redesigning general Project Chat.
 
 ### Goal
 
@@ -466,18 +479,16 @@ Add durable collaboration across VisiWork and Projects after the core authorizat
 - Message search and exact-message navigation
 - Mentions and collaboration notifications
 - Message editing and deletion
-- Realtime or automatic live message updates
+- Automatic live message updates
 - Presence where useful
-- Live notification updates where useful
-- Attachment upload and retrieval
-- Attachment permissions
-- Reconnect and missed-event recovery behavior
+- live notification refresh where useful
+- reconnect and missed-event recovery through persistent refetch
 
 ### Core rules
 
 Persistent collaboration state remains authoritative in PostgreSQL.
 
-Realtime or polling state is supplemental and must recover from persistent records.
+Polling, invalidation, focus refresh, reconnect refresh, or a future push transport are supplemental and must recover from persistent records.
 
 Presence does not replace Time In and Time Out.
 
@@ -490,11 +501,18 @@ Project Chat and Project announcements must follow the approved Project communic
 Normal Project activity intended for company-wide visibility remains readable by all active authorized Prometheus users.
 Any Lead-only activity detail must be additive rather than replacing the company-visible activity trail.
 
-Attachment authorization must not rely only on possession of a storage URL.
+Future binary attachments must not rely only on possession of a storage URL.
 
 ### Exit milestone
 
-Collaboration messaging, live updates, reconnect behavior, notifications, and attachments enhance Prometheus without becoming a second source of truth or bypassing domain authorization.
+Durable VisiWork and Project collaboration, automatic live updates, reconnect recovery, collaboration notifications, and Project activity operate without becoming a second source of truth or bypassing domain authorization.
+
+### Post-release collaboration backlog
+
+- Binary Project/VisiWork chat attachments.
+- Dedicated Outcome-specific discussion UI/API.
+- Optional Supabase Realtime push transport if polling no longer meets latency/scale needs.
+- Additional release-level cross-browser and multi-user smoke automation.
 
 ### Manual test file
 
