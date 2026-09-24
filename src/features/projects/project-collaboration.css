@@ -557,3 +557,233 @@
   .pw-chat-panel .pw-chat-thread { min-height: 210px; padding: 8px; }
   .pw-chat-channel-heading { padding: 11px; }
 }
+
+/* High-fidelity conversation cards and compact composer from the Project Chat frames. */
+.pw-chat-panel .pw-chat-thread {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 9px;
+}
+.pw-chat-panel .pw-chat-message {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: 100%;
+  min-width: min(100%, 200px);
+  padding: 10px 10px 23px;
+  border: 1px solid #e5ddd7;
+  border-radius: 13px;
+  background: #fffcfa;
+}
+.pw-chat-panel .pw-chat-message:last-child { border-bottom: 1px solid #e5ddd7; }
+.pw-chat-panel .pw-chat-message--own {
+  align-self: flex-end;
+  max-width: 82%;
+  background: #fff4ef;
+  border-color: #f1d3c4;
+}
+.pw-chat-panel .pw-chat-avatar { display: none; }
+.pw-chat-panel .pw-chat-message-meta {
+  display: flex;
+  margin: 0 0 6px;
+  gap: 8px;
+}
+.pw-chat-panel .pw-chat-message-meta strong {
+  color: #7a6458;
+  font: 10px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.pw-chat-panel .pw-chat-message-meta time {
+  position: absolute;
+  bottom: 7px;
+  left: 10px;
+  font: 9px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.pw-chat-panel .pw-chat-message-text { font-size: 11px; line-height: 1.55; }
+.pw-chat-panel .pw-chat-composer {
+  margin-top: 9px;
+  padding: 9px;
+  position: relative;
+}
+.pw-chat-compose-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+}
+.pw-chat-compose-row textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 38px !important;
+  height: 38px;
+  resize: vertical;
+}
+.pw-chat-compose-row button {
+  flex: 0 0 auto;
+  min-width: 55px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: #cb4d22;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.pw-chat-compose-row button:disabled { opacity: .55; cursor: not-allowed; }
+.pw-chat-compose-row button:hover:not(:disabled) { background: #b5411a; }
+
+/* Project Activities: filters, total count, audit cards, and member filter. */
+.pw-activity-panel {
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+.pw-activity-panel .pw-activity-heading {
+  margin: 2px 0 20px;
+  align-items: flex-end;
+}
+.pw-activity-panel .pw-collaboration-heading h2 {
+  margin: 5px 0 6px;
+  color: #282320;
+  font-size: 20px;
+  font-weight: 760;
+}
+.pw-activity-summary {
+  flex: 0 0 auto;
+  min-width: 88px;
+  padding: 13px 16px;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 5px 17px rgba(53,38,30,.035);
+  text-align: center;
+}
+.pw-activity-summary strong {
+  display: block;
+  font-size: 17px;
+  line-height: 1.25;
+  color: #cb4d22;
+}
+.pw-activity-summary span {
+  display: block;
+  font-size: 10px;
+  color: #887d76;
+  margin-top: 3px;
+}
+.pw-activity-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 13px;
+  margin-bottom: 10px;
+}
+.pw-activity-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  flex: 1 1 450px;
+}
+.pw-activity-filter {
+  flex: 0 0 auto;
+  border: 1px solid #e4dad3;
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: #fff;
+  color: #776f68;
+  font-size: 10px;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.pw-activity-filter:hover { border-color: #d4ac98; }
+.pw-activity-filter.is-active {
+  background: #fff5ef;
+  border-color: #eecbb8;
+  color: #bd4b27;
+}
+.pw-activity-member-filter {
+  flex: 0 0 135px;
+  display: grid;
+  gap: 5px;
+  color: #82776f;
+  font: 9px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-transform: uppercase;
+}
+.pw-activity-member-filter select {
+  width: 100%;
+  padding: 8px 9px;
+  border: 1px solid #ded4cd;
+  border-radius: 7px;
+  color: #554841;
+  background: white;
+  font: 10px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-transform: none;
+}
+.pw-activity-panel .pw-activity-timeline {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+.pw-activity-panel .pw-activity-entry {
+  padding: 10px;
+  gap: 9px;
+  align-items: flex-start;
+  border: 1px solid #eae1db;
+  border-radius: 11px;
+  background: rgba(255,255,255,.96);
+}
+.pw-activity-panel .pw-activity-entry::before { display: none; }
+.pw-activity-panel .pw-activity-node {
+  display: grid;
+  place-items: center;
+  flex: 0 0 27px;
+  width: 27px;
+  height: 27px;
+  margin: 0;
+  background: #f8f4f1;
+  border: 0;
+  border-radius: 8px;
+  color: #8b7264;
+  font-size: 13px;
+  font-weight: 800;
+}
+.pw-activity-panel .pw-activity-node-review { background: #fff1e7; color: #ba5b2d; }
+.pw-activity-panel .pw-activity-node-output { background: #eef3fc; color: #5279ad; }
+.pw-activity-panel .pw-activity-node-task,
+.pw-activity-panel .pw-activity-node-feature { background: #e8f5ed; color: #4f8a60; }
+.pw-activity-entry-top {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-bottom: 5px;
+  color: #948780;
+  font-size: 10px;
+}
+.pw-activity-entry-top time { margin-left: auto; }
+.pw-activity-entry-body p { margin: 0 0 3px; color: #62554d; font-size: 11px; }
+.pw-activity-entry-body p strong { color: #2e2723; font-size: 12px; }
+.pw-activity-panel .pw-activity-subject { color: #685b53; }
+.pw-activity-panel .pw-activity-entry-meta { margin: 5px 0 0; font-size: 10px; }
+.pw-activity-panel .pw-activity-entry-meta a { font-weight: 650; }
+.pw-activity-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 13px;
+}
+.pw-activity-actions .pw-collaboration-load-more { margin: 0; }
+@media (max-width: 520px) {
+  .pw-chat-panel .pw-chat-message--own { max-width: 92%; }
+  .pw-activity-controls { align-items: stretch; }
+  .pw-activity-member-filter { flex: 1 1 100%; }
+  .pw-activity-summary { min-width: 60px; }
+  .pw-activity-panel .pw-activity-heading { gap: 10px; }
+}
