@@ -229,6 +229,19 @@ Final browser acceptance result:
 
 The Phase 1 Playwright suite passed after the final selector/accessibility fixes.
 
+## Post-Phase Maintenance - Password Recovery
+
+Phase 1 remains complete.
+
+Authentication expanded after the original closure with `/forgot-password` and `/reset-password`.
+The integrated flow uses Supabase password recovery, a generic non-enumerating request response, recovery-session validation, new-password confirmation, password update, invalid/expired-link handling, and local sign-out after success.
+
+Password recovery changes authentication credentials only.
+The recovered identity must still resolve to an active authorized Prometheus Member before workspace access is allowed.
+
+Recovery redirect and environment requirements are documented in `.docs/DEPLOYMENT.md` and `.docs/ENVIRONMENT.md`.
+Canonical behavior is documented in `.context/user-flows.md`.
+
 # Decision & Challenge Log
 
 ## P1-D01 - Authentication must be separate from Prometheus authorization
