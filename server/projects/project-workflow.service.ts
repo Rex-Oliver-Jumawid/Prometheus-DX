@@ -20,6 +20,7 @@ import type {
   UpdateProjectMemberAccessRequest,
 } from '../../shared/contracts/project-workflow';
 import { PrismaService } from '../database/prisma.service';
+import { writeNotifications } from '../notifications/notification-writer';
 
 const outcomeInclude = {
   _count: {
@@ -148,11 +149,16 @@ export class ProjectWorkflowService {
       });
       if (!existing) throw new NotFoundException('Project Member not found.');
       if (existing.accessLevel === input.accessLevel) return;
-      await transaction.projectMember.update({
-        where: { projectId_memberId: { projectId, memberId } },
+      const changed = await transaction.projectMember.updateMany({
+        where: {
+          projectId,
+          memberId,
+          accessLevel: existing.accessLevel,
+        },
         data: { accessLevel: input.accessLevel },
       });
-      await transaction.projectMemberAccessHistory.create({
+      if (changed.count === 0) return;
+      const history = await transaction.projectMemberAccessHistory.create({
         data: {
           projectId,
           memberId,
@@ -160,6 +166,14 @@ export class ProjectWorkflowService {
           newAccess: input.accessLevel,
           changedByMemberId: currentMember.id,
         },
+      });
+      await writeNotifications(transaction, {
+        type: 'PROJECT_MEMBER_ACCESS_CHANGED',
+        sourceEventId: history.id,
+        actorMemberId: currentMember.id,
+        recipientMemberIds: [memberId],
+        projectId,
+        data: { accessLevel: input.accessLevel },
       });
     });
     const response = await this.getProjectMembers(currentMember, projectId);
@@ -383,7 +397,12 @@ export class ProjectWorkflowService {
         where: { id: outcomeId },
         select: {
           lifecycleStatus: true,
-          stage: { select: { projectId: true } },
+          stage: {
+            select: {
+              projectId: true,
+              project: { select: { leadMemberId: true } },
+            },
+          },
         },
       });
       if (!existing || existing.stage.projectId !== projectId) {
@@ -394,12 +413,9 @@ export class ProjectWorkflowService {
           'Accepted Outcomes are closed to new Members.',
         );
       }
-      await transaction.outcomeMember.upsert({
-        where: {
-          outcomeId_memberId: { outcomeId, memberId: currentMember.id },
-        },
-        update: {},
-        create: { outcomeId, memberId: currentMember.id },
+      const joined = await transaction.outcomeMember.createMany({
+        data: [{ outcomeId, memberId: currentMember.id }],
+        skipDuplicates: true,
       });
       await transaction.projectMember.upsert({
         where: {
@@ -412,6 +428,28 @@ export class ProjectWorkflowService {
           accessLevel: 'CAN_VIEW',
         },
       });
+      if (joined.count > 0) {
+        await transaction.activityLog.create({
+          data: {
+            projectId,
+            outcomeId,
+            actorMemberId: currentMember.id,
+            entityType: 'Outcome',
+            entityId: outcomeId,
+            action: 'OUTCOME_JOINED',
+            metadata: { memberId: currentMember.id },
+          },
+        });
+        await writeNotifications(transaction, {
+          type: 'OUTCOME_JOINED',
+          sourceEventId: outcomeId,
+          subjectId: currentMember.id,
+          actorMemberId: currentMember.id,
+          recipientMemberIds: [existing.stage.project.leadMemberId],
+          projectId,
+          outcomeId,
+        });
+      }
     });
     const outcome = await this.prisma.outcome.findUniqueOrThrow({
       where: { id: outcomeId },

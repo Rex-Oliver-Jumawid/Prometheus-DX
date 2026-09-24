@@ -33,3 +33,11 @@ export function loadVisiWorkRoute() {
     Component: module.VisiWorkPage,
   }));
 }
+
+export function loadNotificationsRoute() {
+  return import('../features/notifications/NotificationsPage').then(
+    (module) => ({
+      Component: module.NotificationsPage,
+    }),
+  );
+}

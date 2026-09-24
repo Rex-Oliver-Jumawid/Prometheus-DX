@@ -975,16 +975,32 @@ Administrator status does not override Project or Outcome permissions.
 Notification
 ------------
 id
-member_id
+recipient_member_id
+actor_member_id (nullable)
+project_id (nullable)
+outcome_id (nullable)
 type
-entity_type
-entity_id
+event_key
 data
 read_at
 created_at
 ```
 
-`data` may use PostgreSQL `JSONB` for notification-specific display metadata.
+`recipient_member_id` owns the inbox, independently of organization role or Project Lead authority.
+
+`actor_member_id`, `project_id`, and `outcome_id` are relational references to canonical entities, not identifiers hidden inside `data`.
+
+`data` is PostgreSQL `JSONB` for small event-specific display details, such as a changed access level.
+
+`event_key` identifies one authoritative source event and is unique with `recipient_member_id`.
+
+The producer uses stable source identity, such as a Project, access-history row, submission, revision request, or acceptance, so retrying the same operation cannot create a duplicate notification.
+
+`read_at` is null until the recipient marks the notification read.
+
+List ordering uses `created_at DESC, id DESC` so equal timestamps still have a stable order.
+
+Project and Outcome references become null if a linked resource is deleted, preserving the inbox record without granting access to missing context.
 
 Initial in-app notification targeting is:
 
@@ -1623,7 +1639,9 @@ OutcomeSubmission(review_status)
 
 OutcomeAcceptance(outcome_id, accepted_at)
 
-Notification(member_id, read_at, created_at)
+Notification(recipient_member_id, created_at, id)
+Notification(recipient_member_id, read_at, created_at, id)
+Notification(recipient_member_id, event_key) UNIQUE
 
 ProjectMessage(project_id, created_at)
 ProjectMessage(outcome_id, created_at)

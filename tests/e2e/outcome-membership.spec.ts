@@ -235,6 +235,9 @@ test.afterAll(async () => {
     leadingProjectId,
   ].filter(Boolean);
   if (projectIds.length) {
+    await prisma.notification.deleteMany({
+      where: { projectId: { in: projectIds } },
+    });
     await prisma.outcomeDependency.deleteMany({
       where: {
         OR: [

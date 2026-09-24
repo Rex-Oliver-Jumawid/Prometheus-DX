@@ -10,8 +10,8 @@ import { HomePage } from '../features/home/HomePage';
 import { ProjectsPage } from '../features/projects/ProjectsPage';
 import { NotFoundPage } from '../features/foundation/NotFoundPage';
 import { AppShell } from '../features/shell/AppShell';
-import { PlaceholderPage } from '../features/shell/PlaceholderPage';
 import {
+  loadNotificationsRoute,
   loadProjectOverviewRoute,
   loadRegistryRoute,
   loadReportsAnalyticsRoute,
@@ -52,10 +52,7 @@ export const router = createBrowserRouter([
           { path: '/schedule', lazy: loadScheduleRoute },
           { path: '/team', lazy: loadTeamRoute },
           { path: '/reports', lazy: loadReportsAnalyticsRoute },
-          {
-            path: '/notifications',
-            element: <PlaceholderPage title="Notifications" />,
-          },
+          { path: '/notifications', lazy: loadNotificationsRoute },
           { path: '/registry', lazy: loadRegistryRoute },
         ],
       },

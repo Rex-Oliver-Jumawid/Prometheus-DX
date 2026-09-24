@@ -97,7 +97,7 @@ export function ProjectDialog({
             <button
               type="button"
               className="projects-icon-button"
-              aria-label={`Close ${title}`}
+              aria-label={`Close ${ariaLabel ?? title}`}
               disabled={pending}
               onClick={onClose}
             >

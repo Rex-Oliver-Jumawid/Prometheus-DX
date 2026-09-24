@@ -136,6 +136,9 @@ test.afterAll(async () => {
   }
   const projectIds = [projectId, mainFlowProjectId].filter(Boolean);
   if (projectIds.length) {
+    await prisma.notification.deleteMany({
+      where: { projectId: { in: projectIds } },
+    });
     await prisma.project.deleteMany({ where: { id: { in: projectIds } } });
   }
   if (alternateLeadId) {
