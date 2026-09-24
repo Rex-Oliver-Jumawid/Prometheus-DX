@@ -201,15 +201,10 @@ pnpm format:check
 pnpm format
 ```
 
-Use the matching `.testcases/phase-XX-*.md` file as the acceptance gate for the phase being delivered.
-
-Open phase acceptance work is tracked in the matching files under `.testcases/`.
-
 The phase acceptance files remain repeatable regression checklists.
 
 All phase journals are closed for the current release.
-Use the matching `.testcases/phase-XX-*.md` file when changing behavior owned by that phase.
-- `.testcases/phase-09-collaboration-tests.md`
+When changing behavior owned by a completed phase, reuse the matching `.testcases/phase-XX-*.md` cases and record new evidence in the appropriate maintenance or feature work.
 
 ## Environment security
 
