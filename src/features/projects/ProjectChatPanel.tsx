@@ -258,7 +258,7 @@ export function ProjectChatPanel({
 
   const memberChoices = [
     ...(projectLead ? [projectLead] : []),
-    ...(members.data?.members.map((item) => item.member) ?? []),
+    ...(members.data?.members?.map((item) => item.member) ?? []),
   ].filter(
     (candidate, index, all) =>
       all.findIndex((item) => item.id === candidate.id) === index,
