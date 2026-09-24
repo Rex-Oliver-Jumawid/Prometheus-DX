@@ -223,7 +223,7 @@ The PostgreSQL integration CI job creates the Supabase browser roles required to
 
 If Supabase Realtime is adopted later, its configuration must remain compatible with persisted message recovery and reconnect behavior.
 
-If Supabase Storage is adopted for attachments, storage configuration and authorization policy must be documented without committing secrets.
+If post-release chat attachments adopt Supabase Storage, storage configuration and authorization policy must be documented without committing secrets.
 
 ## Testing and Acceptance Result
 
@@ -323,7 +323,7 @@ Allow only the author to edit or delete a message and represent deletion as a pe
 
 Conversation ordering and reply context remain stable while deleted content is removed from normal presentation and search.
 
-### P9-D04 - Polling is an interim live-sync mechanism, not the phase exit criterion
+### P9-D04 - Polling and persistent refetch are the release live-sync mechanism
 
 **Status:** Accepted
 
@@ -333,17 +333,20 @@ Conversation ordering and reply context remain stable while deleted content is r
 
 #### Root cause / constraint
 
-Cross-account updates need to appear without manual reloads before the final realtime transport decision is complete.
+Cross-account updates need to appear without manual reloads while missed events must remain recoverable after focus changes or reconnects.
 
 #### Decision
 
-Use automatic query refresh and invalidation for the current integrated behavior.
+Use short-interval automatic query refresh, background polling where appropriate, mutation invalidation, focus refetch, and reconnect refetch as the current release transport.
 
-Do not describe that mechanism as completion of the final realtime and reconnect scope.
+Keep PostgreSQL records authoritative.
+
+Supabase Realtime remains optional future optimization rather than a release dependency.
 
 #### Result
 
-Message mutations and Work Session presence refresh across active clients while the durable database remains authoritative.
+Message mutations and WorkSession-backed visibility refresh across active clients without creating a second state store.
+Reconnect and focus changes recover current persisted records through refetch.
 
 ### P9-D05 - Keep Project Chat authorization aligned with derived Project Membership
 
