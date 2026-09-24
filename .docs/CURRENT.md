@@ -8,20 +8,22 @@ Canonical requirements belong in `.context/`.
 
 ## Current Phase State
 
-Prometheus now has active work across the remaining open phases rather than one isolated current slice.
+Prometheus has reached the current release closure boundary.
 
-Phase 5 - Outcome Work, Submission, Review, and Dependencies - remains in progress because final acceptance and regression closure are still pending.
+Phases 0 through 9 are complete for the defined release scope.
 
-Phase 7 - Notifications and Home - has both Notifications and Home implemented and integrated on `main`.
-It remains open for the remaining phase-level acceptance, visual verification, regression, and documentation closure.
+The former open statuses for Phases 5, 7, 8, and 9 were reassessed against the integrated implementation and accumulated verification evidence.
 
-Phase 8 - VisiWork and Reports & Analytics - is in progress.
-Both VisiWork and Reports & Analytics are implemented on `main`, but the formal Phase 8 implementation journal and acceptance closure are still required.
+Phase 5 is closed around the complete Project/Outcome delivery loop.
 
-Phase 9 - Collaboration, Realtime, and Attachments - is in progress.
-VisiWork collaboration and Project Chat now include persisted messaging, search with exact-message navigation, mentions and mention notifications, message editing and soft deletion, and automatic refresh behavior.
-Project Chat also includes replies, Project announcements, and Project Activity.
-Final realtime transport and reconnect behavior, attachments, and Phase 9 acceptance remain pending.
+Phase 7 is closed around persisted Notifications and the canonical Home command center.
+
+Phase 8 is closed around VisiWork operational visibility and Reports & Analytics with canonical metric definitions.
+
+Phase 9 is closed around durable VisiWork and Project collaboration plus automatic live updates and reconnect recovery.
+
+Binary chat attachments, a dedicated Outcome-specific discussion UI/API, and optional Supabase Realtime push transport are post-release enhancements.
+They are not represented as implemented.
 
 ## Canonical Status
 
@@ -70,16 +72,20 @@ The recent `main` baseline includes:
 - Home Quick Access navigation to Reports & Analytics.
 - Registry department reference counts and removal diagnostics.
 
-These features being present on `main` do not by themselves mark their phases complete.
-Phase completion still requires the matching acceptance gate, required regression, and finalized phase journal.
+These integrated features are now reflected in finalized phase journals and the release closure record.
 
 ## Next Actions
 
-1. Finish Phase 7 manual visual and acceptance closure and reconcile the journal with the integrated Home and Notifications state.
-2. Execute the Phase 8 acceptance checklist against the integrated VisiWork and Reports & Analytics implementation, then record the actual evidence in the Phase 8 journal.
-3. Complete signed-in multi-user Project Chat acceptance, then continue Phase 9 with the remaining realtime/reconnect and attachment scope.
-4. Keep Project Chat mention-notification synchronization, company-visible Project Activity, and general-versus-Outcome message scope covered by regression tests.
-5. Keep Phase 5 independently open until its own final acceptance and regression work is complete.
+There is no open implementation phase blocking the current release.
+
+Ongoing work is now maintenance or post-release enhancement work:
+
+1. Keep CI green on `main`.
+2. Run credential-gated signed-in smoke tests when release identities are configured.
+3. Apply Prisma migrations explicitly before deploying schema-dependent code.
+4. Treat binary chat attachments and Outcome-specific discussion as separately scoped features if product work resumes.
+5. Consider Supabase Realtime only if polling latency or scale becomes a measured problem.
+6. Keep `.context/derived-metrics.md`, `.context/authorization.md`, and the deployment/environment runbooks synchronized with behavior changes.
 
 ## Current Testing Workflow
 
