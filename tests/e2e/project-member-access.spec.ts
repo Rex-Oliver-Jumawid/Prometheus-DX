@@ -158,13 +158,13 @@ test('F4-28 F4-29: Lead grants and revokes persisted Project Member access', asy
       response.url().endsWith(`/api/projects/${projectId}/workflow`) &&
       response.request().method() === 'GET',
   );
-  const membersResponse = page.waitForResponse(
-    (response) =>
-      response.url().endsWith(`/api/projects/${projectId}/members`) &&
-      response.request().method() === 'GET',
-  );
   await page.goto(`/projects/${projectId}`);
   expect((await workflowResponse).status()).toBe(200);
+  const membersResponse = page.waitForResponse((response) =>
+    response.url().endsWith(`/api/projects/${projectId}/members`) &&
+    response.request().method() === 'GET',
+  );
+  await page.getByRole('tab', { name: 'Chat' }).click();
   expect((await membersResponse).status()).toBe(200);
   await expect(
     page.getByRole('heading', { name: 'Project Members' }),
@@ -282,6 +282,8 @@ test('F4-30 F4-32 F4-33 F4-34 F4-35 F4-36: CAN_EDIT changes status but cannot ex
   await expect(
     page.getByRole('button', { name: 'Edit Outcome Access Outcome' }),
   ).toHaveCount(0);
+  await page.getByRole('tab', { name: 'Chat' }).click();
+  await expect(page.getByRole('heading', { name: 'Project Members' })).toBeVisible();
   await expect(page.locator('.project-member-access select')).toHaveCount(0);
 
   expect(
@@ -371,14 +373,8 @@ test('F4-31: CAN_VIEW Project Member cannot change Project status', async ({
       response.url().endsWith(`/api/projects/${projectId}/workflow`) &&
       response.request().method() === 'GET',
   );
-  const membersResponse = page.waitForResponse(
-    (response) =>
-      response.url().endsWith(`/api/projects/${projectId}/members`) &&
-      response.request().method() === 'GET',
-  );
   await page.goto(`/projects/${projectId}`);
   expect((await workflowResponse).status()).toBe(200);
-  expect((await membersResponse).status()).toBe(200);
   await expect(page.getByLabel('Project status')).toHaveCount(0);
   expect(
     (
@@ -387,9 +383,8 @@ test('F4-31: CAN_VIEW Project Member cannot change Project status', async ({
       })
     ).status,
   ).toBe(403);
-  await expect(
-    page.getByText('CAN_VIEW', { exact: true }).first(),
-  ).toBeVisible();
+  await page.getByRole('tab', { name: 'Chat' }).click();
+  await expect(page.getByText('View only', { exact: true }).first()).toBeVisible();
   expect(
     await prisma.project.findUniqueOrThrow({ where: { id: projectId } }),
   ).toMatchObject({ status: 'IN_PROGRESS' });
@@ -500,13 +495,13 @@ test('Phase 4 main E2E flow: Lead builds workflow, Member joins, Lead grants CAN
       response.url().endsWith(`/api/projects/${mainFlowProjectId}/workflow`) &&
       response.request().method() === 'GET',
   );
-  const leadMembersResponse = page.waitForResponse(
-    (response) =>
-      response.url().endsWith(`/api/projects/${mainFlowProjectId}/members`) &&
-      response.request().method() === 'GET',
-  );
   await page.reload();
   expect((await leadWorkflowResponse).status()).toBe(200);
+  const leadMembersResponse = page.waitForResponse((response) =>
+    response.url().endsWith(`/api/projects/${mainFlowProjectId}/members`) &&
+    response.request().method() === 'GET',
+  );
+  await page.getByRole('tab', { name: 'Chat' }).click();
   expect((await leadMembersResponse).status()).toBe(200);
   const accessControl = page.getByLabel(
     `Project access for ${currentMember.fullName}`,
@@ -547,12 +542,15 @@ test('Phase 4 main E2E flow: Lead builds workflow, Member joins, Lead grants CAN
   await page.getByLabel('Project status').selectOption('IN_PROGRESS');
   expect((await statusResponse).status()).toBe(200);
   await expect(page.getByLabel('Project status')).toHaveValue('IN_PROGRESS');
+  await page.getByRole('tab', { name: 'Content' }).click();
   await expect(page.getByRole('button', { name: '+ Add Stage' })).toHaveCount(
     0,
   );
   await expect(page.getByRole('button', { name: '+ Add Outcome' })).toHaveCount(
     0,
   );
+  await page.getByRole('tab', { name: 'Chat' }).click();
+  await expect(page.getByRole('heading', { name: 'Project Members' })).toBeVisible();
   await expect(page.locator('.project-member-access select')).toHaveCount(0);
   expect(
     (
