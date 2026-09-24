@@ -25,14 +25,28 @@ vi.mock('../../lib/api', async (importOriginal) => ({
   apiFetch: vi.fn(),
 }));
 
-function renderActivity() {
+function renderActivity({
+  isLead = true,
+  currentMemberId = actor.id,
+  currentMemberName = actor.fullName,
+}: {
+  isLead?: boolean;
+  currentMemberId?: string;
+  currentMemberName?: string;
+} = {}) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter>
-        <ProjectActivityPanel projectId={projectId} accessToken="token" />
+        <ProjectActivityPanel
+          projectId={projectId}
+          accessToken="token"
+          currentMemberId={currentMemberId}
+          currentMemberName={currentMemberName}
+          isLead={isLead}
+        />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -54,6 +68,49 @@ describe('ProjectActivityPanel', () => {
 
     resolveFeed({ items: [], nextCursor: null });
     expect(await screen.findByText('No project activity has been recorded yet.')).toBeVisible();
+  });
+
+  it('shows only personal actions, compact filters, and the Outcome context in Member Activity', async () => {
+    const teammate = { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', fullName: 'Teammate' };
+    vi.mocked(apiFetch).mockResolvedValue({
+      items: [
+        { ...event, action: 'FEATURE_CREATED', metadata: { title: 'Search' },
+          outcomeTitle: 'Opportunity decision' },
+        { ...event, id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+          actor: teammate, action: 'TASK_COMPLETED', metadata: { title: 'Unrelated task' } },
+      ],
+      nextCursor: null,
+      scope: 'PERSONAL',
+    });
+    const { container } = renderActivity({ isLead: false, currentMemberId: actor.id });
+    expect(await screen.findByRole('heading', { name: 'My Activity' })).toBeVisible();
+    expect(screen.getByText('PERSONAL PROJECT HISTORY')).toBeVisible();
+    expect(screen.getByText('Actions performed by Project Lead inside this project.')).toBeVisible();
+    expect(screen.getByText('Added feature: Search')).toBeVisible();
+    expect(screen.getByText('Opportunity decision · Project Lead')).toBeVisible();
+    expect(screen.getByRole('link', { name: 'View outcome' })).toHaveAttribute(
+      'href', '/projects/' + projectId + '/outcomes/' + outcomeId,
+    );
+    expect(screen.queryByText('Unrelated task')).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Member' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reviews' })).not.toBeInTheDocument();
+    expect(screen.getByText('actions logged')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Outputs' }));
+    expect(screen.getByText('No activity matches the selected filters.')).toBeVisible();
+    expect(container.querySelector('.pw-activity-empty-state')).toBeInTheDocument();
+  });
+
+  it('uses the Figma empty-history card when a member has no recorded actions', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({
+      items: [],
+      nextCursor: null,
+      scope: 'PERSONAL',
+    });
+    const { container } = renderActivity({ isLead: false });
+    expect(await screen.findByText('No activity has been recorded yet.')).toBeVisible();
+    expect(container.querySelector('.pw-activity-empty-state')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'My Activity' })).toBeVisible();
+    expect(screen.getByText('0')).toBeVisible();
   });
 
   it('links to live Outcomes and renders safe status transitions', async () => {

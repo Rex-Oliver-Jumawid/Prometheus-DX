@@ -502,7 +502,14 @@ export function ProjectOverviewPage() {
         </div>
       ) : activeTab === 'activity' ? (
         <div id="pw-activity-panel" role="tabpanel" aria-labelledby="pw-activity-tab">
-          <ProjectActivityPanel key={projectId} projectId={projectId!} accessToken={accessToken} />
+          <ProjectActivityPanel
+            key={projectId}
+            projectId={projectId!}
+            accessToken={accessToken}
+            currentMemberId={member?.id ?? session?.user?.id}
+            currentMemberName={member?.fullName}
+            isLead={value.lead.id === (member?.id ?? session?.user?.id)}
+          />
         </div>
       ) : (
         <div id="pw-content-panel" role="tabpanel" aria-labelledby="pw-content-tab">

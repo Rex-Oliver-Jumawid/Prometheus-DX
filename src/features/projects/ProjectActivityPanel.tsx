@@ -76,6 +76,35 @@ const activityFilters: ActivityFilter[] = [
   'All', 'Reviews', 'Accepted', 'Needs Revision',
   'Outputs', 'Tasks', 'Features', 'Membership', 'Project',
 ];
+const personalFilters: ActivityFilter[] = ['All', 'Outputs', 'Tasks', 'Features', 'Membership'];
+
+function personalAction(action: string) {
+  const titles: Record<string, string> = {
+    FEATURE_CREATED: 'Added feature',
+    FEATURE_UPDATED: 'Updated feature',
+    FEATURE_DELETED: 'Deleted feature',
+    TASK_CREATED: 'Added task',
+    TASK_UPDATED: 'Updated task',
+    TASK_COMPLETED: 'Completed task',
+    TASK_REOPENED: 'Reopened task',
+    TASK_DELETED: 'Deleted task',
+    OUTCOME_JOINED: 'Joined outcome',
+    SUBMISSION_CREATED: 'Submitted output',
+    SUBMISSION_REVIEWED: 'Reviewed submission',
+    REVISION_REQUESTED: 'Requested revisions',
+  };
+  const label = titles[action] ?? eventDescription(action);
+  return label[0].toUpperCase() + label.slice(1);
+}
+
+function personalDetail(item: ProjectActivity) {
+  const title = eventTitle(item);
+  if (!title) return null;
+  if (item.action === 'FEATURE_CREATED') return 'Added feature: ' + title;
+  if (item.action === 'FEATURE_UPDATED') return 'Updated feature: ' + title;
+  if (item.action === 'TASK_CREATED') return 'Added task: ' + title;
+  return title;
+}
 
 function matchesFilter(action: string, filter: ActivityFilter) {
   if (filter === 'All') return true;
@@ -134,14 +163,21 @@ function eventTime(date: string) {
 export function ProjectActivityPanel({
   projectId,
   accessToken,
+  currentMemberId,
+  currentMemberName,
+  isLead = true,
 }: {
   projectId: string;
   accessToken?: string;
+  currentMemberId?: string;
+  currentMemberName?: string;
+  isLead?: boolean;
 }) {
   const [filter, setFilter] = useState<ActivityFilter>('All');
   const [memberId, setMemberId] = useState('all');
   const feed = useInfiniteQuery({
-    queryKey: ['projects', projectId, 'activity'],
+    // Prevent a cached Lead's project-wide history from leaking to another signed-in member.
+    queryKey: ['projects', projectId, 'activity', currentMemberId ?? 'unresolved'],
     queryFn: ({ pageParam }) =>
       apiFetch(
         '/projects/' + projectId + '/activity' +
@@ -151,7 +187,7 @@ export function ProjectActivityPanel({
       ),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    enabled: Boolean(accessToken),
+    enabled: Boolean(accessToken && currentMemberId),
     staleTime: 10_000,
     refetchInterval: 20_000,
   });
@@ -160,21 +196,35 @@ export function ProjectActivityPanel({
   const items = (feed.data?.pages.flatMap((page) => page.items) ?? []).filter(
     (item) => !seenIds.has(item.id) && Boolean(seenIds.add(item.id)),
   );
+  // The API is authoritative about visibility. Use the same scope for layout and
+  // filtering; the identity-keyed query prevents showing a previous user's history.
+  const scope = feed.data?.pages[0]?.scope ?? (isLead ? 'PROJECT' : 'PERSONAL');
+  const personal = scope === 'PERSONAL';
+  const availableFilters = personal ? personalFilters : activityFilters;
+  const activeFilter = availableFilters.includes(filter) ? filter : 'All';
   const actors = [...new Map(
     items.filter((item) => item.actor).map((item) => [item.actor!.id, item.actor!.fullName] as const),
   )].sort((a, b) => a[1].localeCompare(b[1]));
   const visible = items.filter(
-    (item) => matchesFilter(item.action, filter) &&
-      (memberId === 'all' || item.actor?.id === memberId),
+    (item) => (!personal || item.actor?.id === currentMemberId) &&
+      matchesFilter(item.action, activeFilter) &&
+      (personal || memberId === 'all' || item.actor?.id === memberId),
   );
 
   return (
-    <section className="pw-collaboration-panel pw-activity-panel" aria-label="Project activity">
+    <section
+      className={personal ? 'pw-collaboration-panel pw-activity-panel pw-activity-panel--personal' : 'pw-collaboration-panel pw-activity-panel'}
+      aria-label={personal ? 'My Activity' : 'Project activity'}
+    >
       <header className="pw-collaboration-heading pw-activity-heading">
         <div>
-          <span className="pw-collaboration-eyebrow">PROJECT AUDIT TRAIL</span>
-          <h2>Project Activity</h2>
-          <p>Review project decisions, submissions, revisions, dependencies, and member activity in one history.</p>
+          <span className="pw-collaboration-eyebrow">{personal ? 'PERSONAL PROJECT HISTORY' : 'PROJECT AUDIT TRAIL'}</span>
+          <h2>{personal ? 'My Activity' : 'Project Activity'}</h2>
+          <p>
+            {personal
+              ? 'Actions performed by ' + (currentMemberName ?? 'you') + ' inside this project.'
+              : 'Review project decisions, submissions, revisions, dependencies, and member activity in one history.'}
+          </p>
         </div>
         <div className="pw-activity-summary" aria-live="polite">
           {feed.isPending ? (
@@ -185,7 +235,9 @@ export function ProjectActivityPanel({
           ) : (
             <>
               <strong>{items.length}{feed.hasNextPage ? '+' : ''}</strong>
-              <span>{feed.hasNextPage ? 'loaded events' : 'audit events'}</span>
+              <span>{personal
+                ? (feed.hasNextPage ? 'loaded actions' : 'actions logged')
+                : (feed.hasNextPage ? 'loaded events' : 'audit events')}</span>
             </>
           )}
         </div>
@@ -193,27 +245,29 @@ export function ProjectActivityPanel({
 
       <div className="pw-activity-controls">
         <div className="pw-activity-filters" role="group" aria-label="Filter project activity">
-          {activityFilters.map((option) => (
+          {availableFilters.map((option) => (
             <button
               key={option}
-              className={filter === option ? 'pw-activity-filter is-active' : 'pw-activity-filter'}
+              className={activeFilter === option ? 'pw-activity-filter is-active' : 'pw-activity-filter'}
               type="button"
-              aria-pressed={filter === option}
+              aria-pressed={activeFilter === option}
               onClick={() => setFilter(option)}
             >
               {option}
             </button>
           ))}
         </div>
-        <label className="pw-activity-member-filter">
-          <span>Member</span>
-          <select value={memberId} onChange={(event) => setMemberId(event.target.value)}>
-            <option value="all">All members</option>
-            {actors.map(([id, name]) => (
-              <option key={id} value={id}>{name}</option>
-            ))}
-          </select>
-        </label>
+        {!personal && (
+          <label className="pw-activity-member-filter">
+            <span>Member</span>
+            <select value={memberId} onChange={(event) => setMemberId(event.target.value)}>
+              <option value="all">All members</option>
+              {actors.map(([id, name]) => (
+                <option key={id} value={id}>{name}</option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
 
       {feed.isPending ? (
@@ -252,14 +306,25 @@ export function ProjectActivityPanel({
                   </span>
                   <div className="pw-activity-entry-body">
                     <div className="pw-activity-entry-top">
-                      <span>{item.actor?.fullName ?? 'System'} · {eventCategory(item.action)}</span>
+                      {personal
+                        ? <strong className="pw-activity-personal-action">{personalAction(item.action)}</strong>
+                        : <span>{item.actor?.fullName ?? 'System'} · {eventCategory(item.action)}</span>}
                       <time dateTime={item.createdAt}>{eventTime(item.createdAt)}</time>
                     </div>
-                    <p><strong>{eventDescription(item.action)}</strong></p>
-                    {eventTitle(item) && (
-                      <p className="pw-activity-subject">{eventTitle(item)}</p>
+                    {personal ? (
+                      personalDetail(item) && <p className="pw-activity-personal-detail">{personalDetail(item)}</p>
+                    ) : (
+                      <>
+                        <p><strong>{eventDescription(item.action)}</strong></p>
+                        {eventTitle(item) && <p className="pw-activity-subject">{eventTitle(item)}</p>}
+                      </>
                     )}
                     <div className="pw-activity-entry-meta">
+                      {personal && item.outcomeId && (
+                        <span className="pw-activity-context-chip">
+                          {item.outcomeTitle ?? 'Outcome'} · {currentMemberName ?? 'You'}
+                        </span>
+                      )}
                       {item.outcomeId && (
                         <Link
                           to={'/projects/' + projectId + '/outcomes/' + item.outcomeId}
@@ -274,10 +339,10 @@ export function ProjectActivityPanel({
               ))}
             </ol>
           ) : (
-            <p className="pw-collaboration-state">
+            <p className="pw-collaboration-state pw-activity-empty-state">
               {items.length
-                ? 'No matching activity in the loaded history. Try another filter or load older events.'
-                : 'No project activity has been recorded yet.'}
+                ? 'No activity matches the selected filters.'
+                : 'No activity has been recorded yet.'}
             </p>
           )}
           {feed.isError && items.length > 0 && (

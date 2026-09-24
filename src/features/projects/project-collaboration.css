@@ -2169,3 +2169,53 @@
 .pw-chat-panel .pw-chat-composer:has(textarea:disabled) button[type="submit"] {
   cursor: not-allowed;
 }
+
+/* Member Activity / No Activity Figma variants. Project Leads retain the complete audit view. */
+.pw-activity-panel--personal .pw-activity-heading {
+  align-items: center;
+}
+.pw-activity-panel--personal .pw-activity-filters {
+  flex-basis: 100%;
+}
+.pw-activity-panel--personal .pw-activity-entry {
+  min-height: 70px;
+  background: #fff;
+}
+.pw-activity-panel--personal .pw-activity-entry-top {
+  align-items: baseline;
+  gap: 10px;
+}
+.pw-activity-personal-action {
+  color: #3d3630;
+  font-weight: 750;
+  font-size: 10.5px;
+}
+.pw-activity-personal-detail {
+  color: #655850;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.pw-activity-context-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #f7f4f1;
+  color: #8d827b;
+  font-size: 9px;
+  overflow-wrap: anywhere;
+}
+.pw-activity-panel .pw-activity-empty-state {
+  display: grid;
+  place-items: center;
+  min-height: 62px;
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed #d0d5dd;
+  border-radius: 7px;
+  background: #fff;
+  color: #98a2b3;
+  font-size: 10.5px;
+  text-align: center;
+}
