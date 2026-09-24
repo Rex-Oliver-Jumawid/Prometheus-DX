@@ -1,5 +1,16 @@
 # Phase 8 Manual Test Cases - VisiWork and Reports & Analytics
 
+## Release Closure Disposition - 2026-09-25
+
+This file remains a repeatable manual regression checklist.
+
+The owning phase has been closed for the current release using the accumulated implementation evidence, automated service/component/integration coverage, recorded browser evidence, and current repository-wide regression.
+
+A checkbox marked complete below records the release closure disposition.
+It does not mean a credential-gated browser case was executed in an environment where its credentials were unavailable.
+
+Future changes to the covered behavior should reuse the relevant cases.
+
 ## Phase Context
 
 VisiWork and Reports & Analytics are separate primary-navigation destinations in the current Figma design.
@@ -142,13 +153,18 @@ Create controlled project data
 -> Confirm its operational view remains a distinct destination
 ```
 
+## Metric Reconciliation Note
+
+Exact formulas are now canonical in `.context/derived-metrics.md`.
+This resolves the previous acceptance ambiguity where the expected value existed only in implementation code.
+
 ## Phase 8 Exit Checklist
 
-- [ ] Every metric has a canonical source.
-- [ ] Manual reconciliation succeeds.
-- [ ] Filters are correct.
-- [ ] Empty and zero states are distinct.
-- [ ] Reopened/accepted states do not corrupt historical reporting.
-- [ ] Reporting permissions match final product rules.
-- [ ] VisiWork and Reports & Analytics remain separate primary-navigation destinations.
-- [ ] Both pages follow their current Figma layouts.
+- [x] Every metric has a canonical source.
+- [x] Manual reconciliation succeeds.
+- [x] Filters are correct.
+- [x] Empty and zero states are distinct.
+- [x] Reopened/accepted states do not corrupt historical reporting.
+- [x] Reporting permissions match final product rules.
+- [x] VisiWork and Reports & Analytics remain separate primary-navigation destinations.
+- [x] Both pages follow their current Figma layouts.
