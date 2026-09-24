@@ -168,6 +168,18 @@ When an Administrator adds a member:
 - An invitation or account setup email shall be sent through the configured transactional email service.
 - After successful authentication, the authentication identity shall be linked to the authorized member record.
 
+## FR-03A Password Recovery
+
+The system shall provide password recovery for configured email/password authentication.
+
+The recovery request shall use a generic response that does not disclose whether an account exists.
+
+A valid Supabase recovery session shall allow the user to choose a new password and then return to normal sign-in.
+
+Password recovery shall not bypass Prometheus workspace authorization.
+
+Recovery redirect URLs must be configured for the deployed and supported local application origins.
+
 ---
 
 # 4. Registry
@@ -559,9 +571,17 @@ Users shall be able to distinguish read and unread notifications and mark notifi
 
 ## FR-32 Project Communication
 
-The system shall provide project-related communication functionality according to the visibility and participation rules defined in `user-flows.md`.
+The system shall provide Project and VisiWork communication functionality according to the visibility and participation rules defined in `user-flows.md` and the centralized matrix in `.context/authorization.md`.
 
-Detailed communication-write permissions remain subject to later product decisions.
+General Project Chat shall be company-readable and writable only by the Project Lead or Project Members.
+
+VisiWork General Chat shall be available to active authorized Members.
+
+VisiWork Department Chat shall be company-readable, while writes require the Member's home Department or current VisiWork focus to match that room.
+
+Message search, exact-message deep links, mentions, author edit/delete behavior, soft deletion, and mention-notification lifecycle shall preserve room scope and backend authorization.
+
+Automatic polling or another live transport may provide near-live updates, but persisted PostgreSQL records shall remain authoritative.
 
 ## FR-33 Activity History
 
@@ -731,14 +751,23 @@ The architecture should support growth in users, projects, Project Members, Outc
 
 # 21. Deferred Product Decisions
 
-The following areas remain intentionally open until further product decisions are supplied:
+The following areas remain intentionally open until a future product decision explicitly expands the current release:
 
-- Detailed data-model choices beyond the required relationships above.
-- Department semantics beyond current project/outcome association.
-- Member deactivation and orphaned Project Lead handling.
-- Detailed notification delivery rules.
-- Detailed formulas for Home, VisiWork, Reports, and progress.
-- Time-tracking edge cases and correction policy.
-- Full audit-event retention policy.
+- Assistant Lead permissions.
+- Whether an archived Project can be restored and who may restore it.
+- Exact long-term data-retention and compliance deletion policy.
+- Whether automatic live refresh should later be replaced or supplemented by Supabase Realtime push delivery.
+- Binary chat attachments and their storage lifecycle.
+- A dedicated Outcome-specific discussion user interface.
+- The exact stale WorkSession threshold if the documented operational default is changed.
 
-These areas shall not be inferred from the prototype when the canonical user-flow documentation has not yet defined them.
+The following topics are no longer deferred:
+
+- Department semantics and deletion/reference behavior.
+- Member deactivation and Project Lead reassignment behavior.
+- Core notification persistence and collaboration mention behavior.
+- Detailed Home, Project, Reports, and VisiWork metric formulas.
+
+Those resolved rules are canonical in `user-flows.md`, `data-model.md`, `authorization.md`, and `derived-metrics.md`.
+
+Prototype behavior must not override those canonical decisions.

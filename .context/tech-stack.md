@@ -568,18 +568,25 @@ Brevo credentials must never be exposed to frontend code.
 
 ---
 
-## 10. Realtime
+## 10. Live Refresh and Realtime
 
-Supabase Realtime will be used only where realtime behavior provides clear value.
+Prometheus treats PostgreSQL as the collaboration and WorkSession source of truth.
 
-Initial candidates include:
+The current release uses TanStack Query polling plus explicit invalidation and focus/reconnect refetching where live visibility matters, including chat and Working Now surfaces.
 
-- Project chat
-- Presence
-- Working-now indicators
-- Live notification updates
+This satisfies the release requirement for automatic live updates without requiring a second message state.
 
-Persistent business state such as Outcome Membership, project access, submissions, project status, and work sessions must remain stored in PostgreSQL and must not rely on ephemeral presence state.
+Supabase Realtime remains an optional future transport when push delivery provides material value.
+
+Potential future push candidates include:
+
+- Project and VisiWork chat.
+- Live notification delivery.
+- Presence indicators that remain supplemental to WorkSession state.
+
+Persistent business state such as messages, Outcome Membership, project access, submissions, project status, notifications, and WorkSessions must remain stored in PostgreSQL and must not rely on ephemeral presence or transport state.
+
+Reconnect behavior must recover by refetching persistent records rather than trusting a missed-event-free connection.
 
 ---
 
@@ -587,17 +594,17 @@ Persistent business state such as Outcome Membership, project access, submission
 
 Supabase Storage will be used for files that should not be stored directly inside PostgreSQL.
 
-Examples include:
+Examples for current or future file-bearing features include:
 
-- Profile pictures
-- Project attachments
-- Outcome submission attachments
-- Screenshots
-- PDFs
-- Documents
-- Exported design files
+- Profile pictures.
+- Outcome submission attachments when implemented.
+- Future Project or chat attachments.
+- Screenshots, PDFs, documents, and exported design files when a product flow requires them.
 
 PostgreSQL should store file metadata, ownership/context references, and storage object references.
+
+Chat binary attachments are not part of the current release scope.
+Do not infer chat attachment support from the availability of Supabase Storage.
 
 ---
 

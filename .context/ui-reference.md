@@ -91,6 +91,25 @@ These desktop frames are visual references rather than instructions to hard-code
 
 Responsive production behavior should preserve the same hierarchy, navigation model, and visual intent at supported viewport sizes.
 
+## Figma Frame Index
+
+Use this table as the central route-to-frame orientation index.
+
+| Product surface | Route / context | Approved Figma reference |
+| --- | --- | --- |
+| Home | `/` | node `189:3` |
+| Notifications | `/notifications` | node `11:2301` |
+| Registry | `/registry` | node `11:1887` |
+| VisiWork Departments | `/visiwork` department view | node `233:583` |
+| VisiWork Projects | `/visiwork` project grouping | node `233:1180` |
+| VisiWork Department View | `/visiwork` department detail | node `233:2237` |
+| Reports & Analytics | `/reports` | named `Reports & Analytics` frame in the current Prometheus file; inspect the current node before substantial visual work |
+| Project Chat | Project workspace Chat tab | named `Project Chat` and `Project Chat - Project Lead` frames; inspect the current node before substantial visual work |
+| Project Activity | Project workspace Activity tab | named `Project Activities` frame; inspect the current node before substantial visual work |
+
+Do not invent a node ID when this index names a frame without pinning its node.
+Use the connected Figma integration to resolve the current node at implementation time.
+
 ## HTML Prototypes Are Interaction References
 
 `.model/finalmodel.html` is an interaction and workflow reference for the main authenticated application.

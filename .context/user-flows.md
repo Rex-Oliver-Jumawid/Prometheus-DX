@@ -840,6 +840,12 @@ Outcome Member of that Outcome
 
 General Project Chat and Outcome-specific discussion remain separate scopes even though both use Project communication persistence.
 
+Search is scoped to the current Project chat room.
+
+Selecting a search result may temporarily highlight the exact message.
+Clearing search removes that search target.
+Sending a new message clears any search target and returns the conversation to the newest messages.
+
 ---
 
 # 23. Project Activity
@@ -953,23 +959,144 @@ The effective permission is the combination of the user's organization role, Pro
 13. Administrator status alone does not permit project-member access management.
 14. The Project Lead and Project Members with `CAN_EDIT` may change Project status and perform Project editor workflow actions.
 15. Project Member access management remains Project Lead-only.
-15. Manual project states are `PLANNING`, `IN_PROGRESS`, and `DONE`.
-16. A project may be set to `DONE` even when some outcomes are not accepted.
-17. A project that remains `DONE` for 14 days automatically becomes `ARCHIVED`.
-18. Any active authorized user may join a locked outcome.
-19. Any active authorized user may join an outcome while it is `FOR_REVIEW`.
-20. Outcome Membership is permanent once created.
-21. Outcome Members cannot leave an outcome.
-22. Project Leads cannot remove Outcome Members.
-23. Each outcome has one shared submission history.
-24. Multiple submissions may be `FOR_REVIEW` at the same time.
-25. Outcome Members may continue submitting while previous submissions are for review, provided the outcome is not accepted and submission is not otherwise blocked.
-26. Outcome acceptance is an outcome-level Project editor decision that may be made by the Project Lead or a Project Member with `CAN_EDIT`.
-27. All Outcome Members receive credit when the outcome is accepted.
-28. Accepted outcomes stop new submissions and new joins while accepted.
-29. The Project Lead or a Project Member with `CAN_EDIT` may reopen an accepted outcome.
-30. Reopening preserves existing Outcome Membership, submission history, and acceptance history.
-31. After reopening, users may join and Outcome Members may submit again.
-32. Important authorization and lifecycle rules must be enforced by the backend and not only through frontend visibility.
-33. Invitation account setup for an invited `@gmail.com` address uses Google authentication and does not offer password creation.
-34. Invitation account setup for any other invited domain uses email/password setup and does not offer Google authentication.
+16. Manual project states are `PLANNING`, `IN_PROGRESS`, and `DONE`.
+17. A project may be set to `DONE` even when some outcomes are not accepted.
+18. A project that remains `DONE` for 14 days automatically becomes `ARCHIVED`.
+19. Any active authorized user may join a locked outcome.
+20. Any active authorized user may join an outcome while it is `FOR_REVIEW`.
+21. Outcome Membership is permanent once created.
+22. Outcome Members cannot leave an outcome.
+23. Project Leads cannot remove Outcome Members.
+24. Each outcome has one shared submission history.
+25. Multiple submissions may be `FOR_REVIEW` at the same time.
+26. Outcome Members may continue submitting while previous submissions are for review, provided the outcome is not accepted and submission is not otherwise blocked.
+27. Outcome acceptance is an outcome-level Project editor decision that may be made by the Project Lead or a Project Member with `CAN_EDIT`.
+28. All Outcome Members receive credit when the outcome is accepted.
+29. Accepted outcomes stop new submissions and new joins while accepted.
+30. The Project Lead or a Project Member with `CAN_EDIT` may reopen an accepted outcome.
+31. Reopening preserves existing Outcome Membership, submission history, and acceptance history.
+32. After reopening, users may join and Outcome Members may submit again.
+33. Important authorization and lifecycle rules must be enforced by the backend and not only through frontend visibility.
+34. Invitation account setup for an invited `@gmail.com` address uses Google authentication and does not offer password creation.
+35. Invitation account setup for any other invited domain uses email/password setup and does not offer Google authentication.
+
+---
+
+# 28. VisiWork Collaboration
+
+VisiWork communication is a company collaboration surface backed by persistent PostgreSQL messages.
+
+General Chat is readable and writable by every active authorized Prometheus Member.
+
+Department Chat is readable by every active authorized Prometheus Member.
+
+Department Chat write authority is:
+
+```text
+Member.department_id = room Department
+OR
+Member.visiwork_department_id = room Department
+```
+
+Changing VisiWork focus changes the Member's current operational Department context.
+It does not change the Member's canonical home Department.
+
+General Chat mentions may target any other active Prometheus Member.
+
+Department Chat mentions may target active Members whose home Department or current VisiWork focus matches that room.
+
+Message search is room-scoped.
+
+Exact-message navigation loads surrounding messages from that same room.
+
+Only the message author may edit or delete their message.
+
+Deleted messages are represented by a persistent tombstone so ordering and deep links remain stable.
+
+Deleted message content is excluded from normal search.
+
+Mention relationships and mention notifications follow the message lifecycle:
+
+```text
+edit adds mention
+-> persist mention
+-> create mention notification
+
+edit removes mention
+-> remove persisted mention
+-> remove obsolete notification
+
+edit retains mention
+-> refresh notification preview
+
+delete message
+-> remove mention relationships
+-> remove mention notifications
+-> preserve message tombstone
+```
+
+Automatic query refresh and reconnect/focus refetch provide live visibility in the current release.
+
+Persistent messages remain authoritative.
+Live refresh does not create a second collaboration source of truth.
+
+The centralized permission reference is `.context/authorization.md`.
+
+---
+
+# 29. Password Recovery
+
+A signed-out user may start password recovery from `/forgot-password`.
+
+```text
+Signed-out user
+-> Forgot Password
+-> enter email
+-> Supabase recovery request
+-> generic confirmation
+-> recovery email
+-> /reset-password
+-> establish recovery session
+-> choose new password
+-> local sign out
+-> return to login
+```
+
+The forgot-password response must not reveal whether an account exists.
+
+The user-facing success response therefore remains equivalent to:
+
+```text
+If an account exists for that email, a password reset link has been sent.
+```
+
+The recovery URL uses the browser's current origin plus `/reset-password`.
+
+Production and local recovery origins must therefore be allowed by the Supabase Auth redirect configuration.
+
+A reset link that is missing, invalid, expired, or already consumed must not expose a password editor.
+
+The new password must satisfy the current client validation and Supabase Auth policy.
+
+After a successful password update, the local recovery session is signed out and the user returns to normal sign-in.
+
+Password recovery does not bypass Prometheus workspace authorization.
+A recovered Supabase account must still resolve to an active authorized Prometheus Member.
+
+---
+
+# 30. Canonical Derived Metrics
+
+Home, Reports & Analytics, Team, and VisiWork must use the definitions in `.context/derived-metrics.md`.
+
+Displayed metrics are read models over canonical records.
+
+They are not independent business state.
+
+---
+
+# 31. Authorization Reference
+
+Use `.context/authorization.md` as the centralized action matrix.
+
+The detailed rules in this document remain canonical workflow behavior, while the matrix provides the quick implementation reference.

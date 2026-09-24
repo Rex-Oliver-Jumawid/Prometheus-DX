@@ -256,6 +256,29 @@ Department relationships may be used for filtering, dashboards, reports, capacit
 
 Department relationships must not independently grant or deny Project or Outcome access.
 
+## Department deletion and reference diagnostics
+
+A Department with zero Members is not necessarily deletable.
+
+Deletion is blocked while relational references still exist, including current references from:
+
+- Members.
+- Project-to-Department associations.
+- Outcome-to-Department associations.
+
+Registry should expose reference counts so the Administrator can distinguish an empty Department from a referenced Department.
+
+```text
+0 Members
+!=
+0 Department references
+```
+
+The backend remains authoritative.
+If a relational foreign key still references the Department, deletion must fail rather than orphan business records.
+
+Before deleting a referenced Department, reassign Members and remove or change the applicable Project/Outcome associations deliberately.
+
 ---
 
 # 8. Project
@@ -1113,27 +1136,84 @@ Only the message author may edit or delete their message.
 
 Archived Projects are read-only for Project Chat and announcement mutations.
 
+## VisiWork messages
+
+VisiWork collaboration uses separate persistent room-scoped records:
+
+```text
+VisiWorkMessage
+---------------
+id
+department_id
+member_id
+body
+edited_at
+deleted_at
+created_at
+```
+
+`department_id = NULL` represents General Chat.
+
+A non-null `department_id` represents that Department's VisiWork room.
+
+```text
+VisiWorkMessageMention
+----------------------
+message_id
+member_id
+```
+
+The pair `(message_id, member_id)` is unique.
+
+VisiWork deletion is soft deletion.
+
+Deleting a message preserves its identity and chronological position while replacing active content with a tombstone and clearing mention relationships.
+
+General Chat is readable and writable by every active authorized Member.
+
+Department Chat is company-readable.
+Department Chat writes require the Member's home Department or current `visiwork_department_id` to match the room.
+
+Search is room-scoped and excludes deleted content.
+
+Exact-message context reads surrounding messages only from the target message's room.
+
+## Collaboration attachment release scope
+
+The current release does not persist binary attachments on Project Chat or VisiWork messages.
+
+The existing `SubmissionAttachment` concept belongs to Outcome submission evidence and must not be treated as implemented chat attachment support.
+
+If chat attachments are added later, storage-object references and authorization context must be persisted and checked server-side.
+Possession of a storage URL alone must never grant access.
+
 ---
 
 # 31. Progress and Dashboard Derivations
 
-Progress formulas must be canonical so every screen displays the same values.
+The canonical formula reference is `.context/derived-metrics.md`.
+
+This section defines persistence relationships while `derived-metrics.md` owns exact cross-screen calculations.
 
 ## Project Progress
 
+Current Project summary behavior is:
+
 ```text
-accepted current Outcomes
-------------------------- x 100
-total Outcomes
+if Project.status = DONE:
+    progress = 100
+else if total Outcomes = 0:
+    progress = 0
+else:
+    progress = round(current accepted Outcomes / total Outcomes * 100)
 ```
 
-Project status remains independent from Project progress.
+Project status remains a separate concept from Outcome acceptance.
 
-A Project may therefore be `DONE` while Project progress is below 100 percent.
+If a previously accepted Outcome is reopened, accepted-Outcome counts decrease and any progress derived from accepted Outcomes may decrease unless the Project is explicitly `DONE`.
 
-If a previously accepted Outcome is reopened, it is no longer counted as currently accepted and Project progress may decrease.
-
-If a Project has no Outcomes, progress should be represented as unavailable rather than inventing a percentage.
+Home, Reports & Analytics, Team, and VisiWork must not redefine this metric independently.
+See `.context/derived-metrics.md` for filtered-report and dashboard formulas.
 
 ## Stage Progress
 
@@ -1592,7 +1672,7 @@ These operations occur atomically.
 ## Accept Outcome
 
 ```text
-Validate current Member is Project Lead
+Validate current Member is Project Lead OR ProjectMember CAN_EDIT
 Create OutcomeAcceptance
 Snapshot all current OutcomeMembers into OutcomeAcceptanceMember
 Set Outcome.lifecycle_status = ACCEPTED
@@ -1603,7 +1683,7 @@ Create ActivityLog
 ## Reopen Outcome
 
 ```text
-Validate current Member is Project Lead
+Validate current Member is Project Lead OR ProjectMember CAN_EDIT
 Update latest OutcomeAcceptance.reopened_at
 Update latest OutcomeAcceptance.reopened_by_member_id
 Set Outcome.lifecycle_status = OPEN
@@ -1775,6 +1855,8 @@ Notification
 ProjectMessage
 ProjectMessageMention
 ProjectAnnouncement
+VisiWorkMessage
+VisiWorkMessageMention
 ActivityLog
 
 MemberSchedule
