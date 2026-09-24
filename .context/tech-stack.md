@@ -838,4 +838,4 @@ Authorization and workflow rules belong in NestJS.
 
 The frontend should render the permissions returned by the system rather than inventing them independently.
 
-The relational structure described in the future `data-model.md` should be agreed before the Prisma schema is treated as stable.
+The canonical `.context/data-model.md`, `prisma/schema.prisma`, and tracked migrations must remain synchronized as the system evolves.

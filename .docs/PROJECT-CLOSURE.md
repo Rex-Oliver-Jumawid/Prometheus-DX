@@ -163,9 +163,11 @@ The nullable Project-message Outcome scope and Supabase Storage architecture lea
 
 ## Verification Evidence
 
-The repository CI run on current release-closure `main` commit `bcb0c83dcdab7cdc9cd48ed05fe1843e3f37c170` completed successfully.
+The repository CI run on green release-baseline commit `bcb0c83dcdab7cdc9cd48ed05fe1843e3f37c170` completed successfully.
 
-That commit contains the final Project Chat search/send behavior, CAN_EDIT authorization amendments, phase closure reconciliation, canonical metrics/authorization documents, and operational runbooks.
+That baseline contains the Project Chat search/send behavior, CAN_EDIT authorization amendments, phase closure reconciliation, canonical metrics/authorization documents, and operational runbooks.
+
+Subsequent maintenance commits add automatic notification refresh and further documentation/test cleanup; use the latest `main` CI result as the current verification state.
 
 That run includes the standard verification pipeline:
 
