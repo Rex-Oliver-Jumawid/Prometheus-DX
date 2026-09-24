@@ -8,7 +8,12 @@ The phases are ordered by dependency rather than navbar position.
 
 Each phase should leave the system in a usable and testable state.
 
-Do not move to the next phase until the required manual acceptance tests for the current phase pass.
+A phase is not complete until its required acceptance and regression work passes.
+
+Later phase work may begin before an earlier phase is formally closed when the required dependency slice is already implemented and stable enough to build on.
+
+When phases overlap, keep each phase's status, acceptance debt, and implementation journal independent.
+Do not use later implementation progress to mark an earlier phase complete.
 
 ## Implementation Status
 
