@@ -12,15 +12,16 @@ Phase 05 - Outcome Work, Submission, Review, and Dependencies - remains in progr
 
 Phase 06 - Schedule, Work Sessions, and Team - is complete and is present on `main`.
 
-Phase 07 - Notifications and Home - is in progress.
+Phase 07 - Notifications and Home - has both product slices implemented and integrated on `main`, but remains in progress until the remaining phase acceptance, visual verification, regression, and documentation closure are complete.
 
-The current Phase 07 slice is Notifications.
+Phase 08 - VisiWork and Reports & Analytics - is in progress.
+The VisiWork and Reports & Analytics implementations are present on `main`; formal Phase 8 acceptance and closure remain pending.
 
-Phase 07 Home is planned as a separate slice after Notifications is stable.
+Phase 09 - Collaboration, Realtime, and Attachments - is in progress.
+VisiWork collaboration already includes persisted chat, message search and deep links, mentions and mention notifications, message editing and deletion, and automatic refresh behavior.
+Project Chat, the final realtime transport/reconnect behavior, attachments, and formal Phase 9 acceptance remain pending.
 
-Phases 08 and 09 have not started.
-
-See `.docs/phases/README.md` for the canonical high-level status index, `.docs/CURRENT.md` for the current handoff, and `.docs/phases/phase-07-notifications-home.md` for the active Phase 07 implementation record.
+See `.docs/phases/README.md` for the canonical high-level status index, `.docs/CURRENT.md` for the current handoff, and the matching phase journals under `.docs/phases/` for implementation evidence.
 
 ## Repository structure
 
@@ -189,9 +190,14 @@ pnpm format
 
 Use the matching `.testcases/phase-XX-*.md` file as the acceptance gate for the phase being delivered.
 
-The active Phase 07 acceptance file is `.testcases/phase-07-notifications-home-tests.md`.
+Open phase acceptance work is tracked in the matching files under `.testcases/`.
 
-Phase 05 remains open and still uses `.testcases/phase-05-work-review-tests.md` for its pending closure work.
+The currently relevant acceptance gates are:
+
+- `.testcases/phase-05-work-review-tests.md`
+- `.testcases/phase-07-notifications-home-tests.md`
+- `.testcases/phase-08-visiwork-reporting-tests.md`
+- `.testcases/phase-09-collaboration-tests.md`
 
 ## Environment security
 

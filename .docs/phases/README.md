@@ -158,11 +158,11 @@ The root `README.md` should summarize this status, while each phase journal reco
 | 2 | Registry | Complete | `phase-02-registry-closure.md` |
 | 3 | Project Core | Complete | `phase-03-project-core.md` |
 | 4 | Project Workflow Structure | Complete | `phase-04-project-workflow.md` |
-| 5 | Outcome Work, Submission, Review, and Dependencies | In progress - slices 1-4 delivered; final acceptance and regression pending | `phase-05-work-review.md` |
+| 5 | Outcome Work, Submission, Review, and Dependencies | In progress - slices delivered; final acceptance and regression pending | `phase-05-work-review.md` |
 | 6 | Schedule, Work Sessions, and Team | Complete | `phase-06-schedule-work-sessions-team.md` |
-| 7 | Notifications and Home | In progress - Notifications is the current slice | `phase-07-notifications-home.md` |
-| 8 | VisiWork and Reports & Analytics | Not started | To be created |
-| 9 | Collaboration, Realtime, and Attachments | Not started | To be created |
+| 7 | Notifications and Home | In progress - Notifications and Home are integrated; final acceptance, visual verification, regression, and closure pending | `phase-07-notifications-home.md` |
+| 8 | VisiWork and Reports & Analytics | In progress - both product surfaces are integrated; formal acceptance and closure pending | `phase-08-visiwork-reporting.md` |
+| 9 | Collaboration, Realtime, and Attachments | In progress - VisiWork collaboration slices are delivered; Project Chat, remaining realtime behavior, attachments, and acceptance are pending | `phase-09-collaboration.md` |
 
 ## Principle
 

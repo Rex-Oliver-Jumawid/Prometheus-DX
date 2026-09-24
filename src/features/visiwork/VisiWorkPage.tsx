@@ -1319,7 +1319,9 @@ export function VisiWorkPage() {
   );
   const waitingForWorkflows =
     Boolean(projects.data?.length) && workflowQueries.some((query) => query.isPending);
-  const workflowError = workflowQueries.find((query) => query.isError)?.error;
+  const workflowError = workflowQueries.find(
+    (query) => query.isError && !query.data,
+  )?.error;
 
   const model = team.data
     ? buildVisiWorkModel(projects.data ?? [], workflows, team.data)
@@ -1370,7 +1372,13 @@ export function VisiWorkPage() {
     return <VisiWorkSkeleton />;
   }
 
-  if (projects.isError || team.isError || workflowError || !team.data || !model) {
+  if (
+    (projects.isError && !projects.data) ||
+    (team.isError && !team.data) ||
+    workflowError ||
+    !team.data ||
+    !model
+  ) {
     const message =
       projects.error?.message ??
       team.error?.message ??

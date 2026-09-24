@@ -4,9 +4,11 @@
 
 In progress.
 
-Current slice: Notifications.
+Notifications and Home are both implemented and integrated on `main`.
 
-Phase 7 starts from the Phase 6-complete `main` baseline while Phase 5 final acceptance and regression remain open on their own line of work.
+Phase 7 remains open until the remaining manual acceptance, Figma visual verification, required regression, and final documentation closure are complete.
+
+Phase 5 final acceptance and regression remain open on their own line of work.
 
 This journal records only work and decisions that belong to Phase 7.
 
@@ -18,14 +20,24 @@ Do not create duplicate client-only or manually synchronized business state for 
 
 ## Current Scope
 
-Phase 7 is split into two implementation slices:
+Phase 7 was delivered as two implementation slices:
 
 1. Notifications
 2. Home
 
-Notifications is the current slice.
+Both slices are now present on `main`.
 
-Home should be implemented separately after the Notifications slice is stable enough to integrate against canonical notification and workflow behavior.
+The remaining Phase 7 work is acceptance and closure rather than feature implementation.
+Historical branch-specific notes below are retained where they explain implementation decisions made before the two slices were integrated.
+
+## Post-Integration Updates
+
+Later Phase 9 collaboration work added persisted VisiWork mentions, Mentions and Projects notification filters, and deep links from mention notifications back to the referenced room and message.
+
+Earlier notes in this journal that describe mention and reply support as deferred are historical records of the original Phase 7 branch boundary rather than the current integrated product state.
+
+Reports & Analytics is also now implemented under Phase 8.
+The Home Reports Quick Access control remains disabled in the current source and should be reconciled as an integration follow-up.
 
 ## UI Reference
 
@@ -751,16 +763,22 @@ Any notification event that cannot be created atomically with its source domain 
 
 ## Recommendations and Next Approach
 
-Start with the Notifications backend foundation and event creation.
+Do not add another Phase 7 feature slice merely to close this phase.
 
-Then implement the Figma-aligned Notifications inbox and sidebar unread state.
+Run the remaining Phase 7 manual acceptance checklist against the integrated `main` implementation.
 
-Verify notification navigation and read-state persistence before beginning the Home slice.
+Complete direct visual comparison for Notifications and Home against their current Figma frames at the supported desktop, medium, and mobile viewport sizes.
 
-After Notifications is stable, build Home as an aggregation surface over canonical data and compare it directly against Figma node `189:3`.
+Verify read-state persistence, notification navigation, Home aggregation, loading and empty states, and the shared sidebar treatment in the integrated application.
+
+Run the required regression gate after the later Phase 8 and Phase 9 integrations that touch shared navigation, notifications, Home presence data, or workflow state.
+
+Record the final acceptance evidence here before changing Phase 7 to Complete.
 
 ## Phase Exit Result
 
 Not yet complete.
 
-Phase 7 may be marked complete only after Notifications and Home satisfy the acceptance gate, visual verification, required regression checks, and final implementation documentation.
+Notifications and Home are implemented and integrated, but implementation presence alone does not satisfy the phase completion rule.
+
+Phase 7 may be marked complete only after the acceptance gate, remaining visual verification, required regression checks, and final implementation documentation are complete.

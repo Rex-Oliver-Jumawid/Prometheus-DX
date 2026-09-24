@@ -100,7 +100,7 @@ describe('HomeDashboardView', () => {
     expect(screen.getByText('17h planned commitment')).toBeInTheDocument();
   });
 
-  it('uses intentional empty states and does not create a Reports route', () => {
+  it('uses intentional empty states', () => {
     const emptyData: HomeDashboardResponse = {
       ...data,
       projects: { leading: [], participating: [] },
@@ -119,7 +119,6 @@ describe('HomeDashboardView', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('No active work sessions.')).toBeInTheDocument();
     expect(screen.getByText('Nothing needs attention.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Reports/ })).toBeDisabled();
   });
 
   it('links project, attention, and implemented quick-access destinations', () => {
@@ -144,6 +143,10 @@ describe('HomeDashboardView', () => {
     expect(screen.getByRole('link', { name: /Team/ })).toHaveAttribute(
       'href',
       '/team',
+    );
+    expect(screen.getByRole('link', { name: /Reports/ })).toHaveAttribute(
+      'href',
+      '/reports',
     );
   });
 });
