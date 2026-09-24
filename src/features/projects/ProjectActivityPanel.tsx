@@ -197,7 +197,7 @@ export function ProjectActivityPanel({
 
   // The API is authoritative about visibility. Scope the cached history to the
   // current identity before deriving the count, filters, and visible activity.
-  const scope = feed.data?.pages[0]?.scope ?? (isLead ? 'PROJECT' : 'PERSONAL');
+  const scope = feed.data?.pages[0]?.scope ?? 'PROJECT';
   const personal = scope === 'PERSONAL';
   const seenIds = new Set<string>();
   const items = (feed.data?.pages.flatMap((page) => page.items) ?? []).filter(
