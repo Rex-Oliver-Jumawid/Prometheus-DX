@@ -4,6 +4,10 @@ import { defineConfig, devices } from '@playwright/test';
 const usesSharedMemberCredential = Boolean(
   process.env.E2E_MEMBER_EMAIL && process.env.E2E_MEMBER_PASSWORD,
 );
+const apiPort = Number(process.env.E2E_API_PORT || 3001);
+const webPort = Number(process.env.E2E_WEB_PORT || 5173);
+const isolatedPorts = Boolean(process.env.E2E_API_PORT || process.env.E2E_WEB_PORT);
+const webBaseUrl = `http://127.0.0.1:${webPort}`;
 const apiEnvironmentWithoutBrevo = Object.fromEntries(
   Object.entries(process.env).filter(([key]) => !key.startsWith('BREVO_')),
 );
@@ -20,7 +24,7 @@ export default defineConfig({
     timeout: 10_000,
   },
   use: {
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: webBaseUrl,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
@@ -41,18 +45,23 @@ export default defineConfig({
   webServer: [
     {
       command: 'pnpm dev:api',
-      url: 'http://127.0.0.1:3001/api/health',
+      url: `http://127.0.0.1:${apiPort}/api/health`,
       env: {
         ...apiEnvironmentWithoutBrevo,
+        PORT: String(apiPort),
         INVITATION_DELIVERY_MODE: 'disabled',
       },
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: !process.env.CI && !isolatedPorts,
       timeout: 120_000,
     },
     {
-      command: 'pnpm dev:web',
-      url: 'http://127.0.0.1:5173/foundation',
-      reuseExistingServer: !process.env.CI,
+      command: `pnpm exec vite --host 127.0.0.1 --port ${webPort} --strictPort`,
+      url: `${webBaseUrl}/foundation`,
+      env: {
+        ...process.env,
+        E2E_API_PORT: String(apiPort),
+      },
+      reuseExistingServer: !process.env.CI && !isolatedPorts,
       timeout: 120_000,
     },
   ],
