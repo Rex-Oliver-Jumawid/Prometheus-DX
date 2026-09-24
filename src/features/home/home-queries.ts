@@ -15,7 +15,10 @@ export function homeDashboardQuery(accessToken?: string) {
         accessToken,
         signal,
       }),
-    staleTime: 10_000,
-    refetchOnWindowFocus: true,
+    staleTime: 2_000,
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 }
