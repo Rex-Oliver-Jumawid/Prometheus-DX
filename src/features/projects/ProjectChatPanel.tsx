@@ -109,6 +109,7 @@ export function ProjectChatPanel({
   const [targetMessageId, setTargetMessageId] = useState<string | null>(initialMessageId ?? null);
   const [jumpRevision, setJumpRevision] = useState(0);
   const threadRef = useRef<HTMLOListElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
   const pinnedToBottom = useRef(true);
   const initiallyScrolled = useRef(false);
   const olderScroll = useRef<{ top: number; height: number; pageCount: number } | null>(null);
@@ -321,6 +322,13 @@ export function ProjectChatPanel({
   const pageCount = messages.data?.pages.length ?? 0;
   const firstMessageId = ordered[0]?.id;
   const lastMessageId = ordered[ordered.length - 1]?.id;
+
+  useLayoutEffect(() => {
+    const composer = composerRef.current;
+    if (!composer) return;
+    composer.style.height = 'auto';
+    composer.style.height = Math.max(36, Math.min(128, composer.scrollHeight)) + 'px';
+  }, [body]);
 
   useLayoutEffect(() => {
     const thread = threadRef.current;
@@ -596,7 +604,7 @@ export function ProjectChatPanel({
           )}
 
           {ordered.length === 0 ? (
-            <p className="pw-collaboration-state">No messages yet. Start the conversation.</p>
+            <p className="pw-collaboration-state pw-chat-empty-state">No messages yet. Start the conversation.</p>
           ) : (
             <ol
               className="pw-chat-thread"
@@ -779,6 +787,7 @@ export function ProjectChatPanel({
               <div className="pw-chat-compose-row">
                 <div className="pw-chat-input-wrap">
                   <textarea
+                    ref={composerRef}
                     id="pw-chat-input"
                     placeholder="Message the project..."
                     rows={1}
