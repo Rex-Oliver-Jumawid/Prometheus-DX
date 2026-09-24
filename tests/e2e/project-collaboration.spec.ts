@@ -200,6 +200,51 @@ test('Chat opens on recent messages and keeps the viewport when older history lo
   expect(Math.abs(after - before)).toBeLessThan(5);
 });
 
+test('Search results focus the actual older chat message without scrolling the workspace', async ({ page }) => {
+  test.skip(!hasCredentials, 'Requires E2E credentials.');
+  await signIn(page);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/projects/' + projectId + '?tab=chat');
+  await expect(page.getByRole('list', { name: 'Project messages' }).locator('li')).toHaveCount(30);
+  await page.getByRole('button', { name: 'Search project conversation' }).click();
+  await page.getByRole('textbox', { name: 'Search project messages' }).fill('Initial project update');
+  const result = page.locator('.pw-chat-search-result').filter({ hasText: 'Initial project update' });
+  await expect(result).toBeVisible();
+  const before = await page.evaluate(() => window.scrollY);
+  await result.click();
+  const selected = page.locator('[data-message-id="' + rootMessageId + '"]');
+  await expect(selected).toHaveClass(/pw-chat-message--targeted/);
+  await expect.poll(async () => {
+    return page.getByRole('list', { name: 'Project messages' }).evaluate((thread, id) => {
+      const target = thread.querySelector('[data-message-id="' + id + '"]');
+      if (!target) return false;
+      const area = thread.getBoundingClientRect();
+      const row = target.getBoundingClientRect();
+      return row.top >= area.top - 1 && row.bottom <= area.bottom + 1;
+    }, rootMessageId);
+  }).toBe(true);
+  expect(await page.evaluate(() => window.scrollY)).toBe(before);
+});
+
+test('The announcements and members rail fits its contents without stretching to chat height', async ({ page }) => {
+  test.skip(!hasCredentials, 'Requires E2E credentials.');
+  await signIn(page);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/projects/' + projectId + '?tab=chat');
+  const chat = page.locator('.pw-chat-panel');
+  const rail = page.locator('.pw-chat-side-stack');
+  await expect(page.locator('.pw-announcement-card--pinned')).toBeVisible();
+  await expect.poll(async () => {
+    const [chatBox, railBox] = await Promise.all([chat.boundingBox(), rail.boundingBox()]);
+    return Boolean(chatBox && railBox && railBox.height < chatBox.height);
+  }).toBe(true);
+  const [listBox, cardBox] = await Promise.all([
+    page.locator('.pw-announcement-list').boundingBox(),
+    page.locator('.pw-announcement-card--pinned').boundingBox(),
+  ]);
+  expect(listBox && cardBox && cardBox.y + cardBox.height <= listBox.y + listBox.height + 1).toBe(true);
+});
+
 test('Collaboration panels fit narrow and desktop viewports', async ({ page }) => {
   test.skip(!hasCredentials, 'Requires E2E credentials.');
   await signIn(page);
