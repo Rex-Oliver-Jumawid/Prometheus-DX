@@ -158,11 +158,20 @@ The root `README.md` should summarize this status, while each phase journal reco
 | 2 | Registry | Complete | `phase-02-registry-closure.md` |
 | 3 | Project Core | Complete | `phase-03-project-core.md` |
 | 4 | Project Workflow Structure | Complete | `phase-04-project-workflow.md` |
-| 5 | Outcome Work, Submission, Review, and Dependencies | In progress - slices delivered; final acceptance and regression pending | `phase-05-work-review.md` |
+| 5 | Outcome Work, Submission, Review, and Dependencies | Complete | `phase-05-work-review.md` |
 | 6 | Schedule, Work Sessions, and Team | Complete | `phase-06-schedule-work-sessions-team.md` |
-| 7 | Notifications and Home | In progress - Notifications and Home are integrated; final acceptance, visual verification, regression, and closure pending | `phase-07-notifications-home.md` |
-| 8 | VisiWork and Reports & Analytics | In progress - both product surfaces are integrated; formal acceptance and closure pending | `phase-08-visiwork-reporting.md` |
-| 9 | Collaboration, Realtime, and Attachments | In progress - VisiWork collaboration and Project Chat are delivered; final realtime/reconnect behavior, attachments, and acceptance are pending | `phase-09-collaboration.md` |
+| 7 | Notifications and Home | Complete | `phase-07-notifications-home.md` |
+| 8 | VisiWork and Reports & Analytics | Complete | `phase-08-visiwork-reporting.md` |
+| 9 | Collaboration and Live Updates | Complete for current release scope | `phase-09-collaboration.md` |
+
+## Release Closure
+
+As of 2026-09-25, Phases 0 through 9 are closed for the current Prometheus release scope.
+
+Phase 9 was deliberately narrowed at release closure:
+binary chat attachments, a dedicated Outcome-specific discussion interface, and an optional push-based realtime transport are post-release enhancements rather than silently unfinished phase work.
+
+See `.docs/PROJECT-CLOSURE.md` for the final release-level disposition and follow-up backlog.
 
 ## Principle
 
