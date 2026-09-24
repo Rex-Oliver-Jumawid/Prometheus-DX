@@ -29,6 +29,8 @@ export const VisiWorkMessageSchema = z.object({
   author: VisiWorkMessageAuthorSchema,
   body: z.string(),
   mentions: z.array(VisiWorkMessageAuthorSchema).default([]),
+  editedAt: z.string().datetime().nullable(),
+  deletedAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
 });
 
@@ -44,6 +46,8 @@ export const CreateVisiWorkMessageSchema = z
     mentionMemberIds: z.array(z.string().uuid()).max(20).default([]),
   })
   .strict();
+
+export const UpdateVisiWorkMessageSchema = CreateVisiWorkMessageSchema;
 
 export const VisiWorkMessageSearchQuerySchema = z
   .object({
@@ -67,6 +71,9 @@ export type VisiWorkMessage = z.infer<typeof VisiWorkMessageSchema>;
 export type VisiWorkMessagePage = z.infer<typeof VisiWorkMessagePageSchema>;
 export type CreateVisiWorkMessage = z.infer<
   typeof CreateVisiWorkMessageSchema
+>;
+export type UpdateVisiWorkMessage = z.infer<
+  typeof UpdateVisiWorkMessageSchema
 >;
 
 

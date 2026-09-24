@@ -2,10 +2,12 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Put,
   Query,
@@ -16,6 +18,7 @@ import { z } from 'zod';
 import {
   CreateVisiWorkMessageSchema,
   SetVisiWorkPresenceRequestSchema,
+  UpdateVisiWorkMessageSchema,
   VisiWorkMessageSearchQuerySchema,
 } from '../../shared/contracts/visiwork';
 import { CurrentMember } from '../auth/current-member.decorator';
@@ -72,6 +75,29 @@ export class VisiWorkController {
     @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
   ) {
     return this.visiworkService.messageContext(member, messageId);
+  }
+
+  @Patch('messages/:messageId')
+  updateMessage(
+    @CurrentMember() member: Member,
+    @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = UpdateVisiWorkMessageSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        parsed.error.issues[0]?.message ?? 'Invalid message.',
+      );
+    }
+    return this.visiworkService.updateMessage(member, messageId, parsed.data);
+  }
+
+  @Delete('messages/:messageId')
+  deleteMessage(
+    @CurrentMember() member: Member,
+    @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
+  ) {
+    return this.visiworkService.deleteMessage(member, messageId);
   }
 
   @Get('messages')
