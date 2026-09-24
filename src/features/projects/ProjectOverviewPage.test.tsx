@@ -59,6 +59,11 @@ const project: Project = {
 
 vi.mock('../auth/auth-context', () => ({
   useAuth: () => ({
+    member: {
+      id: project.lead.id,
+      fullName: project.lead.fullName,
+      email: project.lead.email,
+    },
     session: {
       access_token: 'token',
       user: { id: project.lead.id },

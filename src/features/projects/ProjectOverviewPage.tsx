@@ -506,9 +506,9 @@ export function ProjectOverviewPage() {
             key={projectId}
             projectId={projectId!}
             accessToken={accessToken}
-            currentMemberId={member?.id ?? session?.user?.id}
+            currentMemberId={member?.id}
             currentMemberName={member?.fullName}
-            isLead={value.lead.id === (member?.id ?? session?.user?.id)}
+            isLead={value.lead.id === member?.id}
           />
         </div>
       ) : (
