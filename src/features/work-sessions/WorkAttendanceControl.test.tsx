@@ -41,10 +41,12 @@ function renderControl() {
 describe('WorkAttendanceControl', () => {
   beforeEach(() => mocks.apiFetch.mockReset());
 
-  it('keeps initial attendance loading silent and clipped', () => {
-    mocks.apiFetch.mockImplementation(
-      () => new Promise(() => undefined),
-    );
+  it('keeps initial attendance loading silent and clipped', async () => {
+    let resolveCurrent: (value: typeof activeResponse) => void = () => undefined;
+    const currentPromise = new Promise<typeof activeResponse>((resolve) => {
+      resolveCurrent = resolve;
+    });
+    mocks.apiFetch.mockReturnValue(currentPromise);
     renderControl();
 
     const attendance = screen.getByLabelText('Time attendance');
@@ -54,6 +56,9 @@ describe('WorkAttendanceControl', () => {
     expect(
       screen.queryByRole('button', { name: /Time In|Time Out/i }),
     ).not.toBeInTheDocument();
+
+    resolveCurrent(activeResponse);
+    await screen.findByRole('button', { name: /Time Out/ });
   });
 
   it('renders the persisted active session and prevents duplicate action while pending', async () => {
@@ -83,6 +88,7 @@ describe('WorkAttendanceControl', () => {
       ),
     ).toHaveLength(1);
     resolveTimeOut(activeResponse);
+    await waitFor(() => expect(button).toBeEnabled());
   });
 
   it('times in from the no-active-session state', async () => {
@@ -105,6 +111,9 @@ describe('WorkAttendanceControl', () => {
         expect.anything(),
         expect.objectContaining({ method: 'POST' }),
       ),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Time In/ })).toBeEnabled(),
     );
   });
 
