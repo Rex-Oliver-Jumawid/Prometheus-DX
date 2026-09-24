@@ -16,6 +16,7 @@ import type {
   ProjectMessagePage,
 } from '../../shared/contracts/project-chat';
 import { PrismaService } from '../database/prisma.service';
+import { writeNotifications } from '../notifications/notification-writer';
 
 const PAGE_SIZE = 30;
 const personSelect = { id: true, fullName: true, email: true } as const;
@@ -262,6 +263,19 @@ export class ProjectChatService {
         },
         include: messageInclude,
       });
+      if (mentions.length > 0) {
+        await writeNotifications(db, {
+          type: 'PROJECT_CHAT_MENTION',
+          sourceEventId: message.id,
+          actorMemberId: member.id,
+          recipientMemberIds: mentions.map((person) => person.id),
+          projectId,
+          data: {
+            messageId: message.id,
+            preview: input.body.slice(0, 140),
+          },
+        });
+      }
       return this.toMessage(message, member.id);
     });
   }
