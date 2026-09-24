@@ -1,6 +1,6 @@
 # Prometheus Phase Test Cases
 
-This folder contains the phase acceptance checks used to verify each implementation phase before moving to the next phase.
+This folder contains the phase acceptance checks used to verify each implementation phase and to regress completed behavior after release.
 
 The implementation phase plan is maintained in `.context/phases.md`.
 
@@ -55,9 +55,12 @@ Automated evidence and manual evidence may both contribute to one phase gate.
 
 The matching phase journal should record which evidence was actually run and the result.
 
-## Phase completion
+## Phase completion and post-release regression
 
-Before continuing to the next phase, complete the matching test-case file and verify that the delivered phase satisfies its acceptance checks.
+Phases 0 through 9 are closed for the current release boundary.
+
+For historical phase delivery, the matching test-case file defines the acceptance gate.
+For post-release maintenance, reuse the relevant cases as regression requirements without reopening the completed phase unless the release decision itself changes.
 
 Run focused verification during development instead of waiting until the phase exit gate.
 
