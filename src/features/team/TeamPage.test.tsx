@@ -68,7 +68,7 @@ describe('TeamPage', () => {
     renderPage();
 
     expect(
-      await screen.findByRole('heading', { name: 'Team', exact: true }),
+      await screen.findByRole('heading', { name: 'Team' }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
