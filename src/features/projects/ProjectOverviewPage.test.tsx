@@ -210,7 +210,7 @@ describe('ProjectOverviewPage status mutation', () => {
     fireEvent.click(await screen.findByRole('tab', { name: 'Chat' }));
 
     expect(await screen.findByRole('heading', { name: 'Project chat' })).toBeVisible();
-    expect(screen.getByText('Initial project update')).toBeVisible();
+    expect(await screen.findByText('Initial project update')).toBeVisible();
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), {
       target: { value: 'Hello project team' },
