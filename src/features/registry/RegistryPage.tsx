@@ -358,6 +358,11 @@ function RemoveDepartmentDialog({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isRemoving, onClose]);
 
+  const hasBlockingReferences =
+    department.memberCount > 0 ||
+    department.projectCount > 0 ||
+    department.outcomeCount > 0;
+
   return createPortal(
     <div
       className="registry-dialog-backdrop"
@@ -393,9 +398,34 @@ function RemoveDepartmentDialog({
         </header>
 
         <p className="registry-remove-copy">
-          This is permanent. A department can only be removed when no members,
-          projects, or outcomes still reference it.
+          This is permanent. These are the references currently attached to this
+          department.
         </p>
+
+        <div
+          className="registry-reference-summary"
+          aria-label={`References for ${department.name}`}
+        >
+          <span className={department.memberCount > 0 ? 'is-blocking' : ''}>
+            <strong>{department.memberCount}</strong>
+            {department.memberCount === 1 ? 'member' : 'members'}
+          </span>
+          <span className={department.projectCount > 0 ? 'is-blocking' : ''}>
+            <strong>{department.projectCount}</strong>
+            {department.projectCount === 1 ? 'project' : 'projects'}
+          </span>
+          <span className={department.outcomeCount > 0 ? 'is-blocking' : ''}>
+            <strong>{department.outcomeCount}</strong>
+            {department.outcomeCount === 1 ? 'outcome' : 'outcomes'}
+          </span>
+        </div>
+
+        {hasBlockingReferences && (
+          <p className="registry-remove-guidance">
+            Non-zero references block deletion. Reassign members and remove the
+            department from the listed projects or outcomes first.
+          </p>
+        )}
 
         {Boolean(removeError) && (
           <p className="registry-form-error" role="alert">
@@ -1283,10 +1313,26 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
                     </span>
                     <span className="registry-department-copy">
                       <strong>{department.shortLabel}</strong>
-                    </span>
-                    <span className="registry-member-count">
-                      {department.memberCount}{' '}
-                      {department.memberCount === 1 ? 'member' : 'members'}
+                      <span className="registry-department-references">
+                        <span
+                          className={department.memberCount > 0 ? 'is-blocking' : ''}
+                        >
+                          {department.memberCount}{' '}
+                          {department.memberCount === 1 ? 'member' : 'members'}
+                        </span>
+                        <span
+                          className={department.projectCount > 0 ? 'is-blocking' : ''}
+                        >
+                          {department.projectCount}{' '}
+                          {department.projectCount === 1 ? 'project' : 'projects'}
+                        </span>
+                        <span
+                          className={department.outcomeCount > 0 ? 'is-blocking' : ''}
+                        >
+                          {department.outcomeCount}{' '}
+                          {department.outcomeCount === 1 ? 'outcome' : 'outcomes'}
+                        </span>
+                      </span>
                     </span>
                   </button>
                   <button
