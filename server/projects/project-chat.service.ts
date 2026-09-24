@@ -123,6 +123,7 @@ export class ProjectChatService {
     return {
       id: record.id,
       projectId: record.projectId,
+      outcomeId: record.outcomeId,
       author: record.member,
       parentMessageId: record.parentMessageId,
       replyTo: record.parent
@@ -150,7 +151,7 @@ export class ProjectChatService {
     const project = await this.projectFor(member, projectId);
     const previous = cursor
       ? await this.prisma.projectMessage.findFirst({
-          where: { id: cursor, projectId },
+          where: { id: cursor, projectId, outcomeId: null },
           select: { id: true, createdAt: true },
         })
       : null;
@@ -160,6 +161,7 @@ export class ProjectChatService {
     const records = await this.prisma.projectMessage.findMany({
       where: {
         projectId,
+        outcomeId: null,
         ...(previous
           ? {
               OR: [
@@ -191,7 +193,12 @@ export class ProjectChatService {
   ) {
     const project = await this.projectFor(member, projectId);
     const rows = await this.prisma.projectMessage.findMany({
-      where: { projectId, deletedAt: null, body: { contains: query.q, mode: 'insensitive' } },
+      where: {
+        projectId,
+        outcomeId: null,
+        deletedAt: null,
+        body: { contains: query.q, mode: 'insensitive' },
+      },
       include: messageInclude,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: 30,
@@ -202,12 +209,12 @@ export class ProjectChatService {
   async context(member: Member, projectId: string, messageId: string) {
     const project = await this.projectFor(member, projectId);
     const target = await this.prisma.projectMessage.findFirst({
-      where: { id: messageId, projectId },
+      where: { id: messageId, projectId, outcomeId: null },
       include: messageInclude,
     });
     if (!target) throw new NotFoundException('Message not found in this Project.');
     const older = await this.prisma.projectMessage.findMany({
-      where: { projectId, OR: [
+      where: { projectId, outcomeId: null, OR: [
         { createdAt: { lt: target.createdAt } },
         { createdAt: target.createdAt, id: { lt: target.id } },
       ] },
@@ -216,7 +223,7 @@ export class ProjectChatService {
       take: 15,
     });
     const newer = await this.prisma.projectMessage.findMany({
-      where: { projectId, OR: [
+      where: { projectId, outcomeId: null, OR: [
         { createdAt: { gt: target.createdAt } },
         { createdAt: target.createdAt, id: { gt: target.id } },
       ] },
@@ -244,7 +251,12 @@ export class ProjectChatService {
       this.requireWrite(member, project);
       if (input.parentMessageId) {
         const parent = await db.projectMessage.findFirst({
-          where: { id: input.parentMessageId, projectId, deletedAt: null },
+          where: {
+            id: input.parentMessageId,
+            projectId,
+            outcomeId: null,
+            deletedAt: null,
+          },
           select: { id: true },
         });
         if (!parent)
@@ -256,6 +268,7 @@ export class ProjectChatService {
       const message = await db.projectMessage.create({
         data: {
           projectId,
+          outcomeId: null,
           memberId: member.id,
           body: input.body,
           parentMessageId: input.parentMessageId,
@@ -291,8 +304,14 @@ export class ProjectChatService {
       const project = await this.projectFor(member, projectId, db);
       this.requireWrite(member, project);
       const original = await db.projectMessage.findFirst({
-        where: { id: messageId, projectId },
-        select: { id: true, memberId: true, editedAt: true, deletedAt: true },
+        where: { id: messageId, projectId, outcomeId: null },
+        select: {
+          id: true,
+          memberId: true,
+          editedAt: true,
+          deletedAt: true,
+          mentions: { select: { memberId: true } },
+        },
       });
       if (!original) throw new NotFoundException('Message not found.');
       if (original.memberId !== member.id)
@@ -303,7 +322,33 @@ export class ProjectChatService {
         throw new ConflictException('This message was edited elsewhere. Cancel and reopen the editor.');
       const mentions = input.mentionMemberIds === undefined
         ? undefined
-        : await this.validatedMentions(db, member, project, projectId, input.body, input.mentionMemberIds);
+        : await this.validatedMentions(
+            db,
+            member,
+            project,
+            projectId,
+            input.body,
+            input.mentionMemberIds,
+          );
+      const previousMentionIds = new Set(
+        original.mentions.map((mention) => mention.memberId),
+      );
+      const nextMentionIds = new Set(
+        mentions?.map((mention) => mention.id) ?? previousMentionIds,
+      );
+      const removedMentionIds = [...previousMentionIds].filter(
+        (id) => !nextMentionIds.has(id),
+      );
+      const retainedMentionIds = [...nextMentionIds].filter((id) =>
+        previousMentionIds.has(id),
+      );
+      const addedMembers = (mentions ?? []).filter(
+        (mention) => !previousMentionIds.has(mention.id),
+      );
+      const notificationData = {
+        messageId,
+        preview: input.body.slice(0, 140),
+      };
       const updated = await db.projectMessage.update({
         where: { id: messageId },
         data: {
@@ -313,6 +358,40 @@ export class ProjectChatService {
         },
         include: messageInclude,
       });
+
+      if (mentions !== undefined) {
+        const eventKey = 'PROJECT_CHAT_MENTION:' + messageId;
+        if (removedMentionIds.length) {
+          await db.notification.deleteMany({
+            where: {
+              recipientMemberId: { in: removedMentionIds },
+              type: 'PROJECT_CHAT_MENTION',
+              eventKey,
+            },
+          });
+        }
+        if (retainedMentionIds.length) {
+          await db.notification.updateMany({
+            where: {
+              recipientMemberId: { in: retainedMentionIds },
+              type: 'PROJECT_CHAT_MENTION',
+              eventKey,
+            },
+            data: { data: notificationData },
+          });
+        }
+        if (addedMembers.length) {
+          await writeNotifications(db, {
+            type: 'PROJECT_CHAT_MENTION',
+            sourceEventId: messageId,
+            actorMemberId: member.id,
+            recipientMemberIds: addedMembers.map((mention) => mention.id),
+            projectId,
+            data: notificationData,
+          });
+        }
+      }
+
       return this.toMessage(updated, member.id);
     });
   }
@@ -329,7 +408,7 @@ export class ProjectChatService {
       const project = await this.projectFor(member, projectId, db);
       this.requireWrite(member, project);
       const original = await db.projectMessage.findFirst({
-        where: { id: messageId, projectId },
+        where: { id: messageId, projectId, outcomeId: null },
         select: { id: true, memberId: true, editedAt: true, deletedAt: true },
       });
       if (!original) throw new NotFoundException('Message not found.');
@@ -340,8 +419,18 @@ export class ProjectChatService {
         throw new ConflictException('Message changed elsewhere. Refresh before deleting.');
       const updated = await db.projectMessage.update({
         where: { id: messageId },
-        data: { body: '[Message deleted]', deletedAt: new Date(), mentions: { deleteMany: {} } },
+        data: {
+          body: '[Message deleted]',
+          deletedAt: new Date(),
+          mentions: { deleteMany: {} },
+        },
         include: messageInclude,
+      });
+      await db.notification.deleteMany({
+        where: {
+          type: 'PROJECT_CHAT_MENTION',
+          eventKey: 'PROJECT_CHAT_MENTION:' + messageId,
+        },
       });
       return this.toMessage(updated, member.id);
     });
