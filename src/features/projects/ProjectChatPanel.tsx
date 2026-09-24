@@ -290,8 +290,12 @@ export function ProjectChatPanel({
           )
           .slice(0, 6);
 
-  const loaded = messages.data?.pages.flatMap((page) => page.items) ?? [];
-  const contextual = context.data?.items ?? [];
+  const loaded: ProjectMessage[] = (
+    messages.data?.pages.flatMap((page) => page.items) ?? []
+  ).map((message) => ProjectMessageSchema.parse(message));
+  const contextual: ProjectMessage[] = (context.data?.items ?? []).map(
+    (message) => ProjectMessageSchema.parse(message),
+  );
   const unique = new Map(
     [...contextual, ...loaded].map((message) => [message.id, message]),
   );
@@ -301,6 +305,8 @@ export function ProjectChatPanel({
   );
   const canWrite = messages.data?.pages[0]?.canWrite ?? false;
   const pageCount = messages.data?.pages.length ?? 0;
+  const firstMessageId = ordered[0]?.id;
+  const lastMessageId = ordered[ordered.length - 1]?.id;
 
   useLayoutEffect(() => {
     const thread = threadRef.current;
@@ -320,7 +326,7 @@ export function ProjectChatPanel({
       thread.scrollTop = thread.scrollHeight;
     }
     initiallyScrolled.current = true;
-  }, [pageCount, ordered.length, ordered[0]?.id, ordered[ordered.length - 1]?.id]);
+  }, [pageCount, ordered.length, firstMessageId, lastMessageId]);
 
   useLayoutEffect(() => {
     if (!targetMessageId || !context.data) return;
@@ -480,7 +486,7 @@ export function ProjectChatPanel({
                   key={result.id}
                   type="button"
                   className="pw-chat-search-result"
-                  onClick={() => jumpToMessage(result)}
+                  onClick={() => jumpToMessage(ProjectMessageSchema.parse(result))}
                 >
                   <span>
                     <strong>{result.author.fullName}</strong>
