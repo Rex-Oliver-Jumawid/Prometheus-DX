@@ -4,6 +4,7 @@ import { ProjectMemberSummarySchema } from './project';
 export const ProjectMessageSchema = z.object({
   id: z.string().uuid(),
   projectId: z.string().uuid(),
+  outcomeId: z.string().uuid().nullable().default(null),
   author: ProjectMemberSummarySchema,
   parentMessageId: z.string().uuid().nullable(),
   replyTo: z.object({
