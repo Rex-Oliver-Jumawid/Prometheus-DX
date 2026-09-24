@@ -143,8 +143,7 @@ Displayed metrics can be traced back to their source records without a parallel 
 
 Formal Phase 8 acceptance is still pending.
 
-The Home Quick Access Reports control currently remains disabled even though the `/reports` route is now implemented.
-That is an integration follow-up rather than evidence that Reports & Analytics itself is missing.
+The Home Quick Access Reports control now routes to the implemented `/reports` destination.
 
 Later VisiWork collaboration behavior is covered by Phase 9 and should not be used to silently expand the Phase 8 completion gate.
 
@@ -170,7 +169,7 @@ Reconcile each report total with controlled source records.
 
 Run regression for navigation, Projects, Schedule, Team, Home, and any shared queries touched by Phase 8.
 
-Fix the stale Home Reports shortcut before Phase 8 closure or explicitly record why it is deferred.
+Keep Home Quick Access routing in the Phase 8 navigation regression now that the Reports shortcut is active.
 
 ## Phase Exit Result
 
