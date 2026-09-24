@@ -8,9 +8,12 @@ Persistent records remain in PostgreSQL.
 
 Presence is not a substitute for Work Sessions.
 
-Collaboration currently spans VisiWork General and Department chat, with Project Chat still part of the Phase 9 target scope.
+Collaboration currently spans VisiWork General and Department chat together with Project Chat.
 
-Chat permissions should follow the final approved room-specific communication rules.
+Project Chat is company-visible for reading, while general Project Chat and announcement writes are restricted to the Project Lead or Project Members.
+Only the Project Lead may pin or unpin Project announcements.
+
+Room permissions must continue to follow the approved room-specific communication rules.
 
 Automatic polling or Supabase Realtime may be used where live behavior has clear value, but persistent records remain authoritative.
 
