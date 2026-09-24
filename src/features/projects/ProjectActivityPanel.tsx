@@ -177,8 +177,17 @@ export function ProjectActivityPanel({
           <p>Review project decisions, submissions, revisions, dependencies, and member activity in one history.</p>
         </div>
         <div className="pw-activity-summary" aria-live="polite">
-          <strong>{items.length}{feed.hasNextPage ? '+' : ''}</strong>
-          <span>{feed.hasNextPage ? 'loaded events' : 'audit events'}</span>
+          {feed.isPending ? (
+            <div aria-hidden="true">
+              <span className="pw-chat-skeleton-line pw-activity-skeleton-count" />
+              <span className="pw-chat-skeleton-line pw-activity-skeleton-count-label" />
+            </div>
+          ) : (
+            <>
+              <strong>{items.length}{feed.hasNextPage ? '+' : ''}</strong>
+              <span>{feed.hasNextPage ? 'loaded events' : 'audit events'}</span>
+            </>
+          )}
         </div>
       </header>
 
@@ -208,7 +217,21 @@ export function ProjectActivityPanel({
       </div>
 
       {feed.isPending ? (
-        <p role="status" className="pw-collaboration-state">Loading project activity…</p>
+        <div className="pw-activity-skeleton" role="status" aria-label="Loading project activity">
+          <span className="sr-only">Loading project activity...</span>
+          <ol className="pw-activity-timeline" aria-hidden="true">
+            {[0, 1, 2, 3].map((index) => (
+              <li className="pw-activity-skeleton-entry" key={index}>
+                <span className="pw-chat-skeleton-line pw-activity-skeleton-icon" />
+                <div className="pw-activity-skeleton-copy">
+                  <span className="pw-chat-skeleton-line pw-activity-skeleton-label" />
+                  <span className="pw-chat-skeleton-line pw-activity-skeleton-title" />
+                  <span className="pw-chat-skeleton-line pw-activity-skeleton-detail" />
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
       ) : feed.isError && items.length === 0 ? (
         <div className="pw-collaboration-state" role="alert">
           <strong>Project activity could not be loaded.</strong>
