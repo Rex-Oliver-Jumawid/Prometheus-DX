@@ -42,7 +42,11 @@ export class RegistryService {
 
   async listDepartments(): Promise<RegistryDepartment[]> {
     const departments = await this.prisma.department.findMany({
-      include: { _count: { select: { members: true } } },
+      include: {
+        _count: {
+          select: { members: true, projects: true, outcomes: true },
+        },
+      },
       orderBy: [{ name: 'asc' }, { createdAt: 'asc' }],
     });
 
@@ -58,7 +62,11 @@ export class RegistryService {
         shortLabel: input.shortLabel || input.name.slice(0, 8),
         description: input.description,
       },
-      include: { _count: { select: { members: true } } },
+      include: {
+        _count: {
+          select: { members: true, projects: true, outcomes: true },
+        },
+      },
     });
 
     return this.toDepartment(department);
@@ -81,7 +89,11 @@ export class RegistryService {
         shortLabel: input.shortLabel || input.name.slice(0, 8),
         description: input.description,
       },
-      include: { _count: { select: { members: true } } },
+      include: {
+        _count: {
+          select: { members: true, projects: true, outcomes: true },
+        },
+      },
     });
 
     return this.toDepartment(updated);
@@ -108,8 +120,24 @@ export class RegistryService {
       department._count.projects > 0 ||
       department._count.outcomes > 0
     ) {
+      const references: string[] = [];
+      if (department._count.members > 0) {
+        references.push(
+          `${department._count.members} ${department._count.members === 1 ? 'member' : 'members'}`,
+        );
+      }
+      if (department._count.projects > 0) {
+        references.push(
+          `${department._count.projects} ${department._count.projects === 1 ? 'project' : 'projects'}`,
+        );
+      }
+      if (department._count.outcomes > 0) {
+        references.push(
+          `${department._count.outcomes} ${department._count.outcomes === 1 ? 'outcome' : 'outcomes'}`,
+        );
+      }
       throw new ConflictException(
-        'This department is still in use. Reassign its members and remove it from projects and outcomes before deleting it.',
+        `This department is still in use: ${references.join(', ')}. Reassign or remove these references before deleting it.`,
       );
     }
 
@@ -315,7 +343,7 @@ export class RegistryService {
     description: string | null;
     createdAt: Date;
     updatedAt: Date;
-    _count: { members: number };
+    _count: { members: number; projects: number; outcomes: number };
   }): RegistryDepartment {
     return {
       id: department.id,
@@ -323,6 +351,8 @@ export class RegistryService {
       shortLabel: department.shortLabel,
       description: department.description,
       memberCount: department._count.members,
+      projectCount: department._count.projects,
+      outcomeCount: department._count.outcomes,
       createdAt: department.createdAt.toISOString(),
       updatedAt: department.updatedAt.toISOString(),
     };

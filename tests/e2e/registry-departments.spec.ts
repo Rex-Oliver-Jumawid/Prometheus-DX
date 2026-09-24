@@ -110,8 +110,18 @@ test('administrator creates and edits a department with persistence', async ({
     .getByRole('button', { name: 'Create department', exact: true })
     .click();
 
+  const createdDepartment = page.getByRole('button', {
+    name: `Edit ${originalName}`,
+  });
+  await expect(createdDepartment).toBeVisible();
   await expect(
-    page.getByRole('button', { name: `Edit ${originalName}` }),
+    createdDepartment.getByText('0 members', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    createdDepartment.getByText('0 projects', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    createdDepartment.getByText('0 outcomes', { exact: true }),
   ).toBeVisible();
   await expect(page.getByText(originalShortLabel, { exact: true })).toBeVisible();
   await expect(page.getByText(originalName, { exact: true })).toHaveCount(0);
@@ -149,9 +159,11 @@ test('administrator creates and edits a department with persistence', async ({
   await expect(page.getByText(updatedShortLabel, { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: `Remove ${updatedName}` }).click();
-  await expect(
-    page.getByRole('dialog', { name: 'Remove department' }),
-  ).toBeVisible();
+  const removeDialog = page.getByRole('dialog', { name: 'Remove department' });
+  await expect(removeDialog).toBeVisible();
+  await expect(removeDialog.getByText('0 members', { exact: true })).toBeVisible();
+  await expect(removeDialog.getByText('0 projects', { exact: true })).toBeVisible();
+  await expect(removeDialog.getByText('0 outcomes', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(
     page.getByRole('button', { name: `Edit ${updatedName}` }),
