@@ -82,7 +82,7 @@ export function ProjectOverviewPage() {
       return next;
     });
   };
-  const { session } = useAuth();
+  const { member, session } = useAuth();
   const queryClient = useQueryClient();
   const accessToken = session?.access_token;
   const detailKey = projectKeys.detail(projectId ?? 'missing-project');
@@ -265,6 +265,7 @@ export function ProjectOverviewPage() {
               projectId={projectId!}
               projectName={value.name}
               projectLead={value.lead}
+              currentMemberId={member?.id}
               accessToken={accessToken}
             />
             <aside className="pw-chat-side-stack" aria-label="Project chat sidebar">
