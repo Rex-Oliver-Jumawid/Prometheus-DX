@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   ProjectStatusUpdateResponseSchema,
   UpdateProjectStatusRequestSchema,
@@ -9,6 +9,9 @@ import {
 import { useAuth } from '../auth/auth-context';
 import { ApiRequestError, apiFetch } from '../../lib/api';
 import { ProjectMembersPanel } from './ProjectMembersPanel';
+import { ProjectActivityPanel } from './ProjectActivityPanel';
+import { ProjectChatPanel } from './ProjectChatPanel';
+import { ProjectAnnouncementsPanel } from './ProjectAnnouncementsPanel';
 import { ProjectWorkflow } from './ProjectWorkflow';
 import {
   projectDetailQuery,
@@ -65,7 +68,21 @@ function withProjectStatus(
 
 export function ProjectOverviewPage() {
   const { projectId, outcomeId } = useParams();
-  const { session } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') === 'activity'
+    ? 'activity'
+    : searchParams.get('tab') === 'chat'
+      ? 'chat'
+      : 'content';
+  const chooseTab = (tab: 'content' | 'chat' | 'activity') => {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      if (tab === 'content') next.delete('tab');
+      else next.set('tab', tab);
+      return next;
+    });
+  };
+  const { member, session } = useAuth();
   const queryClient = useQueryClient();
   const accessToken = session?.access_token;
   const detailKey = projectKeys.detail(projectId ?? 'missing-project');
@@ -214,6 +231,76 @@ export function ProjectOverviewPage() {
     ? errorMessage(updateStatus.error)
     : null;
 
+  if (!outcomeId && activeTab === 'chat') {
+    return (
+      <div
+        id="pwProjectPage"
+        className="pw-project-page pw-project-page--chat"
+        aria-labelledby="pwChatPageTitle"
+      >
+        <div className="tabs-wrap pw-tabs-wrap">
+          <nav className="tabs pw-tabs" role="tablist" aria-label="Project sections">
+            <button className="tab-btn" type="button" role="tab" id="pw-content-tab"
+              aria-selected={false} aria-controls="pw-content-panel"
+              onClick={() => chooseTab('content')}>Content</button>
+            <button className="tab-btn active" type="button" role="tab" id="pw-chat-tab"
+              aria-selected={true} aria-controls="pw-chat-panel">Chat</button>
+            <button className="tab-btn" type="button" role="tab" id="pw-activity-tab"
+              aria-selected={false} aria-controls="pw-activity-panel"
+              onClick={() => chooseTab('activity')}>Activity</button>
+          </nav>
+        </div>
+        <div className="pw-chat-page-heading">
+          <div>
+            <h1 id="pwChatPageTitle">Project chat</h1>
+            <p>Local conversation for {value.name}.</p>
+          </div>
+          <nav className="pw-breadcrumb-pill" aria-label="Breadcrumb">
+            <Link to="/projects" className="pw-breadcrumb-link">
+              Projects
+            </Link>
+            <span className="pw-breadcrumb-sep" aria-hidden="true">/</span>
+            <Link
+              to={`/projects/${projectId}`}
+              className="pw-breadcrumb-current pw-chat-project-link"
+              title={value.name}
+            >
+              {value.name}
+            </Link>
+          </nav>
+        </div>
+
+        <div id="pw-chat-panel" role="tabpanel" aria-label="Project chat">
+          <div className="pw-chat-workspace">
+            <ProjectChatPanel
+              key={projectId}
+              projectId={projectId!}
+              projectName={value.name}
+              projectLead={value.lead}
+              currentMemberId={member?.id}
+              accessToken={accessToken}
+            />
+            <aside className="pw-chat-side-stack" aria-label="Project chat sidebar">
+              <ProjectAnnouncementsPanel
+                projectId={projectId!}
+                accessToken={accessToken}
+              />
+              <div className="pw-chat-sidebar">
+                <ProjectMembersPanel
+                  key={projectId}
+                  projectId={projectId!}
+                  projectLead={value.lead}
+                  accessToken={accessToken}
+                  compact
+                />
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       id="pwProjectPage"
@@ -221,15 +308,10 @@ export function ProjectOverviewPage() {
       aria-labelledby="pwProjectTitle"
     >
       {!outcomeId && (
-        <Link
-          to="/projects"
-          className="pw-back-nav pw-project-back-nav"
-          aria-label="Back to Projects list"
-        >
+        <Link to="/projects" className="pw-back-nav pw-project-back-nav" aria-label="Back to Projects list">
           ← Back to Projects
         </Link>
       )}
-
       <div className="pw-top-bar">
         {(() => {
           if (outcomeId && workflow.data) {
@@ -394,32 +476,65 @@ export function ProjectOverviewPage() {
         </div>
       </section>
 
-      <div className="tabs-wrap pw-tabs-wrap">
-        <nav className="tabs pw-tabs" aria-label="Project sections">
-          <button className="tab-btn active" type="button">
-            Content
-          </button>
-          <button className="tab-btn" type="button">
-            Chat <span className="tab-badge">10</span>
-          </button>
-          <button className="tab-btn" type="button">
-            Activity <span className="tab-badge">6</span>
-          </button>
-        </nav>
-      </div>
-
-      <ProjectWorkflow
-        projectId={projectId!}
-        outcomeId={outcomeId}
-        accessToken={accessToken}
-        isLead={value.lead.id === session?.user?.id || value.canChangeStatus}
-      />
-
       {!outcomeId && (
-        <ProjectMembersPanel
+        <div className="tabs-wrap pw-tabs-wrap">
+          <nav className="tabs pw-tabs" role="tablist" aria-label="Project sections">
+            <button
+              className={`tab-btn ${activeTab === 'content' ? 'active' : ''}`}
+              type="button"
+              role="tab"
+              id="pw-content-tab"
+              aria-selected={activeTab === 'content'}
+              aria-controls="pw-content-panel"
+              onClick={() => chooseTab('content')}
+            >
+              Content
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'chat' ? 'active' : ''}`}
+              type="button"
+              role="tab"
+              id="pw-chat-tab"
+              aria-selected={activeTab === 'chat'}
+              aria-controls="pw-chat-panel"
+              onClick={() => chooseTab('chat')}
+            >
+              Chat
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'activity' ? 'active' : ''}`}
+              type="button"
+              role="tab"
+              id="pw-activity-tab"
+              aria-selected={activeTab === 'activity'}
+              aria-controls="pw-activity-panel"
+              onClick={() => chooseTab('activity')}
+            >
+              Activity
+            </button>
+          </nav>
+        </div>
+      )}
+
+      {outcomeId ? (
+        <ProjectWorkflow
           projectId={projectId!}
+          outcomeId={outcomeId}
           accessToken={accessToken}
+          isLead={workflow.data?.canManageStructure ?? false}
         />
+      ) : activeTab === 'activity' ? (
+        <div id="pw-activity-panel" role="tabpanel" aria-labelledby="pw-activity-tab">
+          <ProjectActivityPanel key={projectId} projectId={projectId!} accessToken={accessToken} />
+        </div>
+      ) : (
+        <div id="pw-content-panel" role="tabpanel" aria-labelledby="pw-content-tab">
+          <ProjectWorkflow
+            projectId={projectId!}
+            accessToken={accessToken}
+            isLead={workflow.data?.canManageStructure ?? false}
+          />
+        </div>
       )}
     </div>
   );
