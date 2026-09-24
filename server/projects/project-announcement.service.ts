@@ -27,12 +27,19 @@ export class ProjectAnnouncementService {
         id: true,
         leadMemberId: true,
         archivedAt: true,
+        members: {
+          where: { memberId: member.id },
+          select: { memberId: true },
+        },
       },
     });
     if (!project) throw new NotFoundException('Project not found.');
     return {
       ...project,
       canManage: project.leadMemberId === member.id && project.archivedAt === null,
+      canPost:
+        project.archivedAt === null &&
+        (project.leadMemberId === member.id || project.members.length > 0),
     };
   }
 
@@ -74,6 +81,7 @@ export class ProjectAnnouncementService {
     return {
       items: rows.map((row) => this.toAnnouncement(row)),
       canManage: project.canManage,
+      canPost: project.canPost,
     };
   }
 
@@ -86,13 +94,21 @@ export class ProjectAnnouncementService {
       await db.$queryRaw`SELECT id FROM projects WHERE id = ${projectId}::uuid FOR UPDATE`;
       const project = await db.project.findUnique({
         where: { id: projectId },
-        select: { id: true, leadMemberId: true, archivedAt: true },
+        select: {
+          id: true,
+          leadMemberId: true,
+          archivedAt: true,
+          members: {
+            where: { memberId: member.id },
+            select: { memberId: true },
+          },
+        },
       });
       if (!project) throw new NotFoundException('Project not found.');
       if (project.archivedAt)
         throw new ConflictException('Archived Projects are read-only.');
-      if (project.leadMemberId !== member.id)
-        throw new ForbiddenException('Only the Project Lead may post announcements.');
+      if (project.leadMemberId !== member.id && project.members.length === 0)
+        throw new ForbiddenException('Only Project Members and the Project Lead may post announcements.');
 
       const announcement = await db.projectAnnouncement.create({
         data: {
