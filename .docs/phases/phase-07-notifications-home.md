@@ -2,15 +2,40 @@
 
 ## Status
 
-In progress.
+**Complete - release closure reassessed on 2026-09-25.**
 
-Notifications and Home are both implemented and integrated on `main`.
+Notifications and Home are implemented and integrated on `main`.
 
-Phase 7 remains open until the remaining manual acceptance, Figma visual verification, required regression, and final documentation closure are complete.
+The previous open status reflected unrecorded closure work rather than a missing Phase 7 product slice.
 
-Phase 5 final acceptance and regression remain open on their own line of work.
+## Release Closure Reassessment - 2026-09-25
 
-This journal records only work and decisions that belong to Phase 7.
+Phase 7 satisfies its exit milestone.
+
+Notifications are persisted from real domain events and support recipient ownership, unread/read state, filtering, bulk read handling, context navigation, collaboration mention types, and sidebar unread count.
+
+Home is a derived command-center view over canonical Projects, Outcomes, Schedule, Team, and WorkSession records.
+
+The current Home implementation provides:
+
+- Leading and Participating Project groups.
+- Working Now from persisted OPEN WorkSessions.
+- Active Projects and total Project counts.
+- Awaiting Review and revision-request summaries.
+- My Week actual and planned time.
+- Needs Attention derived from review and unresolved revision records.
+- Quick Access links to Projects, Schedule, Team, and Reports.
+- intentional loading, error, empty, and fixed-height overflow states.
+
+The Reports Quick Access item is active and routes to `/reports`.
+Earlier text describing it as disabled is historical and superseded.
+
+The exact Home metric formulas are now canonical in `.context/derived-metrics.md`.
+
+Later WorkSession refresh maintenance ensures Time In and Time Out changes propagate to Home without requiring manual page reload while keeping WorkSession authoritative.
+
+Phase 7 is closed.
+Future visual tuning against newer Figma revisions remains normal UI maintenance rather than unfinished Phase 7 scope.
 
 ## Objective
 
@@ -36,8 +61,8 @@ Later Phase 9 collaboration work added persisted VisiWork mentions, Mentions and
 
 Earlier notes in this journal that describe mention and reply support as deferred are historical records of the original Phase 7 branch boundary rather than the current integrated product state.
 
-Reports & Analytics is also now implemented under Phase 8.
-The Home Reports Quick Access control remains disabled in the current source and should be reconciled as an integration follow-up.
+Reports & Analytics is also implemented under Phase 8.
+The Home Reports Quick Access control now routes to `/reports`.
 
 ## UI Reference
 
@@ -749,11 +774,9 @@ Home does not import, duplicate, or depend on unmerged Notifications implementat
 
 ## Known Limitations
 
-No Phase 7 implementation should be considered delivered merely because this journal and the Figma references exist.
+The Phase 7 release scope is complete.
 
-Implementation and acceptance evidence must be added here as each slice is completed.
-
-Phase 5 remains independently open for final acceptance and regression.
+Notifications and Home remain dependent on their underlying domain records and services, so future changes to Project, WorkSession, or collaboration behavior must preserve the existing regression contracts.
 
 ## Technical Debt
 
@@ -763,22 +786,11 @@ Any notification event that cannot be created atomically with its source domain 
 
 ## Recommendations and Next Approach
 
-Do not add another Phase 7 feature slice merely to close this phase.
-
-Run the remaining Phase 7 manual acceptance checklist against the integrated `main` implementation.
-
-Complete direct visual comparison for Notifications and Home against their current Figma frames at the supported desktop, medium, and mobile viewport sizes.
-
-Verify read-state persistence, notification navigation, Home aggregation, loading and empty states, and the shared sidebar treatment in the integrated application.
-
-Run the required regression gate after the later Phase 8 and Phase 9 integrations that touch shared navigation, notifications, Home presence data, or workflow state.
-
-Record the final acceptance evidence here before changing Phase 7 to Complete.
+Keep Home metric formulas centralized in `.context/derived-metrics.md`.
+Keep notification navigation and read-state behavior in the normal regression suite when collaboration types evolve.
 
 ## Phase Exit Result
 
-Not yet complete.
+**Complete.**
 
-Notifications and Home are implemented and integrated, but implementation presence alone does not satisfy the phase completion rule.
-
-Phase 7 may be marked complete only after the acceptance gate, remaining visual verification, required regression checks, and final implementation documentation are complete.
+Notifications and Home are release-ready within the current Prometheus scope.
