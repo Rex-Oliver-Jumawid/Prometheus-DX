@@ -7,6 +7,7 @@ import { ProjectsModule } from './projects/projects.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { TeamModule } from './team/team.module';
 import { WorkSessionsModule } from './work-sessions/work-sessions.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { HomeModule } from './home/home.module';
 import { VisiWorkModule } from './visiwork/visiwork.module';
 
@@ -20,6 +21,7 @@ import { VisiWorkModule } from './visiwork/visiwork.module';
     ScheduleModule,
     WorkSessionsModule,
     TeamModule,
+    NotificationsModule,
     HomeModule,
     VisiWorkModule,
   ],
