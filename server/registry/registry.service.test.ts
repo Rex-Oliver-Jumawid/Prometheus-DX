@@ -84,17 +84,36 @@ describe('RegistryService invitation behavior', () => {
       department: {
         findMany: vi
           .fn()
-          .mockResolvedValue([{ ...department, _count: { members: 1 } }]),
+          .mockResolvedValue([
+            {
+              ...department,
+              _count: { members: 1, projects: 2, outcomes: 3 },
+            },
+          ]),
       },
       member: { findMany: vi.fn().mockResolvedValue([member]) },
     } as unknown as PrismaService;
     const service = new RegistryService(database, delivery());
 
     await expect(service.getOverview()).resolves.toMatchObject({
-      departments: [{ id: department.id, memberCount: 1 }],
+      departments: [
+        {
+          id: department.id,
+          memberCount: 1,
+          projectCount: 2,
+          outcomeCount: 3,
+        },
+      ],
       members: [{ id: member.id, departmentId: department.id }],
     });
-    expect(database.department.findMany).toHaveBeenCalledOnce();
+    expect(database.department.findMany).toHaveBeenCalledWith({
+      include: {
+        _count: {
+          select: { members: true, projects: true, outcomes: true },
+        },
+      },
+      orderBy: [{ name: 'asc' }, { createdAt: 'asc' }],
+    });
     expect(database.member.findMany).toHaveBeenCalledOnce();
   });
 
