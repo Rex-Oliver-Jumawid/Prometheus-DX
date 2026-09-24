@@ -78,6 +78,11 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
+  if (!hasCredentials) {
+    await prisma.$disconnect();
+    return;
+  }
+
   const projectIds = [
     createdProjectId,
     unrelatedProjectId,
