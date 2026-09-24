@@ -104,7 +104,11 @@ export function TeamPage() {
         <TeamHeader />
         <div className="team-state error" role="alert">
           <strong>Team could not be loaded</strong>
-          <p>{team.error.message}</p>
+          <p>
+            {team.error instanceof Error
+              ? team.error.message
+              : 'Current Team data is unavailable.'}
+          </p>
           <button type="button" onClick={() => void team.refetch()}>
             Try again
           </button>
