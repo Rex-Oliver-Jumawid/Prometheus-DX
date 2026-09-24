@@ -115,6 +115,25 @@ test('Chat persists a reply and author edit across reload', async ({ page }) => 
   await expect(page.getByText('Persistent edited reply')).toBeVisible();
   await page.reload();
   await expect(page.getByText('Persistent edited reply')).toBeVisible();
+  // The Figma bubble places the timestamp below the message, never over its author.
+  const bubble = page.locator('.pw-chat-message').filter({
+    hasText: 'Persistent edited reply',
+  }).first();
+  const [authorBounds, bodyBounds, timeBounds, bubbleBounds] = await Promise.all([
+    bubble.locator('.pw-chat-message-meta strong').boundingBox(),
+    bubble.locator('.pw-chat-message-text').boundingBox(),
+    bubble.locator(':scope > time.pw-chat-message-time').boundingBox(),
+    bubble.boundingBox(),
+  ]);
+  expect(authorBounds).not.toBeNull();
+  expect(bodyBounds).not.toBeNull();
+  expect(timeBounds).not.toBeNull();
+  expect(bubbleBounds).not.toBeNull();
+  expect(timeBounds!.y).toBeGreaterThanOrEqual(bodyBounds!.y + bodyBounds!.height - 1);
+  expect(timeBounds!.y).toBeGreaterThan(authorBounds!.y + authorBounds!.height);
+  expect(timeBounds!.y + timeBounds!.height).toBeLessThanOrEqual(
+    bubbleBounds!.y + bubbleBounds!.height + 1,
+  );
   const stored = await prisma.projectMessage.findFirstOrThrow({
     where: { projectId, body: 'Persistent edited reply' },
   });

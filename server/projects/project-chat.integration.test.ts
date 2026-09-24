@@ -5,6 +5,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PrismaService } from '../database/prisma.service';
 import { ProjectChatService } from './project-chat.service';
 import { ProjectAnnouncementService } from './project-announcement.service';
+import { ProjectActivityService } from './project-activity.service';
+import { ProjectActivityPageSchema } from '../../shared/contracts/project-activity';
 import { ProjectMessagePageSchema } from '../../shared/contracts/project-chat';
 import { ProjectAnnouncementsResponseSchema } from '../../shared/contracts/project-announcement';
 
@@ -93,6 +95,50 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
       canManage: false,
       canPost: false,
     });
+  });
+
+  it('enforces Lead-wide versus Member-only activity queries against real PostgreSQL', async () => {
+    const leadLogId = randomUUID();
+    const memberLogId = randomUUID();
+    const foreignLogId = randomUUID();
+    await db.activityLog.createMany({
+      data: [
+        {
+          id: leadLogId, projectId, actorMemberId: lead.id,
+          entityType: 'Feature', entityId: randomUUID(),
+          action: 'FEATURE_CREATED', metadata: { title: 'Lead feature' },
+        },
+        {
+          id: memberLogId, projectId, actorMemberId: participant.id,
+          entityType: 'Feature', entityId: randomUUID(),
+          action: 'FEATURE_CREATED', metadata: { title: 'Member feature' },
+        },
+        {
+          id: foreignLogId, projectId: secondProjectId, actorMemberId: participant.id,
+          entityType: 'Feature', entityId: randomUUID(),
+          action: 'FEATURE_CREATED', metadata: { title: 'Another Project' },
+        },
+      ],
+    });
+    const activity = new ProjectActivityService(db);
+    const [leadView, memberView, outsiderView] = await Promise.all([
+      activity.list(lead, projectId),
+      activity.list(participant, projectId),
+      activity.list(viewer, projectId),
+    ]);
+    expect(ProjectActivityPageSchema.parse(leadView).scope).toBe('PROJECT');
+    expect(leadView.items.map((item) => item.id)).toEqual(
+      expect.arrayContaining([leadLogId, memberLogId]),
+    );
+    expect(ProjectActivityPageSchema.parse(memberView)).toMatchObject({
+      scope: 'PERSONAL',
+      items: [{ id: memberLogId, actor: { id: participant.id }, outcomeTitle: null }],
+      nextCursor: null,
+    });
+    expect(outsiderView.scope).toBe('PERSONAL');
+    expect(outsiderView.items).toEqual([]);
+    await expect(activity.list(participant, projectId, leadLogId))
+      .rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('persists replies, restricts author edits and isolates other Project messages', async () => {
