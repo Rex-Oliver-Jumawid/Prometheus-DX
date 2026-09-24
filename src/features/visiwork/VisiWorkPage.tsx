@@ -508,7 +508,7 @@ function RoomPanel({
                   key={result.id}
                   type="button"
                   className="visiwork-chat-search-result"
-                  onClick={() => jumpToMessage(result)}
+                  onClick={() => jumpToMessage(VisiWorkMessageSchema.parse(result))}
                 >
                   <span>
                     <strong>{result.author.fullName}</strong>
