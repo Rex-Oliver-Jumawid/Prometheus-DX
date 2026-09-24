@@ -146,7 +146,7 @@ model Member {
   visiworkMessages            VisiWorkMessage[]
   visiworkMentions            VisiWorkMessageMention[]
   projectMessages             ProjectMessage[]
-  projectMessageMentions      ProjectMessageMention[]
+  projectMessageMentions      ProjectMessageMention[] @relation("ProjectMessageMentionTarget")
   projectAnnouncements        ProjectAnnouncement[]
   receivedNotifications       Notification[]               @relation("NotificationRecipient")
   actedNotifications          Notification[]               @relation("NotificationActor")
