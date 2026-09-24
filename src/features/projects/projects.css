@@ -4114,60 +4114,37 @@
 
 
 
-/* Dedicated Project Chat frame: matches the chat reference rather than the full overview card. */
-.pw-project-page--chat {
-  gap: 8px;
-}
-
+/* Project Chat shares the same Workspace header, breadcrumb, and tabs as Content. */
 .pw-chat-page-heading {
-  min-height: 46px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
-  padding: 1px 0 4px;
+  min-height: 46px;
+  gap: 16px;
+  padding: 1px 0 11px;
 }
 
 .pw-chat-page-heading > div {
   min-width: 0;
 }
 
-.pw-chat-page-heading h1 {
+.pw-chat-page-heading h2 {
   margin: 0;
   color: #29221f;
   font-family: Inter, system-ui, -apple-system, sans-serif;
   font-size: 16px;
   font-weight: 760;
   line-height: 1.25;
-  letter-spacing: -.015em;
+  letter-spacing: -0.015em;
 }
 
 .pw-chat-page-heading p {
-  margin: 3px 0 0;
+  margin: 4px 0 0;
   color: #968981;
-  font-size: 9.5px;
+  font-size: 10px;
   line-height: 1.4;
-}
-
-.pw-chat-page-heading .pw-breadcrumb-pill {
-  margin-top: 0;
-  padding: 7px 13px;
-  background: rgba(255,255,255,.78);
-  font-size: 9px;
 }
 
 .pw-chat-project-link {
   text-decoration: none;
-}
-
-@media (max-width: 620px) {
-  .pw-chat-page-heading {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 7px;
-  }
-
-  .pw-chat-page-heading .pw-breadcrumb-pill {
-    align-self: flex-start;
-  }
 }
