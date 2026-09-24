@@ -32,17 +32,25 @@ Implement Stages, Outcomes, Outcome Membership, derived Project Membership, Proj
 
 Features, Tasks, submissions, review actions, acceptance transitions, reopening, and work-delivery logic remain Phase 5 scope.
 
+## Permission Amendment - 2026-09-25
+
+The original Phase 4 acceptance established a narrower `CAN_EDIT` permission.
+A later product decision expanded `CAN_EDIT` into Project editor authority.
+Historical test evidence below remains a record of the original Phase 4 closure, while current authorization follows the amended rules documented here and in the canonical context files.
+
 ## Authorization Model
 
 - Every active authorized Prometheus Member may read every Project workflow.
-- Only the persisted Project Lead may create or manage Stages and Outcomes.
-- Administrator role and Project creator history do not grant Project Lead authority.
+- The persisted Project Lead or a Project Member with `CAN_EDIT` may create or manage Stages and Outcomes.
+- Administrator role and Project creator history do not grant Project editor authority by themselves.
 - Any active authorized Member may join a non-accepted Outcome.
 - Outcome Membership cannot be left or removed.
 - Joining an Outcome creates the missing Project Membership atomically with default `CAN_VIEW` access.
 - Only the persisted Project Lead may change Project Member access.
 - Project Lead or a Project Member with `CAN_EDIT` may change Project status.
-- `CAN_EDIT` grants no Stage, Outcome, Project Member access-management, Registry, or Project Lead authority.
+- `CAN_EDIT` also grants Stage and Outcome management authority.
+- Project Member access management remains Project Lead-only.
+- `CAN_EDIT` grants no Registry authority and does not make the Member the Project Lead.
 
 ## Slice Plan
 
@@ -144,7 +152,8 @@ Project status authorization now permits the Project Lead or a Project Member wi
 
 A Project Member with `CAN_VIEW` remains unable to change Project status.
 
-`CAN_EDIT` remains intentionally narrow and does not grant Stage creation/editing, Outcome creation/editing, Project Member access management, Registry access, or Project Lead identity.
+`CAN_EDIT` now represents Project editor authority and grants Stage/Outcome creation and editing in addition to Project status authority.
+Project Member access management and Registry access remain separate, and `CAN_EDIT` does not grant Project Lead identity.
 
 Administrator status alone does not grant project-specific authority.
 

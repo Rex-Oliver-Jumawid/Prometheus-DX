@@ -10,7 +10,7 @@ Each outcome has one shared submission history.
 
 Multiple submissions may be under review simultaneously.
 
-Only the Project Lead may request revision, accept an outcome, reopen an outcome, or make Project Lead dependency decisions.
+The Project Lead or a Project Member with `CAN_EDIT` may review submissions, request or resolve revision, accept or reopen an Outcome, and override dependencies.
 
 Acceptance applies to the outcome as a whole.
 
@@ -111,13 +111,24 @@ Apply these checks to every page in this phase:
 | F5-15 | Ordering | Add several submissions. | Timestamps and ordering are correct. |
 | F5-16 | Double submit | Rapidly press Submit twice. | Only one intended submission is created. |
 
+## CAN_EDIT Project Editor Tests
+
+| ID | Test | Steps | Expected Result |
+| --- | --- | --- | --- |
+| F5-E01 | CAN_EDIT reviews submission | Grant CAN_EDIT to a Project Member and open an Outcome with submitted work. | Review controls are visible and the review mutation succeeds. |
+| F5-E02 | CAN_EDIT requests revision | Editable Project Member requests revision with valid feedback. | Outcome enters NEEDS_REVISION and history records the editor. |
+| F5-E03 | CAN_EDIT accepts Outcome | Editable Project Member verifies criteria and accepts the Outcome. | Outcome becomes ACCEPTED and acceptance history credits current Outcome Members. |
+| F5-E04 | CAN_EDIT reopens Outcome | Editable Project Member reopens an accepted Outcome. | Outcome returns to OPEN and prior acceptance history remains preserved. |
+| F5-E05 | CAN_EDIT overrides dependency | Editable Project Member provides a valid reason for one unresolved dependency. | Only that dependency edge is overridden and the audit trail records the editor. |
+| F5-E06 | CAN_VIEW remains denied | Repeat Project editor mutations as CAN_VIEW. | Backend returns forbidden and no decision records are written. |
+
 ## Review and Revision Tests
 
 | ID | Test | Steps | Expected Result |
 | --- | --- | --- | --- |
 | F5-17 | Lead opens history | Project Lead opens submission history. | All shared submissions are visible. |
-| F5-18 | Non-Lead review | Member attempts Project Lead review action. | Denied. |
-| F5-19 | Admin non-Lead review | Admin who is not Lead attempts review. | Denied. |
+| F5-18 | Non-editor review | Member without CAN_EDIT attempts a Project review action. | Denied. |
+| F5-19 | Admin non-editor review | Admin who is neither Lead nor CAN_EDIT attempts review. | Denied. |
 | F5-20 | Request revision | Lead requests revision with feedback. | Outcome enters `NEEDS_REVISION` and feedback is preserved. |
 | F5-21 | Member reads feedback | Outcome Member opens outcome. | Review feedback is visible. |
 | F5-22 | New submission during revision | Member submits revised work. | New entry is added to same history. |
@@ -148,7 +159,7 @@ Apply these checks to every page in this phase:
 | F5-37 | Blocked work or submission | Attempt action that dependency rule blocks. | Action is denied with understandable state. |
 | F5-38 | Resolve prerequisite | Resolve or accept prerequisite according to rule. | Dependent outcome unlocks. |
 | F5-39 | Refresh unlock state | Refresh. | Unlock remains correct. |
-| F5-40 | Non-Lead resolves dependency | Unauthorized user attempts Project Lead dependency action. | Denied. |
+| F5-40 | Non-editor resolves dependency | User without Project editor authority attempts dependency override. | Denied. |
 
 ## Critical Prometheus Core E2E Test
 
@@ -179,7 +190,7 @@ Administrator creates or authorizes Member A and Member B
 - [ ] Only Outcome Members can perform Outcome Member work.
 - [ ] Shared submission history behaves correctly.
 - [ ] Multiple submissions can be under review simultaneously.
-- [ ] Project Lead-only review authority is enforced.
+- [ ] Project review authority is enforced for Project Lead and CAN_EDIT Project Members while CAN_VIEW/non-editor users remain denied.
 - [ ] Revision flow works.
 - [ ] Acceptance blocks new joins and submissions.
 - [ ] Reopening preserves history and memberships.

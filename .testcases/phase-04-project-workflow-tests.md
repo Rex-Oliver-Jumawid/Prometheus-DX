@@ -4,7 +4,7 @@
 
 This phase implements stages, outcomes, outcome joining, derived project membership, and project-member access.
 
-Only the Project Lead may create and manage project stages and outcomes.
+The Project Lead or a Project Member with `CAN_EDIT` may create and manage project stages and outcomes.
 
 Any active authorized user may join an outcome unless the outcome is accepted.
 
@@ -15,6 +15,10 @@ A user becomes a Project Member after joining at least one outcome in the projec
 Project Members default to `CAN_VIEW`.
 
 Only the Project Lead may grant or revoke `CAN_EDIT`.
+
+Current permission amendment:
+`CAN_EDIT` grants Project editor authority for Project status plus Stage and Outcome management.
+Project Member access management remains Project Lead-only.
 
 ## Required Pages and Interfaces
 
@@ -155,8 +159,8 @@ Final status: `PASS` within the exercised Phase 4 browser paths.
 | F4-29 | Lead revokes CAN_EDIT | Change persists. | PASS |
 | F4-30 | CAN_EDIT changes project status | Allowed. | PASS |
 | F4-31 | CAN_VIEW changes project status | Denied. | PASS |
-| F4-32 | CAN_EDIT creates stage | Denied. | PASS |
-| F4-33 | CAN_EDIT creates outcome | Denied. | PASS |
+| F4-32 | CAN_EDIT creates stage | Allowed under the current Project editor rule. | REVALIDATE |
+| F4-33 | CAN_EDIT creates outcome | Allowed under the current Project editor rule. | REVALIDATE |
 | F4-34 | CAN_EDIT manages project-member access | Denied. | PASS |
 | F4-35 | Admin non-Lead grants CAN_EDIT | Denied. | PASS |
 | F4-36 | Backend bypass attempt | Backend returns forbidden. | PASS |
@@ -175,21 +179,21 @@ Lead opens project
 -> Access defaults to CAN_VIEW
 -> Lead grants CAN_EDIT
 -> Member can change project status
--> Member still cannot create stages or outcomes
+-> Member can create and manage stages and outcomes
 ```
 
 The final browser suite includes a dedicated test for this complete flow and verifies that Lead-only authority remains isolated after `CAN_EDIT` is granted.
 
 ## Phase 4 Exit Checklist
 
-- [x] Stage authority is Project Lead-only.
-- [x] Outcome authority is Project Lead-only.
+- [ ] Stage authority allows Project Lead or CAN_EDIT Project Member and requires revalidation.
+- [ ] Outcome authority allows Project Lead or CAN_EDIT Project Member and requires revalidation.
 - [x] Outcome joining follows state rules.
 - [x] Outcome Membership cannot be removed.
 - [x] Project Membership is derived from Outcome Membership.
 - [x] Default project access is `CAN_VIEW`.
 - [x] Only Project Lead can manage `CAN_EDIT`.
-- [x] `CAN_EDIT` does not grant Project Lead actions.
+- [ ] `CAN_EDIT` grants Project editor workflow actions but not Project Member access management; revalidation required.
 - [x] Administrator status does not override project relationships.
 
 ## Phase Exit

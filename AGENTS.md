@@ -151,7 +151,8 @@ Preserve these rules unless the canonical requirements explicitly change:
 - Project Membership is derived from Outcome Membership.
 - Project Members default to `CAN_VIEW`.
 - Only the Project Lead may grant or revoke `CAN_EDIT` where specified by the canonical workflow.
-- `CAN_EDIT` does not make a member the Project Lead.
+- `CAN_EDIT` grants Project editor authority for Project status, Stage and Outcome management, submission review, revision decisions, Outcome acceptance/reopening, and dependency overrides.
+- `CAN_EDIT` does not make a member the Project Lead and does not grant Project Member access-management authority.
 - Outcome Membership is outcome-specific and must preserve required history.
 - Do not add a normal leave mechanism for Outcome Membership unless requirements change.
 - Submission history must be preserved.

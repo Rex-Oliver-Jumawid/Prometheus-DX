@@ -6,9 +6,15 @@ In progress.
 Phase 4 remains the completed baseline.
 Repository orientation on 2026-09-17 found a clean worktree, 84 passing unit tests, and a valid Prisma schema.
 
+## Permission Amendment - 2026-09-25
+
+The original Phase 5 implementation and acceptance were written around Project Lead-only review decisions.
+The current product rule expands those Project-level decision capabilities to Project Members with `CAN_EDIT`.
+Historical Lead-only verification notes remain useful as records of the earlier baseline, but current authorization must follow the amended Project editor rule.
+
 ## Objective
 
-Deliver the complete Outcome Member work, shared submission, Lead review, revision, acceptance, reopening, and dependency lifecycle without implementing Phase 6.
+Deliver the complete Outcome Member work, shared submission, Project editor review, revision, acceptance, reopening, and dependency lifecycle without implementing Phase 6.
 
 ## Slice Plan
 
@@ -37,7 +43,7 @@ Future Phase 5 test changes should migrate non-browser permission, validation, A
 Added Outcome work and delivery services with project-scoped routes behind the existing authentication guard.
 React Query remains the owner of client server-state caching.
 Outcome Membership alone grants member work capabilities, subject to lifecycle and dependency conditions.
-Persisted Project Lead identity alone grants review authority.
+Persisted Project Lead identity or Project Member `CAN_EDIT` grants Project review, revision, acceptance/reopening, and dependency-override authority.
 Project and Stage progress derive from currently accepted Outcomes, while work progress derives from completed Tasks and accepted Outcomes display 100 percent.
 Project status remains independent from acceptance progress.
 
