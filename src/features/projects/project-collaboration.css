@@ -1742,3 +1742,68 @@
     min-height: 280px;
   }
 }
+
+
+/* Compact member rail typography from the Project Chat - Project Lead frame. */
+.pw-chat-members {
+  padding: 10px !important;
+}
+
+.pw-chat-members .project-members-heading h2 {
+  margin: 0 0 4px;
+  color: #302824;
+  font: 800 8.5px/1.25 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.pw-chat-members .project-members-heading > div > p:last-child {
+  margin: 0;
+  color: #9a8c84;
+  font-size: 7.8px;
+  line-height: 1.35;
+}
+
+.pw-chat-members .pw-chat-lead-row,
+.pw-chat-members .project-member-row {
+  min-height: 35px;
+  padding: 6px 0;
+}
+
+.pw-chat-members .project-member-identity > span,
+.pw-chat-member-avatar {
+  flex-basis: 21px;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: #e8dfd8;
+  color: #6e5d53;
+  font-size: 7px;
+}
+
+.pw-chat-members .project-member-identity h3,
+.pw-chat-member-identity strong {
+  font-size: 8.5px;
+  line-height: 1.25;
+}
+
+.pw-chat-members .project-member-identity p,
+.pw-chat-member-identity small {
+  margin-top: 1px;
+  font-size: 7.2px;
+  line-height: 1.25;
+}
+
+.pw-chat-member-role,
+.pw-chat-members .project-member-access strong {
+  padding: 4px 6px;
+  border-radius: 999px;
+  font-size: 7px;
+}
+
+.pw-chat-members .project-member-access select {
+  max-width: 82px;
+  padding: 4px 5px;
+  border-radius: 7px;
+  font-size: 7.5px;
+}
