@@ -33,6 +33,31 @@ describe('notification presentation for VisiWork mentions', () => {
     );
   });
 
+  it('links a Project Chat mention directly to the relevant project message', () => {
+    const notification: Notification = {
+      id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      type: 'PROJECT_CHAT_MENTION',
+      actor: { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', fullName: 'Project Member' },
+      project: { id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', name: 'Launch' },
+      outcome: null,
+      newAccessLevel: null,
+      projectChatMention: {
+        messageId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+        preview: 'Can @Rex check this?',
+      },
+      createdAt: '2026-09-24T07:00:00.000Z',
+      readAt: null,
+    };
+    expect(presentNotification(notification)).toMatchObject({
+      title: 'You were mentioned in Project Chat',
+      category: 'Mention',
+    });
+    expect(notificationPath(notification)).toBe(
+      '/projects/cccccccc-cccc-4ccc-8ccc-cccccccccccc?tab=chat&message=dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+    );
+    expect(notificationPath({ ...notification, project: null })).toBeNull();
+  });
+
   it('links a department mention to the room and exact message', () => {
     const notification: Notification = {
       id: '44444444-4444-4444-8444-444444444444',
