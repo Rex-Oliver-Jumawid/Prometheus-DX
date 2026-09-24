@@ -30,6 +30,10 @@ function safeMetadata(action: string, raw: unknown): Record<string, string> {
   ) result.title = fields.name;
   if (action === 'PROJECT_CREATED' && typeof fields.name === 'string')
     result.title = fields.name;
+  if (
+    ['PROJECT_ANNOUNCEMENT_POSTED', 'PROJECT_ANNOUNCEMENT_PINNED', 'PROJECT_ANNOUNCEMENT_UNPINNED'].includes(action) &&
+    typeof fields.title === 'string'
+  ) result.title = fields.title;
   if (action === 'PROJECT_MEMBER_ACCESS_CHANGED') {
     if (typeof fields.previousAccess === 'string')
       result.previousAccess = fields.previousAccess;
