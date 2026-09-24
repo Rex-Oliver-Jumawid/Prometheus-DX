@@ -994,17 +994,47 @@
   border: 1px solid #ded6d0;
   border-radius: 11px;
   background: #fffdfa;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.visiwork-department-project-detail.expanded {
+  border-color: #d7cbc3;
+  box-shadow: 0 8px 20px rgba(65, 47, 38, 0.045);
 }
 
 .visiwork-department-project-summary {
+  width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 130px;
+  grid-template-columns: 14px minmax(0, 1fr) 130px;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   padding: 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.visiwork-department-project-summary > div:first-child {
+.visiwork-department-project-summary:hover {
+  background: rgba(245, 239, 235, 0.42);
+}
+
+.visiwork-department-project-summary:focus-visible {
+  outline: 2px solid rgba(203, 77, 34, 0.42);
+  outline-offset: -2px;
+}
+
+.visiwork-project-disclosure {
+  width: 14px;
+  color: #4d4540;
+  font-size: 9px;
+  line-height: 1;
+}
+
+.visiwork-department-project-copy {
   min-width: 0;
 }
 
@@ -1032,11 +1062,15 @@
   flex: 1 1 auto;
 }
 
-.visiwork-project-inline-progress span {
+.visiwork-project-inline-progress > span:last-child {
   flex: 0 0 auto;
   color: #7c6f68;
   font-family: Menlo, Monaco, Consolas, monospace;
   font-size: 8.5px;
+}
+
+.visiwork-project-details {
+  border-top: 1px solid #ebe3dd;
 }
 
 .visiwork-stage {
