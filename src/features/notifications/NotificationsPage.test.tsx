@@ -103,6 +103,16 @@ describe('NotificationsPage', () => {
             items: records.filter((item) => !item.readAt),
           });
         }
+        if (path === '/notifications?filter=mentions') {
+          return Promise.resolve({
+            items: records.filter((item) => item.type === 'VISIWORK_MENTION'),
+          });
+        }
+        if (path === '/notifications?filter=projects') {
+          return Promise.resolve({
+            items: records.filter((item) => item.type !== 'VISIWORK_MENTION'),
+          });
+        }
         if (path === '/notifications/unread-count') {
           return Promise.resolve({
             count: records.filter((item) => !item.readAt).length,
@@ -201,6 +211,51 @@ describe('NotificationsPage', () => {
     expect(
       screen.getByRole('button', { name: /You were assigned as Project Lead/ }),
     ).toBeInTheDocument();
+  });
+
+  it('separates Mentions and Projects using the Notifications design tabs', async () => {
+    records = [
+      ...records,
+      {
+        id: '77777777-7777-4777-8777-777777777777',
+        type: 'VISIWORK_MENTION',
+        actor: {
+          id: '88888888-8888-4888-8888-888888888888',
+          fullName: 'Rex Jumawid',
+        },
+        project: null,
+        outcome: null,
+        newAccessLevel: null,
+        visiworkMention: {
+          messageId: '99999999-9999-4999-8999-999999999999',
+          departmentId: null,
+          roomLabel: 'General Chat',
+          preview: 'Can @Oliver review this?',
+        },
+        createdAt: '2026-09-22T00:06:00.000Z',
+        readAt: null,
+      },
+    ];
+    const user = userEvent.setup();
+    renderPage();
+
+    await screen.findByRole('button', { name: /You were mentioned in VisiWork/ });
+
+    await user.click(screen.getByRole('tab', { name: /Mentions/ }));
+    expect(
+      await screen.findByRole('button', { name: /You were mentioned in VisiWork/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Output ready for your review/ }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: /Projects/ }));
+    expect(
+      await screen.findByRole('button', { name: /Output ready for your review/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /You were mentioned in VisiWork/ }),
+    ).not.toBeInTheDocument();
   });
 
   it('marks a notification read and opens its canonical Outcome route', async () => {

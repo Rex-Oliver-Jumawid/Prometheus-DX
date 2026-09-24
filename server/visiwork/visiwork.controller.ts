@@ -16,6 +16,7 @@ import { z } from 'zod';
 import {
   CreateVisiWorkMessageSchema,
   SetVisiWorkPresenceRequestSchema,
+  VisiWorkMessageSearchQuerySchema,
 } from '../../shared/contracts/visiwork';
 import { CurrentMember } from '../auth/current-member.decorator';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
@@ -49,6 +50,28 @@ export class VisiWorkController {
       );
     }
     return this.visiworkService.joinDepartment(member, parsed.data);
+  }
+
+  @Get('messages/search')
+  searchMessages(
+    @CurrentMember() member: Member,
+    @Query() query: unknown,
+  ) {
+    const parsed = VisiWorkMessageSearchQuerySchema.safeParse(query);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        parsed.error.issues[0]?.message ?? 'Invalid search.',
+      );
+    }
+    return this.visiworkService.searchMessages(member, parsed.data);
+  }
+
+  @Get('messages/:messageId/context')
+  messageContext(
+    @CurrentMember() member: Member,
+    @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
+  ) {
+    return this.visiworkService.messageContext(member, messageId);
   }
 
   @Get('messages')

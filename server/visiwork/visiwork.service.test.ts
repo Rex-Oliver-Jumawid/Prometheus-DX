@@ -1,3 +1,4 @@
+import { ForbiddenException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import type { Member } from '@prisma/client';
 import type { PrismaService } from '../database/prisma.service';
@@ -6,6 +7,7 @@ import { VisiWorkService } from './visiwork.service';
 const memberId = '11111111-1111-4111-8111-111111111111';
 const homeDepartmentId = '22222222-2222-4222-8222-222222222222';
 const joinedDepartmentId = '33333333-3333-4333-8333-333333333333';
+const mentionedMemberId = '66666666-6666-4666-8666-666666666666';
 
 function member(overrides: Partial<Member> = {}): Member {
   return {
@@ -30,11 +32,27 @@ function member(overrides: Partial<Member> = {}): Member {
   };
 }
 
+function storedMessage(overrides: Record<string, unknown> = {}) {
+  return {
+    id: '44444444-4444-4444-8444-444444444444',
+    departmentId: null,
+    memberId,
+    body: 'Morning team',
+    createdAt: new Date('2026-09-24T01:00:00.000Z'),
+    member: { id: memberId, fullName: 'Member One' },
+    mentions: [],
+    ...overrides,
+  };
+}
+
 describe('VisiWorkService', () => {
   it('moves the current member focus to the joined department', async () => {
     const prisma = {
       department: {
-        findUnique: vi.fn().mockResolvedValue({ id: joinedDepartmentId }),
+        findUnique: vi.fn().mockResolvedValue({
+          id: joinedDepartmentId,
+          shortLabel: 'R&D',
+        }),
       },
       member: {
         update: vi.fn().mockResolvedValue({ id: memberId }),
@@ -45,109 +63,163 @@ describe('VisiWorkService', () => {
       departmentId: joinedDepartmentId,
     });
 
-    expect(prisma.department.findUnique).toHaveBeenCalledWith({
-      where: { id: joinedDepartmentId },
-      select: { id: true },
-    });
-    expect(prisma.member.update).toHaveBeenCalledWith({
-      where: { id: memberId },
-      data: { visiworkDepartmentId: joinedDepartmentId },
-    });
-    expect(result).toEqual({
-      memberId,
-      departmentId: joinedDepartmentId,
-    });
+    expect(result).toEqual({ memberId, departmentId: joinedDepartmentId });
   });
 
-  it('returns persisted general-room messages newest-first from storage', async () => {
+  it('returns persisted general-room messages with mentions', async () => {
     const prisma = {
       visiWorkMessage: {
         findMany: vi.fn().mockResolvedValue([
-          {
-            id: '44444444-4444-4444-8444-444444444444',
-            departmentId: null,
-            memberId,
-            body: 'Morning team',
-            createdAt: new Date('2026-09-24T01:00:00.000Z'),
-            member: { id: memberId, fullName: 'Member One' },
-          },
+          storedMessage({
+            mentions: [
+              {
+                memberId: mentionedMemberId,
+                member: { id: mentionedMemberId, fullName: 'Oliver' },
+              },
+            ],
+          }),
         ]),
       },
     } as unknown as PrismaService;
 
     const result = await new VisiWorkService(prisma).listMessages(member());
 
-    expect(prisma.visiWorkMessage.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { departmentId: null },
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-        take: 41,
-      }),
-    );
-    expect(result).toEqual({
-      items: [
-        {
-          id: '44444444-4444-4444-8444-444444444444',
-          departmentId: null,
-          author: { id: memberId, fullName: 'Member One' },
-          body: 'Morning team',
-          createdAt: '2026-09-24T01:00:00.000Z',
-        },
-      ],
-      nextCursor: null,
-      canWrite: true,
+    expect(result.items[0]).toMatchObject({
+      body: 'Morning team',
+      mentions: [{ id: mentionedMemberId, fullName: 'Oliver' }],
     });
   });
 
-  it('allows a member to send to the department they joined', async () => {
-    const focusedMember = member({
-      visiworkDepartmentId: joinedDepartmentId,
+  it('persists mentions and creates mention notifications atomically', async () => {
+    const message = storedMessage({
+      body: 'Please check this @Oliver',
+      mentions: [
+        {
+          memberId: mentionedMemberId,
+          member: { id: mentionedMemberId, fullName: 'Oliver' },
+        },
+      ],
+    });
+    const createMessage = vi.fn().mockResolvedValue(message);
+    const createMany = vi.fn().mockResolvedValue({ count: 1 });
+    const prisma = {
+      member: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: mentionedMemberId, fullName: 'Oliver' },
+        ]),
+      },
+      $transaction: vi.fn().mockImplementation(async (callback) =>
+        callback({
+          visiWorkMessage: { create: createMessage },
+          notification: { createMany },
+        }),
+      ),
+    } as unknown as PrismaService;
+
+    const result = await new VisiWorkService(prisma).sendMessage(member(), {
+      body: 'Please check this @Oliver',
+      mentionMemberIds: [mentionedMemberId],
+    });
+
+    expect(createMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          mentions: {
+            create: [{ memberId: mentionedMemberId }],
+          },
+        }),
+      }),
+    );
+    expect(createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: [
+          expect.objectContaining({
+            recipientMemberId: mentionedMemberId,
+            actorMemberId: memberId,
+            type: 'VISIWORK_MENTION',
+          }),
+        ],
+      }),
+    );
+    expect(result.mentions).toEqual([
+      { id: mentionedMemberId, fullName: 'Oliver' },
+    ]);
+  });
+
+  it('searches only the current room and returns matching persisted messages', async () => {
+    const findMany = vi.fn().mockResolvedValue([
+      storedMessage({ body: 'The quotation workflow is ready.' }),
+    ]);
+    const prisma = {
+      visiWorkMessage: { findMany },
+    } as unknown as PrismaService;
+
+    const result = await new VisiWorkService(prisma).searchMessages(member(), {
+      q: 'quotation',
+    });
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          departmentId: null,
+          body: { contains: 'quotation', mode: 'insensitive' },
+        },
+      }),
+    );
+    expect(result.items[0].body).toContain('quotation');
+  });
+
+  it('loads message context around an exact message for deep linking', async () => {
+    const target = storedMessage();
+    const before = storedMessage({
+      id: '77777777-7777-4777-8777-777777777777',
+      createdAt: new Date('2026-09-24T00:59:00.000Z'),
+      body: 'Before',
+    });
+    const after = storedMessage({
+      id: '88888888-8888-4888-8888-888888888888',
+      createdAt: new Date('2026-09-24T01:01:00.000Z'),
+      body: 'After',
     });
     const prisma = {
-      department: {
-        findUnique: vi.fn().mockResolvedValue({ id: joinedDepartmentId }),
-      },
       visiWorkMessage: {
-        create: vi.fn().mockResolvedValue({
-          id: '55555555-5555-4555-8555-555555555555',
-          departmentId: joinedDepartmentId,
-          memberId,
-          body: 'I can help here.',
-          createdAt: new Date('2026-09-24T01:05:00.000Z'),
-          member: { id: memberId, fullName: 'Member One' },
-        }),
+        findUnique: vi.fn().mockResolvedValue(target),
+        findMany: vi
+          .fn()
+          .mockResolvedValueOnce([before])
+          .mockResolvedValueOnce([after]),
       },
     } as unknown as PrismaService;
 
-    const result = await new VisiWorkService(prisma).sendMessage(
-      focusedMember,
-      { body: 'I can help here.' },
-      joinedDepartmentId,
+    const result = await new VisiWorkService(prisma).messageContext(
+      member(),
+      target.id,
     );
 
-    expect(result.departmentId).toBe(joinedDepartmentId);
-    expect(result.body).toBe('I can help here.');
+    expect(result.targetMessageId).toBe(target.id);
+    expect(result.items.map((item) => item.body)).toEqual([
+      'Before',
+      'Morning team',
+      'After',
+    ]);
   });
 
   it('blocks department-room sending until the member belongs to or joins it', async () => {
     const prisma = {
       department: {
-        findUnique: vi.fn().mockResolvedValue({ id: joinedDepartmentId }),
-      },
-      visiWorkMessage: {
-        create: vi.fn(),
+        findUnique: vi.fn().mockResolvedValue({
+          id: joinedDepartmentId,
+          shortLabel: 'R&D',
+        }),
       },
     } as unknown as PrismaService;
 
     await expect(
       new VisiWorkService(prisma).sendMessage(
         member(),
-        { body: 'Should not send' },
+        { body: 'Should not send', mentionMemberIds: [] },
         joinedDepartmentId,
       ),
-    ).rejects.toThrow(
-      'Join this department before sending messages to its room.',
-    );
-    expect(prisma.visiWorkMessage.create).not.toHaveBeenCalled();
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 });

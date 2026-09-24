@@ -10,11 +10,12 @@ export const NotificationTypeSchema = z.enum([
   'OUTCOME_ACCEPTED',
   'OUTCOME_REOPENED',
   'DEPENDENCY_UNLOCKED',
+  'VISIWORK_MENTION',
 ]);
 
 export const NotificationListQuerySchema = z
   .object({
-    filter: z.enum(['all', 'unread']).default('all'),
+    filter: z.enum(['all', 'unread', 'mentions', 'projects']).default('all'),
   })
   .strict();
 
@@ -40,6 +41,15 @@ export const NotificationSchema = z.object({
   project: NotificationProjectSchema.nullable(),
   outcome: NotificationOutcomeSchema.nullable(),
   newAccessLevel: ProjectAccessLevelSchema.nullable(),
+  visiworkMention: z
+    .object({
+      messageId: z.string().uuid(),
+      departmentId: z.string().uuid().nullable(),
+      roomLabel: z.string().min(1),
+      preview: z.string(),
+    })
+    .nullable()
+    .optional(),
   createdAt: z.string().datetime(),
   readAt: z.string().datetime().nullable(),
 });

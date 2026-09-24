@@ -16,8 +16,10 @@ import { OutcomeWorkSchema, type OutcomeWork } from '../../../shared/contracts/o
 import {
   CreateVisiWorkMessageSchema,
   SetVisiWorkPresenceRequestSchema,
+  VisiWorkMessageContextResponseSchema,
   VisiWorkMessagePageSchema,
   VisiWorkMessageSchema,
+  VisiWorkMessageSearchResponseSchema,
   VisiWorkPresenceResponseSchema,
   type VisiWorkMessage,
 } from '../../../shared/contracts/visiwork';
@@ -90,6 +92,38 @@ function chatError(value: unknown): string {
   return value instanceof Error ? value.message : 'Please try again.';
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^$()|[\]\\]/g, '\\$&');
+}
+
+function MessageBody({ message }: { message: VisiWorkMessage }) {
+  const names = message.mentions
+    .map((mention) => mention.fullName)
+    .sort((left, right) => right.length - left.length);
+  if (!names.length) return <>{message.body}</>;
+
+  const matcher = new RegExp(
+    '(@(?:' + names.map(escapeRegExp).join('|') + '))',
+    'gi',
+  );
+
+  return (
+    <>
+      {message.body.split(matcher).map((part, index) => {
+        const isMention = names.some(
+          (name) => part.toLowerCase() === '@' + name.toLowerCase(),
+        );
+        return isMention ? (
+          <mark className="visiwork-message-mention" key={index}>
+            {part}
+          </mark>
+        ) : (
+          part
+        );
+      })}
+    </>
+  );
+}
 function RoomPanel({
   roomType,
   title,
@@ -97,6 +131,7 @@ function RoomPanel({
   accessToken,
   currentMemberId,
   departmentId,
+  mentionMembers,
 }: {
   roomType: string;
   title: string;
@@ -104,9 +139,16 @@ function RoomPanel({
   accessToken?: string;
   currentMemberId?: string;
   departmentId?: string;
+  mentionMembers: Array<{ id: string; fullName: string }>;
 }) {
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [body, setBody] = useState('');
+  const [selectedMentions, setSelectedMentions] = useState<
+    Array<{ id: string; fullName: string }>
+  >([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const feedRef = useRef<HTMLDivElement>(null);
   const pinnedToBottom = useRef(true);
   const initiallyScrolled = useRef(false);
@@ -115,6 +157,7 @@ function RoomPanel({
   const basePath = departmentId
     ? '/visiwork/departments/' + departmentId + '/messages'
     : '/visiwork/messages';
+  const targetMessageId = searchParams.get('message');
 
   const messages = useInfiniteQuery({
     queryKey,
@@ -134,22 +177,57 @@ function RoomPanel({
     refetchOnReconnect: true,
   });
 
+  const context = useQuery({
+    queryKey: ['visiwork', 'message-context', targetMessageId],
+    queryFn: () =>
+      apiFetch(
+        '/visiwork/messages/' + targetMessageId + '/context',
+        VisiWorkMessageContextResponseSchema,
+        { accessToken },
+      ),
+    enabled: Boolean(accessToken && targetMessageId),
+    staleTime: 15_000,
+    retry: false,
+  });
+
+  const search = useQuery({
+    queryKey: ['visiwork', 'message-search', roomKey, searchTerm.trim()],
+    queryFn: () => {
+      const params = new URLSearchParams({ q: searchTerm.trim() });
+      if (departmentId) params.set('departmentId', departmentId);
+      return apiFetch(
+        '/visiwork/messages/search?' + params.toString(),
+        VisiWorkMessageSearchResponseSchema,
+        { accessToken },
+      );
+    },
+    enabled: Boolean(accessToken && searchOpen && searchTerm.trim()),
+    staleTime: 5_000,
+  });
+
   const send = useMutation({
-    mutationFn: (messageBody: string) =>
+    mutationFn: (input: { body: string; mentionMemberIds: string[] }) =>
       apiFetch(basePath, VisiWorkMessageSchema, {
         accessToken,
         method: 'POST',
-        body: CreateVisiWorkMessageSchema.parse({ body: messageBody }),
+        body: CreateVisiWorkMessageSchema.parse(input),
       }),
     onSuccess: async () => {
       setBody('');
+      setSelectedMentions([]);
       pinnedToBottom.current = true;
       await queryClient.invalidateQueries({ queryKey });
     },
   });
 
   const loaded = messages.data?.pages.flatMap((page) => page.items) ?? [];
-  const unique = new Map(loaded.map((message) => [message.id, message]));
+  const contextual =
+    context.data?.departmentId === (departmentId ?? null)
+      ? context.data.items
+      : [];
+  const unique = new Map(
+    [...loaded, ...contextual].map((message) => [message.id, message]),
+  );
   const ordered = [...unique.values()].sort(
     (left, right) =>
       left.createdAt.localeCompare(right.createdAt) ||
@@ -157,6 +235,20 @@ function RoomPanel({
   );
   const canWrite = messages.data?.pages[0]?.canWrite ?? !departmentId;
   const latestMessageId = ordered.at(-1)?.id;
+
+  const mentionMatch = body.match(/(?:^|\s)@([^@\n]*)$/);
+  const mentionQuery = mentionMatch?.[1]?.trim().toLowerCase() ?? null;
+  const mentionSuggestions =
+    mentionQuery === null
+      ? []
+      : mentionMembers
+          .filter(
+            (candidate) =>
+              candidate.id !== currentMemberId &&
+              candidate.fullName.toLowerCase().includes(mentionQuery) &&
+              !selectedMentions.some((selected) => selected.id === candidate.id),
+          )
+          .slice(0, 6);
 
   useLayoutEffect(() => {
     const feed = feedRef.current;
@@ -167,13 +259,66 @@ function RoomPanel({
     initiallyScrolled.current = true;
   }, [ordered.length, latestMessageId]);
 
+  useLayoutEffect(() => {
+    if (
+      !targetMessageId ||
+      !context.data ||
+      context.data.departmentId !== (departmentId ?? null)
+    ) {
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => {
+      const element = feedRef.current?.querySelector<HTMLElement>(
+        '[data-message-id="' + targetMessageId + '"]',
+      );
+      element?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [departmentId, targetMessageId, context.data]);
+
+  function updateBody(value: string) {
+    setBody(value);
+    setSelectedMentions((current) =>
+      current.filter((mention) => value.includes('@' + mention.fullName)),
+    );
+  }
+
+  function selectMention(mention: { id: string; fullName: string }) {
+    const match = body.match(/(?:^|\s)@([^@\n]*)$/);
+    if (!match || match.index === undefined) return;
+    const prefixLength = match[0].startsWith(' ') ? 1 : 0;
+    const start = match.index + prefixLength;
+    const next =
+      body.slice(0, start) +
+      '@' +
+      mention.fullName +
+      ' ' +
+      body.slice(match.index + match[0].length);
+    setBody(next);
+    setSelectedMentions((current) => [...current, mention]);
+  }
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = body.trim();
     if (!trimmed || trimmed.length > 2000 || !canWrite || send.isPending) {
       return;
     }
-    send.mutate(trimmed);
+    send.mutate({
+      body: trimmed,
+      mentionMemberIds: selectedMentions.map((mention) => mention.id),
+    });
+  }
+
+  function jumpToMessage(message: VisiWorkMessage) {
+    const next = new URLSearchParams(searchParams);
+    next.set('message', message.id);
+    if (message.departmentId) next.set('department', message.departmentId);
+    else next.delete('department');
+    next.delete('view');
+    pinnedToBottom.current = false;
+    setSearchParams(next);
+    setSearchOpen(false);
   }
 
   return (
@@ -184,8 +329,73 @@ function RoomPanel({
           <strong>{title}</strong>
           <small>{subtitle}</small>
         </div>
-        <b>● LIVE</b>
+        <div className="visiwork-room-header-actions">
+          <b>● LIVE</b>
+          <button
+            type="button"
+            className={searchOpen ? 'active' : ''}
+            aria-label={'Search ' + title}
+            title="Search messages"
+            onClick={() => setSearchOpen((current) => !current)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5" />
+              <path d="m16 16 4 4" />
+            </svg>
+          </button>
+        </div>
       </header>
+
+      {searchOpen && (
+        <section className="visiwork-chat-search" aria-label="Search messages">
+          <div className="visiwork-chat-search-input">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5" />
+              <path d="m16 16 4 4" />
+            </svg>
+            <input
+              autoFocus
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder={'Search ' + title + '...'}
+              aria-label={'Search messages in ' + title}
+            />
+            {searchTerm && (
+              <button type="button" onClick={() => setSearchTerm('')}>
+                Clear
+              </button>
+            )}
+          </div>
+          <div className="visiwork-chat-search-results">
+            {!searchTerm.trim() ? (
+              <p>Search messages from this room.</p>
+            ) : search.isPending ? (
+              <p>Searching...</p>
+            ) : search.isError ? (
+              <p role="alert">{chatError(search.error)}</p>
+            ) : search.data.items.length ? (
+              search.data.items.map((result) => (
+                <button
+                  key={result.id}
+                  type="button"
+                  className="visiwork-chat-search-result"
+                  onClick={() => jumpToMessage(result)}
+                >
+                  <span>
+                    <strong>{result.author.fullName}</strong>
+                    <time dateTime={result.createdAt}>
+                      {messageTime(result.createdAt)}
+                    </time>
+                  </span>
+                  <p>{result.body}</p>
+                </button>
+              ))
+            ) : (
+              <p>No matching messages.</p>
+            )}
+          </div>
+        </section>
+      )}
 
       <div
         className="visiwork-room-feed"
@@ -207,6 +417,12 @@ function RoomPanel({
           </button>
         )}
 
+        {context.isError && targetMessageId && (
+          <div className="visiwork-chat-warning" role="alert">
+            The linked message could not be loaded.
+          </div>
+        )}
+
         {messages.isPending ? (
           <div className="visiwork-room-empty" role="status">
             <span>Loading conversation...</span>
@@ -222,13 +438,18 @@ function RoomPanel({
         ) : ordered.length ? (
           ordered.map((message: VisiWorkMessage) => {
             const ownMessage = message.author.id === currentMemberId;
+            const highlighted = message.id === targetMessageId;
             return (
               <div
-                className={
+                className={[
                   ownMessage
                     ? 'visiwork-room-message own'
-                    : 'visiwork-room-message'
-                }
+                    : 'visiwork-room-message',
+                  highlighted ? 'targeted' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                data-message-id={message.id}
                 key={message.id}
               >
                 {!ownMessage && (
@@ -242,7 +463,7 @@ function RoomPanel({
                     {' · '}
                     {messageTime(message.createdAt)}
                   </small>
-                  <p>{message.body}</p>
+                  <p><MessageBody message={message} /></p>
                 </div>
               </div>
             );
@@ -263,16 +484,42 @@ function RoomPanel({
 
       {canWrite ? (
         <form className="visiwork-room-composer" onSubmit={submit}>
-          <input
-            aria-label={'Message ' + title}
-            placeholder={
-              departmentId ? 'Message this department...' : 'Message everyone...'
-            }
-            value={body}
-            maxLength={2000}
-            disabled={send.isPending}
-            onChange={(event) => setBody(event.target.value)}
-          />
+          <div className="visiwork-chat-input-wrap">
+            <input
+              aria-label={'Message ' + title}
+              placeholder={
+                departmentId ? 'Message this department...' : 'Message everyone...'
+              }
+              value={body}
+              maxLength={2000}
+              disabled={send.isPending}
+              onChange={(event) => updateBody(event.target.value)}
+              onKeyDown={(event) => {
+                if (
+                  mentionSuggestions.length > 0 &&
+                  (event.key === 'Enter' || event.key === 'Tab')
+                ) {
+                  event.preventDefault();
+                  selectMention(mentionSuggestions[0]);
+                }
+              }}
+            />
+            {mentionSuggestions.length > 0 && (
+              <div className="visiwork-mention-menu" role="listbox">
+                {mentionSuggestions.map((candidate) => (
+                  <button
+                    key={candidate.id}
+                    type="button"
+                    role="option"
+                    onClick={() => selectMention(candidate)}
+                  >
+                    <span>{initials(candidate.fullName)}</span>
+                    <strong>{candidate.fullName}</strong>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             type="submit"
             disabled={send.isPending || !body.trim()}
@@ -712,6 +959,10 @@ function DepartmentView({
           accessToken={accessToken}
           currentMemberId={currentMemberId}
           departmentId={department.id}
+          mentionMembers={department.members.map((departmentMember) => ({
+            id: departmentMember.id,
+            fullName: departmentMember.fullName,
+          }))}
         />
       </div>
     </div>
@@ -931,6 +1182,10 @@ export function VisiWorkPage() {
           subtitle={team.data.summary.workingNowCount + ' working now · company-wide'}
           accessToken={accessToken}
           currentMemberId={member?.id}
+          mentionMembers={team.data.members.map((teamMember) => ({
+            id: teamMember.id,
+            fullName: teamMember.fullName,
+          }))}
         />
       </div>
     </section>
