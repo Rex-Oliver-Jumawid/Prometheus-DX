@@ -103,6 +103,9 @@ describe('ProjectOverviewPage status mutation', () => {
       if (path === `/projects/${projectId}/members`) {
         return Promise.resolve(projectMembersResponse);
       }
+      if (path === `/projects/${projectId}/messages`) {
+        return Promise.resolve({ items: [], nextCursor: null, canWrite: true });
+      }
       if (path === `/projects/${projectId}`) return Promise.resolve(project);
       return Promise.resolve({});
     });
