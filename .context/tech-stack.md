@@ -33,8 +33,9 @@ When these references disagree, the conflict should be resolved explicitly befor
 | Database | Supabase PostgreSQL | Primary relational database |
 | Authentication | Supabase Auth | Authentication, sessions, and account identity |
 | Google Sign-In | Google OAuth Client through Supabase Auth | Google account authentication |
-| File Storage | Supabase Storage | Profile images and project/output attachments |
-| Realtime | Supabase Realtime | Chat, presence, and live notifications where useful |
+| File Storage | Supabase Storage | Available for future file-bearing flows; binary chat attachments are not in the current release |
+| Live Refresh | TanStack Query polling/refetch | Current chat, Working Now, and reconnect visibility strategy |
+| Optional Push Transport | Supabase Realtime | Future optimization if measured latency/scale requires push delivery |
 | Email | Brevo Transactional Email API | Member invitation and account setup emails |
 | Unit Testing | Vitest | Unit and utility testing |
 | Component Testing | React Testing Library | React component behavior testing |
@@ -799,8 +800,12 @@ Email/password
 
 STORAGE
 Supabase Storage
+Future file-bearing flows
 
-REALTIME
+LIVE REFRESH
+TanStack Query polling / invalidation / focus and reconnect refetch
+
+OPTIONAL PUSH TRANSPORT
 Supabase Realtime
 
 EMAIL
