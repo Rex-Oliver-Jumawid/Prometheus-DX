@@ -199,7 +199,14 @@ export function TeamPage() {
                 </div>
               </div>
 
-              <button type="button" onClick={() => navigate('/schedule')}>
+              <button
+                type="button"
+                onClick={() =>
+                  navigate(
+                    `/schedule?view=shifts&member=${encodeURIComponent(member.id)}`,
+                  )
+                }
+              >
                 <span>View Schedule</span>
                 <span aria-hidden="true">→</span>
               </button>

@@ -278,7 +278,11 @@
 }
 
 .registry-members-panel {
+  display: flex;
   min-width: 0;
+  height: 560px;
+  min-height: 0;
+  flex-direction: column;
   overflow: hidden;
 }
 
@@ -336,8 +340,13 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
   margin-top: 13px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
   border: 1px solid #e5ddd7;
   border-radius: 13px;
   background: rgba(255, 255, 255, 0.52);
@@ -377,6 +386,10 @@
 }
 
 .registry-members-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fffdfa;
   color: #988b84;
   font:
     750 5.5px/1 ui-monospace,
@@ -992,6 +1005,10 @@
 }
 
 @media (max-width: 680px) {
+  .registry-members-panel {
+    height: 500px;
+  }
+
   .registry-assignment-alert {
     align-items: stretch;
     flex-direction: column;

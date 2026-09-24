@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
+import { useSearchParams } from 'react-router-dom';
 import {
   MemberScheduleSchema,
   UpdateScheduleRequestSchema,
@@ -332,10 +333,17 @@ function SchedulePageSkeleton() {
 export function SchedulePage() {
   const { member, session } = useAuth();
   const queryClient = useQueryClient();
-  const [view, setView] = useState<'team' | 'shifts'>('team');
+  const [searchParams] = useSearchParams();
+  const requestedMemberId = searchParams.get('member');
+  const requestedView = searchParams.get('view');
+  const [view, setView] = useState<'team' | 'shifts'>(() =>
+    requestedView === 'shifts' ? 'shifts' : 'team',
+  );
   const [configuring, setConfiguring] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [selectedMemberId, setSelectedMemberId] = useState(member?.id ?? '');
+  const [selectedMemberId, setSelectedMemberId] = useState(
+    () => requestedMemberId ?? member?.id ?? '',
+  );
   const [selectedPeopleIds, setSelectedPeopleIds] = useState<string[] | null>(null);
   const [departmentId, setDepartmentId] = useState('');
   const [weekParam, setWeekParam] = useState<string | undefined>(undefined);
@@ -371,8 +379,13 @@ export function SchedulePage() {
   }, [configuring, form, mineQuery.data, mineQuery.isPending]);
 
   useEffect(() => {
+    if (requestedMemberId) {
+      setSelectedMemberId(requestedMemberId);
+      setView('shifts');
+      return;
+    }
     if (!selectedMemberId && member?.id) setSelectedMemberId(member.id);
-  }, [member?.id, selectedMemberId]);
+  }, [member?.id, requestedMemberId, selectedMemberId]);
 
   const mutation = useMutation({
     mutationFn: (input: UpdateScheduleRequest) =>

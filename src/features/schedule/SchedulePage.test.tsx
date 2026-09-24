@@ -80,13 +80,13 @@ function teamResponse(schedule: MemberSchedule | null) {
   };
 }
 
-function renderPage() {
+function renderPage(initialEntry = '/') {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <SchedulePage />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -299,6 +299,22 @@ describe('SchedulePage', () => {
     );
     expect(
       screen.getByText('No schedule blocks match these filters.'),
+    ).toBeInTheDocument();
+  });
+
+  it('opens Shifts with the requested Team member selected', async () => {
+    renderPage(
+      '/schedule?view=shifts&member=22222222-2222-4222-8222-222222222222',
+    );
+
+    expect(
+      await screen.findByRole('tab', { name: 'Shifts' }),
+    ).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('combobox', { name: 'Member' })).toHaveValue(
+      '22222222-2222-4222-8222-222222222222',
+    );
+    expect(
+      screen.getByText(/for Member Two\./),
     ).toBeInTheDocument();
   });
 

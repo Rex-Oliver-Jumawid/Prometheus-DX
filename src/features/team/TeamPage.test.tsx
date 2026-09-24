@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TeamPage } from './TeamPage';
 
@@ -11,6 +12,15 @@ vi.mock('../auth/auth-context', () => ({
 }));
 vi.mock('../../lib/api', () => ({ apiFetch: mocks.apiFetch }));
 
+function LocationProbe() {
+  const location = useLocation();
+  return (
+    <output data-testid="location">
+      {location.pathname + location.search}
+    </output>
+  );
+}
+
 function renderPage() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -20,6 +30,7 @@ function renderPage() {
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
         <TeamPage />
+        <LocationProbe />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -29,6 +40,7 @@ describe('TeamPage', () => {
   beforeEach(() => mocks.apiFetch.mockReset());
 
   it('renders the Figma Team hierarchy from Registry, Schedule, and WorkSession data', async () => {
+    const user = userEvent.setup();
     mocks.apiFetch.mockResolvedValue({
       timezone: 'Asia/Manila',
       asOf: '2026-09-18T05:00:00.000Z',
@@ -81,9 +93,13 @@ describe('TeamPage', () => {
     expect(screen.getByText(/9:00 AM.*1:00 PM/)).toBeInTheDocument();
     expect(screen.getAllByText('6h').length).toBeGreaterThan(0);
     expect(screen.getAllByText('5h').length).toBeGreaterThan(0);
-    expect(
-      screen.getByRole('button', { name: 'View Schedule' }),
-    ).toBeInTheDocument();
+    const viewSchedule = screen.getByRole('button', { name: 'View Schedule' });
+    expect(viewSchedule).toBeInTheDocument();
+
+    await user.click(viewSchedule);
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/schedule?view=shifts&member=11111111-1111-4111-8111-111111111111',
+    );
   });
 
   it('renders a rest day when a member has no schedule blocks today', async () => {
