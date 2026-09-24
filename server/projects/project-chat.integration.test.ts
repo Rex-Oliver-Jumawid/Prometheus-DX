@@ -79,6 +79,7 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
     expect(ProjectAnnouncementsResponseSchema.parse(emptyAnnouncements)).toEqual({
       items: [],
       canManage: true,
+      canPost: true,
     });
 
     const viewerChat = await chat.list(viewer, projectId);
@@ -90,6 +91,7 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
     expect(ProjectAnnouncementsResponseSchema.parse(viewerAnnouncements)).toEqual({
       items: [],
       canManage: false,
+      canPost: false,
     });
   });
 
