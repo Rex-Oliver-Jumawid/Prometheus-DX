@@ -2,13 +2,13 @@
 
 ## 1. Purpose
 
-This document defines the proposed relational data model for the Prometheus Centralized Workflow Management System.
+This document defines the canonical relational data model for the Prometheus Centralized Workflow Management System and distinguishes implemented release entities from explicitly planned extensions.
 
 The model translates the Software Requirements Specification and `user-flows.md` into persistent entities, relationships, constraints, derived values, and audit history.
 
-This document should be finalized before `prisma/schema.prisma` is treated as stable.
+The implemented schema is represented by `prisma/schema.prisma` and tracked migrations.
 
-The data model is designed for Supabase PostgreSQL, Prisma ORM, NestJS business logic, Supabase Auth identity, and Supabase Storage attachments.
+The data model is designed for Supabase PostgreSQL, Prisma ORM, NestJS business logic, Supabase Auth identity, and optional Supabase Storage for future file-bearing flows.
 
 ---
 
@@ -68,8 +68,8 @@ Supabase Auth
                          |
                          +----< OutcomeSubmission
                          |       |
-                         |       +----< SubmissionAttachment
                          |       +----< SubmissionReview
+                         |       +----< SubmissionAttachment [planned extension]
                          |
                          +----< OutcomeRevisionRequest
                          |
@@ -773,7 +773,15 @@ Draft edits carry the last observed update timestamp to reject stale overwrites.
 
 ---
 
-# 22. Submission Attachment
+# 22. Submission Attachment - Planned Extension
+
+`SubmissionAttachment` is a canonical future extension for binary Outcome submission evidence.
+
+It is **not** part of the current release Prisma schema.
+
+The current Outcome submission flow stores output text/name or HTTP(S) link plus optional note.
+
+When binary submission attachments are implemented, use the following model shape:
 
 ```text
 SubmissionAttachment
@@ -1845,7 +1853,6 @@ Feature
 Task
 
 OutcomeSubmission
-SubmissionAttachment
 SubmissionReview
 OutcomeRevisionRequest
 OutcomeAcceptance
