@@ -47,7 +47,7 @@ function safeMetadata(action: string, raw: unknown): Record<string, string> {
   return result;
 }
 
-/** Leads receive the project audit trail; other members receive only their own events. */
+/** Every active authorized member may read the display-safe Project activity trail. */
 @Injectable()
 export class ProjectActivityService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
@@ -59,15 +59,14 @@ export class ProjectActivityService {
   ): Promise<ProjectActivityPage> {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
-      select: { id: true, leadMemberId: true },
+      select: { id: true },
     });
     if (!project) throw new NotFoundException('Project not found.');
-    const scope = project.leadMemberId === member.id ? 'PROJECT' : 'PERSONAL';
-    const actorFilter = scope === 'PERSONAL' ? { actorMemberId: member.id } : {};
+    const scope = 'PROJECT' as const;
 
     const previous = cursor
       ? await this.prisma.activityLog.findFirst({
-          where: { id: cursor, projectId, ...actorFilter },
+          where: { id: cursor, projectId },
           select: { id: true, createdAt: true },
         })
       : null;
@@ -78,7 +77,6 @@ export class ProjectActivityService {
     const records = await this.prisma.activityLog.findMany({
       where: {
         projectId,
-        ...actorFilter,
         ...(previous
           ? {
               OR: [
