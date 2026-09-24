@@ -35,7 +35,7 @@ function renderChat() {
   });
   return render(
     <QueryClientProvider client={client}>
-      <ProjectChatPanel projectId={projectId} accessToken="token" />
+      <ProjectChatPanel projectId={projectId} projectName="Example Project" accessToken="token" />
     </QueryClientProvider>,
   );
 }
