@@ -20,9 +20,13 @@ function errorMessage(error: unknown) {
 export function ProjectMembersPanel({
   projectId,
   accessToken,
+  compact = false,
+  projectLead,
 }: {
   projectId: string;
   accessToken?: string;
+  compact?: boolean;
+  projectLead?: { id: string; fullName: string; email: string };
 }) {
   const queryClient = useQueryClient();
   const members = useQuery({
@@ -90,19 +94,27 @@ export function ProjectMembersPanel({
 
   return (
     <section
-      className="project-members-panel"
+      className={`project-members-panel${compact ? ' pw-chat-members' : ''}`}
       aria-labelledby="project-members-title"
     >
       <div className="project-members-heading">
         <div>
-          <p className="projects-kicker">PROJECT PARTICIPATION</p>
+          {!compact && <p className="projects-kicker">PROJECT PARTICIPATION</p>}
           <h2 id="project-members-title">Project Members</h2>
           <p>
-            Membership is derived from permanent Outcome Membership. Access
-            controls only the canonical project-level editable actions.
+            {compact
+              ? 'Members default to View only for project structure.'
+              : 'Membership is derived from permanent Outcome Membership. Access controls only the canonical project-level editable actions.'}
           </p>
         </div>
       </div>
+      {compact && projectLead && (
+        <div className="pw-chat-lead-row">
+          <span className="pw-chat-member-avatar" aria-hidden="true">{projectLead.fullName.trim().split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase()}</span>
+          <div className="pw-chat-member-identity"><strong>{projectLead.fullName}</strong><small>Project Lead</small></div>
+          <span className="pw-chat-member-role">Project Lead</span>
+        </div>
+      )}
       {members.isPending ? (
         <div className="project-members-loading" role="status">
           Loading Project Members...
@@ -119,14 +131,16 @@ export function ProjectMembersPanel({
             Retry
           </button>
         </div>
-      ) : members.data.members.length === 0 ? (
-        <div className="projects-state-card">
-          <strong>No Project Members yet</strong>
-          <p>Members appear here after joining their first Outcome.</p>
-        </div>
+      ) : members.data.members.filter((item) => item.member.id !== projectLead?.id).length === 0 ? (
+        compact && projectLead ? null : (
+          <div className="projects-state-card">
+            <strong>No Project Members yet</strong>
+            <p>Members appear here after joining their first Outcome.</p>
+          </div>
+        )
       ) : (
         <div className="project-members-list">
-          {members.data.members.map((item) => {
+          {members.data.members.filter((item) => item.member.id !== projectLead?.id).map((item) => {
             const isUpdating =
               updateAccess.isPending &&
               updateAccess.variables?.memberId === item.member.id;
@@ -145,17 +159,17 @@ export function ProjectMembersPanel({
                     <p>{item.member.email}</p>
                   </div>
                 </div>
-                <div className="project-member-outcomes">
+                {!compact && <div className="project-member-outcomes">
                   <span>Joined Outcomes</span>
                   <p>
                     {item.outcomes.length
                       ? item.outcomes.map(({ title }) => title).join(', ')
                       : 'Membership source unavailable'}
                   </p>
-                </div>
+                </div>}
                 {members.data.canManageAccess ? (
                   <label className="project-member-access">
-                    <span>Project access</span>
+                    <span>{compact ? 'Access' : 'Project access'}</span>
                     <select
                       aria-label={`Project access for ${item.member.fullName}`}
                       value={item.accessLevel}
@@ -167,14 +181,14 @@ export function ProjectMembersPanel({
                         })
                       }
                     >
-                      <option value="CAN_VIEW">CAN_VIEW</option>
-                      <option value="CAN_EDIT">CAN_EDIT</option>
+                      <option value="CAN_VIEW">{compact ? 'View only' : 'CAN_VIEW'}</option>
+                      <option value="CAN_EDIT">{compact ? 'Can edit' : 'CAN_EDIT'}</option>
                     </select>
                   </label>
                 ) : (
                   <div className="project-member-access">
                     <span>Project access</span>
-                    <strong>{item.accessLevel}</strong>
+                    <strong>{compact ? (item.accessLevel === 'CAN_VIEW' ? 'View only' : 'Can edit') : item.accessLevel}</strong>
                   </div>
                 )}
               </article>
