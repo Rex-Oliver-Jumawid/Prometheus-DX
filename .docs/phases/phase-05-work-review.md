@@ -103,7 +103,7 @@ Schema drift inspection shows only the pre-existing `updated_at` defaults on `me
 Phase 5 introduces no table/column drift.
 Implemented entities include Feature, Task, OutcomeSubmission, SubmissionReview, OutcomeRevisionRequest, OutcomeAcceptance, OutcomeAcceptanceMember, and ActivityLog.
 Reconciled prototype output content, private saved drafts, and persisted criterion verification in the canonical data model before implementation.
-Attachment upload remains Phase 9; Phase 5 output content supports the prototype's output name or link.
+Binary attachment upload is outside the current release scope; Phase 5 output content supports the prototype's output name or HTTP(S) link.
 
 ## API Changes
 
@@ -128,7 +128,7 @@ Baseline checks run during orientation:
 - `pnpm test`: 84/84 passed across 13 files.
 - `pnpm prisma:validate`: passed.
 
-The full Phase 5 acceptance gate remains in progress.
+At the time this implementation evidence was recorded, the full Phase 5 gate had not yet been formally closed.
 Slice 1 focused browser verification: 6/6 passed.
 The latest previously recorded `pnpm verify` passed with 106/106 Node tests across 16 files, typecheck, lint, and both production builds.
 The repository now also runs React component tests through `pnpm test:ui`, includes them in `pnpm verify`, keeps normal Playwright E2E on Chromium, and exposes `pnpm verify:release` for Firefox/WebKit release verification.
@@ -211,7 +211,8 @@ Recorded the resulting semantics in the canonical data model.
 #### Result
 
 The rule is implemented from current prerequisite acceptance and per-edge override records.
-The distinct-user dependency browser checks are in progress.
+At the time of this decision entry, distinct-user dependency browser checks were still in progress.
+Later closure evidence supersedes that interim status.
 
 #### What we learned
 
