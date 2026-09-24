@@ -573,7 +573,7 @@ Brevo credentials must never be exposed to frontend code.
 
 Prometheus treats PostgreSQL as the collaboration and WorkSession source of truth.
 
-The current release uses TanStack Query polling plus explicit invalidation and focus/reconnect refetching where live visibility matters, including chat and Working Now surfaces.
+The current release uses TanStack Query polling plus explicit invalidation and focus/reconnect refetching where live visibility matters, including chat, Notifications, unread counts, and Working Now surfaces.
 
 This satisfies the release requirement for automatic live updates without requiring a second message state.
 
@@ -581,8 +581,8 @@ Supabase Realtime remains an optional future transport when push delivery provid
 
 Potential future push candidates include:
 
-- Project and VisiWork chat.
-- Live notification delivery.
+- Project and VisiWork chat when lower latency is required.
+- Notification delivery when polling no longer meets scale or latency needs.
 - Presence indicators that remain supplemental to WorkSession state.
 
 Persistent business state such as messages, Outcome Membership, project access, submissions, project status, notifications, and WorkSessions must remain stored in PostgreSQL and must not rely on ephemeral presence or transport state.

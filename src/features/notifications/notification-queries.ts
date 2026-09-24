@@ -15,6 +15,8 @@ import { apiFetch } from '../../lib/api';
 
 export type NotificationFilter = 'all' | 'unread' | 'mentions' | 'projects';
 
+export const NOTIFICATION_REFRESH_INTERVAL_MS = 15_000;
+
 export const notificationKeys = {
   all: ['notifications'] as const,
   list: (filter: NotificationFilter) =>
@@ -35,7 +37,10 @@ export function notificationListQuery(
         { accessToken, signal },
       ),
     staleTime: 15_000,
-    refetchOnWindowFocus: true,
+    refetchInterval: NOTIFICATION_REFRESH_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 }
 
@@ -49,8 +54,10 @@ export function notificationUnreadCountQuery(accessToken?: string) {
         { accessToken, signal },
       ),
     staleTime: 15_000,
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: true,
+    refetchInterval: NOTIFICATION_REFRESH_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 }
 

@@ -176,9 +176,9 @@ When binary chat attachments are implemented, restore coverage for supported/uns
 
 | ID | Test | Steps | Expected Result |
 | --- | --- | --- | --- |
-| F9-21 | Live notification | Trigger a notification event while recipient has app open. | Notification appears without refresh. |
+| F9-21 | Live notification | Trigger a notification event while recipient has app open. | Notification list and sidebar unread count update automatically within the configured polling interval without manual refresh. |
 | F9-22 | Persistence | Refresh after live notification. | Notification remains because it is persistent data. |
-| F9-23 | Reconnect missed event | Disconnect recipient, trigger event, reconnect. | Persistent notification is recovered even if live event was missed. |
+| F9-23 | Reconnect missed event | Disconnect recipient, trigger event, reconnect. | Persistent notification is recovered immediately through reconnect refetch even if a polling cycle was missed. |
 
 ## Phase 9 Main E2E Flow
 

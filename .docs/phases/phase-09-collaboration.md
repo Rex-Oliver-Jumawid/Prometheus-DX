@@ -18,6 +18,9 @@ A separate Supabase Realtime transport is not required for current release compl
 
 Current Project Chat refresh behavior polls every 3 seconds, refreshes in the background, and forces refetch on focus and reconnect.
 
+Notifications now refresh the active inbox and global unread count every 15 seconds, including background polling, and force refetch on focus and reconnect.
+This makes new collaboration notifications appear without requiring a manual page refresh while keeping persisted Notification rows authoritative.
+
 Current collaboration behavior also clears a search target when Clear is selected and clears the target plus returns the message viewport to the newest messages after sending, matching the expected Messenger-style conversation flow.
 
 Binary Project/VisiWork chat attachments are **not implemented**.
@@ -249,6 +252,7 @@ Automated coverage exists for:
 - Project Activity filters and rendering.
 - production migration application against PostgreSQL.
 - direct browser-role denial for Project Chat tables.
+- notification query-policy coverage for polling, background refresh, focus refresh, and reconnect refresh.
 
 The manual acceptance file is:
 
