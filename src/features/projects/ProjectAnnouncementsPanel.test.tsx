@@ -55,7 +55,7 @@ describe('ProjectAnnouncementsPanel', () => {
       reads += 1;
       return reads === 1
         ? Promise.reject(new Error('Simulated announcement API failure'))
-        : Promise.resolve({ items: [], canManage: true });
+        : Promise.resolve({ items: [], canManage: true, canPost: true });
     });
     renderPanel();
     expect(await screen.findByText('Announcements could not be loaded.')).toBeVisible();
@@ -70,7 +70,7 @@ describe('ProjectAnnouncementsPanel', () => {
       if (options?.method === 'POST')
         return Promise.resolve(announcement);
       if (path.endsWith('/announcements'))
-        return Promise.resolve({ items: [], canManage: true });
+        return Promise.resolve({ items: [], canManage: true, canPost: true });
       return Promise.reject(new Error('Unexpected API request'));
     });
 
@@ -105,7 +105,7 @@ describe('ProjectAnnouncementsPanel', () => {
           pinnedAt: '2026-09-24T11:05:00.000Z',
         });
       if (path.endsWith('/announcements'))
-        return Promise.resolve({ items: [announcement], canManage: true });
+        return Promise.resolve({ items: [announcement], canManage: true, canPost: true });
       return Promise.reject(new Error('Unexpected API request'));
     });
 
@@ -123,10 +123,38 @@ describe('ProjectAnnouncementsPanel', () => {
     ));
   });
 
+  it('lets Project Members post without showing Lead-only pin controls', async () => {
+    vi.mocked(apiFetch).mockImplementation((path, _schema, options) => {
+      if (options?.method === 'POST') return Promise.resolve(announcement);
+      if (path.endsWith('/announcements'))
+        return Promise.resolve({
+          items: [{ ...announcement, pinnedAt: '2026-09-24T11:05:00.000Z' }],
+          canManage: false,
+          canPost: true,
+        });
+      return Promise.reject(new Error('Unexpected API request'));
+    });
+    renderPanel();
+    fireEvent.click(await screen.findByRole('button', { name: 'Announce' }));
+    expect(screen.queryByRole('button', { name: 'Unpin announcement' })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Announcement title' }), {
+      target: { value: announcement.title },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Announcement details' }), {
+      target: { value: announcement.body },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => expect(apiFetch).toHaveBeenCalledWith(
+      '/projects/' + projectId + '/announcements',
+      expect.anything(),
+      expect.objectContaining({ method: 'POST' }),
+    ));
+  });
+
   it('keeps announcement management hidden from non-leads', async () => {
     vi.mocked(apiFetch).mockResolvedValue({
       items: [{ ...announcement, pinnedAt: '2026-09-24T11:05:00.000Z' }],
-      canManage: false,
+      canManage: false, canPost: false,
     });
 
     renderPanel();
