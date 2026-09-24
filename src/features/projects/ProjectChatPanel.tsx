@@ -212,7 +212,7 @@ export function ProjectChatPanel({
               }}
             >
               {ordered.map((message) => (
-                <li key={message.id} className="pw-chat-message">
+                <li key={message.id} className={message.canEdit ? "pw-chat-message pw-chat-message--own" : "pw-chat-message"}>
                   <div className="pw-chat-avatar" aria-hidden="true">
                     {message.author.fullName.trim().slice(0, 1).toUpperCase() || '?'}
                   </div>
@@ -301,22 +301,22 @@ export function ProjectChatPanel({
                   <button type="button" onClick={() => setReplyTo(null)}>Cancel reply</button>
                 </div>
               )}
-              <label htmlFor="pw-chat-input">Message</label>
-              <textarea
-                id="pw-chat-input"
-                placeholder="Message the project..."
-                rows={3}
-                maxLength={4000}
-                value={body}
-                onChange={(event) => setBody(event.target.value)}
-                disabled={send.isPending}
-              />
-              <div className="pw-chat-composer-footer">
-                <span>{body.length} / 4000</span>
-                <button type="submit" disabled={send.isPending || !body.trim()}>
-                  {send.isPending ? 'Sending…' : 'Send message'}
+              <label htmlFor="pw-chat-input" className="sr-only">Message</label>
+              <div className="pw-chat-compose-row">
+                <textarea
+                  id="pw-chat-input"
+                  placeholder="Message the project..."
+                  rows={1}
+                  maxLength={4000}
+                  value={body}
+                  onChange={(event) => setBody(event.target.value)}
+                  disabled={send.isPending}
+                />
+                <button type="submit" aria-label="Send message" disabled={send.isPending || !body.trim()}>
+                  {send.isPending ? 'Sending…' : 'Send'}
                 </button>
               </div>
+              <span className="sr-only" aria-live="polite">{body.length} / 4000 characters</span>
               {send.isError && (
                 <p className="pw-collaboration-warning" role="alert">
                   {errorMessage(send.error)}
