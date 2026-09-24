@@ -623,7 +623,7 @@ export function ProjectChatPanel({
                     key={message.id}
                     data-message-id={message.id}
                     className={[
-                      message.canEdit ? 'pw-chat-message pw-chat-message--own' : 'pw-chat-message',
+                      (currentMemberId ? message.author.id === currentMemberId : message.canEdit) ? 'pw-chat-message pw-chat-message--own' : 'pw-chat-message',
                       targeted ? 'pw-chat-message--targeted' : '',
                       message.deletedAt ? 'pw-chat-message--deleted' : '',
                     ].filter(Boolean).join(' ')}
@@ -634,7 +634,6 @@ export function ProjectChatPanel({
                     <div className="pw-chat-body">
                       <div className="pw-chat-message-meta">
                         <strong>{message.author.fullName}</strong>
-                        <time dateTime={message.createdAt}>{messageTime(message.createdAt)}</time>
                         {message.editedAt && !message.deletedAt && (
                           <span className="pw-chat-edited">Edited</span>
                         )}
@@ -763,6 +762,9 @@ export function ProjectChatPanel({
                         </>
                       )}
                     </div>
+                    <time className="pw-chat-message-time" dateTime={message.createdAt}>
+                      {messageTime(message.createdAt)}
+                    </time>
                   </li>
                 );
               })}
@@ -775,8 +777,7 @@ export function ProjectChatPanel({
             </p>
           )}
 
-          {canWrite ? (
-            <form className="pw-chat-composer" onSubmit={submit}>
+          <form className="pw-chat-composer" onSubmit={submit} aria-label="Project chat composer">
               {replyTo && (
                 <div className="pw-chat-reply-banner">
                   <span>Replying to {replyTo.author.fullName}</span>
@@ -811,9 +812,10 @@ export function ProjectChatPanel({
                         if (!event.repeat) sendMessage();
                       }
                     }}
-                    disabled={send.isPending}
+                    disabled={!canWrite || send.isPending}
+                    title={!canWrite ? 'Only Project Members and the Project Lead can send messages.' : undefined}
                   />
-                  {mentionSuggestions.length > 0 && (
+                  {canWrite && mentionSuggestions.length > 0 && (
                     <div className="pw-chat-mention-menu" role="listbox">
                       {mentionSuggestions.map((candidate) => (
                         <button
@@ -829,7 +831,7 @@ export function ProjectChatPanel({
                     </div>
                   )}
                 </div>
-                <button type="submit" aria-label="Send message" disabled={send.isPending || !body.trim()}>
+                <button type="submit" aria-label="Send message" disabled={!canWrite || send.isPending || !body.trim()}>
                   {send.isPending ? 'Sending…' : 'Send'}
                 </button>
               </div>
@@ -840,11 +842,6 @@ export function ProjectChatPanel({
                 </p>
               )}
             </form>
-          ) : (
-            <p className="pw-collaboration-state">
-              Project members and the Project Lead can send messages. You can read this conversation.
-            </p>
-          )}
         </>
       )}
 

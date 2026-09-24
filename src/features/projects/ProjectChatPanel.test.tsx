@@ -38,7 +38,7 @@ vi.mock('../../lib/api', async (importOriginal) => ({
   apiFetch: vi.fn(),
 }));
 
-function renderChat(initialMessageId?: string) {
+function renderChat(initialMessageId?: string, currentMemberId?: string) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -48,6 +48,7 @@ function renderChat(initialMessageId?: string) {
         projectId={projectId}
         projectName="Example Project"
         projectLead={projectLead}
+        currentMemberId={currentMemberId}
         accessToken="token"
         initialMessageId={initialMessageId}
       />
@@ -250,9 +251,27 @@ describe('ProjectChatPanel interactions', () => {
     });
     renderChat();
     expect(await screen.findByText('Initial update')).toBeVisible();
-    expect(screen.queryByRole('textbox', { name: 'Message' })).not.toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Message' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Send message' })).toBeDisabled();
+    expect(screen.getByRole('form', { name: 'Project chat composer' })).toBeVisible();
+    expect(screen.queryByText('Project members and the Project Lead can send messages. You can read this conversation.')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Reply' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Message options' })).not.toBeInTheDocument();
+  });
+
+  it('keeps the author and timestamp in separate rows and aligns an own read-only message', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({
+      items: [{ ...existing, canEdit: false, canDelete: false }],
+      nextCursor: null,
+      canWrite: false,
+    });
+    renderChat(undefined, author.id);
+    const row = (await screen.findByText('Initial update')).closest('li');
+    expect(row).toHaveClass('pw-chat-message--own');
+    expect(row?.querySelector('.pw-chat-message-meta strong')).toHaveTextContent('Project Member');
+    expect(row?.querySelector('.pw-chat-message-meta time')).toBeNull();
+    expect(row?.querySelector(':scope > time.pw-chat-message-time')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Message' })).toBeDisabled();
   });
 
   it('opens an older message directly from a Project Chat notification link', async () => {
