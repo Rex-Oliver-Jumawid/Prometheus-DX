@@ -1313,3 +1313,281 @@
     animation: none;
   }
 }
+
+
+/* VisiWork chat search, settings, mentions, and deep-link targeting */
+.visiwork-room-header-actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.visiwork-room-header-actions > b {
+  margin-right: 2px;
+}
+
+.visiwork-room-header-actions > button,
+.visiwork-room-settings-wrap > button {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: #776b64;
+  cursor: pointer;
+}
+
+.visiwork-room-header-actions > button:hover,
+.visiwork-room-settings-wrap > button:hover,
+.visiwork-room-header-actions > button.active,
+.visiwork-room-settings-wrap > button.active {
+  border-color: #e7ddd6;
+  background: #faf6f2;
+  color: #cb4d22;
+}
+
+.visiwork-room-header-actions svg,
+.visiwork-chat-search-input svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.visiwork-room-settings-wrap {
+  position: relative;
+}
+
+.visiwork-room-settings-menu {
+  position: absolute;
+  z-index: 30;
+  top: 34px;
+  right: 0;
+  width: 150px;
+  display: grid;
+  gap: 3px;
+  padding: 6px;
+  border: 1px solid #e3d9d2;
+  border-radius: 11px;
+  background: #fffdfa;
+  box-shadow: 0 14px 32px rgba(58, 41, 33, 0.12);
+}
+
+.visiwork-room-settings-menu button {
+  width: 100%;
+  min-height: 30px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #564b45;
+  font-size: 9px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.visiwork-room-settings-menu button:hover {
+  background: #f7f1ed;
+}
+
+.visiwork-chat-search {
+  flex: 0 0 auto;
+  border-bottom: 1px solid #ebe3dd;
+  background: #fffaf7;
+}
+
+.visiwork-chat-search-input {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 8px;
+  color: #8a7e77;
+}
+
+.visiwork-chat-search-input input {
+  min-width: 0;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid #ded3cb;
+  border-radius: 9px;
+  background: #fff;
+  color: #4f4540;
+  font-size: 9px;
+  outline: none;
+}
+
+.visiwork-chat-search-input input:focus {
+  border-color: #d9a18d;
+  box-shadow: 0 0 0 3px rgba(203, 77, 34, 0.08);
+}
+
+.visiwork-chat-search-input button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #9b8e87;
+  font-size: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.visiwork-chat-search-results {
+  max-height: 190px;
+  overflow-y: auto;
+  padding: 0 8px 8px;
+}
+
+.visiwork-chat-search-results > p {
+  margin: 6px 8px;
+  color: #9a8d86;
+  font-size: 8.5px;
+  line-height: 12px;
+}
+
+.visiwork-chat-search-result {
+  width: 100%;
+  display: grid;
+  gap: 3px;
+  padding: 8px 9px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.visiwork-chat-search-result:hover {
+  background: #f8f1ed;
+}
+
+.visiwork-chat-search-result > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.visiwork-chat-search-result strong {
+  overflow: hidden;
+  color: #4a403b;
+  font-size: 8.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.visiwork-chat-search-result time {
+  flex: 0 0 auto;
+  color: #aaa09a;
+  font-size: 7.5px;
+}
+
+.visiwork-chat-search-result p {
+  margin: 0;
+  overflow: hidden;
+  color: #81756e;
+  font-size: 8.5px;
+  line-height: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.visiwork-room-message.targeted > div {
+  animation: visiwork-target-message 2.5s ease-out;
+}
+
+@keyframes visiwork-target-message {
+  0%,
+  28% {
+    border-color: #dd7b59;
+    background: #ffe3d7;
+    box-shadow: 0 0 0 4px rgba(203, 77, 34, 0.11);
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
+.visiwork-chat-input-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.visiwork-chat-input-wrap > input {
+  width: 100%;
+}
+
+.visiwork-mention-menu {
+  position: absolute;
+  z-index: 40;
+  right: 0;
+  bottom: calc(100% + 7px);
+  left: 0;
+  display: grid;
+  gap: 2px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 5px;
+  border: 1px solid #e0d6cf;
+  border-radius: 11px;
+  background: #fffdfa;
+  box-shadow: 0 13px 30px rgba(58, 41, 33, 0.13);
+}
+
+.visiwork-mention-menu button {
+  display: grid;
+  grid-template-columns: 25px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 4px 7px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #514741;
+  text-align: left;
+  cursor: pointer;
+}
+
+.visiwork-mention-menu button:hover {
+  background: #f8f1ed;
+}
+
+.visiwork-mention-menu button > span {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #f0e8e2;
+  color: #6b5e56;
+  font-family: Menlo, Monaco, Consolas, monospace;
+  font-size: 7.5px;
+  font-weight: 800;
+}
+
+.visiwork-mention-menu button strong {
+  overflow: hidden;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 620px) {
+  .visiwork-room-header-actions > b {
+    display: none;
+  }
+
+  .visiwork-chat-search-results {
+    max-height: 150px;
+  }
+}

@@ -3,7 +3,7 @@ import type { Notification } from '../../../shared/contracts/notification';
 type NotificationPresentation = {
   title: string;
   description: string;
-  category: 'Review' | 'Outcome' | 'Project';
+  category: 'Review' | 'Outcome' | 'Project' | 'Mention';
   icon: 'review' | 'participant' | 'project';
 };
 
@@ -85,10 +85,30 @@ export function presentNotification(
         category: 'Outcome',
         icon: 'project',
       };
+    case 'VISIWORK_MENTION': {
+      const mention = notification.visiworkMention;
+      return {
+        title: 'You were mentioned in VisiWork',
+        description: mention
+          ? `${actor ?? 'A teammate'} mentioned you in ${mention.roomLabel}: “${mention.preview}”`
+          : `${actor ?? 'A teammate'} mentioned you in VisiWork.`,
+        category: 'Mention',
+        icon: 'participant',
+      };
+    }
   }
 }
 
 export function notificationPath(notification: Notification): string | null {
+  if (notification.type === 'VISIWORK_MENTION' && notification.visiworkMention) {
+    const params = new URLSearchParams({
+      message: notification.visiworkMention.messageId,
+    });
+    if (notification.visiworkMention.departmentId) {
+      params.set('department', notification.visiworkMention.departmentId);
+    }
+    return `/visiwork?${params.toString()}`;
+  }
   if (!notification.project) return null;
   if (notification.outcome)
     return `/projects/${notification.project.id}/outcomes/${notification.outcome.id}`;

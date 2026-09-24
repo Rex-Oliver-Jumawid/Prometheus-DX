@@ -48,9 +48,11 @@ function NotificationRow({
         <span className="notification-context">
           <span className="notification-category">{presentation.category}</span>
           <span className="notification-context-name">
-            {notification.project
-              ? (notification.outcome?.title ?? notification.project.name)
-              : 'Linked context unavailable'}
+            {notification.visiworkMention
+              ? notification.visiworkMention.roomLabel
+              : notification.project
+                ? (notification.outcome?.title ?? notification.project.name)
+                : 'Linked context unavailable'}
           </span>
         </span>
       </span>
@@ -157,13 +159,28 @@ export function NotificationsPage() {
     ...notificationListQuery('unread', accessToken),
     enabled: filter === 'unread' && Boolean(accessToken),
   });
+  const mentions = useQuery({
+    ...notificationListQuery('mentions', accessToken),
+    enabled: filter === 'mentions' && Boolean(accessToken),
+  });
+  const projects = useQuery({
+    ...notificationListQuery('projects', accessToken),
+    enabled: filter === 'projects' && Boolean(accessToken),
+  });
   const unreadCount = useQuery({
     ...notificationUnreadCountQuery(accessToken),
     enabled: Boolean(accessToken),
   });
   const markRead = useMarkNotificationRead(accessToken);
   const markAllRead = useMarkAllNotificationsRead(accessToken);
-  const active = filter === 'all' ? all : unread;
+  const active =
+    filter === 'all'
+      ? all
+      : filter === 'unread'
+        ? unread
+        : filter === 'mentions'
+          ? mentions
+          : projects;
   const count =
     unreadCount.data?.count ??
     all.data?.items.filter((item) => !item.readAt).length ??
@@ -233,6 +250,34 @@ export function NotificationsPage() {
             Unread
             <span className="notifications-filter-count">{count}</span>
           </button>
+          <button
+            type="button"
+            id="notifications-mentions-tab"
+            role="tab"
+            aria-selected={filter === 'mentions'}
+            aria-controls="notifications-results"
+            className={filter === 'mentions' ? 'active' : ''}
+            onClick={() => setFilter('mentions')}
+          >
+            Mentions
+            <span className="notifications-filter-count">
+              {all.data?.items.filter((item) => item.type === 'VISIWORK_MENTION').length ?? '…'}
+            </span>
+          </button>
+          <button
+            type="button"
+            id="notifications-projects-tab"
+            role="tab"
+            aria-selected={filter === 'projects'}
+            aria-controls="notifications-results"
+            className={filter === 'projects' ? 'active' : ''}
+            onClick={() => setFilter('projects')}
+          >
+            Projects
+            <span className="notifications-filter-count">
+              {all.data?.items.filter((item) => item.type !== 'VISIWORK_MENTION').length ?? '…'}
+            </span>
+          </button>
         </div>
         <span className="notifications-unread-summary">{count} unread</span>
       </div>
@@ -246,11 +291,7 @@ export function NotificationsPage() {
       <div
         id="notifications-results"
         role="tabpanel"
-        aria-labelledby={
-          filter === 'all'
-            ? 'notifications-all-tab'
-            : 'notifications-unread-tab'
-        }
+        aria-labelledby={`notifications-${filter}-tab`}
       >
         {active.isPending ? (
           <NotificationsListSkeleton />
@@ -267,12 +308,20 @@ export function NotificationsPage() {
             <h2>
               {filter === 'all'
                 ? 'No notifications yet'
-                : "You're all caught up"}
+                : filter === 'mentions'
+                  ? 'No mentions yet'
+                  : filter === 'projects'
+                    ? 'No project notifications yet'
+                    : "You're all caught up"}
             </h2>
             <p>
               {filter === 'all'
-                ? 'Project and Outcome updates for you will appear here.'
-                : 'There are no unread notifications right now.'}
+                ? 'Project updates and VisiWork mentions for you will appear here.'
+                : filter === 'mentions'
+                  ? 'When someone mentions you in VisiWork chat, it will appear here.'
+                  : filter === 'projects'
+                    ? 'Project and Outcome updates for you will appear here.'
+                    : 'There are no unread notifications right now.'}
             </p>
             {filter === 'unread' && (
               <button type="button" onClick={() => setFilter('all')}>

@@ -508,3 +508,29 @@ button.notification-row:disabled {
     grid-column: 2;
   }
 }
+
+
+/* Notification categories added for VisiWork mentions while preserving the existing Figma-derived surface. */
+.notifications-filters [role='tablist'] {
+  flex-wrap: wrap;
+}
+
+.notification-icon.participant {
+  background: rgba(88, 80, 141, 0.09);
+}
+
+@media (max-width: 620px) {
+  .notifications-filters {
+    align-items: flex-start;
+  }
+
+  .notifications-filters [role='tablist'] {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+
+  .notifications-filters [role='tablist']::-webkit-scrollbar {
+    display: none;
+  }
+}

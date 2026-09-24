@@ -13,7 +13,7 @@ import {
 } from '../../../shared/contracts/notification';
 import { apiFetch } from '../../lib/api';
 
-export type NotificationFilter = 'all' | 'unread';
+export type NotificationFilter = 'all' | 'unread' | 'mentions' | 'projects';
 
 export const notificationKeys = {
   all: ['notifications'] as const,

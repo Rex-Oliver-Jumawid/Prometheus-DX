@@ -40,6 +40,22 @@ function newAccessLevel(data: Prisma.JsonValue): ProjectAccessLevel | null {
   return parsed.success ? parsed.data : null;
 }
 
+function visiworkMentionData(
+  data: Prisma.JsonValue,
+): Notification['visiworkMention'] {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
+  const messageId = typeof data.messageId === 'string' ? data.messageId : null;
+  const departmentId =
+    data.departmentId === null || typeof data.departmentId === 'string'
+      ? data.departmentId
+      : null;
+  const roomLabel =
+    typeof data.roomLabel === 'string' ? data.roomLabel : null;
+  const preview = typeof data.preview === 'string' ? data.preview : null;
+  if (!messageId || !roomLabel || preview === null) return null;
+  return { messageId, departmentId, roomLabel, preview };
+}
+
 function toNotification(record: NotificationRecord): Notification {
   return {
     id: record.id,
@@ -51,6 +67,9 @@ function toNotification(record: NotificationRecord): Notification {
       record.type === 'PROJECT_MEMBER_ACCESS_CHANGED'
         ? newAccessLevel(record.data)
         : null,
+    ...(record.type === 'VISIWORK_MENTION'
+      ? { visiworkMention: visiworkMentionData(record.data) }
+      : {}),
     createdAt: record.createdAt.toISOString(),
     readAt: record.readAt?.toISOString() ?? null,
   };
@@ -64,11 +83,18 @@ export class NotificationsService {
     recipientMemberId: string,
     query: NotificationListQuery,
   ): Promise<NotificationListResponse> {
+    const where: Prisma.NotificationWhereInput = { recipientMemberId };
+
+    if (query.filter === 'unread') {
+      where.readAt = null;
+    } else if (query.filter === 'mentions') {
+      where.type = 'VISIWORK_MENTION';
+    } else if (query.filter === 'projects') {
+      where.type = { not: 'VISIWORK_MENTION' };
+    }
+
     const records = await this.prisma.notification.findMany({
-      where: {
-        recipientMemberId,
-        ...(query.filter === 'unread' ? { readAt: null } : {}),
-      },
+      where,
       relationLoadStrategy: 'join',
       select: notificationSelect,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
