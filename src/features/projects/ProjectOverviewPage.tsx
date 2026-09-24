@@ -294,16 +294,6 @@ export function ProjectOverviewPage() {
       className="pw-project-page"
       aria-labelledby="pwProjectTitle"
     >
-      {!outcomeId && (
-        <Link
-          to="/projects"
-          className="pw-back-nav pw-project-back-nav"
-          aria-label="Back to Projects list"
-        >
-          ← Back to Projects
-        </Link>
-      )}
-
       <div className="pw-top-bar">
         {(() => {
           if (outcomeId && workflow.data) {
