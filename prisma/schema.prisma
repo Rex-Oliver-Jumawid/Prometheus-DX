@@ -118,6 +118,7 @@ model Member {
   submissions                 OutcomeSubmission[]
   activity                    ActivityLog[]
   projectMessages             ProjectMessage[]
+  projectMessageMentions       ProjectMessageMention[]      @relation("ProjectMessageMentionTarget")
   submissionReviews           SubmissionReview[]
   requestedRevisions          OutcomeRevisionRequest[]     @relation("RevisionRequestedBy")
   resolvedRevisions           OutcomeRevisionRequest[]     @relation("RevisionResolvedBy")
@@ -469,6 +470,8 @@ model ProjectMessage {
   body            String           @db.VarChar(4000)
   createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   editedAt        DateTime?        @map("edited_at") @db.Timestamptz(6)
+  deletedAt       DateTime?        @map("deleted_at") @db.Timestamptz(6)
+  mentions        ProjectMessageMention[]
   project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   member          Member           @relation(fields: [memberId], references: [id], onDelete: Restrict)
   parent          ProjectMessage?  @relation("ProjectMessageReplies", fields: [parentMessageId], references: [id], onDelete: Restrict)
@@ -478,6 +481,17 @@ model ProjectMessage {
   @@index([memberId])
   @@index([parentMessageId])
   @@map("project_messages")
+}
+
+model ProjectMessageMention {
+  messageId String         @map("message_id") @db.Uuid
+  memberId  String         @map("member_id") @db.Uuid
+  message   ProjectMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  member    Member         @relation("ProjectMessageMentionTarget", fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@id([messageId, memberId])
+  @@index([memberId])
+  @@map("project_message_mentions")
 }
 
 model ActivityLog {

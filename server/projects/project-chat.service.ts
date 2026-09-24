@@ -9,7 +9,9 @@ import {
 import { Prisma, type Member } from '@prisma/client';
 import type {
   CreateProjectMessage,
+  DeleteProjectMessage,
   EditProjectMessage,
+  ProjectMessageSearchQuery,
   ProjectMessage,
   ProjectMessagePage,
 } from '../../shared/contracts/project-chat';
@@ -23,9 +25,11 @@ const messageInclude = {
     select: {
       id: true,
       body: true,
+      deletedAt: true,
       member: { select: { fullName: true } },
     },
   },
+  mentions: { include: { member: { select: { id: true, fullName: true } } } },
 } satisfies Prisma.ProjectMessageInclude;
 
 type MessageRecord = Prisma.ProjectMessageGetPayload<{
@@ -79,6 +83,37 @@ export class ProjectChatService {
       );
   }
 
+  /** Resolve only active people assigned to this Project, never arbitrary workspace IDs. */
+  private async validatedMentions(
+    db: Prisma.TransactionClient,
+    member: Member,
+    project: Awaited<ReturnType<ProjectChatService['projectFor']>>,
+    projectId: string,
+    body: string,
+    ids: string[],
+  ) {
+    const requested = [...new Set(ids)].filter((id) => id !== member.id);
+    if (!requested.length) return [];
+    const [people, memberships] = await Promise.all([
+      db.member.findMany({
+        where: { id: { in: requested }, status: 'ACTIVE' },
+        select: { id: true, fullName: true },
+      }),
+      db.projectMember.findMany({
+        where: { projectId, memberId: { in: requested } },
+        select: { memberId: true },
+      }),
+    ]);
+    const permitted = new Set([project.leadMemberId, ...memberships.map((row) => row.memberId)]);
+    const matches = people.filter((person) =>
+      permitted.has(person.id) &&
+      body.toLocaleLowerCase().includes('@' + person.fullName.toLocaleLowerCase()),
+    );
+    if (matches.length !== requested.length)
+      throw new BadRequestException('Mention an active Project Member who appears in the message.');
+    return matches;
+  }
+
   private toMessage(
     record: MessageRecord,
     currentMemberId: string,
@@ -93,13 +128,16 @@ export class ProjectChatService {
         ? {
             id: record.parent.id,
             authorName: record.parent.member.fullName,
-            preview: record.parent.body.slice(0, 160),
+            preview: record.parent.deletedAt ? '[Message deleted]' : record.parent.body.slice(0, 160),
           }
         : null,
-      body: record.body,
+      body: record.deletedAt ? '[Message deleted]' : record.body,
+      mentions: record.deletedAt ? [] : (record.mentions ?? []).map((entry) => entry.member),
+      deletedAt: record.deletedAt?.toISOString() ?? null,
       createdAt: record.createdAt.toISOString(),
       editedAt: record.editedAt?.toISOString() ?? null,
-      canEdit: canWrite && record.memberId === currentMemberId,
+      canEdit: canWrite && !record.deletedAt && record.memberId === currentMemberId,
+      canDelete: canWrite && !record.deletedAt && record.memberId === currentMemberId,
     };
   }
 
@@ -145,6 +183,53 @@ export class ProjectChatService {
     };
   }
 
+  async search(
+    member: Member,
+    projectId: string,
+    query: ProjectMessageSearchQuery,
+  ) {
+    const project = await this.projectFor(member, projectId);
+    const rows = await this.prisma.projectMessage.findMany({
+      where: { projectId, deletedAt: null, body: { contains: query.q, mode: 'insensitive' } },
+      include: messageInclude,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: 30,
+    });
+    return { items: rows.map((row) => this.toMessage(row, member.id, this.canWrite(member, project))) };
+  }
+
+  async context(member: Member, projectId: string, messageId: string) {
+    const project = await this.projectFor(member, projectId);
+    const target = await this.prisma.projectMessage.findFirst({
+      where: { id: messageId, projectId },
+      include: messageInclude,
+    });
+    if (!target) throw new NotFoundException('Message not found in this Project.');
+    const older = await this.prisma.projectMessage.findMany({
+      where: { projectId, OR: [
+        { createdAt: { lt: target.createdAt } },
+        { createdAt: target.createdAt, id: { lt: target.id } },
+      ] },
+      include: messageInclude,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: 15,
+    });
+    const newer = await this.prisma.projectMessage.findMany({
+      where: { projectId, OR: [
+        { createdAt: { gt: target.createdAt } },
+        { createdAt: target.createdAt, id: { gt: target.id } },
+      ] },
+      include: messageInclude,
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: 15,
+    });
+    return {
+      targetMessageId: messageId,
+      items: [...older.reverse(), target, ...newer].map((row) =>
+        this.toMessage(row, member.id, this.canWrite(member, project))),
+    };
+  }
+
   async send(
     member: Member,
     projectId: string,
@@ -158,18 +243,22 @@ export class ProjectChatService {
       this.requireWrite(member, project);
       if (input.parentMessageId) {
         const parent = await db.projectMessage.findFirst({
-          where: { id: input.parentMessageId, projectId },
+          where: { id: input.parentMessageId, projectId, deletedAt: null },
           select: { id: true },
         });
         if (!parent)
           throw new BadRequestException('Reply must reference a message in this Project.');
       }
+      const mentions = await this.validatedMentions(
+        db, member, project, projectId, input.body, input.mentionMemberIds ?? [],
+      );
       const message = await db.projectMessage.create({
         data: {
           projectId,
           memberId: member.id,
           body: input.body,
           parentMessageId: input.parentMessageId,
+          ...(mentions.length ? { mentions: { create: mentions.map((person) => ({ memberId: person.id })) } } : {}),
         },
         include: messageInclude,
       });
@@ -189,17 +278,55 @@ export class ProjectChatService {
       this.requireWrite(member, project);
       const original = await db.projectMessage.findFirst({
         where: { id: messageId, projectId },
-        select: { id: true, memberId: true, editedAt: true },
+        select: { id: true, memberId: true, editedAt: true, deletedAt: true },
       });
       if (!original) throw new NotFoundException('Message not found.');
       if (original.memberId !== member.id)
         throw new ForbiddenException('Only the author may edit this message.');
+      if (original.deletedAt) throw new ConflictException('Deleted messages cannot be edited.');
       // A stale editor must not replace another tab's more recent changes.
       if ((original.editedAt?.toISOString() ?? null) !== input.expectedEditedAt)
         throw new ConflictException('This message was edited elsewhere. Cancel and reopen the editor.');
+      const mentions = input.mentionMemberIds === undefined
+        ? undefined
+        : await this.validatedMentions(db, member, project, projectId, input.body, input.mentionMemberIds);
       const updated = await db.projectMessage.update({
         where: { id: messageId },
-        data: { body: input.body, editedAt: new Date() },
+        data: {
+          body: input.body,
+          editedAt: new Date(),
+          ...(mentions ? { mentions: { deleteMany: {}, create: mentions.map((person) => ({ memberId: person.id })) } } : {}),
+        },
+        include: messageInclude,
+      });
+      return this.toMessage(updated, member.id);
+    });
+  }
+
+  /** A tombstone preserves replies without disclosing the removed message. */
+  async remove(
+    member: Member,
+    projectId: string,
+    messageId: string,
+    input: DeleteProjectMessage,
+  ): Promise<ProjectMessage> {
+    return this.prisma.$transaction(async (db) => {
+      await db.$queryRaw`SELECT id FROM projects WHERE id = ${projectId}::uuid FOR UPDATE`;
+      const project = await this.projectFor(member, projectId, db);
+      this.requireWrite(member, project);
+      const original = await db.projectMessage.findFirst({
+        where: { id: messageId, projectId },
+        select: { id: true, memberId: true, editedAt: true, deletedAt: true },
+      });
+      if (!original) throw new NotFoundException('Message not found.');
+      if (original.memberId !== member.id)
+        throw new ForbiddenException('Only the author may delete this message.');
+      if (original.deletedAt) throw new ConflictException('Message was already deleted.');
+      if ((original.editedAt?.toISOString() ?? null) !== input.expectedEditedAt)
+        throw new ConflictException('Message changed elsewhere. Refresh before deleting.');
+      const updated = await db.projectMessage.update({
+        where: { id: messageId },
+        data: { body: '[Message deleted]', deletedAt: new Date(), mentions: { deleteMany: {} } },
         include: messageInclude,
       });
       return this.toMessage(updated, member.id);

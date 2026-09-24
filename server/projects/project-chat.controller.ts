@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -15,7 +16,9 @@ import { z } from 'zod';
 import type { Member } from '@prisma/client';
 import {
   CreateProjectMessageSchema,
+  DeleteProjectMessageSchema,
   EditProjectMessageSchema,
+  ProjectMessageSearchQuerySchema,
 } from '../../shared/contracts/project-chat';
 import { CurrentMember } from '../auth/current-member.decorator';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
@@ -27,6 +30,27 @@ export class ProjectChatController {
   constructor(
     @Inject(ProjectChatService) private readonly chat: ProjectChatService,
   ) {}
+
+  @Get('search')
+  search(
+    @CurrentMember() member: Member,
+    @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
+    @Query() query: unknown,
+  ) {
+    const parsed = ProjectMessageSearchQuerySchema.safeParse(query);
+    if (!parsed.success)
+      throw new BadRequestException(parsed.error.issues[0]?.message ?? 'Invalid search.');
+    return this.chat.search(member, projectId, parsed.data);
+  }
+
+  @Get(':messageId/context')
+  context(
+    @CurrentMember() member: Member,
+    @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
+    @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
+  ) {
+    return this.chat.context(member, projectId, messageId);
+  }
 
   @Get()
   list(
@@ -62,5 +86,18 @@ export class ProjectChatController {
     if (!parsed.success)
       throw new BadRequestException(parsed.error.issues[0]?.message ?? 'Invalid message.');
     return this.chat.edit(member, projectId, messageId, parsed.data);
+  }
+
+  @Delete(':messageId')
+  remove(
+    @CurrentMember() member: Member,
+    @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
+    @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = DeleteProjectMessageSchema.safeParse(body);
+    if (!parsed.success)
+      throw new BadRequestException(parsed.error.issues[0]?.message ?? 'Invalid message.');
+    return this.chat.remove(member, projectId, messageId, parsed.data);
   }
 }
