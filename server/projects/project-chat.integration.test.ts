@@ -97,7 +97,7 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
     });
   });
 
-  it('enforces Lead-wide versus Member-only activity queries against real PostgreSQL', async () => {
+  it('exposes company-visible safe Project activity to every authorized member', async () => {
     const leadLogId = randomUUID();
     const memberLogId = randomUUID();
     const foreignLogId = randomUUID();
@@ -126,18 +126,14 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
       activity.list(participant, projectId),
       activity.list(viewer, projectId),
     ]);
-    expect(ProjectActivityPageSchema.parse(leadView).scope).toBe('PROJECT');
-    expect(leadView.items.map((item) => item.id)).toEqual(
-      expect.arrayContaining([leadLogId, memberLogId]),
-    );
-    expect(ProjectActivityPageSchema.parse(memberView)).toMatchObject({
-      scope: 'PERSONAL',
-      items: [{ id: memberLogId, actor: { id: participant.id }, outcomeTitle: null }],
-      nextCursor: null,
-    });
-    expect(outsiderView.scope).toBe('PERSONAL');
-    expect(outsiderView.items).toEqual([]);
-    await expect(activity.list(participant, projectId, leadLogId))
+    for (const view of [leadView, memberView, outsiderView]) {
+      expect(ProjectActivityPageSchema.parse(view).scope).toBe('PROJECT');
+      expect(view.items.map((item) => item.id)).toEqual(
+        expect.arrayContaining([leadLogId, memberLogId]),
+      );
+      expect(view.items.some((item) => item.id === foreignLogId)).toBe(false);
+    }
+    await expect(activity.list(participant, projectId, foreignLogId))
       .rejects.toBeInstanceOf(BadRequestException);
   });
 
