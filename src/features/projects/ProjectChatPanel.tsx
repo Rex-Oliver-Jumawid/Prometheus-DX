@@ -534,7 +534,7 @@ export function ProjectChatPanel({
           <strong>Project chat could not be loaded.</strong>
           <p>{errorMessage(messages.error)}</p>
           <p className="pw-chat-load-hint">
-            If the API reports a server error, check its terminal and regenerate the Prisma Client after switching branches.
+            Your conversation will reappear when the service recovers. Try again without leaving this page.
           </p>
           <button type="button" onClick={() => void messages.refetch()}>Try again</button>
         </div>
