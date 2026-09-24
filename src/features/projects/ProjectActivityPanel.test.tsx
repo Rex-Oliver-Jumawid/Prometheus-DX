@@ -89,9 +89,14 @@ describe('ProjectActivityPanel', () => {
     expect(screen.getByText(/completed a task/)).toBeVisible();
     expect(screen.getByRole('combobox', { name: 'Member' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reviews' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'View outcome' })).toHaveAttribute(
-      'href', '/projects/' + projectId + '/outcomes/' + outcomeId,
-    );
+    const outcomeLinks = screen.getAllByRole('link', { name: 'View outcome' });
+    expect(outcomeLinks).toHaveLength(2);
+    for (const link of outcomeLinks) {
+      expect(link).toHaveAttribute(
+        'href',
+        '/projects/' + projectId + '/outcomes/' + outcomeId,
+      );
+    }
   });
 
   it('uses the empty-history card when Project Activity has no recorded actions', async () => {
