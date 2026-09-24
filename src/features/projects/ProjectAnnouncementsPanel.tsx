@@ -45,8 +45,9 @@ export function ProjectAnnouncementsPanel({
         { accessToken },
       ),
     enabled: Boolean(accessToken),
-    staleTime: 5_000,
-    refetchInterval: 10_000,
+    staleTime: 60_000,
+    gcTime: 15 * 60_000,
+    refetchInterval: 30_000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
   });
@@ -175,12 +176,31 @@ export function ProjectAnnouncementsPanel({
       )}
 
       {announcements.isPending ? (
-        <div className="pw-announcement-state" role="status">
-          Loading announcements...
+        <div className="pw-announcement-skeleton" role="status" aria-label="Loading announcements">
+          <span className="sr-only">Loading announcements...</span>
+          <div className="pw-announcement-skeleton-card" aria-hidden="true">
+            <span className="pw-chat-skeleton-line" />
+            <span className="pw-chat-skeleton-line" />
+            <span className="pw-chat-skeleton-line" />
+            <span className="pw-chat-skeleton-line" />
+          </div>
+          <div className="pw-announcement-skeleton-card pw-announcement-skeleton-card--secondary" aria-hidden="true">
+            <span className="pw-chat-skeleton-line" />
+            <span className="pw-chat-skeleton-line" />
+            <span className="pw-chat-skeleton-line" />
+          </div>
         </div>
       ) : announcements.isError ? (
         <div className="pw-announcement-state" role="alert">
-          Announcements could not be loaded.
+          <strong>Announcements could not be loaded.</strong>
+          <p>{errorMessage(announcements.error)}</p>
+          <button
+            type="button"
+            className="pw-announce-retry"
+            onClick={() => void announcements.refetch()}
+          >
+            Try again
+          </button>
         </div>
       ) : announcements.data.items.length ? (
         <div className="pw-announcement-list">
