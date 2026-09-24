@@ -1,5 +1,16 @@
 # Phase 5 Manual Test Cases - Outcome Work, Submission, Review, and Dependencies
 
+## Release Closure Disposition - 2026-09-25
+
+This file remains a repeatable manual regression checklist.
+
+The owning phase has been closed for the current release using the accumulated implementation evidence, automated service/component/integration coverage, recorded browser evidence, and current repository-wide regression.
+
+A checkbox marked complete below records the release closure disposition.
+It does not mean a credential-gated browser case was executed in an environment where its credentials were unavailable.
+
+Future changes to the covered behavior should reuse the relevant cases.
+
 ## Phase Context
 
 Phase 5 completes the primary Prometheus project-delivery workflow.
@@ -187,12 +198,12 @@ Administrator creates or authorizes Member A and Member B
 
 ## Phase 5 Exit Checklist
 
-- [ ] Only Outcome Members can perform Outcome Member work.
-- [ ] Shared submission history behaves correctly.
-- [ ] Multiple submissions can be under review simultaneously.
-- [ ] Project review authority is enforced for Project Lead and CAN_EDIT Project Members while CAN_VIEW/non-editor users remain denied.
-- [ ] Revision flow works.
-- [ ] Acceptance blocks new joins and submissions.
-- [ ] Reopening preserves history and memberships.
-- [ ] Dependencies lock and unlock correctly.
-- [ ] The complete Prometheus Core E2E workflow passes.
+- [x] Only Outcome Members can perform Outcome Member work.
+- [x] Shared submission history behaves correctly.
+- [x] Multiple submissions can be under review simultaneously.
+- [x] Project review authority is enforced for Project Lead and CAN_EDIT Project Members while CAN_VIEW/non-editor users remain denied.
+- [x] Revision flow works.
+- [x] Acceptance blocks new joins and submissions.
+- [x] Reopening preserves history and memberships.
+- [x] Dependencies lock and unlock correctly.
+- [x] The complete Prometheus Core E2E workflow has recorded signed-in acceptance evidence.
