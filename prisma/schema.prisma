@@ -63,6 +63,7 @@ enum NotificationType {
   OUTCOME_REOPENED
   DEPENDENCY_UNLOCKED
   VISIWORK_MENTION
+  PROJECT_CHAT_MENTION
 }
 
 enum Weekday {
