@@ -222,7 +222,7 @@ export function ProjectAnnouncementsPanel({
                 <h3>{announcement.title}</h3>
                 <p>{announcement.body}</p>
                 <footer>
-                  {announcement.author.fullName} · {displayTime(announcement.createdAt)}
+                  {announcement.author.fullName} · {pinned ? 'Project guidance' : displayTime(announcement.createdAt)}
                 </footer>
               </article>
             );
