@@ -422,11 +422,11 @@ export function HomePage() {
 
   if (!member) return null;
 
-  if (dashboard.isPending) {
+  if (dashboard.isPending && !dashboard.data) {
     return <HomeDashboardSkeleton />;
   }
 
-  if (dashboard.isError || !dashboard.data) {
+  if (!dashboard.data) {
     return (
       <section className="home-request-state" role="alert">
         <h1>Home could not be loaded</h1>

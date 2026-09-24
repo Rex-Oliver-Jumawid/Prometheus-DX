@@ -113,7 +113,7 @@ export function WorkAttendanceControl() {
     },
   });
 
-  if (current.isPending) {
+  if (current.isPending && !current.data) {
     return (
       <aside
         className="attendance-control attendance-edge-time pending"
@@ -131,7 +131,7 @@ export function WorkAttendanceControl() {
     );
   }
 
-  if (current.isError) {
+  if (current.isError && !current.data) {
     return (
       <div className="attendance-control error" role="alert">
         <span>Attendance unavailable</span>
