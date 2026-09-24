@@ -526,64 +526,85 @@ function DepartmentProjectDetail({
   workByOutcome: Map<string, OutcomeWork>;
 }) {
   const stages = departmentStages(project, departmentId);
+  const [expanded, setExpanded] = useState(false);
+  const detailsId = `visiwork-project-details-${project.id}`;
 
   return (
-    <article className="visiwork-department-project-detail">
-      <div className="visiwork-department-project-summary">
-        <div>
+    <article
+      className={
+        expanded
+          ? 'visiwork-department-project-detail expanded'
+          : 'visiwork-department-project-detail'
+      }
+    >
+      <button
+        type="button"
+        className="visiwork-department-project-summary"
+        aria-expanded={expanded}
+        aria-controls={detailsId}
+        onClick={() => setExpanded((current) => !current)}
+      >
+        <span className="visiwork-project-disclosure" aria-hidden="true">
+          {expanded ? '▼' : '▶'}
+        </span>
+        <span className="visiwork-department-project-copy">
           <strong>{project.name}</strong>
           <p>{project.description}</p>
-        </div>
-        <div className="visiwork-project-inline-progress">
-          <div className="visiwork-progress-track" aria-hidden="true">
+        </span>
+        <span className="visiwork-project-inline-progress">
+          <span className="visiwork-progress-track" aria-hidden="true">
             <i style={{ width: clampPercent(project.progress) + '%' }} />
-          </div>
+          </span>
           <span>{clampPercent(project.progress)}%</span>
-        </div>
-      </div>
+        </span>
+      </button>
 
-      {stages.length ? (
-        stages.map((stage) => {
-          const openCount = stage.outcomes.filter(
-            (outcome) => outcome.lifecycleStatus !== 'ACCEPTED',
-          ).length;
-          return (
-            <section className="visiwork-stage" key={stage.id}>
-              <header>
-                <strong>{stage.name}</strong>
-                <span>
-                  {openCount} open / {stage.outcomes.length} assigned
-                </span>
-              </header>
-              <div className="visiwork-outcome-list">
-                {stage.outcomes.map((outcome) => {
-                  const state = outcomeState(
-                    outcome,
-                    workByOutcome.get(outcome.id),
-                  );
-                  return (
-                    <div className="visiwork-outcome" key={outcome.id}>
-                      <div>
-                        <strong>{outcome.title}</strong>
-                        <div className="visiwork-outcome-people">
-                          {outcome.memberNames.slice(0, 3).map((name) => (
-                            <span key={name}>{name}</span>
-                          ))}
+      {expanded && (
+        <div className="visiwork-project-details" id={detailsId}>
+          {stages.length ? (
+            stages.map((stage) => {
+              const openCount = stage.outcomes.filter(
+                (outcome) => outcome.lifecycleStatus !== 'ACCEPTED',
+              ).length;
+              return (
+                <section className="visiwork-stage" key={stage.id}>
+                  <header>
+                    <strong>{stage.name}</strong>
+                    <span>
+                      {openCount} open / {stage.outcomes.length} assigned
+                    </span>
+                  </header>
+                  <div className="visiwork-outcome-list">
+                    {stage.outcomes.map((outcome) => {
+                      const state = outcomeState(
+                        outcome,
+                        workByOutcome.get(outcome.id),
+                      );
+                      return (
+                        <div className="visiwork-outcome" key={outcome.id}>
+                          <div>
+                            <strong>{outcome.title}</strong>
+                            <div className="visiwork-outcome-people">
+                              {outcome.memberNames.slice(0, 3).map((name) => (
+                                <span key={name}>{name}</span>
+                              ))}
+                            </div>
+                          </div>
+                          <span>
+                            {state.label} · {state.progress}%
+                          </span>
                         </div>
-                      </div>
-                      <span>
-                        {state.label} · {state.progress}%
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          );
-        })
-      ) : (
-        <div className="visiwork-detail-empty">
-          No outcomes are assigned to this department in this project yet.
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })
+          ) : (
+            <div className="visiwork-detail-empty">
+              No outcomes are assigned to this department in this project yet.
+            </div>
+          )}
         </div>
       )}
     </article>
