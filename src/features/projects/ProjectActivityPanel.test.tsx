@@ -41,14 +41,19 @@ function renderActivity() {
 describe('ProjectActivityPanel', () => {
   beforeEach(() => vi.mocked(apiFetch).mockReset());
 
-  it('renders event-shaped skeletons and a summary placeholder while loading', () => {
-    vi.mocked(apiFetch).mockImplementation(() => new Promise(() => {}));
+  it('renders event-shaped skeletons and a summary placeholder while loading', async () => {
+    let resolveFeed!: (result: unknown) => void;
+    const pending = new Promise((resolve) => { resolveFeed = resolve; });
+    vi.mocked(apiFetch).mockImplementation(() => pending);
     const { container } = renderActivity();
     expect(screen.getByRole('status', { name: 'Loading project activity' })).toBeVisible();
     expect(container.querySelectorAll('.pw-activity-skeleton-entry')).toHaveLength(4);
     expect(container.querySelectorAll('.pw-activity-skeleton-icon')).toHaveLength(4);
     expect(container.querySelector('.pw-activity-skeleton-count')).toBeInTheDocument();
     expect(screen.queryByText('0')).not.toBeInTheDocument();
+
+    resolveFeed({ items: [], nextCursor: null });
+    expect(await screen.findByText('No project activity has been recorded yet.')).toBeVisible();
   });
 
   it('links to live Outcomes and renders safe status transitions', async () => {
