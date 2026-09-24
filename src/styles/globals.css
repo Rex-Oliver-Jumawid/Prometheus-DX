@@ -1665,3 +1665,40 @@ button:disabled {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+.notification-utility {
+  position: relative;
+}
+
+.notification-utility .utility-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-unread-badge {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #f4511e;
+  box-shadow: 0 4px 6px rgba(244, 81, 30, 0.18);
+  color: #fff;
+  font-size: 8px;
+  font-weight: 850;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 980px) and (min-width: 701px) {
+  .sidebar-unread-badge {
+    position: absolute;
+    top: -2px;
+    right: -3px;
+  }
+}
