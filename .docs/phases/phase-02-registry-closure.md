@@ -58,6 +58,25 @@ The browser regression passed: Registry navigation was absent, direct `/registry
 
 No workspace-level Project Lead role was created.
 
+## Post-Phase Maintenance - Department Reference Diagnostics
+
+Phase 2 remains complete.
+
+Registry Department deletion was improved after closure so Administrators can see why a Department with zero Members may still be undeletable.
+
+A Department may remain referenced by Members, Project associations, or Outcome associations.
+The Registry UI exposes those reference counts and the backend keeps relational integrity authoritative.
+
+```text
+0 Members
+does not imply
+0 Department references
+```
+
+Administrators must reassign Members and remove or change the applicable Project or Outcome associations before deleting a referenced Department.
+
+Canonical deletion/reference semantics are documented in `.context/data-model.md`.
+
 ## Next Phase
 
 Proceed to Phase 3 - Project Core.
