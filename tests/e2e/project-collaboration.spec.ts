@@ -102,7 +102,7 @@ test('Chat persists a reply and author edit across reload', async ({ page }) => 
   await page.getByRole('button', { name: 'Reply', exact: true }).click();
   await expect(page.getByText(/Replying to/)).toBeVisible();
   await page.getByRole('textbox', { name: 'Message' }).fill('Persistent reply');
-  await page.getByRole('button', { name: 'Send message' }).click();
+  await page.getByRole('textbox', { name: 'Message' }).press('Enter');
   await expect(page.getByText('Persistent reply')).toBeVisible();
   await page.reload();
   await expect(page.getByText('Persistent reply')).toBeVisible();
