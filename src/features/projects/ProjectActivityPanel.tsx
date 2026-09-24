@@ -33,6 +33,9 @@ const descriptions: Record<string, string> = {
   SUBMISSION_REVIEWED: 'reviewed a submission',
   REVISION_REQUESTED: 'requested revisions',
   REVISION_RESOLVED: 'resolved revisions',
+  PROJECT_ANNOUNCEMENT_POSTED: 'Posted announcement',
+  PROJECT_ANNOUNCEMENT_PINNED: 'Pinned announcement',
+  PROJECT_ANNOUNCEMENT_UNPINNED: 'Unpinned announcement',
 };
 
 function eventDescription(action: string) {
@@ -98,6 +101,7 @@ function eventCategory(action: string) {
   if (action === 'OUTCOME_ACCEPTED' || action === 'OUTCOME_REOPENED') return 'Review';
   if (action.startsWith('TASK_')) return 'Task';
   if (action.startsWith('FEATURE_')) return 'Feature';
+  if (action.startsWith('PROJECT_ANNOUNCEMENT_')) return 'Announcement';
   if (action === 'OUTCOME_JOINED' || action === 'PROJECT_MEMBER_ACCESS_CHANGED') return 'Membership';
   return 'Project';
 }
@@ -154,7 +158,7 @@ export function ProjectActivityPanel({
       <header className="pw-collaboration-heading pw-activity-heading">
         <div>
           <span className="pw-collaboration-eyebrow">PROJECT AUDIT TRAIL</span>
-          <h2>Project activity</h2>
+          <h2>Project Activity</h2>
           <p>Review project decisions, submissions, revisions, dependencies, and member activity in one history.</p>
         </div>
         <div className="pw-activity-summary" aria-live="polite">
@@ -203,7 +207,8 @@ export function ProjectActivityPanel({
               {visible.map((item) => (
                 <li className="pw-activity-entry" key={item.id}>
                   <span className={'pw-activity-node pw-activity-node-' + eventCategory(item.action).toLowerCase()} aria-hidden="true">
-                    {item.action === 'OUTCOME_ACCEPTED' ? '✓' :
+                    {item.action.startsWith('PROJECT_ANNOUNCEMENT_') ? '⚑' :
+                      item.action === 'OUTCOME_ACCEPTED' ? '✓' :
                       item.action.startsWith('SUBMISSION_') ? '↗' :
                       item.action === 'REVISION_REQUESTED' ? '!' : '•'}
                   </span>
@@ -242,8 +247,8 @@ export function ProjectActivityPanel({
               Activity could not be refreshed. Showing previously loaded events.
             </p>
           )}
-          <div className="pw-activity-actions">
-            {feed.hasNextPage && (
+          {feed.hasNextPage && (
+            <div className="pw-activity-actions">
               <button
                 type="button"
                 className="pw-collaboration-load-more"
@@ -252,16 +257,8 @@ export function ProjectActivityPanel({
               >
                 {feed.isFetchingNextPage ? 'Loading…' : 'Load older activity'}
               </button>
-            )}
-            <button
-              type="button"
-              className="projects-secondary-button"
-              onClick={() => void feed.refetch()}
-              disabled={feed.isFetching}
-            >
-              {feed.isFetching ? 'Refreshing…' : 'Refresh'}
-            </button>
-          </div>
+            </div>
+          )}
         </>
       )}
     </section>
