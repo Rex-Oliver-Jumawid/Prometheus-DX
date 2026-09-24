@@ -231,76 +231,6 @@ export function ProjectOverviewPage() {
     ? errorMessage(updateStatus.error)
     : null;
 
-  if (!outcomeId && activeTab === 'chat') {
-    return (
-      <div
-        id="pwProjectPage"
-        className="pw-project-page pw-project-page--chat"
-        aria-labelledby="pwChatPageTitle"
-      >
-        <div className="tabs-wrap pw-tabs-wrap">
-          <nav className="tabs pw-tabs" role="tablist" aria-label="Project sections">
-            <button className="tab-btn" type="button" role="tab" id="pw-content-tab"
-              aria-selected={false} aria-controls="pw-content-panel"
-              onClick={() => chooseTab('content')}>Content</button>
-            <button className="tab-btn active" type="button" role="tab" id="pw-chat-tab"
-              aria-selected={true} aria-controls="pw-chat-panel">Chat</button>
-            <button className="tab-btn" type="button" role="tab" id="pw-activity-tab"
-              aria-selected={false} aria-controls="pw-activity-panel"
-              onClick={() => chooseTab('activity')}>Activity</button>
-          </nav>
-        </div>
-        <div className="pw-chat-page-heading">
-          <div>
-            <h1 id="pwChatPageTitle">Project chat</h1>
-            <p>Local conversation for {value.name}.</p>
-          </div>
-          <nav className="pw-breadcrumb-pill" aria-label="Breadcrumb">
-            <Link to="/projects" className="pw-breadcrumb-link">
-              Projects
-            </Link>
-            <span className="pw-breadcrumb-sep" aria-hidden="true">/</span>
-            <Link
-              to={`/projects/${projectId}`}
-              className="pw-breadcrumb-current pw-chat-project-link"
-              title={value.name}
-            >
-              {value.name}
-            </Link>
-          </nav>
-        </div>
-
-        <div id="pw-chat-panel" role="tabpanel" aria-label="Project chat">
-          <div className="pw-chat-workspace">
-            <ProjectChatPanel
-              key={projectId}
-              projectId={projectId!}
-              projectName={value.name}
-              projectLead={value.lead}
-              currentMemberId={member?.id}
-              accessToken={accessToken}
-              initialMessageId={searchParams.get('message')}
-            />
-            <aside className="pw-chat-side-stack" aria-label="Project chat sidebar">
-              <ProjectAnnouncementsPanel
-                projectId={projectId!}
-                accessToken={accessToken}
-              />
-              <div className="pw-chat-sidebar">
-                <ProjectMembersPanel
-                  key={projectId}
-                  projectId={projectId!}
-                  projectLead={value.lead}
-                  accessToken={accessToken}
-                  compact
-                />
-              </div>
-            </aside>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div
@@ -374,13 +304,24 @@ export function ProjectOverviewPage() {
                 Projects
               </Link>
               <span className="pw-breadcrumb-sep" aria-hidden="true">/</span>
-              <strong
-                className="pw-breadcrumb-current"
-                title={value.name}
-                aria-current="page"
-              >
-                {value.name}
-              </strong>
+              {!outcomeId && activeTab === 'chat' ? (
+                <Link
+                  to={`/projects/${projectId}`}
+                  className="pw-breadcrumb-current pw-chat-project-link"
+                  title={value.name}
+                  aria-label={value.name}
+                >
+                  {value.name}
+                </Link>
+              ) : (
+                <strong
+                  className="pw-breadcrumb-current"
+                  title={value.name}
+                  aria-current="page"
+                >
+                  {value.name}
+                </strong>
+              )}
             </nav>
           );
         })()}
@@ -524,6 +465,41 @@ export function ProjectOverviewPage() {
           accessToken={accessToken}
           isLead={workflow.data?.canManageStructure ?? false}
         />
+      ) : activeTab === 'chat' ? (
+        <div id="pw-chat-panel" role="tabpanel" aria-labelledby="pw-chat-tab">
+          <div className="pw-chat-page-heading">
+            <div>
+              <h2 id="pwChatPageTitle">Project chat</h2>
+              <p>Local conversation for {value.name}.</p>
+            </div>
+          </div>
+          <div className="pw-chat-workspace">
+            <ProjectChatPanel
+              key={projectId}
+              projectId={projectId!}
+              projectName={value.name}
+              projectLead={value.lead}
+              currentMemberId={member?.id}
+              accessToken={accessToken}
+              initialMessageId={searchParams.get('message')}
+            />
+            <aside className="pw-chat-side-stack" aria-label="Project chat sidebar">
+              <ProjectAnnouncementsPanel
+                projectId={projectId!}
+                accessToken={accessToken}
+              />
+              <div className="pw-chat-sidebar">
+                <ProjectMembersPanel
+                  key={projectId}
+                  projectId={projectId!}
+                  projectLead={value.lead}
+                  accessToken={accessToken}
+                  compact
+                />
+              </div>
+            </aside>
+          </div>
+        </div>
       ) : activeTab === 'activity' ? (
         <div id="pw-activity-panel" role="tabpanel" aria-labelledby="pw-activity-tab">
           <ProjectActivityPanel key={projectId} projectId={projectId!} accessToken={accessToken} />
