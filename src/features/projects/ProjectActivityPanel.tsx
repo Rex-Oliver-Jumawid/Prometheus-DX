@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ProjectActivityPageSchema, type ProjectActivity } from '../../../shared/contracts/project-activity';
@@ -57,6 +58,50 @@ function eventTitle(item: ProjectActivity) {
   return null;
 }
 
+type ActivityFilter =
+  | 'All'
+  | 'Reviews'
+  | 'Accepted'
+  | 'Needs Revision'
+  | 'Outputs'
+  | 'Tasks'
+  | 'Features'
+  | 'Membership'
+  | 'Project';
+
+const activityFilters: ActivityFilter[] = [
+  'All', 'Reviews', 'Accepted', 'Needs Revision',
+  'Outputs', 'Tasks', 'Features', 'Membership', 'Project',
+];
+
+function matchesFilter(action: string, filter: ActivityFilter) {
+  if (filter === 'All') return true;
+  if (filter === 'Reviews') return [
+    'SUBMISSION_REVIEWED', 'REVISION_REQUESTED', 'REVISION_RESOLVED',
+    'OUTCOME_ACCEPTED', 'OUTCOME_REOPENED',
+  ].includes(action);
+  if (filter === 'Accepted') return action === 'OUTCOME_ACCEPTED';
+  if (filter === 'Needs Revision') return action === 'REVISION_REQUESTED';
+  if (filter === 'Outputs') return action.startsWith('SUBMISSION_');
+  if (filter === 'Tasks') return action.startsWith('TASK_');
+  if (filter === 'Features') return action.startsWith('FEATURE_');
+  if (filter === 'Membership') return [
+    'OUTCOME_JOINED', 'PROJECT_MEMBER_ACCESS_CHANGED',
+  ].includes(action);
+  return action.startsWith('PROJECT_') || action.startsWith('STAGE_') ||
+    action.startsWith('OUTCOME_');
+}
+
+function eventCategory(action: string) {
+  if (action.startsWith('SUBMISSION_')) return 'Output';
+  if (action === 'REVISION_REQUESTED' || action === 'REVISION_RESOLVED') return 'Review';
+  if (action === 'OUTCOME_ACCEPTED' || action === 'OUTCOME_REOPENED') return 'Review';
+  if (action.startsWith('TASK_')) return 'Task';
+  if (action.startsWith('FEATURE_')) return 'Feature';
+  if (action === 'OUTCOME_JOINED' || action === 'PROJECT_MEMBER_ACCESS_CHANGED') return 'Membership';
+  return 'Project';
+}
+
 function eventTime(date: string) {
   return new Date(date).toLocaleString(undefined, {
     month: 'short',
@@ -74,6 +119,8 @@ export function ProjectActivityPanel({
   projectId: string;
   accessToken?: string;
 }) {
+  const [filter, setFilter] = useState<ActivityFilter>('All');
+  const [memberId, setMemberId] = useState('all');
   const feed = useInfiniteQuery({
     queryKey: ['projects', projectId, 'activity'],
     queryFn: ({ pageParam }) =>
@@ -89,79 +136,132 @@ export function ProjectActivityPanel({
     staleTime: 10_000,
     refetchInterval: 20_000,
   });
+
   const seenIds = new Set<string>();
   const items = (feed.data?.pages.flatMap((page) => page.items) ?? []).filter(
     (item) => !seenIds.has(item.id) && Boolean(seenIds.add(item.id)),
   );
+  const actors = [...new Map(
+    items.filter((item) => item.actor).map((item) => [item.actor!.id, item.actor!.fullName] as const),
+  )].sort((a, b) => a[1].localeCompare(b[1]));
+  const visible = items.filter(
+    (item) => matchesFilter(item.action, filter) &&
+      (memberId === 'all' || item.actor?.id === memberId),
+  );
+
   return (
-    <section className="pw-collaboration-panel" aria-label="Project activity">
-      <header className="pw-collaboration-heading">
+    <section className="pw-collaboration-panel pw-activity-panel" aria-label="Project activity">
+      <header className="pw-collaboration-heading pw-activity-heading">
         <div>
-          <span className="pw-collaboration-eyebrow">PROJECT TIMELINE</span>
+          <span className="pw-collaboration-eyebrow">PROJECT AUDIT TRAIL</span>
           <h2>Project activity</h2>
-          <p>Updates from your team's project and outcome work.</p>
+          <p>Review project decisions, submissions, revisions, dependencies, and member activity in one history.</p>
         </div>
-        <button
-          type="button"
-          className="projects-secondary-button"
-          onClick={() => void feed.refetch()}
-          disabled={feed.isFetching}
-        >
-          {feed.isFetching ? 'Refreshing…' : 'Refresh'}
-        </button>
+        <div className="pw-activity-summary" aria-live="polite">
+          <strong>{items.length}{feed.hasNextPage ? '+' : ''}</strong>
+          <span>{feed.hasNextPage ? 'loaded events' : 'audit events'}</span>
+        </div>
       </header>
 
+      <div className="pw-activity-controls">
+        <div className="pw-activity-filters" role="group" aria-label="Filter project activity">
+          {activityFilters.map((option) => (
+            <button
+              key={option}
+              className={filter === option ? 'pw-activity-filter is-active' : 'pw-activity-filter'}
+              type="button"
+              aria-pressed={filter === option}
+              onClick={() => setFilter(option)}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+        <label className="pw-activity-member-filter">
+          <span>Member</span>
+          <select value={memberId} onChange={(event) => setMemberId(event.target.value)}>
+            <option value="all">All members</option>
+            {actors.map(([id, name]) => (
+              <option key={id} value={id}>{name}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
       {feed.isPending ? (
-        <p className="pw-collaboration-state" role="status">Loading project activity…</p>
+        <p role="status" className="pw-collaboration-state">Loading project activity…</p>
       ) : feed.isError && items.length === 0 ? (
         <div className="pw-collaboration-state" role="alert">
           <strong>Project activity could not be loaded.</strong>
           <p>{feed.error instanceof Error ? feed.error.message : 'Please try again.'}</p>
           <button type="button" onClick={() => void feed.refetch()}>Retry</button>
         </div>
-      ) : items.length === 0 ? (
-        <p className="pw-collaboration-state">No project activity has been recorded yet.</p>
       ) : (
         <>
-          <ol className="pw-activity-timeline" aria-label="Project activity timeline">
-            {items.map((item) => (
-              <li className="pw-activity-entry" key={item.id}>
-                <span className="pw-activity-node" aria-hidden="true" />
-                <div className="pw-activity-entry-body">
-                  <p>
-                    <strong>{item.actor?.fullName ?? 'System'}</strong>{' '}
-                    {eventDescription(item.action)}
+          {visible.length ? (
+            <ol className="pw-activity-timeline" aria-label="Project activity timeline">
+              {visible.map((item) => (
+                <li className="pw-activity-entry" key={item.id}>
+                  <span className={'pw-activity-node pw-activity-node-' + eventCategory(item.action).toLowerCase()} aria-hidden="true">
+                    {item.action === 'OUTCOME_ACCEPTED' ? '✓' :
+                      item.action.startsWith('SUBMISSION_') ? '↗' :
+                      item.action === 'REVISION_REQUESTED' ? '!' : '•'}
+                  </span>
+                  <div className="pw-activity-entry-body">
+                    <div className="pw-activity-entry-top">
+                      <span>{item.actor?.fullName ?? 'System'} · {eventCategory(item.action)}</span>
+                      <time dateTime={item.createdAt}>{eventTime(item.createdAt)}</time>
+                    </div>
+                    <p><strong>{eventDescription(item.action)}</strong></p>
                     {eventTitle(item) && (
-                      <span className="pw-activity-subject"> - {eventTitle(item)}</span>
+                      <p className="pw-activity-subject">{eventTitle(item)}</p>
                     )}
-                  </p>
-                  <div className="pw-activity-entry-meta">
-                    <time dateTime={item.createdAt}>{eventTime(item.createdAt)}</time>
-                    {item.outcomeId && (
-                      <Link to={'/projects/' + projectId + '/outcomes/' + item.outcomeId}>
-                        View outcome
-                      </Link>
-                    )}
+                    <div className="pw-activity-entry-meta">
+                      {item.outcomeId && (
+                        <Link
+                          to={'/projects/' + projectId + '/outcomes/' + item.outcomeId}
+                          aria-label="View outcome"
+                        >
+                          Open outcome →
+                        </Link>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ol>
-          {feed.isError && (
-            <p className="pw-collaboration-warning" role="alert">
-              Newer activity could not be refreshed. Showing previously loaded events.
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="pw-collaboration-state">
+              {items.length
+                ? 'No matching activity in the loaded history. Try another filter or load older events.'
+                : 'No project activity has been recorded yet.'}
             </p>
           )}
-          {feed.hasNextPage && (
+          {feed.isError && items.length > 0 && (
+            <p className="pw-collaboration-warning" role="alert">
+              Activity could not be refreshed. Showing previously loaded events.
+            </p>
+          )}
+          <div className="pw-activity-actions">
+            {feed.hasNextPage && (
+              <button
+                type="button"
+                className="pw-collaboration-load-more"
+                onClick={() => void feed.fetchNextPage()}
+                disabled={feed.isFetchingNextPage}
+              >
+                {feed.isFetchingNextPage ? 'Loading…' : 'Load older activity'}
+              </button>
+            )}
             <button
               type="button"
-              className="pw-collaboration-load-more"
-              onClick={() => void feed.fetchNextPage()}
-              disabled={feed.isFetchingNextPage}
+              className="projects-secondary-button"
+              onClick={() => void feed.refetch()}
+              disabled={feed.isFetching}
             >
-              {feed.isFetchingNextPage ? 'Loading…' : 'Load older activity'}
+              {feed.isFetching ? 'Refreshing…' : 'Refresh'}
             </button>
-          )}
+          </div>
         </>
       )}
     </section>
