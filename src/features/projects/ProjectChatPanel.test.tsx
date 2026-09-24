@@ -66,7 +66,9 @@ describe('ProjectChatPanel interactions', () => {
       });
       if (typeof path === 'string' && path.endsWith('/messages'))
         return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
-      return Promise.reject(new Error('Unexpected API request'));
+      if (typeof path === 'string' && path.endsWith('/members'))
+        return Promise.resolve({ projectId, members: [], canManageAccess: false });
+      return Promise.reject(new Error('Unexpected API request: ' + path + '\n' + new Error().stack));
     });
     renderChat();
     fireEvent.click(await screen.findByRole('button', { name: 'Reply' }));
@@ -94,7 +96,9 @@ describe('ProjectChatPanel interactions', () => {
       });
       if (typeof path === 'string' && path.endsWith('/messages'))
         return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
-      return Promise.reject(new Error('Unexpected API request'));
+      if (typeof path === 'string' && path.endsWith('/members'))
+        return Promise.resolve({ projectId, members: [], canManageAccess: false });
+      return Promise.reject(new Error('Unexpected API request: ' + path + '\n' + new Error().stack));
     });
     renderChat();
     fireEvent.click(await screen.findByRole('button', { name: 'Message options' }));
@@ -127,7 +131,9 @@ describe('ProjectChatPanel interactions', () => {
           canWrite: true,
         });
       }
-      return Promise.reject(new Error('Unexpected API request'));
+      if (typeof path === 'string' && path.endsWith('/members'))
+        return Promise.resolve({ projectId, members: [], canManageAccess: false });
+      return Promise.reject(new Error('Unexpected API request: ' + path + '\n' + new Error().stack));
     });
     renderChat();
     fireEvent.click(await screen.findByRole('button', { name: 'Message options' }));
@@ -192,7 +198,7 @@ describe('ProjectChatPanel interactions', () => {
         return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
       if (typeof path === 'string' && path.endsWith('/members'))
         return Promise.resolve({ projectId, members: [], canManageAccess: false });
-      return Promise.reject(new Error('Unexpected API request: ' + path));
+      return Promise.reject(new Error('Unexpected API request: ' + path + '\n' + new Error().stack));
     });
 
     renderChat();
@@ -224,7 +230,7 @@ describe('ProjectChatPanel interactions', () => {
             outcomes: [],
           }],
         });
-      return Promise.reject(new Error('Unexpected API request: ' + path));
+      return Promise.reject(new Error('Unexpected API request: ' + path + '\n' + new Error().stack));
     });
 
     renderChat();
@@ -256,7 +262,7 @@ describe('ProjectChatPanel interactions', () => {
         return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
       if (typeof path === 'string' && path.endsWith('/members'))
         return Promise.resolve({ projectId, members: [], canManageAccess: false });
-      return Promise.reject(new Error('Unexpected API request: ' + path));
+      return Promise.reject(new Error('Unexpected API request: ' + path + '\n' + new Error().stack));
     });
 
     renderChat();
