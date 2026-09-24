@@ -30,6 +30,7 @@ export class TeamService {
         id: true,
         fullName: true,
         position: true,
+        visiworkDepartmentId: true,
         createdAt: true,
         department: {
           select: { id: true, name: true, shortLabel: true },
@@ -86,6 +87,7 @@ export class TeamService {
         fullName: member.fullName,
         position: member.position,
         department: member.department,
+        visiworkDepartmentId: member.visiworkDepartmentId,
         workingNow,
         scheduledMinutes,
         actualWorkedSeconds,

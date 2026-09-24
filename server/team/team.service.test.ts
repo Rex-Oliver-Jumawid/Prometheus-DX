@@ -12,6 +12,7 @@ describe('TeamService', () => {
             id: '11111111-1111-4111-8111-111111111111',
             fullName: 'Member One',
             position: 'Designer',
+            visiworkDepartmentId: null,
             createdAt: new Date('2026-09-01T00:00:00.000Z'),
             department: {
               id: '22222222-2222-4222-8222-222222222222',
@@ -56,6 +57,7 @@ describe('TeamService', () => {
       fullName: 'Member One',
       position: 'Designer',
       department: { name: 'Creative' },
+      visiworkDepartmentId: null,
       workingNow: true,
       scheduledMinutes: 360,
     });
