@@ -79,6 +79,24 @@ describe('ProjectActivityPanel', () => {
     expect(screen.queryByRole('link', { name: 'View outcome' })).not.toBeInTheDocument();
   });
 
+  it('renders announcement history with its safe announcement title', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({
+      items: [{
+        ...event,
+        outcomeId: null,
+        entityType: 'ProjectAnnouncement',
+        action: 'PROJECT_ANNOUNCEMENT_PINNED',
+        metadata: { title: 'Release guidance' },
+      }],
+      nextCursor: null,
+    });
+
+    renderActivity();
+    expect(await screen.findByText('Pinned announcement')).toBeVisible();
+    expect(screen.getByText('Release guidance')).toBeVisible();
+    expect(screen.getByText(/Announcement/)).toBeVisible();
+  });
+
   it('loads older events and does not duplicate overlapping event IDs', async () => {
     vi.mocked(apiFetch).mockImplementation((path) => {
       if (path.endsWith('?cursor=' + eventId))
