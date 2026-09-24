@@ -449,31 +449,42 @@ Management metrics can be reconciled with their underlying source records.
 
 ### Goal
 
-Add collaboration enhancements after the core authorization and workflow model is stable.
+Add durable collaboration across VisiWork and Projects after the core authorization and workflow model is stable.
 
 ### Required pages and interfaces
 
-- Project chat
-- Realtime message updates
-- Presence
+- VisiWork General chat
+- VisiWork Department chat
+- Project Chat
+- Message search and exact-message navigation
+- Mentions and collaboration notifications
+- Message editing and deletion
+- Realtime or automatic live message updates
+- Presence where useful
 - Live notification updates where useful
 - Attachment upload and retrieval
 - Attachment permissions
-- Realtime reconnect behavior
+- Reconnect and missed-event recovery behavior
 
 ### Core rules
 
-Realtime state is supplemental.
+Persistent collaboration state remains authoritative in PostgreSQL.
 
-Persistent project and work records remain stored in PostgreSQL.
+Realtime or polling state is supplemental and must recover from persistent records.
 
 Presence does not replace Time In and Time Out.
 
-Chat permissions must follow the final approved product rules.
+Search, mentions, edits, deletions, deep links, and notifications must preserve room authorization.
+
+Users may mutate only messages they are authorized to mutate under the final approved collaboration rules.
+
+Project Chat permissions must follow the final approved Project communication rules.
+
+Attachment authorization must not rely only on possession of a storage URL.
 
 ### Exit milestone
 
-Realtime behavior enhances Prometheus without becoming a second source of truth.
+Collaboration messaging, live updates, reconnect behavior, notifications, and attachments enhance Prometheus without becoming a second source of truth or bypassing domain authorization.
 
 ### Manual test file
 
