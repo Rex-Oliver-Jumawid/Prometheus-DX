@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import {
   useInfiniteQuery,
   useMutation,
@@ -80,12 +80,14 @@ export function ProjectChatPanel({
   projectLead,
   currentMemberId,
   accessToken,
+  initialMessageId,
 }: {
   projectId: string;
   projectName: string;
   projectLead?: { id: string; fullName: string; email: string };
   currentMemberId?: string;
   accessToken?: string;
+  initialMessageId?: string | null;
 }) {
   const queryClient = useQueryClient();
   const queryKey = ['projects', projectId, 'chat'] as const;
@@ -104,11 +106,16 @@ export function ProjectChatPanel({
   const [pendingDelete, setPendingDelete] = useState<ProjectMessage | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [targetMessageId, setTargetMessageId] = useState<string | null>(null);
+  const [targetMessageId, setTargetMessageId] = useState<string | null>(initialMessageId ?? null);
   const threadRef = useRef<HTMLOListElement>(null);
   const pinnedToBottom = useRef(true);
   const initiallyScrolled = useRef(false);
   const olderScroll = useRef<{ top: number; height: number; pageCount: number } | null>(null);
+
+  useEffect(() => {
+    setTargetMessageId(initialMessageId ?? null);
+    if (initialMessageId) pinnedToBottom.current = false;
+  }, [initialMessageId]);
 
   const messages = useInfiniteQuery({
     queryKey,
