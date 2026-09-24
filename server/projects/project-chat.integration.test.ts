@@ -4,6 +4,9 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PrismaService } from '../database/prisma.service';
 import { ProjectChatService } from './project-chat.service';
+import { ProjectAnnouncementService } from './project-announcement.service';
+import { ProjectMessagePageSchema } from '../../shared/contracts/project-chat';
+import { ProjectAnnouncementsResponseSchema } from '../../shared/contracts/project-announcement';
 
 const enabled = process.env.RUN_DATABASE_INTEGRATION === '1';
 const db = new PrismaService();
@@ -62,6 +65,33 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
     }
     await db.$disconnect();
   }, 30_000);
+
+  it('loads a fresh Project with an empty conversation and announcement rail', async () => {
+    const announcements = new ProjectAnnouncementService(db);
+    const emptyChat = await chat.list(lead, projectId);
+    const emptyAnnouncements = await announcements.list(lead, projectId);
+
+    expect(ProjectMessagePageSchema.parse(emptyChat)).toEqual({
+      items: [],
+      nextCursor: null,
+      canWrite: true,
+    });
+    expect(ProjectAnnouncementsResponseSchema.parse(emptyAnnouncements)).toEqual({
+      items: [],
+      canManage: true,
+    });
+
+    const viewerChat = await chat.list(viewer, projectId);
+    const viewerAnnouncements = await announcements.list(viewer, projectId);
+    expect(ProjectMessagePageSchema.parse(viewerChat)).toMatchObject({
+      items: [],
+      canWrite: false,
+    });
+    expect(ProjectAnnouncementsResponseSchema.parse(viewerAnnouncements)).toEqual({
+      items: [],
+      canManage: false,
+    });
+  });
 
   it('persists replies, restricts author edits and isolates other Project messages', async () => {
     const root = await chat.send(lead, projectId, {
