@@ -15,6 +15,7 @@ export const ProjectAnnouncementSchema = z.object({
 export const ProjectAnnouncementsResponseSchema = z.object({
   items: z.array(ProjectAnnouncementSchema),
   canManage: z.boolean(),
+  canPost: z.boolean(),
 });
 
 export const CreateProjectAnnouncementSchema = z.object({
