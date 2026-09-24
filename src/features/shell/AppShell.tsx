@@ -12,6 +12,7 @@ import { WorkAttendanceControl } from '../work-sessions/WorkAttendanceControl';
 import { teamWorkSummaryQuery } from '../work-sessions/work-session-queries';
 import {
   loadRegistryRoute,
+  loadReportsAnalyticsRoute,
   loadScheduleRoute,
   loadTeamRoute,
 } from '../../routes/route-modules';
@@ -95,6 +96,7 @@ export function AppShell() {
   if (!member) return null;
 
   const isProjectSection = location.pathname.startsWith('/projects/');
+  const isReportsSection = location.pathname === '/reports';
   const breadcrumbs = isProjectSection
     ? []
     : breadcrumbsForPath(location.pathname);
@@ -106,6 +108,12 @@ export function AppShell() {
       void Promise.all([
         loadRegistryRoute(),
         queryClient.prefetchQuery(registryOverviewQuery(accessToken)),
+      ]);
+    } else if (path === '/reports') {
+      void Promise.all([
+        loadReportsAnalyticsRoute(),
+        queryClient.prefetchQuery(projectsListQuery(accessToken)),
+        queryClient.prefetchQuery(teamWorkSummaryQuery(accessToken)),
       ]);
     } else if (path === '/schedule') {
       void Promise.all([
@@ -278,7 +286,9 @@ export function AppShell() {
         </header>
         <main className="workspace-content">
           <div className="workspace-content-scroll">
-            <div className="workspace-content-inner">
+            <div
+              className={`workspace-content-inner${isReportsSection ? ' reports-content-inner' : ''}`}
+            >
               <Outlet />
             </div>
           </div>

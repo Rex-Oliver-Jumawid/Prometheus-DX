@@ -9,6 +9,7 @@ export interface NavigationItem {
     | 'visiwork'
     | 'schedule'
     | 'team'
+    | 'reports'
     | 'notifications'
     | 'registry';
 }
@@ -19,6 +20,7 @@ const navigation: NavigationItem[] = [
   { label: 'VisiWork', path: '/visiwork', icon: 'visiwork' },
   { label: 'Schedule', path: '/schedule', icon: 'schedule' },
   { label: 'Team', path: '/team', icon: 'team' },
+  { label: 'Reports & Analytics', path: '/reports', icon: 'reports' },
 ];
 
 export function navigationForRole(role: WorkspaceRole): NavigationItem[] {
