@@ -3,6 +3,8 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { createAuthFixture, deleteAuthFixture } from './auth-fixture';
 
 const prisma = new PrismaClient();
+const runPhase7BrowserIntegration =
+  !process.env.CI || process.env.RUN_DATABASE_INTEGRATION === '1';
 
 async function signIn(
   page: Page,
@@ -27,6 +29,10 @@ test.afterAll(async () => {
 test('submission notification opens Outcome and persists read state', async ({
   browser,
 }) => {
+  test.skip(
+    !runPhase7BrowserIntegration,
+    'CI smoke does not provision the acceptance database.',
+  );
   const runId = `phase7-notifications-${crypto.randomUUID()}`;
   const outcomeTitle = `Review output ${runId}`;
   const accounts: Awaited<ReturnType<typeof createAuthFixture>>[] = [];
