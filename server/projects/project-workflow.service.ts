@@ -167,6 +167,19 @@ export class ProjectWorkflowService {
           changedByMemberId: currentMember.id,
         },
       });
+      await transaction.activityLog.create({
+        data: {
+          projectId,
+          actorMemberId: currentMember.id,
+          entityType: 'ProjectMember',
+          entityId: memberId,
+          action: 'PROJECT_MEMBER_ACCESS_CHANGED',
+          metadata: {
+            previousAccess: existing.accessLevel,
+            newAccess: input.accessLevel,
+          },
+        },
+      });
       await writeNotifications(transaction, {
         type: 'PROJECT_MEMBER_ACCESS_CHANGED',
         sourceEventId: history.id,
@@ -196,7 +209,7 @@ export class ProjectWorkflowService {
         select: { position: true },
         orderBy: { position: 'desc' },
       });
-      return transaction.stage.create({
+      const created = await transaction.stage.create({
         data: {
           projectId,
           name: input.name,
@@ -205,6 +218,17 @@ export class ProjectWorkflowService {
         },
         include: stageInclude,
       });
+      await transaction.activityLog.create({
+        data: {
+          projectId,
+          actorMemberId: currentMember.id,
+          entityType: 'Stage',
+          entityId: created.id,
+          action: 'STAGE_CREATED',
+          metadata: { name: created.name },
+        },
+      });
+      return created;
     });
     return this.toStage(stage, currentMember.id);
   }
@@ -218,7 +242,7 @@ export class ProjectWorkflowService {
     const stage = await this.prisma.$transaction(async (transaction) => {
       await this.requireLead(transaction, projectId, currentMember.id);
       await this.requireStage(transaction, projectId, stageId);
-      return transaction.stage.update({
+      const updated = await transaction.stage.update({
         where: { id: stageId },
         data: {
           name: input.name,
@@ -226,6 +250,17 @@ export class ProjectWorkflowService {
         },
         include: stageInclude,
       });
+      await transaction.activityLog.create({
+        data: {
+          projectId,
+          actorMemberId: currentMember.id,
+          entityType: 'Stage',
+          entityId: stageId,
+          action: 'STAGE_UPDATED',
+          metadata: { name: updated.name },
+        },
+      });
+      return updated;
     });
     return this.toStage(stage, currentMember.id);
   }
@@ -283,6 +318,17 @@ export class ProjectWorkflowService {
           create: { projectId, memberId, accessLevel: 'CAN_VIEW' },
         });
       }
+      await transaction.activityLog.create({
+        data: {
+          projectId,
+          outcomeId: created.id,
+          actorMemberId: currentMember.id,
+          entityType: 'Outcome',
+          entityId: created.id,
+          action: 'OUTCOME_CREATED',
+          metadata: { title: created.title },
+        },
+      });
       return created;
     });
     return this.toOutcome(outcome, currentMember.id);
@@ -350,7 +396,7 @@ export class ProjectWorkflowService {
           });
         }
       }
-      return transaction.outcome.update({
+      const updated = await transaction.outcome.update({
         where: { id: outcomeId },
         data: {
           title: input.title,
@@ -382,6 +428,18 @@ export class ProjectWorkflowService {
         },
         include: outcomeInclude,
       });
+      await transaction.activityLog.create({
+        data: {
+          projectId,
+          outcomeId,
+          actorMemberId: currentMember.id,
+          entityType: 'Outcome',
+          entityId: outcomeId,
+          action: 'OUTCOME_UPDATED',
+          metadata: { title: updated.title },
+        },
+      });
+      return updated;
     });
     return this.toOutcome(outcome, currentMember.id);
   }
@@ -488,6 +546,7 @@ export class ProjectWorkflowService {
         select: {
           stageId: true,
           position: true,
+          title: true,
           stage: { select: { projectId: true } },
           _count: {
             select: {
@@ -511,6 +570,16 @@ export class ProjectWorkflowService {
       const { stageId, position } = outcome;
 
       await transaction.outcome.delete({ where: { id: outcomeId } });
+      await transaction.activityLog.create({
+        data: {
+          projectId,
+          actorMemberId: currentMember.id,
+          entityType: 'Outcome',
+          entityId: outcomeId,
+          action: 'OUTCOME_DELETED',
+          metadata: { title: outcome.title },
+        },
+      });
 
       // Compact sibling positions within the same Stage.
       // Two-pass to avoid transient unique constraint violations on
@@ -551,9 +620,11 @@ export class ProjectWorkflowService {
         select: {
           projectId: true,
           position: true,
+          name: true,
           outcomes: {
             select: {
               id: true,
+              title: true,
               _count: {
                 select: {
                   members: true,
@@ -582,6 +653,30 @@ export class ProjectWorkflowService {
       const { position } = stage;
 
       await transaction.stage.delete({ where: { id: stageId } });
+      await transaction.activityLog.create({
+        data: {
+          projectId,
+          actorMemberId: currentMember.id,
+          entityType: 'Stage',
+          entityId: stageId,
+          action: 'STAGE_DELETED',
+          metadata: { name: stage.name },
+        },
+      });
+      // Stage deletion cascades to safe, unassigned Outcomes. Record those
+      // deletions too, preserving their IDs and titles in the Project audit.
+      if (stage.outcomes.length > 0) {
+        await transaction.activityLog.createMany({
+          data: stage.outcomes.map((outcome) => ({
+            projectId,
+            actorMemberId: currentMember.id,
+            entityType: 'Outcome',
+            entityId: outcome.id,
+            action: 'OUTCOME_DELETED',
+            metadata: { title: outcome.title },
+          })),
+        });
+      }
 
       // Compact sibling stage positions within the Project.
       const siblings = await transaction.stage.findMany({

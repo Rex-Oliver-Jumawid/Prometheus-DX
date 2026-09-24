@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Project } from '../../../shared/contracts/project';
 import { apiFetch } from '../../lib/api';
@@ -59,6 +59,11 @@ const project: Project = {
 
 vi.mock('../auth/auth-context', () => ({
   useAuth: () => ({
+    member: {
+      id: project.lead.id,
+      fullName: project.lead.fullName,
+      email: project.lead.email,
+    },
     session: {
       access_token: 'token',
       user: { id: project.lead.id },
@@ -103,20 +108,29 @@ describe('ProjectOverviewPage status mutation', () => {
       if (path === `/projects/${projectId}/members`) {
         return Promise.resolve(projectMembersResponse);
       }
+      if (path === `/projects/${projectId}/messages`) {
+        return Promise.resolve({ items: [], nextCursor: null, canWrite: true });
+      }
+      if (path === `/projects/${projectId}/announcements`) {
+        return Promise.resolve({ items: [], canManage: true });
+      }
       if (path === `/projects/${projectId}`) return Promise.resolve(project);
       return Promise.resolve({});
     });
   });
 
-  it('loads the Project Members surface on the Project overview', async () => {
+  it('shows the Project Members sidebar only on Project Chat', async () => {
     renderPage();
+
+    expect(screen.queryByRole('heading', { name: 'Project Members' })).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('tab', { name: 'Chat' }));
 
     expect(
       await screen.findByRole('heading', { name: 'Project Members' }),
     ).toBeVisible();
-    expect(
-      await screen.findByLabelText('Project access for Project Member'),
-    ).toHaveValue('CAN_VIEW');
+    expect(await screen.findByLabelText('Project access for Project Member')).toHaveValue('CAN_VIEW');
+    expect(screen.getByText('Project Lead', { selector: '.pw-chat-member-role' })).toBeVisible();
+    expect(screen.getByText('Project Member')).toBeVisible();
 
     await waitFor(() =>
       expect(apiFetch).toHaveBeenCalledWith(
@@ -125,6 +139,177 @@ describe('ProjectOverviewPage status mutation', () => {
         expect.objectContaining({ accessToken: 'token' }),
       ),
     );
+    fireEvent.click(screen.getByRole('link', { name: 'Fast Project' }));
+    expect(await screen.findByRole('tab', { name: 'Content' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.queryByRole('heading', { name: 'Project Members' })).not.toBeInTheDocument();
+  });
+
+  it('retains the project summary and reuses cached chat when returning from Content', async () => {
+    renderPage();
+    expect(await screen.findByRole('heading', { name: 'Fast Project' })).toBeVisible();
+    expect(screen.getByRole('combobox', { name: 'Project status' })).toBeVisible();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Chat' }));
+    expect(await screen.findByRole('heading', { name: 'Project chat' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Fast Project' })).toBeVisible();
+    expect(screen.getByRole('combobox', { name: 'Project status' })).toBeVisible();
+    expect(await screen.findByText('No messages yet. Start the conversation.')).toBeVisible();
+
+    const messageReads = () => vi.mocked(apiFetch).mock.calls.filter(
+      ([path]) => path === `/projects/${projectId}/messages`,
+    ).length;
+    expect(messageReads()).toBe(1);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Content' }));
+    expect(screen.getByRole('heading', { name: 'Fast Project' })).toBeVisible();
+    fireEvent.click(screen.getByRole('tab', { name: 'Chat' }));
+    expect(screen.getByRole('heading', { name: 'Fast Project' })).toBeVisible();
+    expect(await screen.findByText('No messages yet. Start the conversation.')).toBeVisible();
+    expect(messageReads()).toBe(1);
+  });
+
+  it('opens the Project Activity tab and loads persisted events', async () => {
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path.endsWith('/workflow'))
+        return Promise.resolve({ projectId, canManageStructure: false, stages: [] });
+      if (path === `/projects/${projectId}/members`)
+        return Promise.resolve(projectMembersResponse);
+      if (path === `/projects/${projectId}/activity`)
+        return Promise.resolve({
+          items: [{
+            id: '55555555-5555-4555-8555-555555555555',
+            actor: { id: projectMemberId, fullName: 'Project Member' },
+            outcomeId: null,
+            entityType: 'Feature',
+            entityId: '66666666-6666-4666-8666-666666666666',
+            action: 'FEATURE_CREATED',
+            metadata: { title: 'Design mockups' },
+            createdAt: '2026-09-19T13:00:00.000Z',
+          }],
+          nextCursor: null,
+        });
+      if (path === `/projects/${projectId}`) return Promise.resolve(project);
+      return Promise.resolve({});
+    });
+
+    renderPage();
+    fireEvent.click(await screen.findByRole('tab', { name: 'Activity' }));
+
+    expect(await screen.findByRole('heading', { name: 'Project Activity' })).toBeVisible();
+    expect(await screen.findByText(/created a feature/)).toBeVisible();
+    expect(screen.getByText(/Design mockups/)).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Activity' })).toHaveAttribute('aria-selected', 'true');
+    fireEvent.click(screen.getByRole('tab', { name: 'Content' }));
+    expect(screen.getByRole('tab', { name: 'Content' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.queryByRole('heading', { name: 'Project Activity' })).not.toBeInTheDocument();
+  });
+
+  it('shows persistent Project Chat and sends a message for a writable member', async () => {
+    const existing = {
+      id: '55555555-5555-4555-8555-555555555555',
+      projectId,
+      author: { id: projectMemberId, fullName: 'Project Member', email: 'member@example.com' },
+      parentMessageId: null,
+      replyTo: null,
+      body: 'Initial project update',
+      createdAt: '2026-09-23T01:00:00.000Z',
+      editedAt: null,
+      canEdit: false,
+    };
+    vi.mocked(apiFetch).mockImplementation((path: string, _schema, options) => {
+      if (path.endsWith('/workflow'))
+        return Promise.resolve({ projectId, canManageStructure: false, stages: [] });
+      if (path === `/projects/${projectId}/members`)
+        return Promise.resolve(projectMembersResponse);
+      if (path === `/projects/${projectId}/messages` && options?.method === 'POST')
+        return Promise.resolve({
+          ...existing,
+          body: 'Hello project team',
+          id: '66666666-6666-4666-8666-666666666666',
+        });
+      if (path === `/projects/${projectId}/messages`)
+        return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
+      if (path === `/projects/${projectId}/announcements`)
+        return Promise.resolve({ items: [], canManage: true });
+      if (path === `/projects/${projectId}`) return Promise.resolve(project);
+      return Promise.resolve({});
+    });
+
+    renderPage();
+    fireEvent.click(await screen.findByRole('tab', { name: 'Chat' }));
+
+    expect(await screen.findByRole('heading', { name: 'Project chat' })).toBeVisible();
+    expect(await screen.findByText('Initial project update')).toBeVisible();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), {
+      target: { value: 'Hello project team' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
+    await waitFor(() =>
+      expect(apiFetch).toHaveBeenCalledWith(
+        `/projects/${projectId}/messages`,
+        expect.anything(),
+        expect.objectContaining({
+          accessToken: 'token',
+          method: 'POST',
+          body: { body: 'Hello project team', parentMessageId: null, mentionMemberIds: [] },
+        }),
+      ),
+    );
+  });
+
+  it('resets unsent Chat drafts when navigating directly between Projects', async () => {
+    const otherProjectId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path.endsWith('/workflow'))
+        return Promise.resolve({ projectId, canManageStructure: false, stages: [] });
+      if (path.endsWith('/members'))
+        return Promise.resolve(projectMembersResponse);
+      if (path.endsWith('/messages'))
+        return Promise.resolve({ items: [], nextCursor: null, canWrite: true });
+      if (path.endsWith('/announcements'))
+        return Promise.resolve({ items: [], canManage: true });
+      if (path === `/projects/${otherProjectId}`)
+        return Promise.resolve({ ...project, id: otherProjectId, name: 'Other Project' });
+      if (path === `/projects/${projectId}`) return Promise.resolve(project);
+      return Promise.resolve({});
+    });
+    function NavigateBetweenProjects() {
+      const navigate = useNavigate();
+      return (
+        <button type="button" onClick={() =>
+          navigate(`/projects/${otherProjectId}?tab=chat`)
+        }>
+          Switch Project
+        </button>
+      );
+    }
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={[`/projects/${projectId}?tab=chat`]}>
+          <Routes>
+            <Route path="/projects/:projectId" element={
+              <>
+                <NavigateBetweenProjects />
+                <ProjectOverviewPage />
+              </>
+            } />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    const input = await screen.findByRole('textbox', { name: 'Message' });
+    fireEvent.change(input, { target: { value: 'Unsent previous Project draft' } });
+    expect(input).toHaveValue('Unsent previous Project draft');
+    fireEvent.click(screen.getByRole('button', { name: 'Switch Project' }));
+    expect(await screen.findByRole('link', { name: 'Other Project' })).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getByRole('textbox', { name: 'Message' })).toHaveValue(''),
+    );
+    expect(screen.queryByText('Unsent previous Project draft')).not.toBeInTheDocument();
   });
 
   it('updates status immediately and rolls back a failed request', async () => {

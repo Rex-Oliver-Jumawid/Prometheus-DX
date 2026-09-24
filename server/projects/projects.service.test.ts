@@ -116,6 +116,9 @@ function createDatabase(
         .fn()
         .mockResolvedValue(options.updatedProject ?? projectRecord()),
     },
+    activityLog: {
+      create: vi.fn().mockResolvedValue({ id: '66666666-6666-4666-8666-666666666666' }),
+    },
     notification: {
       createMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
@@ -245,6 +248,16 @@ describe('ProjectsService', () => {
         }),
       }),
     );
+    expect(database.activityLog.create).toHaveBeenCalledWith({
+      data: {
+        projectId: projectRecord().id,
+        actorMemberId: creator.id,
+        entityType: 'Project',
+        entityId: projectRecord().id,
+        action: 'PROJECT_CREATED',
+        metadata: { name: 'Phase 3 Project' },
+      },
+    });
     expect(database.notification.createMany).toHaveBeenCalledWith({
       data: [
         expect.objectContaining({
@@ -392,6 +405,11 @@ describe('ProjectsService', () => {
     ).resolves.toMatchObject({ status: 'IN_PROGRESS' });
     expect(database.$queryRaw).toHaveBeenCalledOnce();
     const query = vi.mocked(database.$queryRaw).mock.calls[0][0] as Prisma.Sql;
+    expect(query.text).toContain('activity_history AS (');
+    expect(query.text).toContain("INSERT INTO activity_logs (");
+    expect(query.text).toContain("'PROJECT_STATUS_CHANGED'");
+    expect(query.text).toContain('FROM updated_project');
+    expect(query.text).toContain('activity_write');
     expect(query.values).toEqual(
       expect.arrayContaining([
         '55555555-5555-4555-8555-555555555555',

@@ -4,9 +4,9 @@
 
 In progress.
 
-Several collaboration capabilities are already implemented and integrated on `main` through VisiWork.
+Durable collaboration is implemented across VisiWork and Project Chat.
 
-Project Chat, the final realtime transport and reconnect behavior, attachment handling, and formal Phase 9 acceptance remain pending.
+The remaining Phase 9 scope is the final realtime/reconnect strategy, attachment handling, signed-in multi-user acceptance, and formal phase closure.
 
 ## Objective
 
@@ -14,7 +14,7 @@ Add durable collaboration behavior across VisiWork and Projects without allowing
 
 ## Scope Delivered
 
-The integrated VisiWork collaboration implementation currently includes:
+The current VisiWork collaboration implementation includes:
 
 - persisted General chat.
 - persisted Department chat.
@@ -30,69 +30,164 @@ The integrated VisiWork collaboration implementation currently includes:
 - mention synchronization on edits.
 - mention-notification cleanup on deletion.
 - exclusion of deleted content from message search.
-- automatic polling/refresh behavior so cross-account message changes and work-presence changes appear without a manual page reload.
+- automatic polling and query invalidation so remote message changes appear without a manual page reload.
 
-The current polling behavior improves live synchronization but is not treated as proof that the final realtime/reconnect scope is complete.
+The current Project collaboration implementation includes:
+
+- a Project Chat tab inside the shared Project Workspace.
+- persisted general Project Chat.
+- company-visible read access for active authorized Prometheus members.
+- write access restricted to the Project Lead and Project Members.
+- archived Project read-only enforcement.
+- message replies.
+- deterministic cursor pagination.
+- message search.
+- exact-message context loading and inner-conversation scrolling.
+- @mention selection restricted to active Project participants.
+- Project Chat mention notifications with deep links to the exact Project message.
+- mention-notification synchronization when mentions are added, retained, removed, or deleted.
+- author-only message editing.
+- optimistic-concurrency checks for stale edits and deletes.
+- author-only soft deletion with tombstones that preserve replies and conversation position.
+- Project announcements.
+- announcement posting by the Project Lead or Project Members.
+- Project Lead-only announcement pinning and unpinning.
+- a compact Project Members rail.
+- Project Activity using display-safe ActivityLog metadata.
+- company-visible normal Project activity for every active authorized member.
+- Project Lead and member filtering controls in the Project Activity interface.
+- loading, empty, retry, and skeleton states for collaboration surfaces.
+- automatic polling and query invalidation for Project Chat.
+
+The current polling behavior improves live synchronization but is not treated as proof that the final realtime and reconnect scope is complete.
 
 ## Scope Pending
 
 The remaining planned Phase 9 scope includes:
 
-- Project Chat.
-- final approved Project Chat permission rules.
-- realtime message delivery where adopted.
+- final realtime message delivery where adopted.
 - realtime notification delivery where useful.
 - reconnect and missed-event recovery behavior.
+- Outcome-specific discussion UI and API over the canonical nullable ProjectMessage outcome scope.
 - attachment upload and retrieval.
 - attachment authorization.
 - attachment metadata and storage lifecycle.
+- signed-in multi-user Project Chat acceptance.
 - final cross-browser and multi-user acceptance.
+- formal Phase 9 closure.
 
 ## Architecture and Data Flow
 
 Persistent collaboration records remain stored in PostgreSQL.
 
-VisiWork messages have persisted author, room context, body, edit state, deletion state, and timestamps.
+Realtime or polling state is supplemental and must recover from persisted records.
+
+VisiWork messages persist author, room context, body, edit state, deletion state, timestamps, and mention relationships.
+
+Project messages persist Project scope, nullable Outcome scope, author, reply parent, body, edit state, deletion state, timestamps, and mention relationships.
+
+General Project Chat explicitly reads and writes only Project messages whose `outcome_id` is null.
+
+The nullable `outcome_id` remains available for the canonical Outcome-specific discussion model without mixing those future records into general Project Chat.
 
 Mentions are persisted relationships rather than presentation-only text parsing.
 
-Mention notification creation is integrated with the message persistence boundary so the notification record and mention relationship remain aligned.
+Mention notification creation and synchronization occur at the same persistence boundary as message changes.
 
-Soft deletion keeps message position stable while preventing deleted content from appearing as active searchable message text.
+When a Project Chat author edits mentions, removed mention notifications are deleted, retained notification previews are refreshed, and newly added mentions create notifications.
 
-Current automatic refresh behavior uses application polling/invalidation.
+Deleting a Project Chat message removes its Project Chat mention notifications while preserving a message tombstone.
+
+Project Activity is derived from the existing append-only ActivityLog rather than a second collaboration event store.
+
+The Project Activity API exposes only explicitly allow-listed display metadata so private submission content stored in ActivityLog metadata is not leaked through the company-visible activity surface.
+
+Current automatic refresh behavior uses TanStack Query polling and invalidation.
+
 If Supabase Realtime or another push transport is introduced, it must remain supplemental to persisted PostgreSQL state.
 
 ## Database Changes
 
-The current data model includes persisted VisiWork messages and VisiWork message mentions.
+Phase 9 collaboration currently adds or uses these persistent structures:
 
-Message records include edit and deletion timestamps.
+- VisiWork messages and VisiWork message mentions.
+- Project messages.
+- Project message mentions.
+- Project announcements.
+- Project Activity through the existing ActivityLog.
+- Notification types for VisiWork and Project Chat mentions.
 
-Notification records support the VisiWork mention notification type.
+Project message persistence includes nullable `outcome_id`.
+
+General Project Chat currently stores `NULL` in that column.
+
+Relevant Project Chat migrations include:
+
+- `20260923000000_project_chat`.
+- `20260923010000_project_activity_history`.
+- `20260924030000_project_chat_search_mentions_delete`.
+- `20260924194000_project_announcements`.
+- `20260924200000_project_chat_mention_notifications`.
+- `20260924210000_project_message_outcome_scope`.
+
+Project message and announcement tables enable PostgreSQL row-level security and revoke direct `anon` and `authenticated` browser table privileges.
+
+Protected writes continue through NestJS.
 
 Any future attachment implementation should keep file metadata and authorization-relevant references in PostgreSQL even if binary storage lives outside PostgreSQL.
 
 ## API Changes
 
-The VisiWork service and shared contracts support:
+VisiWork collaboration supports:
 
 - message retrieval.
 - message creation.
 - message search.
+- exact-message context retrieval.
 - mention data.
 - message editing.
 - message deletion.
 
+Project collaboration supports:
+
+- `GET /api/projects/:projectId/messages`.
+- `POST /api/projects/:projectId/messages`.
+- `GET /api/projects/:projectId/messages/search`.
+- `GET /api/projects/:projectId/messages/:messageId/context`.
+- `PATCH /api/projects/:projectId/messages/:messageId`.
+- `DELETE /api/projects/:projectId/messages/:messageId`.
+- `GET /api/projects/:projectId/announcements`.
+- `POST /api/projects/:projectId/announcements`.
+- `PATCH /api/projects/:projectId/announcements/:announcementId/pin`.
+- `GET /api/projects/:projectId/activity`.
+
 Notification querying supports collaboration-oriented Mentions and Projects filtering.
 
-Exact endpoints and final Project Chat APIs should be recorded here when that slice is implemented.
+Project Chat mention notifications navigate to `/projects/:projectId?tab=chat&message=:messageId`.
 
 ## Security and Authorization
 
-Members may edit or delete only their own VisiWork messages.
+All active authorized Prometheus members may read normal company-visible Project Chat and Project Activity.
 
-Room access and future Project Chat access must follow the final approved product rules and be enforced by the backend.
+Only the Project Lead or a Project Member may send general Project Chat messages.
+
+Only the message author may edit or delete their own Project Chat message.
+
+Project Chat mentions may target only active Project participants represented by the Project Lead or Project Membership.
+
+Only the Project Lead or a Project Member may post a Project announcement.
+
+Only the Project Lead may pin or unpin Project announcements.
+
+Archived Projects are read-only for Project Chat and announcement mutations.
+
+Project Activity returns display-safe metadata rather than raw ActivityLog metadata.
+
+Outcome-specific discussion remains a separate scope.
+
+When its interface is implemented, its write boundary remains Project Lead or Outcome Member of that Outcome.
+
+Members may edit or delete only their own VisiWork messages.
 
 Notification navigation must not grant access to a room or resource that the recipient is otherwise unauthorized to open.
 
@@ -102,13 +197,38 @@ Attachment access must be authorized independently of merely knowing a storage U
 
 No new client-side source of truth is introduced for collaboration.
 
+Project Chat uses the existing authenticated API and PostgreSQL environment.
+
+The PostgreSQL integration CI job creates the Supabase browser roles required to validate direct-table restrictions and applies the tracked production migrations before exercising Project Chat.
+
 If Supabase Realtime is adopted later, its configuration must remain compatible with persisted message recovery and reconnect behavior.
 
 If Supabase Storage is adopted for attachments, storage configuration and authorization policy must be documented without committing secrets.
 
 ## Testing and Acceptance Result
 
-Focused automated coverage exists for VisiWork message behavior, including persisted mentions, notification creation, search, edit/delete state, and notification navigation.
+Automated coverage exists for:
+
+- Project Chat read and write authorization.
+- archived Project read-only behavior.
+- replies and cross-Project reply rejection.
+- pagination.
+- search and exact-message context.
+- author-only edit and delete behavior.
+- stale edit/delete protection.
+- Project Chat mention validation.
+- Project Chat mention notification creation and synchronization.
+- Project announcement posting and Lead-only pinning.
+- company-visible display-safe Project Activity.
+- ActivityLog project isolation and pagination.
+- React chat composer behavior.
+- Enter to send and Shift+Enter for a newline.
+- message search navigation.
+- collaboration skeleton and retry states.
+- Project announcement UI permissions.
+- Project Activity filters and rendering.
+- production migration application against PostgreSQL.
+- direct browser-role denial for Project Chat tables.
 
 The manual acceptance file is:
 
@@ -116,7 +236,9 @@ The manual acceptance file is:
 
 Formal Phase 9 acceptance has not been completed.
 
-The existing automated evidence for VisiWork collaboration does not prove the pending Project Chat, final realtime transport, reconnect, or attachment scope.
+Signed-in multi-user Project Chat acceptance remains required because credential-gated browser journeys cannot be treated as passed when the required E2E identities are unavailable.
+
+The final realtime/reconnect and attachment acceptance also remains pending.
 
 ## Decision & Challenge Log
 
@@ -138,7 +260,7 @@ Treat PostgreSQL records as the durable collaboration source of truth and treat 
 
 #### Result
 
-Message history, mentions, edit/delete state, and notifications survive refresh and do not depend on an active realtime connection.
+Message history, mentions, edit/delete state, announcements, and notifications survive refresh and do not depend on an active realtime connection.
 
 ### P9-D02 - Persist mention relationships
 
@@ -158,7 +280,7 @@ Persist mention relationships and create mention notifications at the message pe
 
 #### Result
 
-Notifications can route the mentioned member back to the referenced VisiWork room and message context.
+Notifications can route the mentioned member back to the referenced room and message context.
 
 ### P9-D03 - Use author-only edit/delete with soft deletion
 
@@ -170,7 +292,7 @@ Notifications can route the mentioned member back to the referenced VisiWork roo
 
 #### Root cause / constraint
 
-Hard deletion can destroy conversational context and leave search, mentions, and notification references inconsistent.
+Hard deletion can destroy conversational context and leave search, replies, mentions, and notification references inconsistent.
 
 #### Decision
 
@@ -178,7 +300,7 @@ Allow only the author to edit or delete a message and represent deletion as a pe
 
 #### Result
 
-Conversation ordering remains stable while deleted content is removed from normal presentation and search.
+Conversation ordering and reply context remain stable while deleted content is removed from normal presentation and search.
 
 ### P9-D04 - Polling is an interim live-sync mechanism, not the phase exit criterion
 
@@ -202,21 +324,121 @@ Do not describe that mechanism as completion of the final realtime and reconnect
 
 Message mutations and Work Session presence refresh across active clients while the durable database remains authoritative.
 
-## Known Limitations
+### P9-D05 - Keep Project Chat authorization aligned with derived Project Membership
 
-Project Chat is still pending.
+**Status:** Accepted
+
+**Area:** Security / Product
+
+**Impact:** High
+
+#### Root cause / constraint
+
+All active authorized members may inspect Projects, but company-wide read access must not silently become Project communication write access.
+
+#### Decision
+
+Allow every active authorized member to read general Project Chat.
+
+Allow writes only for the Project Lead or a derived Project Member.
+
+Apply the same posting boundary to Project announcements and reserve pinning for the Project Lead.
+
+#### Result
+
+Normal Project visibility remains company-wide while collaboration mutation authority continues to come from canonical Project relationships.
+
+### P9-D06 - Keep normal Project Activity company-visible and sanitize metadata
+
+**Status:** Accepted
+
+**Area:** Security / Product
+
+**Impact:** High
+
+#### Root cause / constraint
+
+The canonical user flow states that normal Project activity is company-visible, while ActivityLog metadata can contain fields that are not appropriate to expose broadly.
+
+#### Decision
+
+Return the Project-wide activity trail to every active authorized member.
+
+Expose only action-specific allow-listed display metadata instead of raw ActivityLog metadata.
+
+#### Result
+
+Project transparency matches the canonical access model without leaking private submission text through the activity endpoint.
+
+### P9-D07 - Preserve Outcome scope without mixing it into general Project Chat
+
+**Status:** Accepted
+
+**Area:** Database / Architecture
+
+**Impact:** Medium
+
+#### Root cause / constraint
+
+The canonical ProjectMessage model includes nullable `outcome_id`, but the current UI slice implements general Project Chat only.
+
+#### Decision
+
+Persist nullable `outcome_id`.
+
+Make general Project Chat explicitly read and write only rows where `outcome_id IS NULL`.
+
+Defer the Outcome-specific discussion UI and endpoints without deleting the canonical relationship from the data model.
+
+#### Result
+
+The current feature remains correctly scoped and future Outcome discussion can be added without a destructive message-schema redesign.
+
+### P9-D08 - Synchronize Project Chat notifications with mention edits
+
+**Status:** Accepted
+
+**Area:** Database / Notifications
+
+**Impact:** High
+
+#### Root cause / constraint
+
+Creating a notification only when a message is first sent leaves stale notifications when an author later adds, removes, or deletes mentions.
+
+#### Decision
+
+Treat message mentions and mention notifications as one lifecycle.
+
+Create notifications for newly added mentions, refresh retained notification previews, remove notifications for removed mentions, and remove all message mention notifications when a message is deleted.
+
+#### Result
+
+The Notifications inbox remains consistent with the persisted Project Chat message state.
+
+## Known Limitations
 
 Attachments are still pending.
 
 The final realtime transport and reconnect strategy is still pending.
 
-Current collaboration behavior is strongest in VisiWork General and Department chat and should not be generalized to Project Chat permissions until that implementation is complete.
+Outcome-specific discussion has persistence scope but no dedicated user interface or API yet.
+
+Signed-in multi-user Project Chat acceptance still requires configured test identities.
+
+Formal Phase 9 acceptance remains open.
 
 ## Technical Debt
 
-Avoid duplicating VisiWork message rules when Project Chat is implemented.
+VisiWork and Project Chat currently have separate collaboration service implementations.
 
-Prefer a shared collaboration domain or deep module where common message behavior, author mutation rules, mention parsing, search semantics, and notification creation can be reused without coupling room-specific authorization.
+Keep common semantics aligned, especially author mutation rules, mention lifecycle, search behavior, soft deletion, and notification cleanup.
+
+A shared collaboration abstraction should be introduced only if it reduces duplication without obscuring room-specific authorization.
+
+Project Activity currently provides the same display-safe company-visible event set to Project Leads and other authorized viewers.
+
+If Lead-only activity detail is added later, it should be additive and explicitly documented rather than reducing normal company-visible activity.
 
 ## Lessons from the Phase
 
@@ -224,22 +446,30 @@ Search, mentions, edit/delete behavior, notifications, and deep links are one co
 
 Durable message state should be correct before realtime delivery is optimized.
 
-Soft deletion simplifies reference integrity compared with hard deletion when messages can be searched, mentioned, and linked from notifications.
+Mention notifications must follow the lifecycle of the mention relationship instead of only the initial message-create event.
+
+Company-visible activity can remain useful without exposing raw audit metadata.
+
+Keeping the canonical nullable Outcome scope in ProjectMessage avoids coupling general Project Chat to future Outcome discussion.
 
 ## Recommendations and Next Approach
 
-Implement Project Chat as the next vertical collaboration slice.
+Run the latest branch verification after every collaboration reconciliation change.
 
-Reuse the existing durable message and notification concepts where they fit, but keep Project-specific authorization explicit.
+Complete the credential-gated signed-in Project Chat journey with at least two authorized users.
 
-After Project Chat is correct with persisted state, decide whether polling remains acceptable or whether Supabase Realtime materially improves message and notification delivery.
+Verify message receipt without manual reload, exact-message mention navigation, edit/delete synchronization, announcement permissions, and Project Activity visibility.
+
+Then decide whether polling remains acceptable or whether Supabase Realtime materially improves message and notification delivery.
 
 Add reconnect tests that prove missed events are recovered from persistent state.
 
-Implement attachments only after message and room authorization boundaries are stable.
+Implement Outcome-specific discussion only when its product interface is ready, using the existing nullable ProjectMessage Outcome scope.
+
+Implement attachments only after message and room authorization boundaries remain stable under multi-user acceptance.
 
 ## Phase Exit Result
 
 Not yet complete.
 
-VisiWork collaboration has delivered meaningful Phase 9 functionality, but Project Chat, final realtime/reconnect behavior, attachments, and formal acceptance remain open.
+VisiWork collaboration and Project Chat deliver the durable messaging foundation, but final realtime/reconnect behavior, attachments, signed-in multi-user acceptance, and formal Phase 9 closure remain open.

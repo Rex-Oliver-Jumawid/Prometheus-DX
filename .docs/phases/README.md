@@ -162,7 +162,7 @@ The root `README.md` should summarize this status, while each phase journal reco
 | 6 | Schedule, Work Sessions, and Team | Complete | `phase-06-schedule-work-sessions-team.md` |
 | 7 | Notifications and Home | In progress - Notifications and Home are integrated; final acceptance, visual verification, regression, and closure pending | `phase-07-notifications-home.md` |
 | 8 | VisiWork and Reports & Analytics | In progress - both product surfaces are integrated; formal acceptance and closure pending | `phase-08-visiwork-reporting.md` |
-| 9 | Collaboration, Realtime, and Attachments | In progress - VisiWork collaboration slices are delivered; Project Chat, remaining realtime behavior, attachments, and acceptance are pending | `phase-09-collaboration.md` |
+| 9 | Collaboration, Realtime, and Attachments | In progress - VisiWork collaboration and Project Chat are delivered; final realtime/reconnect behavior, attachments, and acceptance are pending | `phase-09-collaboration.md` |
 
 ## Principle
 

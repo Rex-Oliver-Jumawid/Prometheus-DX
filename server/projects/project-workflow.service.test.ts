@@ -98,7 +98,7 @@ function createDatabase(
     outcomeRevisionCount?: number;
     outcomeDependentCount?: number;
     outcomeFeatureCount?: number;
-    stageOutcomes?: Array<{ id: string; counts: { members: number; submissions: number; acceptances: number; revisionRequests: number; dependents: number; features: number } }>;
+    stageOutcomes?: Array<{ id: string; title?: string; counts: { members: number; submissions: number; acceptances: number; revisionRequests: number; dependents: number; features: number } }>;
     stageSiblings?: Array<{ id: string; position: number }>;
     outcomeSiblings?: Array<{ id: string; position: number }>;
   } = {},
@@ -133,9 +133,11 @@ function createDatabase(
           if (options.stageProjectId === null) return Promise.resolve(null);
           const stageOutcomes = (options.stageOutcomes ?? []).map((o) => ({
             id: o.id,
+            title: o.title ?? 'Planned outcome',
             _count: o.counts,
           }));
           return Promise.resolve({
+            name: 'Discovery',
             projectId: options.stageProjectId ?? projectId,
             position: 1,
             outcomes: stageOutcomes,
@@ -321,7 +323,10 @@ function createDatabase(
           }),
         ),
     },
-    activityLog: { create: vi.fn().mockResolvedValue({ id: outcomeId }) },
+    activityLog: {
+      create: vi.fn().mockResolvedValue({ id: outcomeId }),
+      createMany: vi.fn().mockResolvedValue({ count: 1 }),
+    },
     notification: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
   };
   const transaction = vi.fn(
@@ -382,6 +387,26 @@ describe('ProjectWorkflowService', () => {
     await expect(
       service.updateStage(lead, projectId, stageId, { name: 'Research' }),
     ).resolves.toMatchObject({ name: 'Research' });
+    expect(database.activityLog.create).toHaveBeenNthCalledWith(1, {
+      data: {
+        projectId,
+        actorMemberId: lead.id,
+        entityType: 'Stage',
+        entityId: stageId,
+        action: 'STAGE_CREATED',
+        metadata: { name: 'Discovery' },
+      },
+    });
+    expect(database.activityLog.create).toHaveBeenNthCalledWith(2, {
+      data: {
+        projectId,
+        actorMemberId: lead.id,
+        entityType: 'Stage',
+        entityId: stageId,
+        action: 'STAGE_UPDATED',
+        metadata: { name: 'Research' },
+      },
+    });
   });
 
   it.each([
@@ -443,6 +468,17 @@ describe('ProjectWorkflowService', () => {
         }),
       }),
     );
+    expect(database.activityLog.create).toHaveBeenCalledWith({
+      data: {
+        projectId,
+        outcomeId,
+        actorMemberId: lead.id,
+        entityType: 'Outcome',
+        entityId: outcomeId,
+        action: 'OUTCOME_CREATED',
+        metadata: { title: 'Validated opportunity' },
+      },
+    });
   });
 
   it('updates Outcome metadata through replacement of canonical child sets', async () => {
@@ -489,6 +525,17 @@ describe('ProjectWorkflowService', () => {
     });
     expect(database.outcomeDepartment.deleteMany).toHaveBeenCalledWith({
       where: { outcomeId },
+    });
+    expect(database.activityLog.create).toHaveBeenCalledWith({
+      data: {
+        projectId,
+        outcomeId,
+        actorMemberId: lead.id,
+        entityType: 'Outcome',
+        entityId: outcomeId,
+        action: 'OUTCOME_UPDATED',
+        metadata: { title: 'Updated outcome' },
+      },
     });
   });
 
@@ -777,6 +824,16 @@ describe('ProjectWorkflowService', () => {
     expect(database.outcome.delete).toHaveBeenCalledWith({
       where: { id: outcomeId },
     });
+    expect(database.activityLog.create).toHaveBeenCalledWith({
+      data: {
+        projectId,
+        actorMemberId: lead.id,
+        entityType: 'Outcome',
+        entityId: outcomeId,
+        action: 'OUTCOME_DELETED',
+        metadata: { title: 'Validated opportunity' },
+      },
+    });
   });
 
   it('non-Lead cannot delete an Outcome', async () => {
@@ -885,6 +942,43 @@ describe('ProjectWorkflowService', () => {
     ).resolves.toBeUndefined();
     expect(database.stage.delete).toHaveBeenCalledWith({
       where: { id: stageId },
+    });
+    expect(database.activityLog.create).toHaveBeenCalledWith({
+      data: {
+        projectId,
+        actorMemberId: lead.id,
+        entityType: 'Stage',
+        entityId: stageId,
+        action: 'STAGE_DELETED',
+        metadata: { name: 'Discovery' },
+      },
+    });
+  });
+
+  it('records cascading Outcome deletion alongside its Stage without losing titles', async () => {
+    const database = createDatabase({
+      stageOutcomes: [{
+        id: outcomeId,
+        title: 'Planned outcome',
+        counts: {
+          members: 0, submissions: 0, acceptances: 0,
+          revisionRequests: 0, dependents: 0, features: 0,
+        },
+      }],
+    });
+    const service = new ProjectWorkflowService(database);
+
+    await service.deleteStage(lead, projectId, stageId);
+
+    expect(database.activityLog.createMany).toHaveBeenCalledWith({
+      data: [{
+        projectId,
+        actorMemberId: lead.id,
+        entityType: 'Outcome',
+        entityId: outcomeId,
+        action: 'OUTCOME_DELETED',
+        metadata: { title: 'Planned outcome' },
+      }],
     });
   });
 

@@ -4112,3 +4112,39 @@
   }
 }
 
+
+
+/* Project Chat shares the same Workspace header, breadcrumb, and tabs as Content. */
+.pw-chat-page-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  min-height: 46px;
+  gap: 16px;
+  padding: 1px 0 11px;
+}
+
+.pw-chat-page-heading > div {
+  min-width: 0;
+}
+
+.pw-chat-page-heading h2 {
+  margin: 0;
+  color: #29221f;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  font-weight: 760;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+
+.pw-chat-page-heading p {
+  margin: 4px 0 0;
+  color: #968981;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.pw-chat-project-link {
+  text-decoration: none;
+}

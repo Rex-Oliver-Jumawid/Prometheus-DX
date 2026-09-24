@@ -275,11 +275,14 @@ function RoomPanel({
     },
   });
 
-  const loaded = messages.data?.pages.flatMap((page) => page.items) ?? [];
-  const contextual =
+  const loaded: VisiWorkMessage[] = (
+    messages.data?.pages.flatMap((page) => page.items) ?? []
+  ).map((message) => ({ ...message, mentions: message.mentions ?? [] }));
+  const contextual: VisiWorkMessage[] = (
     context.data?.departmentId === (departmentId ?? null)
       ? context.data.items
-      : [];
+      : []
+  ).map((message) => ({ ...message, mentions: message.mentions ?? [] }));
   const unique = new Map(
     [...contextual, ...loaded].map((message) => [message.id, message]),
   );
@@ -505,7 +508,7 @@ function RoomPanel({
                   key={result.id}
                   type="button"
                   className="visiwork-chat-search-result"
-                  onClick={() => jumpToMessage(result)}
+                  onClick={() => jumpToMessage(VisiWorkMessageSchema.parse(result))}
                 >
                   <span>
                     <strong>{result.author.fullName}</strong>

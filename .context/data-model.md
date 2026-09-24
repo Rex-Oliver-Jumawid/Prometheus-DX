@@ -1037,11 +1037,50 @@ parent_message_id
 body
 created_at
 edited_at
+deleted_at
 ```
 
 `outcome_id` is nullable.
 
+A null `outcome_id` represents general Project Chat.
+
+A non-null `outcome_id` is reserved for Outcome-specific discussion and must reference an Outcome in the same Project when that interface is implemented.
+
 `parent_message_id` is nullable and supports replies.
+
+`deleted_at` implements soft deletion so conversation position, reply references, and deep links can remain stable without exposing removed content as an active message.
+
+```text
+ProjectMessageMention
+---------------------
+message_id
+member_id
+```
+
+The pair `(message_id, member_id)` is unique.
+
+Mention relationships are durable identity references rather than presentation-only parsing.
+
+General Project Chat mentions may target active Project participants represented by the Project Lead or Project Membership.
+
+Mention notifications must be synchronized when mentions are added, retained, removed, or deleted.
+
+```text
+ProjectAnnouncement
+-------------------
+id
+project_id
+member_id
+title
+body
+pinned_at
+created_at
+updated_at
+```
+
+Project announcements are Project-scoped, readable with normal Project communication, and posted by the Project Lead or a Project Member.
+
+Only the Project Lead may pin or unpin an announcement.
 
 Read permissions:
 
@@ -1069,6 +1108,10 @@ Outcome Member of that Outcome
 ```
 
 An authorized user who is only browsing a Project may read but does not gain chat write permission until they become a Project Member.
+
+Only the message author may edit or delete their message.
+
+Archived Projects are read-only for Project Chat and announcement mutations.
 
 ---
 
@@ -1645,6 +1688,8 @@ Notification(recipient_member_id, event_key) UNIQUE
 
 ProjectMessage(project_id, created_at)
 ProjectMessage(outcome_id, created_at)
+ProjectMessageMention(member_id)
+ProjectAnnouncement(project_id, pinned_at, created_at)
 
 ActivityLog(project_id, created_at)
 ActivityLog(outcome_id, created_at)
@@ -1728,6 +1773,8 @@ OutcomeAcceptanceMember
 
 Notification
 ProjectMessage
+ProjectMessageMention
+ProjectAnnouncement
 ActivityLog
 
 MemberSchedule

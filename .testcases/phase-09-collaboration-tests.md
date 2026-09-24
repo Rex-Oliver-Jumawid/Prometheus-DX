@@ -8,9 +8,12 @@ Persistent records remain in PostgreSQL.
 
 Presence is not a substitute for Work Sessions.
 
-Collaboration currently spans VisiWork General and Department chat, with Project Chat still part of the Phase 9 target scope.
+Collaboration currently spans VisiWork General and Department chat together with Project Chat.
 
-Chat permissions should follow the final approved room-specific communication rules.
+Project Chat is company-visible for reading, while general Project Chat and announcement writes are restricted to the Project Lead or Project Members.
+Only the Project Lead may pin or unpin Project announcements.
+
+Room permissions must continue to follow the approved room-specific communication rules.
 
 Automatic polling or Supabase Realtime may be used where live behavior has clear value, but persistent records remain authoritative.
 
@@ -119,6 +122,26 @@ Apply these checks to every page in this phase:
 | F9-30 | Soft delete own message | User A deletes their own message. | Conversation position is preserved with a deleted placeholder, deleted content is excluded from search, and obsolete mention notifications are removed as defined. |
 | F9-31 | Cannot delete another member's message | User B attempts the delete mutation against User A's message. | Backend authorization rejects the mutation and the message remains unchanged. |
 
+## Project Chat and Project Activity Regression
+
+| ID | Test | Steps | Expected Result |
+| --- | --- | --- | --- |
+| F9-32 | Company-visible Project Chat | Open the same Project as an active authorized user who is not the Lead or a Project Member. | Existing general Project Chat is readable, while the composer remains disabled. |
+| F9-33 | Project Member send | Open Project Chat as a Project Member and send a valid message. | Message persists and appears in the same Project conversation. |
+| F9-34 | Project Lead send | Open Project Chat as the Project Lead and send a valid message. | Message persists and appears in the same Project conversation. |
+| F9-35 | Project reply | Reply to an existing Project Chat message. | Reply persists with the correct parent preview and cannot reference a message from another Project. |
+| F9-36 | Project search exact message | Search older Project Chat text and choose a result. | The conversation loads surrounding context, scrolls inside the chat viewport, and highlights the exact message. |
+| F9-37 | Project mention notification | Mention another active Project participant. | The mention persists and the recipient receives a Mentions notification that navigates to the exact Project Chat message. |
+| F9-38 | Add mention during edit | Edit an existing Project Chat message to add a valid mention. | The mention relationship is created and the newly mentioned member receives a Project Chat mention notification. |
+| F9-39 | Remove mention during edit | Edit a Project Chat message to remove an existing mention. | The mention relationship and its obsolete Project Chat mention notification are removed. |
+| F9-40 | Delete mentioned message | Delete the author's Project Chat message after mentioning another member. | A tombstone preserves message position and replies, deleted text is not searchable, and Project Chat mention notifications for that message are removed. |
+| F9-41 | Project Member announcement | Post an announcement as a Project Member. | Announcement persists and is visible in the Project Chat sidebar. |
+| F9-42 | Announcement pin authority | Attempt pinning as a Project Member, then as the Project Lead. | Member cannot pin; Project Lead can pin and unpin. |
+| F9-43 | Archived Project collaboration | Archive a Project and attempt Chat and announcement mutations. | Existing communication remains readable and new mutations are rejected. |
+| F9-44 | Company-visible Project Activity | Open Activity as the Lead, a Project Member, and an unrelated active authorized member. | Each can view the same normal Project activity trail for that Project. |
+| F9-45 | Activity metadata safety | Trigger submission/workflow activity whose stored audit metadata contains private details. | The Project Activity API exposes only approved display-safe fields and does not expose private submission text. |
+| F9-46 | General versus Outcome message scope | Verify general Project Chat after an Outcome-scoped ProjectMessage fixture exists. | General Project Chat returns only messages whose `outcome_id` is null. |
+
 ## Presence Tests
 
 | ID | Test | Steps | Expected Result |
@@ -161,7 +184,9 @@ User A and User B open the same authorized collaboration room
 -> navigation returns to the exact room and message
 -> User A edits and then deletes one of their own messages
 -> User B sees the persisted mutation state
--> Project Chat follows its approved Project permission rules
+-> Project Chat is readable company-wide but writable only by its Project Lead or Project Members
+-> Project Chat replies, search, mentions, edit/delete, announcements, and Activity follow their approved Project rules
+-> mention notifications stay synchronized with Project Chat edits and deletion
 -> User A uploads an attachment
 -> User B can access it according to permissions
 -> User A disconnects and reconnects
@@ -176,6 +201,10 @@ User A and User B open the same authorized collaboration room
 - [ ] Mentions persist and route notifications to the correct room and message.
 - [ ] Edit/delete rules are enforced by the backend and soft deletion preserves conversation integrity.
 - [ ] Project Chat follows the approved Project communication rules.
+- [ ] Project Chat mention notifications stay synchronized after mention edits and message deletion.
+- [ ] Project announcements follow Project Member posting and Project Lead pinning rules.
+- [ ] Normal Project Activity remains company-visible without exposing unsafe audit metadata.
+- [ ] General Project Chat excludes Outcome-scoped Project messages.
 - [ ] Live message updates do not require manual reload during normal connected use.
 - [ ] Reconnect behavior recovers missed persistent state without duplicate history.
 - [ ] Presence does not alter Work Session truth.

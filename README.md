@@ -18,8 +18,9 @@ Phase 08 - VisiWork and Reports & Analytics - is in progress.
 The VisiWork and Reports & Analytics implementations are present on `main`; formal Phase 8 acceptance and closure remain pending.
 
 Phase 09 - Collaboration, Realtime, and Attachments - is in progress.
-VisiWork collaboration already includes persisted chat, message search and deep links, mentions and mention notifications, message editing and deletion, and automatic refresh behavior.
-Project Chat, the final realtime transport/reconnect behavior, attachments, and formal Phase 9 acceptance remain pending.
+VisiWork collaboration and Project Chat now include persisted messaging, search and exact-message navigation, mentions and mention notifications, message editing and soft deletion, and automatic refresh behavior.
+Project Chat also includes replies, Project announcements, and the Project Activity surface.
+Final realtime transport/reconnect behavior, attachments, and formal Phase 9 acceptance remain pending.
 
 See `.docs/phases/README.md` for the canonical high-level status index, `.docs/CURRENT.md` for the current handoff, and the matching phase journals under `.docs/phases/` for implementation evidence.
 

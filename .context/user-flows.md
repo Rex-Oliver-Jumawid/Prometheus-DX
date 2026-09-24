@@ -778,13 +778,54 @@ Project-level dependency decisions belong to the Project Lead.
 
 # 22. Project Communication
 
-Project information is company-visible to all authorized Prometheus users.
+Project information and normal Project communication are company-visible to all active authorized Prometheus users.
 
-Authorized Prometheus users may view project communication where the product exposes it company-wide.
+General Project Chat uses the following write rule:
 
-Project Members may participate in project communication where permitted.
+```text
+Project Lead
+OR
+Project Member
+-> may send messages
+```
 
-Outcome-specific discussion may be associated with the corresponding outcome and its Outcome Members.
+An authorized user who is only browsing a Project may read Project Chat but may not send, reply, edit, or post announcements until another canonical Project relationship grants that capability.
+
+Project Chat supports replies, search, exact-message navigation, mentions, author editing, and author deletion.
+
+Only the message author may edit or delete that message.
+
+Deletion is soft deletion so reply chains, ordering, and deep links retain their conversation position while deleted content is no longer searchable or mentionable.
+
+Project Chat mentions may target active Project participants represented by the Project Lead or Project Membership.
+
+Mention notifications must stay synchronized when an author adds, retains, removes, or deletes mentions.
+
+Project announcements use the same posting boundary as general Project Chat:
+
+```text
+Project Lead
+OR
+Project Member
+-> may post an announcement
+```
+
+Only the Project Lead may pin or unpin Project announcements.
+
+Archived Projects are read-only for Project Chat and announcement mutations.
+
+Outcome-specific discussion may be associated with the corresponding Outcome.
+
+When Outcome-specific discussion is exposed, its write rule is:
+
+```text
+Project Lead
+OR
+Outcome Member of that Outcome
+-> may write
+```
+
+General Project Chat and Outcome-specific discussion remain separate scopes even though both use Project communication persistence.
 
 ---
 
@@ -868,6 +909,11 @@ Recorded work may be compared against scheduled working hours.
 | Create stages/outcomes | No | No | No | No | Yes | Only if also Project Lead |
 | Review submissions | No | No | No | No | Yes | Only if also Project Lead |
 | Accept or reopen outcomes | No | No | No | No | Yes | Only if also Project Lead |
+| View Project communication | Yes | Yes | Yes | Yes | Yes | Yes |
+| Post general Project Chat | No | Yes | Yes | If also Project Member | Yes | Only through Project role |
+| Post Project announcement | No | Yes | Yes | If also Project Member | Yes | Only through Project role |
+| Pin or unpin Project announcement | No | No | No | No | Yes | Only if also Project Lead |
+| View normal Project activity | Yes | Yes | Yes | Yes | Yes | Yes |
 | Access Registry | No | No | No | No | Only if also Administrator | Yes |
 
 A single user may hold several relationships at the same time.

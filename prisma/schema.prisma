@@ -63,6 +63,7 @@ enum NotificationType {
   OUTCOME_REOPENED
   DEPENDENCY_UNLOCKED
   VISIWORK_MENTION
+  PROJECT_CHAT_MENTION
 }
 
 enum Weekday {
@@ -145,6 +146,9 @@ model Member {
   workSessionCorrections      WorkSessionCorrection[]
   visiworkMessages            VisiWorkMessage[]
   visiworkMentions            VisiWorkMessageMention[]
+  projectMessages             ProjectMessage[]
+  projectMessageMentions      ProjectMessageMention[] @relation("ProjectMessageMentionTarget")
+  projectAnnouncements        ProjectAnnouncement[]
   receivedNotifications       Notification[]               @relation("NotificationRecipient")
   actedNotifications          Notification[]               @relation("NotificationActor")
 
@@ -182,6 +186,59 @@ model VisiWorkMessageMention {
   @@index([memberId, messageId])
   @@map("visiwork_message_mentions")
 }
+
+model ProjectMessage {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId       String           @map("project_id") @db.Uuid
+  outcomeId       String?          @map("outcome_id") @db.Uuid
+  memberId        String           @map("member_id") @db.Uuid
+  parentMessageId String?          @map("parent_message_id") @db.Uuid
+  body            String           @db.VarChar(4000)
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  editedAt        DateTime?        @map("edited_at") @db.Timestamptz(6)
+  deletedAt       DateTime?        @map("deleted_at") @db.Timestamptz(6)
+  mentions        ProjectMessageMention[]
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  outcome         Outcome?         @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+  member          Member           @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  parent          ProjectMessage?  @relation("ProjectMessageReplies", fields: [parentMessageId], references: [id], onDelete: Restrict)
+  replies         ProjectMessage[] @relation("ProjectMessageReplies")
+
+  @@index([projectId, createdAt, id])
+  @@index([outcomeId, createdAt, id])
+  @@index([memberId])
+  @@index([parentMessageId])
+  @@map("project_messages")
+}
+
+model ProjectMessageMention {
+  messageId String         @map("message_id") @db.Uuid
+  memberId  String         @map("member_id") @db.Uuid
+  message   ProjectMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  member    Member         @relation("ProjectMessageMentionTarget", fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@id([messageId, memberId])
+  @@index([memberId])
+  @@map("project_message_mentions")
+}
+
+model ProjectAnnouncement {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId String   @map("project_id") @db.Uuid
+  memberId  String   @map("member_id") @db.Uuid
+  title     String   @db.VarChar(160)
+  body      String   @db.VarChar(1200)
+  pinnedAt  DateTime? @map("pinned_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@index([projectId, pinnedAt(sort: Desc), createdAt(sort: Desc), id(sort: Desc)])
+  @@index([memberId])
+  @@map("project_announcements")
+}
+
 
 model MemberSchedule {
   id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -264,6 +321,8 @@ model Project {
   memberAccessHistory ProjectMemberAccessHistory[]
   activity            ActivityLog[]
   notifications       Notification[]
+  messages            ProjectMessage[]
+  announcements       ProjectAnnouncement[]
 
   @@index([createdByMemberId])
   @@index([leadMemberId])
@@ -372,6 +431,7 @@ model Outcome {
   revisionRequests   OutcomeRevisionRequest[]
   acceptances        OutcomeAcceptance[]
   notifications      Notification[]
+  messages           ProjectMessage[]
 
   @@unique([stageId, position])
   @@index([stageId])
@@ -523,9 +583,10 @@ model ActivityLog {
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   actorMember   Member?  @relation(fields: [actorMemberId], references: [id], onDelete: Restrict)
   project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  outcome       Outcome? @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+  outcome       Outcome? @relation(fields: [outcomeId], references: [id], onDelete: SetNull)
 
   @@index([projectId, createdAt])
+  @@index([projectId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([outcomeId, createdAt])
   @@index([actorMemberId])
   @@map("activity_logs")

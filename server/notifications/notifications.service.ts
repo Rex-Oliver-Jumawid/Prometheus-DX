@@ -56,6 +56,17 @@ function visiworkMentionData(
   return { messageId, departmentId, roomLabel, preview };
 }
 
+function projectChatMentionData(
+  data: Prisma.JsonValue,
+): Notification['projectChatMention'] {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
+  if (typeof data.messageId !== 'string') return null;
+  return {
+    messageId: data.messageId,
+    preview: typeof data.preview === 'string' ? data.preview : '',
+  };
+}
+
 function toNotification(record: NotificationRecord): Notification {
   return {
     id: record.id,
@@ -69,6 +80,9 @@ function toNotification(record: NotificationRecord): Notification {
         : null,
     ...(record.type === 'VISIWORK_MENTION'
       ? { visiworkMention: visiworkMentionData(record.data) }
+      : {}),
+    ...(record.type === 'PROJECT_CHAT_MENTION'
+      ? { projectChatMention: projectChatMentionData(record.data) }
       : {}),
     createdAt: record.createdAt.toISOString(),
     readAt: record.readAt?.toISOString() ?? null,
@@ -88,9 +102,9 @@ export class NotificationsService {
     if (query.filter === 'unread') {
       where.readAt = null;
     } else if (query.filter === 'mentions') {
-      where.type = 'VISIWORK_MENTION';
+      where.type = { in: ['VISIWORK_MENTION', 'PROJECT_CHAT_MENTION'] };
     } else if (query.filter === 'projects') {
-      where.type = { not: 'VISIWORK_MENTION' };
+      where.type = { notIn: ['VISIWORK_MENTION', 'PROJECT_CHAT_MENTION'] };
     }
 
     const records = await this.prisma.notification.findMany({
