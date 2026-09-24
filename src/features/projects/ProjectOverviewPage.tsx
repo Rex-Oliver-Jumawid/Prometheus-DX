@@ -279,6 +279,7 @@ export function ProjectOverviewPage() {
               projectLead={value.lead}
               currentMemberId={member?.id}
               accessToken={accessToken}
+              initialMessageId={searchParams.get('message')}
             />
             <aside className="pw-chat-side-stack" aria-label="Project chat sidebar">
               <ProjectAnnouncementsPanel
