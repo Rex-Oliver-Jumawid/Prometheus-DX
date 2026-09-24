@@ -21,8 +21,10 @@ Before implementing behavior, identify which artifact owns the decision.
 Use this hierarchy:
 
 - `.context/Software Requirements Specification - Prometheus Centralized Workflow Management System.md` owns functional requirements, business rules, and product intent.
-- `.context/user-flows.md` owns canonical authorization and workflow rules that must be enforced in production.
-- `.context/data-model.md` owns the current persistent entities, relationships, constraints, history, and derived state.
+- `.context/user-flows.md` owns canonical workflow and authorization behavior that must be enforced in production.
+- `.context/authorization.md` is the centralized quick-reference matrix for current permissions and relationships.
+- `.context/data-model.md` owns the current persistent entities, relationships, constraints, and history.
+- `.context/derived-metrics.md` owns exact cross-screen formulas for Project, Home, Reports, Team, and VisiWork derived values.
 - `.context/tech-stack.md` owns technical architecture and approved technologies.
 - `.context/phases.md` owns implementation order, phase scope, dependencies, and exit criteria.
 - `.context/ui-reference.md` owns the UI implementation reference policy.
@@ -31,6 +33,8 @@ Use this hierarchy:
 - `.model/login-page.html` is an authentication interaction reference where the target Figma frame does not fully specify behavior.
 - `.testcases/` owns phase acceptance gates.
 - `.docs/phases/` records what was actually implemented, important decisions, difficult problems, lessons, and next approaches.
+- `.docs/DEPLOYMENT.md`, `.docs/ENVIRONMENT.md`, and `.docs/DEVELOPMENT.md` own operational deployment, configuration, and local/worktree procedures.
+- `.docs/PROJECT-CLOSURE.md` records the current release boundary and explicit post-release backlog.
 
 For substantial user-facing implementation, inspect the relevant current Figma frame with the connected Figma integration before coding.
 
@@ -106,7 +110,7 @@ NestJS owns protected business rules and authorization.
 Prisma is the primary database access layer.
 PostgreSQL owns persistent business state.
 React presents and interacts with server state.
-Realtime supplements persistent state but never replaces it.
+Live refresh or realtime transport supplements persistent state but never replaces it.
 ```
 
 Frontend visibility is a UX feature, not a security boundary.
