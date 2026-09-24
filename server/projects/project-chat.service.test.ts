@@ -136,7 +136,7 @@ describe('ProjectChatService', () => {
       service.send(member, projectId, { body: 'Reply', parentMessageId }),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(db.projectMessage.findFirst).toHaveBeenCalledWith({
-      where: { id: parentMessageId, projectId },
+      where: { id: parentMessageId, projectId, deletedAt: null },
       select: { id: true },
     });
     expect(db.projectMessage.create).not.toHaveBeenCalled();
