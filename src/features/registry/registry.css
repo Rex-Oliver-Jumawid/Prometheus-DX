@@ -1,5 +1,15 @@
+.workspace-content-inner:has(> .registry-page) {
+  overflow: hidden;
+  padding: clamp(18px, 2.2vw, 28px);
+}
+
 .registry-page {
-  min-height: 100%;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .registry-page-header,
@@ -80,12 +90,13 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
-  margin-top: 20px;
+  min-height: 0;
+  margin-top: 0;
 }
 
 .registry-summary-card {
   min-width: 0;
-  padding: 13px 14px;
+  padding: 11px 13px;
   border: 1px solid rgba(255, 255, 255, 0.84);
   border-radius: 16px;
   background: rgba(255, 252, 249, 0.5);
@@ -113,14 +124,14 @@
 
 .registry-summary-card strong {
   display: block;
-  margin-top: 7px;
+  margin-top: 5px;
   color: #342d29;
   font-size: 17px;
   line-height: 1;
 }
 
 .registry-summary-card small {
-  margin-top: 7px;
+  margin-top: 5px;
   color: #9a8e87;
   font-size: 7px;
 }
@@ -132,10 +143,12 @@
 .registry-content-grid {
   display: grid;
   grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.48fr);
-  grid-auto-rows: 560px;
+  grid-auto-rows: minmax(0, 1fr);
   gap: 12px;
   align-items: stretch;
-  margin-top: 14px;
+  min-height: 0;
+  height: 100%;
+  margin-top: 0;
 }
 
 .registry-content-grid > .registry-panel {
@@ -147,7 +160,8 @@
 
 .registry-panel {
   min-width: 0;
-  padding: 16px;
+  min-height: 0;
+  padding: 14px;
   border: 1px solid rgba(255, 255, 255, 0.86);
   border-radius: 20px;
   background: rgba(255, 253, 250, 0.56);
@@ -245,12 +259,14 @@
 
 .registry-department-list {
   display: grid;
+  flex: 1 1 auto;
+  align-content: start;
   gap: 9px;
-  margin-top: 18px;
+  min-height: 0;
+  margin-top: 10px;
 }
 
 .registry-content-grid > .registry-panel .registry-department-list {
-  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
@@ -290,6 +306,36 @@
 .registry-department-main:focus-visible {
   outline: 2px solid rgba(203, 77, 34, 0.42);
   outline-offset: -2px;
+}
+
+.registry-department-search {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.registry-department-search input {
+  width: 100%;
+  height: 34px;
+  padding: 0 11px;
+  border: 1px solid #ded4ce;
+  border-radius: 10px;
+  outline: 0;
+  background: rgba(255, 253, 250, 0.8);
+  color: #4f4540;
+  font: inherit;
+  font-size: 8px;
+}
+
+.registry-department-search input:focus {
+  border-color: rgba(203, 77, 34, 0.58);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(203, 77, 34, 0.09);
+}
+
+.registry-department-search input:disabled {
+  cursor: default;
+  opacity: 0.62;
 }
 
 .registry-members-panel {
@@ -1001,9 +1047,26 @@
 }
 
 @media (max-width: 980px) {
+  .workspace-content-inner:has(> .registry-page) {
+    overflow: visible;
+  }
+
+  .registry-page {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+    grid-template-rows: auto;
+  }
+
+  .registry-summary-grid {
+    margin-top: 20px;
+  }
+
   .registry-content-grid {
     grid-template-columns: 1fr;
     grid-auto-rows: auto;
+    height: auto;
+    margin-top: 14px;
   }
 
   .registry-content-grid > .registry-panel {
