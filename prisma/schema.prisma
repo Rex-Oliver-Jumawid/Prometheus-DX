@@ -79,7 +79,8 @@ model Department {
   members         Member[]            @relation("PrimaryDepartment")
   visiworkMembers Member[]            @relation("VisiWorkDepartment")
   projects        ProjectDepartment[]
-  outcomes    OutcomeDepartment[]
+  outcomes        OutcomeDepartment[]
+  visiworkMessages VisiWorkMessage[]
 
   @@index([name])
   @@map("departments")
@@ -130,11 +131,27 @@ model Member {
   schedule                    MemberSchedule?
   workSessions                WorkSession[]
   workSessionCorrections      WorkSessionCorrection[]
+  visiworkMessages            VisiWorkMessage[]
 
   @@index([departmentId])
   @@index([visiworkDepartmentId])
   @@index([status])
   @@map("members")
+}
+
+model VisiWorkMessage {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  departmentId String?     @map("department_id") @db.Uuid
+  memberId     String      @map("member_id") @db.Uuid
+  body         String      @db.VarChar(2000)
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  member       Member      @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@index([departmentId, createdAt, id])
+  @@index([createdAt, id])
+  @@index([memberId])
+  @@map("visiwork_messages")
 }
 
 model MemberSchedule {

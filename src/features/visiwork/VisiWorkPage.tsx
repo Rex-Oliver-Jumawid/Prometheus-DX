@@ -1,10 +1,25 @@
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { OutcomeWorkSchema, type OutcomeWork } from '../../../shared/contracts/outcome-work';
 import {
+  CreateVisiWorkMessageSchema,
   SetVisiWorkPresenceRequestSchema,
+  VisiWorkMessagePageSchema,
+  VisiWorkMessageSchema,
   VisiWorkPresenceResponseSchema,
+  type VisiWorkMessage,
 } from '../../../shared/contracts/visiwork';
 import { apiFetch } from '../../lib/api';
 import { useAuth } from '../auth/auth-context';
@@ -22,7 +37,6 @@ import {
   groupDepartmentProjects,
   projectStatusLabel,
   type VisiWorkDepartment,
-  type VisiWorkMember,
   type VisiWorkOutcome,
   type VisiWorkProject,
   type VisiWorkStatusGroup,
@@ -65,18 +79,102 @@ function WorkingChip({ name }: { name: string }) {
   );
 }
 
+function messageTime(value: string): string {
+  return new Intl.DateTimeFormat('en-PH', {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(value));
+}
+
+function chatError(value: unknown): string {
+  return value instanceof Error ? value.message : 'Please try again.';
+}
+
 function RoomPanel({
   roomType,
   title,
   subtitle,
-  members,
+  accessToken,
+  currentMemberId,
+  departmentId,
 }: {
   roomType: string;
   title: string;
   subtitle: string;
-  members: VisiWorkMember[];
+  accessToken?: string;
+  currentMemberId?: string;
+  departmentId?: string;
 }) {
-  const liveMembers = members.filter((member) => member.workingNow).slice(0, 3);
+  const queryClient = useQueryClient();
+  const [body, setBody] = useState('');
+  const feedRef = useRef<HTMLDivElement>(null);
+  const pinnedToBottom = useRef(true);
+  const initiallyScrolled = useRef(false);
+  const roomKey = departmentId ?? 'general';
+  const queryKey = ['visiwork', 'messages', roomKey] as const;
+  const basePath = departmentId
+    ? '/visiwork/departments/' + departmentId + '/messages'
+    : '/visiwork/messages';
+
+  const messages = useInfiniteQuery({
+    queryKey,
+    queryFn: ({ pageParam }) =>
+      apiFetch(
+        basePath +
+          (pageParam ? '?cursor=' + encodeURIComponent(pageParam) : ''),
+        VisiWorkMessagePageSchema,
+        { accessToken },
+      ),
+    initialPageParam: null as string | null,
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+    enabled: Boolean(accessToken),
+    staleTime: 2_000,
+    refetchInterval: 4_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  });
+
+  const send = useMutation({
+    mutationFn: (messageBody: string) =>
+      apiFetch(basePath, VisiWorkMessageSchema, {
+        accessToken,
+        method: 'POST',
+        body: CreateVisiWorkMessageSchema.parse({ body: messageBody }),
+      }),
+    onSuccess: async () => {
+      setBody('');
+      pinnedToBottom.current = true;
+      await queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  const loaded = messages.data?.pages.flatMap((page) => page.items) ?? [];
+  const unique = new Map(loaded.map((message) => [message.id, message]));
+  const ordered = [...unique.values()].sort(
+    (left, right) =>
+      left.createdAt.localeCompare(right.createdAt) ||
+      left.id.localeCompare(right.id),
+  );
+  const canWrite = messages.data?.pages[0]?.canWrite ?? !departmentId;
+  const latestMessageId = ordered.at(-1)?.id;
+
+  useLayoutEffect(() => {
+    const feed = feedRef.current;
+    if (!feed || ordered.length === 0) return;
+    if (!initiallyScrolled.current || pinnedToBottom.current) {
+      feed.scrollTop = feed.scrollHeight;
+    }
+    initiallyScrolled.current = true;
+  }, [ordered.length, latestMessageId]);
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmed = body.trim();
+    if (!trimmed || trimmed.length > 2000 || !canWrite || send.isPending) {
+      return;
+    }
+    send.mutate(trimmed);
+  }
 
   return (
     <aside className="visiwork-room" aria-label={title}>
@@ -88,38 +186,110 @@ function RoomPanel({
         </div>
         <b>● LIVE</b>
       </header>
-      <div className="visiwork-room-feed">
-        {liveMembers.length ? (
-          liveMembers.map((member) => (
-            <div className="visiwork-room-message" key={member.id}>
-              <span className="visiwork-room-avatar">{initials(member.fullName)}</span>
-              <div>
-                <small>{member.fullName} · LIVE PRESENCE</small>
-                <p>
-                  {member.position
-                    ? member.position + ' is currently working.'
-                    : 'Currently working in Prometheus.'}
-                </p>
+
+      <div
+        className="visiwork-room-feed"
+        ref={feedRef}
+        onScroll={(event) => {
+          const feed = event.currentTarget;
+          pinnedToBottom.current =
+            feed.scrollHeight - feed.scrollTop - feed.clientHeight < 70;
+        }}
+      >
+        {messages.hasNextPage && (
+          <button
+            className="visiwork-chat-earlier"
+            type="button"
+            disabled={messages.isFetchingNextPage}
+            onClick={() => void messages.fetchNextPage()}
+          >
+            {messages.isFetchingNextPage ? 'Loading...' : 'Load earlier'}
+          </button>
+        )}
+
+        {messages.isPending ? (
+          <div className="visiwork-room-empty" role="status">
+            <span>Loading conversation...</span>
+          </div>
+        ) : messages.isError && ordered.length === 0 ? (
+          <div className="visiwork-room-empty" role="alert">
+            <span>Chat could not be loaded.</span>
+            <small>{chatError(messages.error)}</small>
+            <button type="button" onClick={() => void messages.refetch()}>
+              Retry
+            </button>
+          </div>
+        ) : ordered.length ? (
+          ordered.map((message: VisiWorkMessage) => {
+            const ownMessage = message.author.id === currentMemberId;
+            return (
+              <div
+                className={
+                  ownMessage
+                    ? 'visiwork-room-message own'
+                    : 'visiwork-room-message'
+                }
+                key={message.id}
+              >
+                {!ownMessage && (
+                  <span className="visiwork-room-avatar">
+                    {initials(message.author.fullName)}
+                  </span>
+                )}
+                <div>
+                  <small>
+                    {ownMessage ? 'You' : message.author.fullName}
+                    {' · '}
+                    {messageTime(message.createdAt)}
+                  </small>
+                  <p>{message.body}</p>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <div className="visiwork-room-empty">
-            <span>Room is quiet right now.</span>
-            <small>Live presence appears here when members time in.</small>
+            <span>No messages yet.</span>
+            <small>Start the conversation in {title}.</small>
+          </div>
+        )}
+
+        {messages.isError && ordered.length > 0 && (
+          <div className="visiwork-chat-warning" role="alert">
+            New messages could not be refreshed.
           </div>
         )}
       </div>
-      <div className="visiwork-room-composer" aria-label="Room messaging preview">
-        <input
-          disabled
-          aria-label={'Message ' + title}
-          placeholder="Messaging arrives with collaboration"
-        />
-        <button type="button" disabled>
-          Send
-        </button>
-      </div>
+
+      {canWrite ? (
+        <form className="visiwork-room-composer" onSubmit={submit}>
+          <input
+            aria-label={'Message ' + title}
+            placeholder={
+              departmentId ? 'Message this department...' : 'Message everyone...'
+            }
+            value={body}
+            maxLength={2000}
+            disabled={send.isPending}
+            onChange={(event) => setBody(event.target.value)}
+          />
+          <button
+            type="submit"
+            disabled={send.isPending || !body.trim()}
+          >
+            {send.isPending ? 'Sending' : 'Send'}
+          </button>
+          {send.isError && (
+            <small className="visiwork-chat-send-error" role="alert">
+              {chatError(send.error)}
+            </small>
+          )}
+        </form>
+      ) : (
+        <div className="visiwork-chat-readonly">
+          Join this department to send messages.
+        </div>
+      )}
     </aside>
   );
 }
@@ -423,10 +593,14 @@ function DepartmentProjectDetail({
 function DepartmentView({
   department,
   workByOutcome,
+  accessToken,
+  currentMemberId,
   onBack,
 }: {
   department: VisiWorkDepartment;
   workByOutcome: Map<string, OutcomeWork>;
+  accessToken?: string;
+  currentMemberId?: string;
   onBack: () => void;
 }) {
   const groups = groupDepartmentProjects(department);
@@ -514,7 +688,9 @@ function DepartmentView({
           roomType="DEPARTMENT ROOM"
           title={department.shortLabel + ' Chat'}
           subtitle={department.workingMembers.length + ' members currently working'}
-          members={department.members}
+          accessToken={accessToken}
+          currentMemberId={currentMemberId}
+          departmentId={department.id}
         />
       </div>
     </div>
@@ -649,12 +825,6 @@ export function VisiWorkPage() {
     );
   }
 
-  const allMembers: VisiWorkMember[] = team.data.members.map((teamMember) => ({
-    id: teamMember.id,
-    fullName: teamMember.fullName,
-    position: teamMember.position,
-    workingNow: teamMember.workingNow,
-  }));
   const currentTeamMember = team.data.members.find(
     (teamMember) => teamMember.id === member?.id,
   );
@@ -678,6 +848,8 @@ export function VisiWorkPage() {
       <DepartmentView
         department={selectedDepartment}
         workByOutcome={workByOutcome}
+        accessToken={accessToken}
+        currentMemberId={member?.id}
         onBack={() => setSearchParams({})}
       />
     );
@@ -736,7 +908,8 @@ export function VisiWorkPage() {
           roomType="GENERAL ROOM"
           title="General Chat"
           subtitle={team.data.summary.workingNowCount + ' working now · company-wide'}
-          members={allMembers}
+          accessToken={accessToken}
+          currentMemberId={member?.id}
         />
       </div>
     </section>

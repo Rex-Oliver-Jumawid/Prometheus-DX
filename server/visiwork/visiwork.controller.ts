@@ -2,12 +2,21 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   Inject,
+  Param,
+  ParseUUIDPipe,
+  Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import type { Member } from '@prisma/client';
-import { SetVisiWorkPresenceRequestSchema } from '../../shared/contracts/visiwork';
+import { z } from 'zod';
+import {
+  CreateVisiWorkMessageSchema,
+  SetVisiWorkPresenceRequestSchema,
+} from '../../shared/contracts/visiwork';
 import { CurrentMember } from '../auth/current-member.decorator';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { VisiWorkService } from './visiwork.service';
@@ -19,6 +28,14 @@ export class VisiWorkController {
     @Inject(VisiWorkService)
     private readonly visiworkService: VisiWorkService,
   ) {}
+
+  private validateCursor(cursor?: string): string | undefined {
+    if (cursor === undefined) return undefined;
+    if (!z.string().uuid().safeParse(cursor).success) {
+      throw new BadRequestException('Invalid VisiWork chat cursor.');
+    }
+    return cursor;
+  }
 
   @Put('presence')
   joinDepartment(
@@ -32,5 +49,65 @@ export class VisiWorkController {
       );
     }
     return this.visiworkService.joinDepartment(member, parsed.data);
+  }
+
+  @Get('messages')
+  listGeneralMessages(
+    @CurrentMember() member: Member,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.visiworkService.listMessages(
+      member,
+      undefined,
+      this.validateCursor(cursor),
+    );
+  }
+
+  @Post('messages')
+  sendGeneralMessage(
+    @CurrentMember() member: Member,
+    @Body() body: unknown,
+  ) {
+    const parsed = CreateVisiWorkMessageSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        parsed.error.issues[0]?.message ?? 'Invalid message.',
+      );
+    }
+    return this.visiworkService.sendMessage(member, parsed.data);
+  }
+
+  @Get('departments/:departmentId/messages')
+  listDepartmentMessages(
+    @CurrentMember() member: Member,
+    @Param('departmentId', new ParseUUIDPipe({ version: '4' }))
+    departmentId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.visiworkService.listMessages(
+      member,
+      departmentId,
+      this.validateCursor(cursor),
+    );
+  }
+
+  @Post('departments/:departmentId/messages')
+  sendDepartmentMessage(
+    @CurrentMember() member: Member,
+    @Param('departmentId', new ParseUUIDPipe({ version: '4' }))
+    departmentId: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = CreateVisiWorkMessageSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        parsed.error.issues[0]?.message ?? 'Invalid message.',
+      );
+    }
+    return this.visiworkService.sendMessage(
+      member,
+      parsed.data,
+      departmentId,
+    );
   }
 }
