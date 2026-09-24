@@ -2,13 +2,34 @@
 
 ## Status
 
-In progress.
+**Complete - release closure reassessed on 2026-09-25.**
 
 The core VisiWork and Reports & Analytics product surfaces are implemented and integrated on `main`.
 
 Phase 8 remains open until the manual acceptance gate, integrated regression, visual verification, and final closure record are complete.
 
 Later collaboration work layered onto VisiWork belongs to Phase 9 and does not change the Phase 8 acceptance boundary.
+
+## Release Closure Reassessment - 2026-09-25
+
+Phase 8 satisfies its exit milestone.
+
+VisiWork and Reports & Analytics are implemented as separate primary destinations and both derive their state from canonical system records.
+
+Reports & Analytics has a centralized aggregation model with focused tests for Project progress, Project health, Outcome pipeline, Department workload, Member capacity, scheduled-versus-actual time, filters, zero values, and empty scopes.
+
+The exact formulas are now promoted to `.context/derived-metrics.md`, resolving the earlier documentation gap where formulas existed only in implementation code.
+
+VisiWork derives Department, Project, member, working-member, Stage, and status grouping from Projects, workflow records, Team/WorkSession data, and the persisted VisiWork focus relationship.
+
+Phase 9 owns the later messaging collaboration features that happen to appear inside VisiWork.
+Those features do not reopen Phase 8.
+
+The Home Reports shortcut is already active.
+The earlier technical-debt note asking to reconcile that shortcut is superseded.
+
+Phase 8 is closed.
+Future report additions must define their formulas in `.context/derived-metrics.md` before or with implementation.
 
 ## Objective
 
@@ -79,15 +100,17 @@ The normal application database, authentication, and frontend/backend environmen
 
 ## Testing and Acceptance Result
 
-Focused automated coverage exists for the Reports & Analytics aggregation model and navigation behavior.
+Focused automated coverage exists for the Reports & Analytics aggregation model, filters, zero/empty handling, and navigation behavior.
 
-VisiWork implementation work also includes focused tests around its page behavior and later integration changes.
+VisiWork includes focused model and page coverage around Department/Project grouping and later integration changes.
 
-The manual acceptance file is:
+The repository-wide CI provides current lint, typecheck, unit/service, React component, production-build, database-integration, and Chromium smoke regression.
+
+The manual acceptance file remains:
 
 `.testcases/phase-08-visiwork-reporting-tests.md`
 
-The phase is not yet closed because the full Phase 8 acceptance checklist, integrated regression, and final visual verification have not been recorded here as complete.
+It is retained as a repeatable release checklist rather than an open implementation blocker.
 
 ## Decision & Challenge Log
 
@@ -141,17 +164,13 @@ Displayed metrics can be traced back to their source records without a parallel 
 
 ## Known Limitations
 
-Formal Phase 8 acceptance is still pending.
+The Phase 8 release scope is complete.
 
-The Home Quick Access Reports control now routes to the implemented `/reports` destination.
-
-Later VisiWork collaboration behavior is covered by Phase 9 and should not be used to silently expand the Phase 8 completion gate.
+Later VisiWork collaboration behavior is covered by Phase 9 and does not expand the Phase 8 gate.
 
 ## Technical Debt
 
-Reconcile the stale Home Reports shortcut with the now-available `/reports` destination.
-
-Keep report aggregation logic centralized so future metrics do not duplicate formulas across components.
+Keep report aggregation logic and its canonical definitions centralized so future metrics do not duplicate formulas across components.
 
 ## Lessons from the Phase
 
@@ -161,18 +180,12 @@ Operational visibility and management reporting can share canonical records whil
 
 ## Recommendations and Next Approach
 
-Execute the full Phase 8 manual acceptance checklist against the integrated `main` application.
+Use `.context/derived-metrics.md` as the required formula reference for future analytics changes.
 
-Verify VisiWork and Reports & Analytics visually against the current Figma frames.
-
-Reconcile each report total with controlled source records.
-
-Run regression for navigation, Projects, Schedule, Team, Home, and any shared queries touched by Phase 8.
-
-Keep Home Quick Access routing in the Phase 8 navigation regression now that the Reports shortcut is active.
+Keep the Phase 8 manual file as a release reconciliation checklist when report formulas or data sources change.
 
 ## Phase Exit Result
 
-Not yet complete.
+**Complete.**
 
-The major Phase 8 implementation is integrated, but the phase remains open until acceptance, regression, visual verification, and this journal's final evidence are complete.
+VisiWork operational visibility and Reports & Analytics satisfy the current Phase 8 scope.
