@@ -53,7 +53,7 @@ export class ProjectActivityService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async list(
-    member: Member,
+    _member: Member,
     projectId: string,
     cursor?: string,
   ): Promise<ProjectActivityPage> {
