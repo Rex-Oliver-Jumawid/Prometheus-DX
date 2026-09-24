@@ -347,7 +347,7 @@ export function ProjectChatPanel({
       const target = threadRef.current?.querySelector<HTMLElement>(
         '[data-message-id="' + targetMessageId + '"]',
       );
-      target?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      target?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
     });
     return () => window.cancelAnimationFrame(frame);
   }, [context.data, targetMessageId]);
