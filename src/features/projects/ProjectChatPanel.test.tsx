@@ -38,7 +38,7 @@ vi.mock('../../lib/api', async (importOriginal) => ({
   apiFetch: vi.fn(),
 }));
 
-function renderChat() {
+function renderChat(initialMessageId?: string) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -49,6 +49,7 @@ function renderChat() {
         projectName="Example Project"
         projectLead={projectLead}
         accessToken="token"
+        initialMessageId={initialMessageId}
       />
     </QueryClientProvider>,
   );
@@ -184,6 +185,30 @@ describe('ProjectChatPanel interactions', () => {
     expect(screen.queryByRole('textbox', { name: 'Message' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Reply' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Message options' })).not.toBeInTheDocument();
+  });
+
+  it('opens an older message directly from a Project Chat notification link', async () => {
+    const contextualId = '66666666-6666-4666-8666-666666666666';
+    const target = { ...existing, id: contextualId, body: 'Older mentioned message' };
+    vi.mocked(apiFetch).mockImplementation((path) => {
+      if (typeof path === 'string' && path.endsWith('/messages/' + contextualId + '/context'))
+        return Promise.resolve({ targetMessageId: contextualId, items: [target] });
+      if (typeof path === 'string' && path.endsWith('/messages'))
+        return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
+      if (typeof path === 'string' && path.endsWith('/members'))
+        return Promise.resolve({ projectId, members: [], canManageAccess: false });
+      return Promise.reject(new Error('Unexpected API request: ' + path));
+    });
+
+    renderChat(contextualId);
+    expect(await screen.findByText('Older mentioned message')).toBeVisible();
+    expect(screen.getByText('Older mentioned message').closest('li'))
+      .toHaveClass('pw-chat-message--targeted');
+    await waitFor(() => expect(apiFetch).toHaveBeenCalledWith(
+      '/projects/' + projectId + '/messages/' + contextualId + '/context',
+      expect.anything(),
+      expect.anything(),
+    ));
   });
 
   it('searches project chat and loads context for the selected result', async () => {
