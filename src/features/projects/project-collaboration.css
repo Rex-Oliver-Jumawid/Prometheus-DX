@@ -362,3 +362,198 @@
   .pw-chat-avatar { flex-basis: 29px; width: 29px; height: 29px; }
   .pw-chat-composer { padding: 12px; }
 }
+
+/* Project Chat / Project Lead Figma: conversation with a compact member rail. */
+.pw-chat-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(218px, 27%);
+  align-items: start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.pw-chat-workspace > * { min-width: 0; }
+.pw-chat-panel {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.pw-chat-panel .pw-collaboration-heading {
+  margin: 0 0 11px;
+  gap: 10px;
+}
+.pw-chat-panel .pw-collaboration-heading h2 {
+  margin: 0 0 4px;
+  font-size: 17px;
+  color: #282320;
+}
+.pw-chat-panel .pw-collaboration-heading p {
+  font-size: 11px;
+}
+.pw-chat-panel .pw-collaboration-heading .projects-secondary-button {
+  font-size: 11px;
+  padding: 7px 10px;
+}
+.pw-chat-channel-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 13px 15px;
+  border: 1px solid #ded5ce;
+  border-bottom-color: #eaecf0;
+  border-radius: 17px 17px 0 0;
+  background: rgba(255, 253, 250, .97);
+  color: #282320;
+  font-size: 13px;
+}
+.pw-chat-channel-heading strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pw-chat-channel-heading span {
+  border: 1px solid #ded3cc;
+  border-radius: 999px;
+  background: #f6f1ed;
+  padding: 5px 9px;
+  color: #6f655f;
+  font: 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+.pw-chat-panel .pw-chat-thread {
+  box-sizing: border-box;
+  max-height: 420px;
+  min-height: min(300px, 43vh);
+  padding: 12px 14px;
+  border: 1px solid #ded5ce;
+  border-top: 0;
+  border-radius: 0 0 17px 17px;
+  background: rgba(255,253,250,.97);
+  scrollbar-gutter: stable;
+}
+.pw-chat-panel .pw-chat-message {
+  padding: 10px 0;
+}
+.pw-chat-panel .pw-chat-message:last-child { border-bottom: 0; }
+.pw-chat-panel .pw-chat-composer {
+  margin-top: 10px;
+  background: rgba(255, 253, 250, .97);
+  border-color: #ded5ce;
+  border-radius: 15px;
+}
+.pw-chat-panel .pw-chat-composer textarea {
+  min-height: 48px;
+}
+.pw-chat-sidebar {
+  min-width: 0;
+  border: 1px solid #ded5ce;
+  border-radius: 17px;
+  background: rgba(255,253,250,.94);
+  box-shadow: 0 8px 26px rgba(58,41,33,.04);
+  overflow: hidden;
+}
+.pw-chat-members {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 11px;
+}
+.pw-chat-members .project-members-heading h2 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #282320;
+}
+.pw-chat-members .project-members-heading > div > p:last-child {
+  font-size: 10px;
+  color: #887d76;
+  line-height: 1.5;
+}
+.pw-chat-members .project-members-list {
+  gap: 0;
+  margin: 7px 0 0;
+}
+.pw-chat-members .project-member-row,
+.pw-chat-lead-row {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  border: 0;
+  border-bottom: 1px solid #eee8e2;
+  border-radius: 0;
+  background: transparent;
+  padding: 9px 0;
+}
+.pw-chat-members .project-member-row:last-child { border-bottom: 0; }
+.pw-chat-members .project-member-identity { gap: 7px; }
+.pw-chat-members .project-member-identity > span,
+.pw-chat-member-avatar {
+  flex: 0 0 24px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: #2d2927;
+  color: #fff;
+  font: 700 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.pw-chat-members .project-member-identity h3,
+.pw-chat-member-identity strong {
+  display: block;
+  font-size: 10px;
+  color: #332b26;
+  line-height: 1.4;
+}
+.pw-chat-members .project-member-identity p {
+  font-size: 9px;
+  color: #8a7d75;
+}
+.pw-chat-lead-row {
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  margin-top: 8px;
+}
+.pw-chat-member-identity { min-width: 0; }
+.pw-chat-member-identity small {
+  display: block;
+  margin-top: 2px;
+  font-size: 9px;
+  color: #8a7d75;
+}
+.pw-chat-member-role,
+.pw-chat-members .project-member-access strong {
+  padding: 5px 6px;
+  border-radius: 7px;
+  background: #f6f1ed;
+  color: #716660;
+  white-space: nowrap;
+  font-size: 9px;
+}
+.pw-chat-members .project-member-access {
+  justify-self: end;
+  gap: 3px;
+}
+.pw-chat-members .project-member-access > span { font-size: 8px; }
+.pw-chat-members .project-member-access select {
+  max-width: 92px;
+  padding: 5px 4px;
+  background: #fffdfa;
+  font-size: 9px;
+  font-weight: 650;
+}
+.pw-chat-members .project-members-loading { padding: 10px; font-size: 10px; }
+.pw-chat-members .projects-state-card { padding: 10px; font-size: 10px; }
+
+@media (max-width: 830px) {
+  .pw-chat-workspace { grid-template-columns: minmax(0, 1fr); }
+  .pw-chat-members .project-member-row { grid-template-columns: minmax(0, 1fr) auto; }
+}
+@media (max-width: 520px) {
+  .pw-chat-panel .pw-chat-thread { min-height: 210px; padding: 8px; }
+  .pw-chat-channel-heading { padding: 11px; }
+}
