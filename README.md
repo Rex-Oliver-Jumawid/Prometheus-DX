@@ -6,29 +6,39 @@ Prometheus is an internal web application for project delivery, open internal pr
 
 ## Current status
 
-Phases 00 through 04 are complete.
+**Current release scope complete as of 2026-09-25.**
 
-Phase 05 - Outcome Work, Submission, Review, and Dependencies - remains in progress because final acceptance and regression are still pending.
+Phases 00 through 09 are closed in `.docs/phases/README.md`.
 
-Phase 06 - Schedule, Work Sessions, and Team - is complete and is present on `main`.
+The integrated release includes authentication and Registry, Project/Outcome delivery, Schedule and WorkSessions, Team, Notifications, Home, VisiWork, Reports & Analytics, persistent VisiWork collaboration, Project Chat, announcements, Project Activity, search, mentions, edit/delete, and automatic live refresh.
 
-Phase 07 - Notifications and Home - has both product slices implemented and integrated on `main`, but remains in progress until the remaining phase acceptance, visual verification, regression, and documentation closure are complete.
+Phase 09 uses persisted PostgreSQL messages plus polling/invalidation/focus/reconnect refetch as the current live-update strategy.
 
-Phase 08 - VisiWork and Reports & Analytics - is in progress.
-The VisiWork and Reports & Analytics implementations are present on `main`; formal Phase 8 acceptance and closure remain pending.
+The following are intentionally **post-release enhancements**, not features being represented as complete:
 
-Phase 09 - Collaboration, Realtime, and Attachments - is in progress.
-VisiWork collaboration and Project Chat now include persisted messaging, search and exact-message navigation, mentions and mention notifications, message editing and soft deletion, and automatic refresh behavior.
-Project Chat also includes replies, Project announcements, and the Project Activity surface.
-Final realtime transport/reconnect behavior, attachments, and formal Phase 9 acceptance remain pending.
+- binary Project/VisiWork chat attachments.
+- dedicated Outcome-specific discussion UI/API.
+- optional Supabase Realtime push transport.
+- future Assistant Lead and archived-Project restore rules.
+- long-term audit/data-retention policy.
 
-See `.docs/phases/README.md` for the canonical high-level status index, `.docs/CURRENT.md` for the current handoff, and the matching phase journals under `.docs/phases/` for implementation evidence.
+See:
+
+- `.docs/PROJECT-CLOSURE.md` for final release disposition.
+- `.docs/phases/README.md` for the phase status index.
+- `.docs/CURRENT.md` for the current handoff.
+- `.context/derived-metrics.md` for canonical metrics.
+- `.context/authorization.md` for the centralized permission matrix.
+- `.docs/DEPLOYMENT.md` for production operations.
+- `.docs/ENVIRONMENT.md` for environment variables.
+- `.docs/DEVELOPMENT.md` for local/worktree troubleshooting.
 
 ## Repository structure
 
 ```text
 .agents/skills/ Vendor-neutral reusable workflows for coding agents
-.context/       Product requirements, UI reference policy, user flows, data model, tech stack, and implementation phases
+.context/       Product requirements, UI policy, user flows, data model, authorization, derived metrics, tech stack, and phases
+.docs/          Deployment, environment, development, current-handoff, release-closure, and phase documentation
 .docs/phases/   Per-phase implementation journals, decisions, lessons, and final acceptance records
 .model/         HTML interaction and workflow references; Figma owns current UI layout and visual design
 .testcases/     Manual acceptance gates for each implementation phase
@@ -60,7 +70,9 @@ Agents that do not support automatic skill discovery can read the corresponding 
 - `.context/user-flows.md` defines authorization and canonical workflow rules that production must enforce.
 - `.context/data-model.md` defines the current persistent entities, relationships, constraints, and derived state.
 - `.context/tech-stack.md` defines implementation architecture and technology choices.
-- `.context/phases.md` defines implementation order.
+- `.context/authorization.md` centralizes the current action/role matrix.
+- `.context/derived-metrics.md` defines canonical Home, Project, Reports, Team, and VisiWork formulas.
+- `.context/phases.md` defines implementation order and the current release boundary.
 - `.context/ui-reference.md` defines how the prototype and Figma are used during UI implementation.
 - Figma is the source of truth for current UI layout, visual composition, navigation placement, spacing, typography, colors, icons, and component appearance.
 - `.model/finalmodel.html` is an interaction and workflow reference for the main authenticated application where Figma does not fully specify behavior.
@@ -115,7 +127,7 @@ cp .env.example .env
 
 Replace the placeholder Supabase PostgreSQL and Auth values in `.env`.
 
-In Supabase Auth, enable Email and Google as required and add both the local and deployed `/login` URLs to the allowed redirect URLs.
+In Supabase Auth, enable Email and Google as required and allow the local/deployed authentication and password-recovery destinations used by the app, including `/reset-password`.
 
 Apply the Prisma migration before starting the authenticated workspace:
 
@@ -193,11 +205,10 @@ Use the matching `.testcases/phase-XX-*.md` file as the acceptance gate for the 
 
 Open phase acceptance work is tracked in the matching files under `.testcases/`.
 
-The currently relevant acceptance gates are:
+The phase acceptance files remain repeatable regression checklists.
 
-- `.testcases/phase-05-work-review-tests.md`
-- `.testcases/phase-07-notifications-home-tests.md`
-- `.testcases/phase-08-visiwork-reporting-tests.md`
+All phase journals are closed for the current release.
+Use the matching `.testcases/phase-XX-*.md` file when changing behavior owned by that phase.
 - `.testcases/phase-09-collaboration-tests.md`
 
 ## Environment security
