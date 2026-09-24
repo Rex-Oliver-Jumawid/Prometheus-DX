@@ -885,6 +885,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
     useState<MemberDialogState | null>(null);
   const [departmentToRemove, setDepartmentToRemove] =
     useState<RegistryDepartment | null>(null);
+  const [departmentSearch, setDepartmentSearch] = useState('');
   const [memberSearch, setMemberSearch] = useState('');
   const [memberRoleFilter, setMemberRoleFilter] = useState<
     'ALL' | 'ADMINISTRATOR' | 'MEMBER'
@@ -1036,6 +1037,22 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
   const administratorCount =
     members.data?.filter((member) => member.workspaceRole === 'ADMINISTRATOR')
       .length ?? 0;
+  const filteredDepartments = useMemo(() => {
+    const query = departmentSearch.trim().toLocaleLowerCase();
+    if (!query) return departments.data ?? [];
+
+    return (departments.data ?? []).filter((department) =>
+      [
+        department.name,
+        department.shortLabel,
+        department.description ?? '',
+      ]
+        .join(' ')
+        .toLocaleLowerCase()
+        .includes(query),
+    );
+  }, [departmentSearch, departments.data]);
+
   const filteredMembers = useMemo(() => {
     const query = memberSearch.trim().toLocaleLowerCase();
 
@@ -1184,6 +1201,18 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
             </button>
           </header>
 
+          <label className="registry-department-search">
+            <span className="sr-only">Search departments</span>
+            <input
+              type="search"
+              aria-label="Search departments"
+              placeholder="Search departments"
+              value={departmentSearch}
+              onChange={(event) => setDepartmentSearch(event.target.value)}
+              disabled={!departments.isSuccess || departments.data.length === 0}
+            />
+          </label>
+
           {departments.isPending && (
             <div
               className="registry-department-list"
@@ -1224,9 +1253,18 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
             </div>
           )}
 
-          {departments.isSuccess && departments.data.length > 0 && (
+          {departments.isSuccess &&
+            departments.data.length > 0 &&
+            filteredDepartments.length === 0 && (
+              <div className="registry-state-card registry-filtered-empty">
+                <strong>No matching departments</strong>
+                <p>Try a different department search.</p>
+              </div>
+            )}
+
+          {departments.isSuccess && filteredDepartments.length > 0 && (
             <div className="registry-department-list">
-              {departments.data.map((department) => (
+              {filteredDepartments.map((department) => (
                 <article
                   className="registry-department-card"
                   key={department.id}
