@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -48,33 +47,21 @@ function safeMetadata(action: string, raw: unknown): Record<string, string> {
   return result;
 }
 
-/** Administrators, Project Leads and Project Members share the same display-safe Project activity trail. */
+/** Every active authorized employee may read the same display-safe Project activity trail. */
 @Injectable()
 export class ProjectActivityService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async list(
-    member: Member,
+    _member: Member,
     projectId: string,
     cursor?: string,
   ): Promise<ProjectActivityPage> {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
-      select: {
-        id: true,
-        leadMemberId: true,
-        members: {
-          where: { memberId: member.id },
-          select: { memberId: true },
-        },
-      },
+      select: { id: true },
     });
     if (!project) throw new NotFoundException('Project not found.');
-    if (
-      member.workspaceRole !== 'ADMINISTRATOR' &&
-      project.leadMemberId !== member.id &&
-      project.members.length === 0
-    ) throw new ForbiddenException('Project Activity is available to Project Members and Leads.');
     const scope = 'PROJECT' as const;
 
     const previous = cursor
