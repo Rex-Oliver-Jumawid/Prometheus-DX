@@ -51,7 +51,7 @@ The current release includes:
 - message search and exact-message navigation.
 - mentions and mention notifications.
 - author edit/delete with soft deletion.
-- company-wide Project Chat participation and announcement posting for all active authorized employees; Lead-only announcement pinning.
+- company-wide Project Chat participation and announcement posting, pinning and unpinning for all active authorized employees.
 - company-visible display-safe Project Activity for every active authorized member, including employees who are not part of the Project.
 - automatic collaboration refresh and reconnect/focus recovery from persistent records.
 - automatic notification inbox and unread-count refresh with focus/reconnect recovery.
