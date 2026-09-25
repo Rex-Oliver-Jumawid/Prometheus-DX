@@ -1,6 +1,6 @@
 -- Persist exact schedule rest-day preferences instead of inferring them from empty days.
 ALTER TABLE "member_schedules"
-ADD COLUMN "rest_days" "Weekday"[] NOT NULL DEFAULT ARRAY[]::"Weekday"[];
+ADD COLUMN IF NOT EXISTS "rest_days" "Weekday"[] NOT NULL DEFAULT ARRAY[]::"Weekday"[];
 
 -- Preserve the previous UI behavior for existing schedules by backfilling at most
 -- the trailing two unscheduled weekdays as rest days.
