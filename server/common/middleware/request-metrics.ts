@@ -6,7 +6,7 @@ const logger = new Logger('ApiRequestMetrics');
 const SLOW_REQUEST_MS = 1_000;
 
 /** Never log queries, request bodies, bearer tokens, IPs, or raw dynamic URLs. */
-function safeRoute(request: Request): string {
+export function safeRoute(request: Request): string {
   const route = request.route?.path;
   if (typeof route === 'string') return (request.baseUrl + route).slice(0, 160);
   return request.path
