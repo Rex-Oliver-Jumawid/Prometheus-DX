@@ -1,4 +1,4 @@
-import { ArgumentsHost, Logger } from '@nestjs/common';
+import { ArgumentsHost, HttpException, Logger } from '@nestjs/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { serverEnvironment } from '../../config/env';
 import { AllExceptionsFilter } from './all-exceptions.filter';
@@ -41,4 +41,37 @@ describe('AllExceptionsFilter production privacy', () => {
     expect(logged).not.toContain('private-database-token');
     expect(logged).not.toContain('do-not-log');
   });
+  it('redacts explicit HTTP 500 payloads before sending them to the browser', () => {
+    serverEnvironment.nodeEnv = 'production';
+    const errorSpy = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
+    const response = {
+      getHeader: vi.fn().mockReturnValue('safe-request-id'),
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    };
+    const request = {
+      method: 'GET',
+      originalUrl: '/api/projects/some-id?token=hidden',
+      path: '/api/projects/some-id',
+      baseUrl: '/api',
+      route: { path: '/projects/:projectId' },
+    };
+    const host = {
+      switchToHttp: () => ({ getResponse: () => response, getRequest: () => request }),
+    } as unknown as ArgumentsHost;
+
+    new AllExceptionsFilter().catch(
+      new HttpException({ message: 'sql-connection-password', error: 'Server Error' }, 500),
+      host,
+    );
+
+    expect(response.status).toHaveBeenCalledWith(500);
+    expect(response.json).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'An unexpected server error occurred.',
+      path: '/api/projects/:projectId',
+    }));
+    expect(JSON.stringify(response.json.mock.calls)).not.toContain('sql-connection-password');
+    expect(JSON.stringify(errorSpy.mock.calls)).not.toContain('sql-connection-password');
+  });
+
 });
