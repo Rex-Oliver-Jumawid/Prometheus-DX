@@ -69,12 +69,24 @@ export class BrevoInvitationService implements InvitationDelivery {
           to: [{ email: invitation.email, name: invitation.fullName }],
           subject: 'Set up your Prometheus account',
           htmlContent: `
-            <div style="font-family:Arial,sans-serif;color:#26211f;line-height:1.6;max-width:560px;margin:auto">
-              <h1 style="font-family:Georgia,serif;font-weight:500">Welcome to Prometheus</h1>
-              <p>Hello ${safeName},</p>
-              <p>An administrator has authorized your Prometheus membership. Use the link below to set up authentication with the invited email address.</p>
-              <p style="margin:28px 0"><a href="${safeSetupUrl}" style="background:#cb4d22;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:700">Set up account</a></p>
-              <p>Authentication alone does not grant workspace access. Prometheus will link your authenticated identity to the existing authorized Member record.</p>
+            <div style="margin:0;padding:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#2b2522;">
+              <div style="max-width:560px;margin:0 auto;padding:32px 24px 28px;">
+                <div style="margin:0 0 26px;">
+                  <img src="${escapeHtml(new URL('/auth/prometheus-mark.png', appUrl).toString())}" width="48" height="48" alt="Prometheus" style="display:inline-block;width:48px;height:48px;border:0;border-radius:12px;vertical-align:middle;">
+                  <span style="display:inline-block;margin-left:12px;vertical-align:middle;">
+                    <strong style="display:block;font-family:Georgia,'Times New Roman',serif;font-size:24px;line-height:26px;color:#2b2522;">Prometheus</strong>
+                    <span style="display:block;margin-top:3px;font-size:8px;font-weight:700;letter-spacing:3px;color:#8d7f78;">VIRTUAL OFFICE</span>
+                  </span>
+                </div>
+                <div style="margin:0 0 10px;font-size:10px;line-height:14px;font-weight:700;letter-spacing:3px;color:#d34b1f;">ACCOUNT SETUP</div>
+                <h1 style="margin:0 0 18px;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:38px;font-weight:700;letter-spacing:-0.5px;color:#2b2522;">Welcome to Prometheus</h1>
+                <p style="margin:0 0 12px;font-size:16px;line-height:24px;">Hello ${safeName},</p>
+                <p style="margin:0 0 22px;font-size:16px;line-height:24px;">An administrator has authorized your Prometheus membership. Set up your account using the invited email address.</p>
+                <p style="margin:0 0 22px;">
+                  <a href="${safeSetupUrl}" style="display:inline-block;background:#d34b1f;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:9px;font-size:15px;line-height:20px;font-weight:700;">Set up account</a>
+                </p>
+                <p style="margin:0;font-size:14px;line-height:21px;color:#6f625c;">Your account will be linked to your existing Prometheus member record.</p>
+              </div>
             </div>
           `,
         }),
