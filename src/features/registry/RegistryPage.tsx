@@ -6,6 +6,7 @@ import {
   CreateDepartmentRequestSchema,
   CreateMemberRequestSchema,
   DeleteDepartmentResponseSchema,
+  RemoveMemberResponseSchema,
   RegistryDepartmentSchema,
   RegistryMemberSchema,
   UpdateMemberRequestSchema,
