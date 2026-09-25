@@ -70,7 +70,15 @@ jobs:
           SOURCE_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
           RESTORE_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/prometheus_restore
           BACKUP_OUTPUT_DIR: ${{ runner.temp }}/private-restore-drill
-        run: bash scripts/backup-restore-drill.sh
+        run: |
+          mkdir -p "$BACKUP_OUTPUT_DIR"
+          docker run --rm --network host \
+            --volume "$PWD:/workspace:ro" \
+            --volume "$BACKUP_OUTPUT_DIR:/backups" \
+            --env SOURCE_DATABASE_URL \
+            --env RESTORE_DATABASE_URL \
+            --env BACKUP_OUTPUT_DIR=/backups \
+            postgres:17 bash /workspace/scripts/backup-restore-drill.sh
 
       - name: Verify data and migration history survived restoration
         run: |
