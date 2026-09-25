@@ -7,6 +7,10 @@ import { apiFetch } from '../../lib/api';
 import { ProjectOverviewPage } from './ProjectOverviewPage';
 
 const projectId = '11111111-1111-4111-8111-111111111111';
+const auth = vi.hoisted(() => ({
+  memberId: '22222222-2222-4222-8222-222222222222',
+  workspaceRole: 'MEMBER' as 'MEMBER' | 'ADMINISTRATOR',
+}));
 const projectMemberId = '44444444-4444-4444-8444-444444444444';
 const projectMembersResponse = {
   projectId,
@@ -60,7 +64,8 @@ const project: Project = {
 vi.mock('../auth/auth-context', () => ({
   useAuth: () => ({
     member: {
-      id: project.lead.id,
+      id: auth.memberId,
+      workspaceRole: auth.workspaceRole,
       fullName: project.lead.fullName,
       email: project.lead.email,
     },
@@ -76,13 +81,13 @@ vi.mock('../../lib/api', async (importOriginal) => ({
   apiFetch: vi.fn(),
 }));
 
-function renderPage() {
+function renderPage(initialPath = `/projects/${projectId}`) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[`/projects/${projectId}`]}>
+      <MemoryRouter initialEntries={[initialPath]}>
         <Routes>
           <Route
             path="/projects/:projectId"
@@ -97,6 +102,8 @@ function renderPage() {
 
 describe('ProjectOverviewPage status mutation', () => {
   beforeEach(() => {
+    auth.memberId = project.lead.id;
+    auth.workspaceRole = 'MEMBER';
     vi.mocked(apiFetch).mockImplementation((path: string) => {
       if (path.endsWith('/workflow')) {
         return Promise.resolve({
@@ -202,6 +209,38 @@ describe('ProjectOverviewPage status mutation', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Content' }));
     expect(screen.getByRole('tab', { name: 'Content' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.queryByRole('heading', { name: 'Project Activity' })).not.toBeInTheDocument();
+  });
+
+  it('shows other participants\' events to ordinary Project Members', async () => {
+    auth.memberId = projectMemberId;
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path.endsWith('/workflow')) return Promise.resolve({ projectId, canManageStructure: false, stages: [] });
+      if (path === `/projects/${projectId}/activity`) return Promise.resolve({
+        items: [{
+          id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          actor: { id: project.lead.id, fullName: 'Project Lead' },
+          outcomeId: null, entityType: 'Stage', entityId: projectId,
+          action: 'STAGE_CREATED', metadata: { name: 'Review' },
+          createdAt: '2026-09-19T13:00:00.000Z',
+        }], nextCursor: null, scope: 'PROJECT',
+      });
+      if (path === `/projects/${projectId}`) return Promise.resolve({
+        ...project, isParticipating: true, currentMemberAccess: 'CAN_VIEW',
+      });
+      return Promise.resolve({});
+    });
+    renderPage();
+    fireEvent.click(await screen.findByRole('tab', { name: 'Activity' }));
+    expect(await screen.findByText(/created a stage/)).toBeVisible();
+    expect(screen.getByText(/Project Lead/)).toBeVisible();
+  });
+
+  it('hides Activity from nonmembers, including direct activity links', async () => {
+    auth.memberId = '77777777-7777-4777-8777-777777777777';
+    renderPage(`/projects/${projectId}?tab=activity`);
+    expect(await screen.findByText('Project Activity is available to Project Members and Leads.')).toBeVisible();
+    expect(screen.queryByRole('tab', { name: 'Activity' })).not.toBeInTheDocument();
+    expect(vi.mocked(apiFetch).mock.calls.some(([path]) => path === `/projects/${projectId}/activity`)).toBe(false);
   });
 
   it('shows persistent Project Chat and sends a message for a writable member', async () => {
