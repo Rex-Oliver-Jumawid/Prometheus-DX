@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { Member } from '@prisma/client';
 import { describe, expect, it, vi } from 'vitest';
 import type { PrismaService } from '../database/prisma.service';
@@ -101,12 +101,14 @@ describe('ProjectActivityService', () => {
     expect(foreignCursor.db.activityLog.findMany).not.toHaveBeenCalled();
   });
 
-  it('rejects non-project viewers before querying private activity', async () => {
+  it('shares sanitized Project Activity with non-project authorized members', async () => {
     const outsider = { id: '77777777-7777-4777-8777-777777777777', workspaceRole: 'MEMBER' } as Member;
     const { db, service } = setup();
-    await expect(service.list(outsider, projectId)).rejects.toBeInstanceOf(ForbiddenException);
-    expect(db.activityLog.findFirst).not.toHaveBeenCalled();
-    expect(db.activityLog.findMany).not.toHaveBeenCalled();
+    const response = await service.list(outsider, projectId);
+    expect(response.scope).toBe('PROJECT');
+    expect(response.items).toHaveLength(1);
+    expect(response.items[0].metadata).toEqual({});
+    expect(db.activityLog.findMany).toHaveBeenCalledOnce();
   });
 
   it('allows an Administrator to inspect an authorized Project without membership', async () => {
