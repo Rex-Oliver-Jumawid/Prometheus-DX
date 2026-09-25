@@ -13,6 +13,13 @@ export const WEEKDAYS = [
 export const WeekdaySchema = z.enum(WEEKDAYS);
 export type Weekday = z.infer<typeof WeekdaySchema>;
 
+export const RestDaysSchema = z
+  .array(WeekdaySchema)
+  .max(6)
+  .refine((days) => new Set(days).size === days.length, {
+    message: 'Rest days must be unique.',
+  });
+
 export const ClockTimeSchema = z
   .string()
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Use a 24-hour time such as 09:00.');
@@ -63,6 +70,7 @@ export function findScheduleConflict(
 export const UpdateScheduleRequestSchema = z
   .object({
     targetWeeklyMinutes: z.number().int().min(0).max(10_080),
+    restDays: RestDaysSchema.optional(),
     blocks: z.array(ScheduleBlockInputSchema).max(28),
   })
   .superRefine((value, context) => {
@@ -74,6 +82,17 @@ export const UpdateScheduleRequestSchema = z
           code: z.ZodIssueCode.custom,
           message: 'Start time must be earlier than end time.',
           path: ['blocks', index, 'endTime'],
+        });
+      }
+    });
+
+    const restDays = new Set(value.restDays ?? []);
+    value.blocks.forEach((block, index) => {
+      if (restDays.has(block.weekday)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'A rest day cannot contain schedule blocks.',
+          path: ['blocks', index, 'weekday'],
         });
       }
     });
@@ -98,6 +117,7 @@ export const MemberScheduleSchema = z.object({
   id: z.string().uuid(),
   memberId: z.string().uuid(),
   targetWeeklyMinutes: z.number().int().min(0),
+  restDays: RestDaysSchema.optional(),
   blocks: z.array(ScheduleBlockSchema),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),

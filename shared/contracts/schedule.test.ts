@@ -83,6 +83,24 @@ describe('schedule contracts', () => {
     ).toBe(false);
   });
 
+  it('validates explicit rest days against schedule blocks', () => {
+    expect(
+      UpdateScheduleRequestSchema.safeParse({
+        targetWeeklyMinutes: 240,
+        restDays: ['MONDAY'],
+        blocks: [{ weekday: 'MONDAY', startTime: '09:00', endTime: '13:00' }],
+      }).success,
+    ).toBe(false);
+
+    expect(
+      UpdateScheduleRequestSchema.safeParse({
+        targetWeeklyMinutes: 0,
+        restDays: [],
+        blocks: [],
+      }).success,
+    ).toBe(true);
+  });
+
   it('enforces the block count and weekly target bounds', () => {
     const starts = ['00:00', '06:00', '12:00', '18:00'] as const;
     const ends = ['00:30', '06:30', '12:30', '18:30'] as const;

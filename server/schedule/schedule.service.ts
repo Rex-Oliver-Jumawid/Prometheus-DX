@@ -96,12 +96,23 @@ export class ScheduleService {
         'Schedule blocks on the same day cannot overlap.',
       );
     }
+    const restDays = this.resolveRestDays(input);
+    if (input.blocks.some((block) => restDays.includes(block.weekday))) {
+      throw new BadRequestException('A rest day cannot contain schedule blocks.');
+    }
 
     const schedule = await this.prisma.$transaction(async (database) => {
       const saved = await database.memberSchedule.upsert({
         where: { memberId },
-        create: { memberId, targetWeeklyMinutes: input.targetWeeklyMinutes },
-        update: { targetWeeklyMinutes: input.targetWeeklyMinutes },
+        create: {
+          memberId,
+          targetWeeklyMinutes: input.targetWeeklyMinutes,
+          restDays,
+        },
+        update: {
+          targetWeeklyMinutes: input.targetWeeklyMinutes,
+          restDays,
+        },
       });
 
       await database.scheduleBlock.deleteMany({
@@ -136,6 +147,18 @@ export class ScheduleService {
     return this.toSchedule(schedule);
   }
 
+  private resolveRestDays(input: UpdateScheduleRequest): Weekday[] {
+    if (input.restDays) {
+      return [...input.restDays].sort(
+        (left, right) => WEEKDAYS.indexOf(left) - WEEKDAYS.indexOf(right),
+      );
+    }
+
+    return WEEKDAYS.filter(
+      (day) => !input.blocks.some((block) => block.weekday === day),
+    ).slice(-2);
+  }
+
   private toDatabaseTime(value: string): Date {
     return new Date(`1970-01-01T${value}:00.000Z`);
   }
@@ -151,6 +174,10 @@ export class ScheduleService {
       id: schedule.id,
       memberId: schedule.memberId,
       targetWeeklyMinutes: schedule.targetWeeklyMinutes,
+      restDays: [...(schedule.restDays ?? [])].sort(
+        (left, right) =>
+          WEEKDAYS.indexOf(left as Weekday) - WEEKDAYS.indexOf(right as Weekday),
+      ),
       blocks: [...schedule.blocks]
         .sort(
           (left, right) =>
