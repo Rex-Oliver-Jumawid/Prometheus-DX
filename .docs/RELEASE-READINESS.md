@@ -20,7 +20,7 @@
 4. PR #41: PostgreSQL API quota migration and request monitoring; GitHub CI passed.
 5. Release-readiness PR #42: isolated application-schema backup/restore drill, follow-up database function security migration and this checklist.
 6. Review follow-up PR #43: notification pagination and server-error redaction fixes.
-7. Company-wide collaboration follow-up PR: all active authorized members may view any Project's display-safe Activity, send general Project Chat messages, and post announcements. Only the Lead can pin; only authors can edit or delete their own chat messages.
+7. Company-wide collaboration follow-up PR: all active authorized members may view any Project's display-safe Activity, send general Project Chat messages, and post announcements. Any active authorized member can pin or unpin announcements; only authors can edit or delete their own chat messages.
 
 All changes stay in draft branches until the owner explicitly approves individual merges. **Do not run the new rate-limit API code against a database that has not received its migration.**
 
@@ -60,7 +60,7 @@ The CI `Backup and Restore Drill` proves the scripted public-schema backup/resto
 - [ ] After explicit migration approval, recheck the Supabase security advisor and confirm the trigger has a fixed search path and the auto-RLS event-trigger function no longer grants browser-role EXECUTE (if present).
 - [ ] On Free Supabase Auth, review minimum password length/complexity and document the residual lack of paid leaked-password protection.
 - [ ] Verify release commit SHA equals the intended Vercel **Production** deployment, not merely a Ready Preview build.
-- [ ] With test identities, check login, Home, Projects, cross-member Activity, Project Chat/announcements, Notifications, Schedule/Team, VisiWork, Reports, session expiry and logout. Unassigned authorized members must be able to view Activity through the UI and direct API, send Project Chat messages, and post announcements; only the Project Lead may pin.
+- [ ] With test identities, check login, Home, Projects, cross-member Activity, Project Chat/announcements, Notifications, Schedule/Team, VisiWork, Reports, session expiry and logout. Unassigned authorized members must be able to view Activity through the UI and direct API, send Project Chat messages, and post announcements; any active authorized employee may pin or unpin announcements in non-archived Projects.
 - [ ] Read live `GET /api/health` and `GET /api/health/database` and review server logs for request IDs, 429 responses and unexpected 5xx errors.
 - [ ] Explicit owner approval before merge to `main` and production promotion. Milestone 4 comprehensive authenticated/cross-browser automation remains outside the approved implementation scope.
 
