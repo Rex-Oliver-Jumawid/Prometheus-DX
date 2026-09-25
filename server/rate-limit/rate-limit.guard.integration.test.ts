@@ -1,5 +1,4 @@
 import 'dotenv/config';
-import { HttpException } from '@nestjs/common';
 import type { ExecutionContext } from '@nestjs/common';
 import type { Reflector } from '@nestjs/core';
 import { createHash, randomUUID } from 'node:crypto';
