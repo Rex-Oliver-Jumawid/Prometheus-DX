@@ -197,22 +197,20 @@ export function buildVisiWorkModel(
   const departments = [...departmentMap.values()]
     .map((department): VisiWorkDepartment => {
       const members = team.members
-        .filter(
-          (member) =>
-            member.department.id === department.id ||
-            member.visiworkDepartmentId === department.id,
-        )
-        .map((member) => {
+        .filter((member) => {
           const focusedDepartmentId =
             member.visiworkDepartmentId ?? member.department.id;
-          return {
-            id: member.id,
-            fullName: member.fullName,
-            position: member.position,
-            workingNow:
-              member.workingNow && focusedDepartmentId === department.id,
-          };
+          // VisiWork membership represents the member's current working room,
+          // not their Registry/home department. The home department remains
+          // unchanged in the database.
+          return focusedDepartmentId === department.id;
         })
+        .map((member) => ({
+          id: member.id,
+          fullName: member.fullName,
+          position: member.position,
+          workingNow: member.workingNow,
+        }))
         .sort(
           (left, right) =>
             Number(right.workingNow) - Number(left.workingNow) ||
