@@ -14,6 +14,7 @@ export const HomeProjectSchema = z.object({
 export const HomeWorkingMemberSchema = z.object({
   id: z.string().uuid(),
   fullName: z.string().min(1),
+  profileImagePath: z.string().nullable(),
   department: z.object({
     id: z.string().uuid(),
     name: z.string().min(1),
