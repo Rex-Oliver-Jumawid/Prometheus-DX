@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import type { PrismaService } from '../database/prisma.service';
 import { NotificationsService } from './notifications.service';
@@ -97,6 +97,49 @@ describe('NotificationsService', () => {
         where: { recipientMemberId: recipientId, readAt: null },
       }),
     );
+  });
+
+  it('paginates notification history and prevents cross-recipient cursors', async () => {
+    const { service, notification } = fixture();
+    const [sample] = await notification.findMany();
+    notification.findMany.mockClear();
+    const rows = Array.from({ length: 31 }, (_, index) => ({
+      ...sample,
+      id: '33333333-3333-4333-8333-' + String(index).padStart(12, '0'),
+    }));
+    notification.findMany.mockResolvedValueOnce(rows);
+    const first = await service.list(recipientId, { filter: 'all' });
+    expect(first.items).toHaveLength(30);
+    expect(first.nextCursor).toBe(rows[29].id);
+
+    notification.findFirst.mockResolvedValueOnce({ id: rows[29].id, createdAt });
+    notification.findMany.mockResolvedValueOnce([rows[30]]);
+    const second = await service.list(recipientId, {
+      filter: 'all', cursor: rows[29].id,
+    });
+    expect(second.items.map((item) => item.id)).toEqual([rows[30].id]);
+    expect(second.nextCursor).toBeNull();
+    expect(notification.findFirst).toHaveBeenCalledWith({
+      where: { recipientMemberId: recipientId, id: rows[29].id },
+      select: { id: true, createdAt: true },
+    });
+    expect(notification.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: {
+          recipientMemberId: recipientId,
+          OR: [
+            { createdAt: { lt: createdAt } },
+            { createdAt, id: { lt: rows[29].id } },
+          ],
+        },
+        take: 31,
+      }),
+    );
+
+    notification.findFirst.mockResolvedValueOnce(null);
+    await expect(service.list(otherId, {
+      filter: 'all', cursor: rows[29].id,
+    })).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('counts unread notifications only for the current recipient', async () => {
