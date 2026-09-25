@@ -227,8 +227,6 @@ export function ProjectOverviewPage() {
   }
 
   const value = project.data;
-  const canReadActivity = member?.workspaceRole === 'ADMINISTRATOR' ||
-    value.lead.id === member?.id || value.isParticipating;
   const statusError = updateStatus.isError
     ? errorMessage(updateStatus.error)
     : null;
@@ -445,8 +443,7 @@ export function ProjectOverviewPage() {
             >
               Chat
             </button>
-            {canReadActivity && (
-              <button
+            <button
                 className={`tab-btn ${activeTab === 'activity' ? 'active' : ''}`}
                 type="button"
                 role="tab"
@@ -457,7 +454,6 @@ export function ProjectOverviewPage() {
               >
                 Activity
               </button>
-            )}
           </nav>
         </div>
       )}
@@ -505,22 +501,16 @@ export function ProjectOverviewPage() {
           </div>
         </div>
       ) : activeTab === 'activity' ? (
-        canReadActivity ? (
-          <div id="pw-activity-panel" role="tabpanel" aria-labelledby="pw-activity-tab">
-            <ProjectActivityPanel
-              key={projectId}
-              projectId={projectId!}
-              accessToken={accessToken}
-              currentMemberId={member?.id}
-              currentMemberName={member?.fullName}
-              isLead={value.lead.id === member?.id}
-            />
-          </div>
-        ) : (
-          <div id="pw-activity-panel" role="tabpanel" aria-label="Activity unavailable">
-            <p className="pw-collaboration-state">Project Activity is available to Project Members and Leads.</p>
-          </div>
-        )
+        <div id="pw-activity-panel" role="tabpanel" aria-labelledby="pw-activity-tab">
+          <ProjectActivityPanel
+            key={projectId}
+            projectId={projectId!}
+            accessToken={accessToken}
+            currentMemberId={member?.id}
+            currentMemberName={member?.fullName}
+            isLead={value.lead.id === member?.id}
+          />
+        </div>
       ) : (
         <div id="pw-content-panel" role="tabpanel" aria-labelledby="pw-content-tab">
           <ProjectWorkflow
