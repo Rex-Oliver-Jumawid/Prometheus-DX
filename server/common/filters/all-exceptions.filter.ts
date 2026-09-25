@@ -42,12 +42,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message,
       error: statusCode >= 500 ? 'Server Error' : 'Request Error',
       timestamp: new Date().toISOString(),
-      path: request.originalUrl,
+      path: request.path,
     };
 
     if (statusCode >= 500) {
       this.logger.error(
-        `${request.method} ${request.originalUrl} failed`,
+        `${request.method} ${request.path} failed`,
         exception instanceof Error ? exception.stack : String(exception),
       );
     }
