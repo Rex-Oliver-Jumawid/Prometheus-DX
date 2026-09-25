@@ -300,7 +300,7 @@ export function EditableTeamCalendar({
                     const isSelected = own && entry.ownIndex === selectedIndex;
                     return (
                       <div
-                        role={own ? 'button' : undefined}
+                        role={own ? 'button' : 'group'}
                         tabIndex={own ? 0 : undefined}
                         aria-label={own ? 'Select ' + DAY_NAMES[day] + ' schedule block, ' + formatClock(editorClock(entry.start)) + ' to ' + formatClock(editorClock(entry.end)) : entry.name + ': ' + formatClock(editorClock(entry.start)) + ' to ' + formatClock(editorClock(entry.end))}
                         aria-pressed={own ? isSelected : undefined}
@@ -311,7 +311,7 @@ export function EditableTeamCalendar({
                           }
                         } : undefined}
                         onPointerDown={own && !disabled ? (event) => startGesture(event, entry.ownIndex!, 'move') : undefined}
-                        className={'schedule-calendar-block' + (own ? ' mine editable' : '') + (isSelected ? ' selected' : '') + (own && entry.ownIndex === draggingIndex ? ' dragging' : '') + ''}
+                        className={'schedule-calendar-block' + (own ? ' mine editable' : '') + (isSelected ? ' selected' : '') + (own && entry.ownIndex === draggingIndex ? ' dragging' : '') + (entry.end - entry.start < 90 ? ' short' : '')}
                         key={entry.key}
                         style={style}
                         title={entry.name + ': ' + formatClock(editorClock(entry.start)) + ' - ' + formatClock(editorClock(entry.end))}
