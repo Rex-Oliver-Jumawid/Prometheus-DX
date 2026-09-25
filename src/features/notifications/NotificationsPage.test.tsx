@@ -142,6 +142,30 @@ describe('NotificationsPage', () => {
     );
   });
 
+  it('loads older notification pages on demand without losing existing rows', async () => {
+    const original = mocks.apiFetch.getMockImplementation();
+    mocks.apiFetch.mockImplementation((path: string, ...args: unknown[]) => {
+      if (path === '/notifications?filter=all')
+        return Promise.resolve({ items: [records[0]], nextCursor: unreadId });
+      if (path === '/notifications?filter=all&cursor=' + unreadId)
+        return Promise.resolve({ items: [records[1]], nextCursor: null });
+      return original?.(path, ...args);
+    });
+    const user = userEvent.setup();
+    renderPage();
+    expect(await screen.findByRole('button', { name: /Output ready for your review/ }))
+      .toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /You were assigned as Project Lead/ }))
+      .not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Load older notifications' }));
+    expect(await screen.findByRole('button', { name: /You were assigned as Project Lead/ }))
+      .toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Output ready for your review/ }))
+      .toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Load older notifications' }))
+      .not.toBeInTheDocument();
+  });
+
   it('shows loading without flashing an empty inbox', async () => {
     let resolveList: (value: { items: Notification[] }) => void = () => {};
     listRequest = new Promise((resolve) => {
