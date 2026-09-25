@@ -21,6 +21,10 @@ export const DeleteDepartmentResponseSchema = z.object({
   id: z.string().uuid(),
 });
 
+export const RemoveMemberResponseSchema = z.object({
+  id: z.string().uuid(),
+});
+
 const DepartmentDetailsRequestSchema = z.object({
   name: z.string().trim().min(1, 'Enter a department name.'),
   shortLabel: z
@@ -44,6 +48,7 @@ export type RegistryDepartment = z.infer<typeof RegistryDepartmentSchema>;
 export type DeleteDepartmentResponse = z.infer<
   typeof DeleteDepartmentResponseSchema
 >;
+export type RemoveMemberResponse = z.infer<typeof RemoveMemberResponseSchema>;
 export type CreateDepartmentRequest = z.infer<
   typeof CreateDepartmentRequestSchema
 >;
