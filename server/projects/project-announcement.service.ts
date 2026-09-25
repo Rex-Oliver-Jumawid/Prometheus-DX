@@ -37,9 +37,7 @@ export class ProjectAnnouncementService {
     return {
       ...project,
       canManage: project.leadMemberId === member.id && project.archivedAt === null,
-      canPost:
-        project.archivedAt === null &&
-        (project.leadMemberId === member.id || project.members.length > 0),
+      canPost: project.archivedAt === null,
     };
   }
 
@@ -107,8 +105,6 @@ export class ProjectAnnouncementService {
       if (!project) throw new NotFoundException('Project not found.');
       if (project.archivedAt)
         throw new ConflictException('Archived Projects are read-only.');
-      if (project.leadMemberId !== member.id && project.members.length === 0)
-        throw new ForbiddenException('Only Project Members and the Project Lead may post announcements.');
 
       const announcement = await db.projectAnnouncement.create({
         data: {
