@@ -32,7 +32,7 @@ This backup **does not include the separate Supabase-managed Auth user schema or
 
 ### Minimum operator process
 
-1. Use a machine with PostgreSQL client tools (`pg_dump`, `pg_restore`, `psql`, `createdb`), an isolated local Postgres instance and securely obtained read-only production connection details. Use a direct connection or a *session* pooler rather than the transaction pooler for logical dumps.
+1. Use a machine with PostgreSQL client tools (`pg_dump`, `pg_restore`, `psql`, `createdb`) **at least as new as the source server's major version** (currently PostgreSQL 17), an isolated local Postgres instance and securely obtained production connection details. Use a direct connection or a *session* pooler rather than the transaction pooler for logical dumps.
 2. Create an empty local database named `prometheus_restore`; never target a live or shared database for the drill.
 3. Configure `SOURCE_DATABASE_URL` from the approved source, `RESTORE_DATABASE_URL` pointing only to local `prometheus_restore`, and a private `BACKUP_OUTPUT_DIR` **outside the Git repository**. Never commit `.env`, DB URLs, dump files or passwords.
 4. Run `bash scripts/backup-restore-drill.sh`. Check the dump checksum, applied migration count, expected application tables and a known non-sensitive row count. Do not mark a recovery test successful merely because the dump command exited zero.

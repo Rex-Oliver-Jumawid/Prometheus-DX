@@ -36,6 +36,11 @@ if command -v shasum >/dev/null 2>&1; then
 else
   (cd "$backup_dir" && sha256sum "$(basename "$backup_file")" > "$(basename "$backup_file").sha256")
 fi
+if command -v shasum >/dev/null 2>&1; then
+  (cd "$backup_dir" && shasum -a 256 --check "$(basename "$backup_file").sha256")
+else
+  (cd "$backup_dir" && sha256sum --check "$(basename "$backup_file").sha256")
+fi
 
 # The target name, loopback address and distinct URL checks above intentionally
 # protect live production from accidental restore commands.
