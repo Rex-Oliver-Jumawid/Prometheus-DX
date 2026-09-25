@@ -28,16 +28,19 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const rawResponse =
       exception instanceof HttpException ? exception.getResponse() : undefined;
 
-    const message =
-      typeof rawResponse === 'object' &&
-      rawResponse !== null &&
-      'message' in rawResponse
+    // A deliberately raised HttpException can also contain SQL, provider or
+    // authentication details. Do not return any 5xx exception text to clients.
+    const message = statusCode >= 500
+      ? 'An unexpected server error occurred.'
+      : typeof rawResponse === 'object' &&
+          rawResponse !== null &&
+          'message' in rawResponse
         ? Array.isArray(rawResponse.message)
           ? rawResponse.message.join(', ')
           : String(rawResponse.message)
-        : exception instanceof Error && statusCode < 500
+        : exception instanceof Error
           ? exception.message
-          : 'An unexpected server error occurred.';
+          : 'Request failed.';
 
     const body: ApiErrorResponse = {
       statusCode,
