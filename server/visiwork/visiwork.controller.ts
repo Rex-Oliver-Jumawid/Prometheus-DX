@@ -23,10 +23,11 @@ import {
 } from '../../shared/contracts/visiwork';
 import { CurrentMember } from '../auth/current-member.decorator';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
+import { ApiRateLimit, ApiRateLimitGuard } from '../common/rate-limit';
 import { VisiWorkService } from './visiwork.service';
 
 @Controller('visiwork')
-@UseGuards(SupabaseAuthGuard)
+@UseGuards(SupabaseAuthGuard, ApiRateLimitGuard)
 export class VisiWorkController {
   constructor(
     @Inject(VisiWorkService)
@@ -56,6 +57,7 @@ export class VisiWorkController {
   }
 
   @Get('messages/search')
+  @ApiRateLimit({ group: 'visiwork-search', limit: 40, windowSeconds: 60 })
   searchMessages(
     @CurrentMember() member: Member,
     @Query() query: unknown,
@@ -78,6 +80,7 @@ export class VisiWorkController {
   }
 
   @Patch('messages/:messageId')
+  @ApiRateLimit({ group: 'visiwork-edit', limit: 30, windowSeconds: 60 })
   updateMessage(
     @CurrentMember() member: Member,
     @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
@@ -93,6 +96,7 @@ export class VisiWorkController {
   }
 
   @Delete('messages/:messageId')
+  @ApiRateLimit({ group: 'visiwork-delete', limit: 30, windowSeconds: 60 })
   deleteMessage(
     @CurrentMember() member: Member,
     @Param('messageId', new ParseUUIDPipe({ version: '4' })) messageId: string,
@@ -113,6 +117,7 @@ export class VisiWorkController {
   }
 
   @Post('messages')
+  @ApiRateLimit({ group: 'visiwork-send', limit: 20, windowSeconds: 60 })
   sendGeneralMessage(
     @CurrentMember() member: Member,
     @Body() body: unknown,
@@ -141,6 +146,7 @@ export class VisiWorkController {
   }
 
   @Post('departments/:departmentId/messages')
+  @ApiRateLimit({ group: 'visiwork-send', limit: 20, windowSeconds: 60 })
   sendDepartmentMessage(
     @CurrentMember() member: Member,
     @Param('departmentId', new ParseUUIDPipe({ version: '4' }))
