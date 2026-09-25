@@ -90,16 +90,16 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
     const viewerAnnouncements = await announcements.list(viewer, projectId);
     expect(ProjectMessagePageSchema.parse(viewerChat)).toMatchObject({
       items: [],
-      canWrite: false,
+      canWrite: true,
     });
     expect(ProjectAnnouncementsResponseSchema.parse(viewerAnnouncements)).toEqual({
       items: [],
       canManage: false,
-      canPost: false,
+      canPost: true,
     });
   });
 
-  it('shares safe Project activity with participants and admins but denies unrelated members', async () => {
+  it('shares safe Project Activity with every authorized employee and isolates other projects', async () => {
     const leadLogId = randomUUID();
     const memberLogId = randomUUID();
     const foreignLogId = randomUUID();
@@ -123,24 +123,39 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
       ],
     });
     const activity = new ProjectActivityService(db);
-    const [leadView, memberView, adminView] = await Promise.all([
+    const [leadView, memberView, adminView, outsiderView] = await Promise.all([
       activity.list(lead, projectId),
       activity.list(participant, projectId),
       activity.list(admin, projectId),
+      activity.list(viewer, projectId),
     ]);
-    for (const view of [leadView, memberView, adminView]) {
+    for (const view of [leadView, memberView, adminView, outsiderView]) {
       expect(ProjectActivityPageSchema.parse(view).scope).toBe('PROJECT');
       expect(view.items.map((item) => item.id)).toEqual(
         expect.arrayContaining([leadLogId, memberLogId]),
       );
       expect(view.items.some((item) => item.id === foreignLogId)).toBe(false);
     }
-    await expect(activity.list(viewer, projectId))
-      .rejects.toBeInstanceOf(ForbiddenException);
-    await expect(activity.list(participant, secondProjectId))
-      .rejects.toBeInstanceOf(ForbiddenException);
+    const otherProjectView = await activity.list(participant, secondProjectId);
+    expect(otherProjectView.items.map((item) => item.id).toContain(foreignLogId);
+    expect(otherProjectView.items.map((item) => item.id).not.toContain(leadLogId);
     await expect(activity.list(participant, projectId, foreignLogId))
       .rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('lets unrelated employees post announcements but reserves pinning for the Lead', async () => {
+    const announcements = new ProjectAnnouncementService(db);
+    const posted = await announcements.create(viewer, projectId, {
+      title: 'Company update', body: 'Shared with every employee.',
+    });
+    expect(posted.author.id).toBe(viewer.id);
+    expect((await announcements.list(viewer, projectId))).toMatchObject({
+      canPost: true, canManage: false,
+    });
+    await expect(announcements.setPinned(viewer, projectId, posted.id, { pinned: true }))
+      .rejects.toBeInstanceOf(ForbiddenException);
+    await expect(announcements.setPinned(lead, projectId, posted.id, { pinned: true }))
+      .resolves.toMatchObject({ id: posted.id });
   });
 
   it('persists replies, restricts author edits and isolates other Project messages', async () => {
@@ -155,12 +170,16 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
     });
 
     const read = await chat.list(viewer, projectId);
-    expect(read.canWrite).toBe(false);
+    expect(read.canWrite).toBe(true);
     expect(read.items.find((item) => item.id === reply.id)?.replyTo?.id).toBe(root.id);
     expect(read.items.some((item) => item.id === foreign.id)).toBe(false);
-    await expect(chat.send(viewer, projectId, {
-      body: 'Not a Project Member', parentMessageId: null,
-    })).rejects.toBeInstanceOf(ForbiddenException);
+    const outsiderMessage = await chat.send(viewer, projectId, {
+      body: 'Company-wide input', parentMessageId: null,
+    });
+    expect(outsiderMessage.author.id).toBe(viewer.id);
+    await expect(chat.edit(viewer, projectId, outsiderMessage.id, {
+      body: 'Updated company-wide input', expectedEditedAt: null,
+    })).resolves.toMatchObject({ body: 'Updated company-wide input' });
     await expect(chat.send(participant, projectId, {
       body: 'Cross-Project reply', parentMessageId: foreign.id,
     })).rejects.toBeInstanceOf(BadRequestException);
