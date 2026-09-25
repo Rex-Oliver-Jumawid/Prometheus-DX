@@ -9,7 +9,7 @@
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  padding: clamp(14px, 1.8vw, 22px);
+  padding: var(--workspace-page-gutter);
 }
 
 .registry-page {
@@ -42,9 +42,9 @@
 
 .registry-page-header h1 {
   margin: 4px 0 5px;
-  font-size: 26px;
-  line-height: 1;
-  font-weight: 720;
+  font-size: var(--workspace-page-title-size, 26px);
+  line-height: 1.15;
+  font-weight: 760;
 }
 
 .registry-page-header > div:first-child > p:last-child,
@@ -53,15 +53,15 @@
 .registry-dialog-header > div > p:last-child {
   margin: 0;
   color: #8f8179;
-  font-size: 9px;
-  line-height: 1.55;
+  font-size: var(--workspace-page-subtitle-size, 10px);
+  line-height: 1.45;
 }
 
 .registry-kicker {
   margin: 0;
   color: #c94d27;
   font:
-    800 7px/1 ui-monospace,
+    800 var(--workspace-page-kicker-size, 8px)/1 ui-monospace,
     SFMono-Regular,
     Menlo,
     monospace;

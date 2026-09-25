@@ -2430,8 +2430,8 @@
 .project-overview-header h1 {
   margin: 7px 0 8px;
   color: #101828;
-  font-size: 30px;
-  line-height: 1.1;
+  font-size: var(--workspace-page-title-size, 29px);
+  line-height: 1.15;
   letter-spacing: -0.035em;
   overflow-wrap: anywhere;
 }
@@ -2439,8 +2439,8 @@
   margin: 0;
   max-width: 680px;
   color: #667085;
-  font-size: 14px;
-  line-height: 1.55;
+  font-size: var(--workspace-page-subtitle-size, 10px);
+  line-height: 1.45;
   overflow-wrap: anywhere;
 }
 .project-status-panel {

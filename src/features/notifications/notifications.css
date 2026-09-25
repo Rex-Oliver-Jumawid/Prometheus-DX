@@ -12,7 +12,7 @@
   justify-content: space-between;
   gap: 24px;
   min-width: 0;
-  margin: 0 4px 20px;
+  margin: 0 0 20px;
 }
 
 .notifications-header > div {
@@ -22,7 +22,7 @@
 .notifications-header h1 {
   margin: 4px 0 7px;
   color: #201b18;
-  font-size: 28px;
+  font-size: var(--workspace-page-title-size, 28px);
   font-weight: 760;
   line-height: 1.06;
   letter-spacing: -0.04em;
@@ -32,8 +32,8 @@
   max-width: 620px;
   margin: 0;
   color: #82766f;
-  font-size: 11px;
-  line-height: 1.5;
+  font-size: var(--workspace-page-subtitle-size, 10px);
+  line-height: 1.45;
 }
 
 .notifications-mark-all {

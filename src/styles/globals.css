@@ -1031,10 +1031,14 @@ button:disabled {
   scrollbar-color: rgba(86, 72, 64, 0.26) transparent;
 }
 .workspace-content-inner {
+  --workspace-page-gutter: clamp(28px, 3.4vw, 42px);
+  --workspace-page-title-size: clamp(24px, 2.4vw, 29px);
+  --workspace-page-kicker-size: 8px;
+  --workspace-page-subtitle-size: 10px;
   min-width: 0;
   height: 100%;
   min-height: 100%;
-  padding: clamp(28px, 3.4vw, 42px);
+  padding: var(--workspace-page-gutter);
 }
 .workspace-content-scroll::-webkit-scrollbar {
   width: 8px;

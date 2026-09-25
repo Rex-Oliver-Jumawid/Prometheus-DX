@@ -10,6 +10,7 @@ import {
   type WorkItemInput,
 } from '../../../shared/contracts/outcome-work';
 import { apiFetch } from '../../lib/api';
+import { projectKeys } from './project-queries';
 import './outcome-work.css';
 
 type Change = {
@@ -672,6 +673,9 @@ export function OutcomeWorkArea({
     },
     onSuccess: (data) => {
       queryClient.setQueryData(queryKey, data);
+      void queryClient.invalidateQueries({
+        queryKey: projectKeys.workflow(projectId),
+      });
       void queryClient.invalidateQueries({
         queryKey: ['projects', projectId, 'delivery', outcomeId],
       });

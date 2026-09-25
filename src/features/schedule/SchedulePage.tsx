@@ -240,6 +240,53 @@ function dayActualSeconds(
     .reduce((total, session) => total + session.durationSeconds, 0);
 }
 
+type ShiftTimelineSegment = {
+  startMinutes: number;
+  endMinutes: number;
+};
+
+const SHIFT_TIMELINE_MINUTES = 24 * 60;
+const SHIFT_TIMELINE_TICKS = [
+  { minutes: 0, label: '12 AM' },
+  { minutes: 360, label: '6 AM' },
+  { minutes: 720, label: '12 PM' },
+  { minutes: 1080, label: '6 PM' },
+  { minutes: 1440, label: '12 AM' },
+] as const;
+
+function plannedTimelineSegments(
+  schedule: TeamScheduleResponse['members'][number]['schedule'],
+  weekday: Weekday,
+): ShiftTimelineSegment[] {
+  return (schedule?.blocks ?? [])
+    .filter((block) => block.weekday === weekday)
+    .map((block) => ({
+      startMinutes: clockTimeToMinutes(block.startTime),
+      endMinutes: clockTimeToMinutes(block.endTime),
+    }))
+    .filter((segment) => segment.endMinutes > segment.startMinutes);
+}
+
+function actualTimelineSegments(
+  history: WorkSessionHistoryResponse | undefined,
+  weekday: Weekday,
+): ShiftTimelineSegment[] {
+  return (history?.sessions ?? [])
+    .filter((session) => weekdayFromInstant(session.timeIn) === weekday)
+    .map((session) => {
+      const startMinutes = clockMinutesFromInstant(session.timeIn);
+      const clockEnd = session.timeOut
+        ? clockMinutesFromInstant(session.timeOut)
+        : startMinutes + Math.round(session.durationSeconds / 60);
+      const endMinutes = clockEnd < startMinutes ? SHIFT_TIMELINE_MINUTES : clockEnd;
+      return {
+        startMinutes,
+        endMinutes: Math.min(SHIFT_TIMELINE_MINUTES, endMinutes),
+      };
+    })
+    .filter((segment) => segment.endMinutes > segment.startMinutes);
+}
+
 function SchedulePageSkeleton() {
   const hours = Array.from(
     { length: (CALENDAR_END_MINUTES - CALENDAR_START_MINUTES) / 60 },
@@ -742,26 +789,37 @@ export function SchedulePage() {
                 <span className="fulfilled-pill">Commitment fulfilled ✓</span>
               )}
             </header>
+            <div className="shift-timeline-axis" aria-hidden="true">
+              <span />
+              <div className="shift-timeline-axis-track">
+                {SHIFT_TIMELINE_TICKS.map((tick) => (
+                  <span
+                    key={tick.minutes}
+                    style={{ left: (tick.minutes / SHIFT_TIMELINE_MINUTES) * 100 + '%' }}
+                  >
+                    {tick.label}
+                  </span>
+                ))}
+              </div>
+              <span />
+            </div>
             <div className="shift-day-list">
               {WEEKDAYS.map((weekday) => {
-                const planned =
-                  selectedMember?.schedule?.blocks
-                    .filter((block) => block.weekday === weekday)
-                    .reduce(
-                      (total, block) =>
-                        total +
-                        Math.max(
-                          0,
-                          clockTimeToMinutes(block.endTime) -
-                            clockTimeToMinutes(block.startTime),
-                        ),
-                      0,
-                    ) ?? 0;
-                const actual =
-                  selectedMember?.id === member?.id
-                    ? dayActualSeconds(historyQuery.data, weekday)
-                    : 0;
-                const maxMinutes = Math.max(planned, actual / 60, 60);
+                const plannedSegments = plannedTimelineSegments(
+                  selectedMember?.schedule ?? null,
+                  weekday,
+                );
+                const planned = plannedSegments.reduce(
+                  (total, segment) => total + segment.endMinutes - segment.startMinutes,
+                  0,
+                );
+                const hasActualTimeline = selectedMember?.id === member?.id;
+                const actualSegments = hasActualTimeline
+                  ? actualTimelineSegments(historyQuery.data, weekday)
+                  : [];
+                const actual = hasActualTimeline
+                  ? dayActualSeconds(historyQuery.data, weekday)
+                  : 0;
                 return (
                   <button
                     type="button"
@@ -776,13 +834,14 @@ export function SchedulePage() {
                     <div className="shift-day-bars">
                       <TimelineBar
                         label="Planned"
-                        ratio={planned / maxMinutes}
+                        segments={plannedSegments}
                         variant="planned"
                       />
                       <TimelineBar
                         label="Actual"
-                        ratio={(actual / 60) / maxMinutes}
+                        segments={actualSegments}
                         variant="actual"
+                        unavailable={!hasActualTimeline}
                       />
                     </div>
                     <strong className="shift-day-total">
@@ -1170,21 +1229,44 @@ function ShiftStat({
 
 function TimelineBar({
   label,
-  ratio,
+  segments,
   variant,
+  unavailable = false,
 }: {
   label: string;
-  ratio: number;
+  segments: ShiftTimelineSegment[];
   variant: 'planned' | 'actual';
+  unavailable?: boolean;
 }) {
   return (
     <div className="timeline-row">
       <span>{label}</span>
-      <div className="timeline-track">
-        <i
-          className={variant}
-          style={{ width: Math.max(0, Math.min(100, ratio * 100)) + '%' }}
-        />
+      <div
+        className={'timeline-track' + (unavailable ? ' unavailable' : '')}
+        aria-label={label + ' timeline'}
+      >
+        {segments.map((segment, index) => {
+          const start = Math.max(
+            0,
+            Math.min(SHIFT_TIMELINE_MINUTES, segment.startMinutes),
+          );
+          const end = Math.max(
+            start,
+            Math.min(SHIFT_TIMELINE_MINUTES, segment.endMinutes),
+          );
+          return (
+            <i
+              key={index}
+              className={variant}
+              data-start-minutes={start}
+              data-end-minutes={end}
+              style={{
+                left: (start / SHIFT_TIMELINE_MINUTES) * 100 + '%',
+                width: ((end - start) / SHIFT_TIMELINE_MINUTES) * 100 + '%',
+              }}
+            />
+          );
+        })}
       </div>
     </div>
   );

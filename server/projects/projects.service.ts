@@ -284,7 +284,7 @@ export class ProjectsService {
             'USER'::"ProjectStatusChangeSource"
           FROM updated_project
           RETURNING project_id
-        )
+        ),
         activity_history AS (
           INSERT INTO activity_logs (
             project_id,

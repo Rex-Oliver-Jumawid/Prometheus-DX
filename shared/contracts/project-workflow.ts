@@ -61,6 +61,7 @@ export const OutcomeSchema = z.object({
   isLocked: z.boolean(),
   isJoined: z.boolean(),
   hasForReview: z.boolean(),
+  workProgress: z.number().int().min(0).max(100).nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });

@@ -1,5 +1,5 @@
 .workspace-content-inner:has(> .team-page) {
-  padding: 18px 28px 28px;
+  padding: var(--workspace-page-gutter);
 }
 
 .team-page {
@@ -17,7 +17,7 @@
   margin: 0;
   color: #cb4d22;
   font:
-    800 6.5px/1 Menlo,
+    800 var(--workspace-page-kicker-size, 8px)/1 Menlo,
     Monaco,
     Consolas,
     monospace;
@@ -28,17 +28,17 @@
 .team-header h1 {
   margin: 2px 0 0;
   color: #211d1b;
-  font-size: 27px;
-  font-weight: 620;
-  line-height: 1.06;
+  font-size: var(--workspace-page-title-size, 27px);
+  font-weight: 760;
+  line-height: 1.15;
   letter-spacing: -0.035em;
 }
 
 .team-header > p:last-child {
   margin: 4px 0 0;
   color: #7c716a;
-  font-size: 9px;
-  line-height: 1.55;
+  font-size: var(--workspace-page-subtitle-size, 10px);
+  line-height: 1.45;
 }
 
 .team-summary {

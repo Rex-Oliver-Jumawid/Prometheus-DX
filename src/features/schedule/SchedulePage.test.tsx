@@ -329,6 +329,12 @@ describe('SchedulePage', () => {
       'true',
     );
     expect(await screen.findByText('Weekly work history')).toBeInTheDocument();
+    expect(screen.getByText('12 PM')).toBeInTheDocument();
+    const actualSegment = document.querySelector(
+      '.timeline-track[aria-label="Actual timeline"] i.actual',
+    );
+    expect(actualSegment).toHaveAttribute('data-start-minutes', '480');
+    expect(actualSegment).toHaveAttribute('data-end-minutes', '780');
     // A literal escaped newline in JSX previously appeared as visible "\\n" below the header.
     expect(document.querySelector('.shifts-workspace')?.firstElementChild).toHaveClass('schedule-compat-label');
     expect(document.querySelector('.shifts-workspace')?.firstChild?.nodeType).toBe(Node.ELEMENT_NODE);

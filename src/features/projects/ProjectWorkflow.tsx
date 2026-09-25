@@ -1888,17 +1888,9 @@ export function ProjectWorkflow({
 
                             <div className="card-foot">
                               <span className="tiny">
-                                {outcome.lifecycleStatus === 'ACCEPTED'
-                                  ? '100%'
-                                  : outcome.hasForReview
-                                    ? '80%'
-                                    : outcome.lifecycleStatus ===
-                                        'NEEDS_REVISION'
-                                      ? '50%'
-                                      : outcome.isJoined
-                                        ? '30%'
-                                        : '0%'}{' '}
-                                work progress
+                                {outcome.workProgress === null
+                                  ? 'No tasks yet'
+                                  : outcome.workProgress + '% work progress'}
                               </span>
                               <Link
                                 to={`/projects/${projectId}/outcomes/${outcome.id}`}

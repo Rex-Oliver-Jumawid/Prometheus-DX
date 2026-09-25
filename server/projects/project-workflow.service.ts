@@ -42,6 +42,11 @@ const outcomeInclude = {
     },
     orderBy: { createdAt: 'asc' as const },
   },
+  features: {
+    select: {
+      tasks: { select: { status: true } },
+    },
+  },
   members: {
     include: {
       member: { select: { id: true, fullName: true, email: true } },
@@ -893,6 +898,14 @@ export class ProjectWorkflowService {
   }
 
   private toOutcome(outcome: OutcomeRecord, currentMemberId: string): Outcome {
+    const tasks = outcome.features.flatMap((feature) => feature.tasks);
+    const completedTasks = tasks.filter((task) => task.status === 'DONE').length;
+    const workProgress =
+      outcome.lifecycleStatus === 'ACCEPTED'
+        ? 100
+        : tasks.length
+          ? Math.round((completedTasks / tasks.length) * 100)
+          : null;
     const prerequisites = outcome.prerequisites.map((dependency) => ({
       id: dependency.prerequisiteOutcome.id,
       dependencyId: dependency.id,
@@ -927,6 +940,7 @@ export class ProjectWorkflowService {
         outcome.lifecycleStatus !== 'ACCEPTED' &&
         prerequisites.some((prerequisite) => !prerequisite.resolved),
       hasForReview: outcome._count.submissions > 0,
+      workProgress,
       isJoined: outcome.members.some(
         ({ memberId }) => memberId === currentMemberId,
       ),

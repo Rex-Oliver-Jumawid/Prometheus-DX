@@ -98,6 +98,7 @@ const outcome = (
   isLocked: options.isLocked ?? false,
   isJoined: false,
   hasForReview: options.hasForReview ?? false,
+  workProgress: lifecycleStatus === 'ACCEPTED' ? 100 : 0,
   createdAt: '2026-09-01T00:00:00.000Z',
   updatedAt: '2026-09-20T00:00:00.000Z',
 });

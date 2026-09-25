@@ -31,6 +31,7 @@ const workflowFixture: ProjectWorkflowResponse = {
           isJoined: false,
           isLocked: false,
           hasForReview: false,
+          workProgress: 42,
           departments: [
             {
               id: '44444444-4444-4444-8444-444444444444',
@@ -90,6 +91,7 @@ describe('ProjectWorkflow Stage & Outcome Deletion', () => {
     expect(await screen.findByText('STAGE 1')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Discovery' })).toBeInTheDocument();
     expect(screen.getByText('1 outcome')).toBeInTheDocument();
+    expect(screen.getByText('42% work progress')).toBeInTheDocument();
     expect(screen.queryByText('Initial stage')).not.toBeInTheDocument();
 
     const editStage = screen.getByRole('button', {
