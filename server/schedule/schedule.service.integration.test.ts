@@ -92,19 +92,23 @@ describe.runIf(runDatabaseIntegration)(
 
       await service.replaceMemberSchedule(owner, owner.id, {
         targetWeeklyMinutes: 240,
+        restDays: ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'],
         blocks: [{ weekday: 'MONDAY', startTime: '08:00', endTime: '12:00' }],
       });
       await expect(service.getMemberSchedule(owner.id)).resolves.toMatchObject({
         targetWeeklyMinutes: 240,
+        restDays: ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'],
         blocks: [{ weekday: 'MONDAY', startTime: '08:00', endTime: '12:00' }],
       });
 
       await service.replaceMemberSchedule(owner, owner.id, {
         targetWeeklyMinutes: 0,
+        restDays: [],
         blocks: [],
       });
       await expect(service.getMemberSchedule(owner.id)).resolves.toMatchObject({
         targetWeeklyMinutes: 0,
+        restDays: [],
         blocks: [],
       });
     });

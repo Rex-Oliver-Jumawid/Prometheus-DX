@@ -48,6 +48,7 @@ describe('ScheduleService', () => {
       id: '33333333-3333-4333-8333-333333333333',
       memberId: '11111111-1111-4111-8111-111111111111',
       targetWeeklyMinutes: 0,
+      restDays: ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'],
       createdAt: new Date('2026-09-18T00:00:00.000Z'),
       updatedAt: new Date('2026-09-18T01:00:00.000Z'),
       blocks: [],
@@ -65,15 +66,29 @@ describe('ScheduleService', () => {
 
     const result = await service.replaceMemberSchedule(member(), member().id, {
       targetWeeklyMinutes: 0,
+      restDays: ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'],
       blocks: [],
     });
 
     expect(transaction).toHaveBeenCalledOnce();
+    expect(upsert).toHaveBeenCalledWith({
+      where: { memberId: member().id },
+      create: {
+        memberId: member().id,
+        targetWeeklyMinutes: 0,
+        restDays: ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'],
+      },
+      update: {
+        targetWeeklyMinutes: 0,
+        restDays: ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'],
+      },
+    });
     expect(deleteMany).toHaveBeenCalledWith({
       where: { scheduleId: '33333333-3333-4333-8333-333333333333' },
     });
     expect(createMany).not.toHaveBeenCalled();
     expect(result.blocks).toEqual([]);
+    expect(result.restDays).toEqual(['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']);
   });
 
   it('lists only active Registry members in deterministic name order', async () => {
