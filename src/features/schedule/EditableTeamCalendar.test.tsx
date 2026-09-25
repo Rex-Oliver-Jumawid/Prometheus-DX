@@ -18,7 +18,7 @@ const members = [{
 }] satisfies TeamScheduleResponse['members'];
 const dateLabels = Object.fromEntries(WEEKDAYS.map(day => [day, 'Sep 21'])) as Record<(typeof WEEKDAYS)[number], string>;
 
-function setup(initial: ScheduleBlockInput[] = [monday], rest = new Set<(typeof WEEKDAYS)[number]>(['SATURDAY', 'SUNDAY'])) {
+function setup(initial: ScheduleBlockInput[] = [monday], rest = new Set<(typeof WEEKDAYS)[number]>(['SATURDAY', 'SUNDAY']), visibleMembers: TeamScheduleResponse['members'] = members) {
   const changed = vi.fn();
   const toggleRest = vi.fn();
   const restChanges = vi.fn();
@@ -27,7 +27,7 @@ function setup(initial: ScheduleBlockInput[] = [monday], rest = new Set<(typeof 
     const [blocks, setBlocks] = useState(initial);
     const [restDays, setRestDays] = useState(new Set(rest));
     const [selected, setSelected] = useState<number | null>(null);
-    return <EditableTeamCalendar members={members} currentMemberId={ownId}
+    return <EditableTeamCalendar members={visibleMembers} currentMemberId={ownId}
       currentMemberName="Me" dateLabels={dateLabels} blocks={blocks} restDays={restDays}
       selectedIndex={selected} onSelect={setSelected}
       onChange={(next, nextRestDays) => {
@@ -68,7 +68,7 @@ describe('EditableTeamCalendar pointer gestures', () => {
   it('rejects moving onto a rest day when the source still has another block', () => {
     const s = setup([monday, { weekday: 'MONDAY', startTime: '13:00', endTime: '15:00' }]);
     fireEvent.pointerDown(s.mine(), { pointerId: 3, button: 0, clientX: 200, clientY: 200 });
-    fireEvent.pointerMove(s.stage, { pointerId: 3, clientX: 835, clientY: 200 });
+    fireEvent.pointerMove(s.stage, { pointerId: 3, clientX: 940, clientY: 200 });
     fireEvent.pointerUp(s.stage, { pointerId: 3 });
     expect(s.changed).not.toHaveBeenCalled();
     expect(s.message).toHaveBeenCalledWith(expect.stringContaining('unavailable'));
@@ -77,7 +77,7 @@ describe('EditableTeamCalendar pointer gestures', () => {
   it('swaps the source rest day when moving its only block onto a rest day', () => {
     const s = setup();
     fireEvent.pointerDown(s.mine(), { pointerId: 5, button: 0, clientX: 200, clientY: 200 });
-    fireEvent.pointerMove(s.stage, { pointerId: 5, clientX: 835, clientY: 200 });
+    fireEvent.pointerMove(s.stage, { pointerId: 5, clientX: 940, clientY: 200 });
     fireEvent.pointerUp(s.stage, { pointerId: 5 });
     expect(s.changed).toHaveBeenLastCalledWith([
       { weekday: 'SATURDAY', startTime: '10:00', endTime: '12:00' },
@@ -117,8 +117,55 @@ describe('EditableTeamCalendar pointer gestures', () => {
   it('keeps a boundary block fully inside its day column', () => {
     setup([{ weekday: 'MONDAY', startTime: '07:00', endTime: '10:00' }]);
     const block = screen.getByRole('button', { name: /Select Monday schedule block, 7:00 AM to 10:00 AM/ });
-    expect(block).toHaveStyle({ top: '6px', height: '120px' });
-    expect((block as HTMLElement).style.width).toContain('- 12px');
+    expect(block).toHaveStyle({ top: '4px', height: '154px' });
+    expect((block as HTMLElement).style.width).toContain('- 10px');
+  });
+
+  it('uses reference lanes for every distinct member even if their other blocks do not overlap', () => {
+    const secondId = '55555555-5555-4555-8555-555555555555';
+    const thirdId = '66666666-6666-4666-8666-666666666666';
+    const extraMembers: TeamScheduleResponse['members'] = [
+      {
+        ...members[0],
+        schedule: {
+          ...members[0].schedule!,
+          blocks: [
+            members[0].schedule!.blocks[0],
+            { ...members[0].schedule!.blocks[0], id: '77777777-7777-4777-8777-777777777777', startTime: '17:00', endTime: '19:00' },
+          ],
+        },
+      },
+      {
+        ...members[0],
+        id: secondId,
+        fullName: 'Second colleague',
+        schedule: {
+          ...members[0].schedule!,
+          memberId: secondId,
+          blocks: [{ ...members[0].schedule!.blocks[0], id: '88888888-8888-4888-8888-888888888888', startTime: '11:00', endTime: '15:00' }],
+        },
+      },
+      {
+        ...members[0],
+        id: thirdId,
+        fullName: 'Third colleague',
+        schedule: {
+          ...members[0].schedule!,
+          memberId: thirdId,
+          blocks: [{ ...members[0].schedule!.blocks[0], id: '99999999-9999-4999-8999-999999999999', startTime: '16:00', endTime: '18:00' }],
+        },
+      },
+    ];
+    const s = setup([monday], new Set<(typeof WEEKDAYS)[number]>(['SATURDAY', 'SUNDAY']), extraMembers);
+    const mondayDay = s.container.querySelector('.schedule-calendar-day[aria-label="Monday"]')!;
+    const guides = mondayDay.querySelectorAll('.schedule-calendar-lane-guide');
+    expect(guides).toHaveLength(3);
+    const blocks = [...mondayDay.querySelectorAll<HTMLElement>('.schedule-calendar-block')];
+    expect(blocks).toHaveLength(5);
+    for (const entry of blocks) expect(entry.style.width).toContain('25%');
+    const teammateBlocks = blocks.filter((entry) => entry.title.startsWith('Teammate:'));
+    expect(teammateBlocks).toHaveLength(2);
+    expect(teammateBlocks[0].style.left).toBe(teammateBlocks[1].style.left);
   });
 
   it('delegates rest-day header clicks to the draft owner', () => {
