@@ -1,5 +1,7 @@
 import {
+  infiniteQueryOptions,
   queryOptions,
+  type InfiniteData,
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
@@ -15,7 +17,7 @@ import { apiFetch } from '../../lib/api';
 
 export type NotificationFilter = 'all' | 'unread' | 'mentions' | 'projects';
 
-export const NOTIFICATION_REFRESH_INTERVAL_MS = 15_000;
+export const NOTIFICATION_REFRESH_INTERVAL_MS = 30_000;
 
 export const notificationKeys = {
   all: ['notifications'] as const,
@@ -28,17 +30,20 @@ export function notificationListQuery(
   filter: NotificationFilter,
   accessToken?: string,
 ) {
-  return queryOptions({
+  return infiniteQueryOptions({
     queryKey: notificationKeys.list(filter),
-    queryFn: ({ signal }) =>
+    queryFn: ({ pageParam, signal }) =>
       apiFetch(
-        `/notifications?filter=${filter}`,
+        '/notifications?filter=' + filter +
+          (pageParam ? '&cursor=' + encodeURIComponent(pageParam) : ''),
         NotificationListResponseSchema,
         { accessToken, signal },
       ),
-    staleTime: 15_000,
+    initialPageParam: null as string | null,
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+    staleTime: NOTIFICATION_REFRESH_INTERVAL_MS,
     refetchInterval: NOTIFICATION_REFRESH_INTERVAL_MS,
-    refetchIntervalInBackground: true,
+    refetchIntervalInBackground: false,
     refetchOnWindowFocus: 'always',
     refetchOnReconnect: 'always',
   });
@@ -55,15 +60,17 @@ export function notificationUnreadCountQuery(accessToken?: string) {
       ),
     staleTime: 15_000,
     refetchInterval: NOTIFICATION_REFRESH_INTERVAL_MS,
-    refetchIntervalInBackground: true,
+    refetchIntervalInBackground: false,
     refetchOnWindowFocus: 'always',
     refetchOnReconnect: 'always',
   });
 }
 
+type NotificationPages = InfiniteData<NotificationListResponse, string | null>;
+
 type NotificationCacheSnapshot = {
-  all: NotificationListResponse | undefined;
-  unread: NotificationListResponse | undefined;
+  all: NotificationPages | undefined;
+  unread: NotificationPages | undefined;
   count: NotificationUnreadCountResponse | undefined;
 };
 
@@ -80,10 +87,10 @@ export function useMarkNotificationRead(accessToken?: string) {
     onMutate: async (id): Promise<NotificationCacheSnapshot> => {
       await queryClient.cancelQueries({ queryKey: notificationKeys.all });
       const snapshot = {
-        all: queryClient.getQueryData<NotificationListResponse>(
+        all: queryClient.getQueryData<NotificationPages>(
           notificationKeys.list('all'),
         ),
-        unread: queryClient.getQueryData<NotificationListResponse>(
+        unread: queryClient.getQueryData<NotificationPages>(
           notificationKeys.list('unread'),
         ),
         count: queryClient.getQueryData<NotificationUnreadCountResponse>(
@@ -91,25 +98,35 @@ export function useMarkNotificationRead(accessToken?: string) {
         ),
       };
       const wasUnread = Boolean(
-        snapshot.all?.items.some((item) => item.id === id && !item.readAt) ||
-        snapshot.unread?.items.some((item) => item.id === id),
+        snapshot.all?.pages.some((page) => page.items.some((item) => item.id === id && !item.readAt)) ||
+        snapshot.unread?.pages.some((page) => page.items.some((item) => item.id === id)),
       );
       const readAt = new Date().toISOString();
 
       if (snapshot.all) {
-        queryClient.setQueryData<NotificationListResponse>(
+        queryClient.setQueryData<NotificationPages>(
           notificationKeys.list('all'),
           {
-            items: snapshot.all.items.map((item) =>
-              item.id === id && !item.readAt ? { ...item, readAt } : item,
-            ),
+            ...snapshot.all,
+            pages: snapshot.all.pages.map((page) => ({
+              ...page,
+              items: page.items.map((item) =>
+                item.id === id && !item.readAt ? { ...item, readAt } : item,
+              ),
+            })),
           },
         );
       }
       if (snapshot.unread) {
-        queryClient.setQueryData<NotificationListResponse>(
+        queryClient.setQueryData<NotificationPages>(
           notificationKeys.list('unread'),
-          { items: snapshot.unread.items.filter((item) => item.id !== id) },
+          {
+            ...snapshot.unread,
+            pages: snapshot.unread.pages.map((page) => ({
+              ...page,
+              items: page.items.filter((item) => item.id !== id),
+            })),
+          },
         );
       }
       if (wasUnread && snapshot.count) {
@@ -150,10 +167,10 @@ export function useMarkAllNotificationsRead(accessToken?: string) {
     onMutate: async (): Promise<NotificationCacheSnapshot> => {
       await queryClient.cancelQueries({ queryKey: notificationKeys.all });
       const snapshot = {
-        all: queryClient.getQueryData<NotificationListResponse>(
+        all: queryClient.getQueryData<NotificationPages>(
           notificationKeys.list('all'),
         ),
-        unread: queryClient.getQueryData<NotificationListResponse>(
+        unread: queryClient.getQueryData<NotificationPages>(
           notificationKeys.list('unread'),
         ),
         count: queryClient.getQueryData<NotificationUnreadCountResponse>(
@@ -163,18 +180,21 @@ export function useMarkAllNotificationsRead(accessToken?: string) {
       const readAt = new Date().toISOString();
 
       if (snapshot.all) {
-        queryClient.setQueryData<NotificationListResponse>(
+        queryClient.setQueryData<NotificationPages>(
           notificationKeys.list('all'),
           {
-            items: snapshot.all.items.map((item) =>
-              item.readAt ? item : { ...item, readAt },
-            ),
+            ...snapshot.all,
+            pages: snapshot.all.pages.map((page) => ({
+              ...page,
+              items: page.items.map((item) => item.readAt ? item : { ...item, readAt }),
+            })),
           },
         );
       }
       if (snapshot.unread) {
-        queryClient.setQueryData(notificationKeys.list('unread'), {
-          items: [],
+        queryClient.setQueryData<NotificationPages>(notificationKeys.list('unread'), {
+          ...snapshot.unread,
+          pages: snapshot.unread.pages.map((page) => ({ ...page, items: [] })),
         });
       }
       if (snapshot.count) {
