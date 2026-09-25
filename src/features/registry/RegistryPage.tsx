@@ -898,6 +898,51 @@ function MemberDialog({
   );
 }
 
+function RemoveMemberDialog({
+  member,
+  isRemoving,
+  removeError,
+  onClose,
+  onConfirm,
+}: {
+  member: RegistryMember;
+  isRemoving: boolean;
+  removeError: unknown;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  return createPortal(
+    <div className="registry-dialog-backdrop" role="presentation" onClick={(event) => {
+      if (event.target === event.currentTarget && !isRemoving) onClose();
+    }}>
+      <section className="registry-dialog registry-remove-dialog" role="dialog" aria-modal="true" aria-labelledby="remove-member-title">
+        <header className="registry-dialog-header">
+          <div>
+            <p className="registry-kicker">REMOVE MEMBER ACCESS</p>
+            <h2 id="remove-member-title">Remove member</h2>
+            <p>Remove <strong>{member.fullName}</strong> from Prometheus?</p>
+          </div>
+          <button type="button" className="registry-icon-button" aria-label="Close remove member dialog" onClick={onClose} disabled={isRemoving}>×</button>
+        </header>
+        <p className="registry-remove-copy">
+          Their account access will be revoked while historical project, chat, notification, and work records remain preserved.
+        </p>
+        <p className="registry-form-note">
+          You can add {member.email} again later to send a new account setup invitation.
+        </p>
+        {Boolean(removeError) && <p className="registry-form-error" role="alert">{messageFromError(removeError)}</p>}
+        <footer className="registry-dialog-actions">
+          <button type="button" className="registry-secondary-button" onClick={onClose} disabled={isRemoving}>Cancel</button>
+          <button type="button" className="registry-danger-button" onClick={onConfirm} disabled={isRemoving}>
+            {isRemoving ? 'Removing...' : 'Remove member'}
+          </button>
+        </footer>
+      </section>
+    </div>,
+    document.body,
+  );
+}
+
 function memberInitials(fullName: string): string {
   return fullName
     .split(/\s+/)
@@ -916,6 +961,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
     useState<MemberDialogState | null>(null);
   const [departmentToRemove, setDepartmentToRemove] =
     useState<RegistryDepartment | null>(null);
+  const [memberToRemove, setMemberToRemove] = useState<RegistryMember | null>(null);
   const [departmentSearch, setDepartmentSearch] = useState('');
   const [memberSearch, setMemberSearch] = useState('');
   const [memberRoleFilter, setMemberRoleFilter] = useState<
