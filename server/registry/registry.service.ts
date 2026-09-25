@@ -10,6 +10,8 @@ import {
 import { Prisma } from '@prisma/client';
 import { createClient } from '@supabase/supabase-js';
 import type {
+  CompleteAccountSetupRequest,
+  CompleteAccountSetupResponse,
   CreateDepartmentRequest,
   CreateMemberRequest,
   RegistryDepartment,
@@ -34,6 +36,84 @@ export class RegistryService {
     @Inject(INVITATION_DELIVERY)
     private readonly invitationDelivery: InvitationDelivery,
   ) {}
+
+  async completeAccountSetup(
+    input: CompleteAccountSetupRequest,
+  ): Promise<CompleteAccountSetupResponse> {
+    const member = await this.prisma.member.findFirst({
+      where: {
+        email: { equals: input.email, mode: 'insensitive' },
+        authUserId: null,
+        status: { in: ['INVITED', 'ACTIVE'] },
+        invitationSentAt: { not: null },
+      },
+      select: { id: true, email: true },
+    });
+    if (!member) {
+      throw new BadRequestException(
+        'This invitation is no longer available. Ask an administrator for a new invitation.',
+      );
+    }
+
+    const supabaseUrl = serverEnvironment.supabaseUrl;
+    const serviceRoleKey = serverEnvironment.supabaseServiceRoleKey;
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new ServiceUnavailableException(
+        'Account setup is temporarily unavailable.',
+      );
+    }
+
+    const admin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
+      },
+    });
+    const { data, error } = await admin.auth.admin.createUser({
+      email: member.email,
+      password: input.password,
+      email_confirm: true,
+    });
+    if (error || !data.user) {
+      this.logger.error(
+        `Failed to create Supabase Auth user for member ${member.id}: ${error?.message ?? 'No user returned.'}`,
+      );
+      throw new BadRequestException(
+        error?.message?.toLowerCase().includes('already')
+          ? 'An account already exists for this email. Sign in instead.'
+          : 'The account could not be created. Ask an administrator to resend the invitation.',
+      );
+    }
+
+    try {
+      const linked = await this.prisma.member.updateMany({
+        where: {
+          id: member.id,
+          authUserId: null,
+          status: { in: ['INVITED', 'ACTIVE'] },
+        },
+        data: {
+          authUserId: data.user.id,
+          status: 'ACTIVE',
+          deactivatedAt: null,
+        },
+      });
+      if (linked.count !== 1) {
+        await admin.auth.admin.deleteUser(data.user.id);
+        throw new BadRequestException(
+          'This invitation has already been used. Sign in instead.',
+        );
+      }
+    } catch (error) {
+      if (!(error instanceof BadRequestException)) {
+        await admin.auth.admin.deleteUser(data.user.id);
+      }
+      throw error;
+    }
+
+    return { readyToSignIn: true };
+  }
 
   async getOverview(): Promise<RegistryOverviewResponse> {
     const [departments, members] = await Promise.all([
