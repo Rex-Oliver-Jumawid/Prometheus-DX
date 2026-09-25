@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -47,26 +48,38 @@ function safeMetadata(action: string, raw: unknown): Record<string, string> {
   return result;
 }
 
-/** Every active authorized member may read the display-safe Project activity trail. */
+/** Activity is project-wide for administrators and leads, personal for project members. */
 @Injectable()
 export class ProjectActivityService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async list(
-    _member: Member,
+    member: Member,
     projectId: string,
     cursor?: string,
   ): Promise<ProjectActivityPage> {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
-      select: { id: true },
+      select: {
+        id: true,
+        leadMemberId: true,
+        members: {
+          where: { memberId: member.id },
+          select: { memberId: true },
+        },
+      },
     });
     if (!project) throw new NotFoundException('Project not found.');
-    const scope = 'PROJECT' as const;
+    const privileged = member.workspaceRole === 'ADMINISTRATOR' ||
+      project.leadMemberId === member.id;
+    if (!privileged && project.members.length === 0)
+      throw new ForbiddenException('Only Project Members may view their activity.');
+    const scope = privileged ? 'PROJECT' : 'PERSONAL';
+    const actorFilter = privileged ? {} : { actorMemberId: member.id };
 
     const previous = cursor
       ? await this.prisma.activityLog.findFirst({
-          where: { id: cursor, projectId },
+          where: { id: cursor, projectId, ...actorFilter },
           select: { id: true, createdAt: true },
         })
       : null;
@@ -77,6 +90,7 @@ export class ProjectActivityService {
     const records = await this.prisma.activityLog.findMany({
       where: {
         projectId,
+        ...actorFilter,
         ...(previous
           ? {
               OR: [
