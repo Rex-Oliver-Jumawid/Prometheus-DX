@@ -11,12 +11,14 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import type { Member } from '@prisma/client';
 import {
   CreateDepartmentRequestSchema,
   CreateMemberRequestSchema,
   UpdateDepartmentRequestSchema,
   UpdateMemberRequestSchema,
 } from '../../shared/contracts/registry';
+import { CurrentMember } from '../auth/current-member.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { WorkspaceRoles } from '../auth/workspace-roles.decorator';
@@ -112,6 +114,14 @@ export class RegistryController {
     }
 
     return this.registryService.updateMember(memberId, parsed.data);
+  }
+
+  @Delete('members/:memberId')
+  removeMember(
+    @Param('memberId', new ParseUUIDPipe({ version: '4' })) memberId: string,
+    @CurrentMember() currentMember: Member,
+  ) {
+    return this.registryService.removeMember(memberId, currentMember.id);
   }
 
   @Post('members/:memberId/invitation')
