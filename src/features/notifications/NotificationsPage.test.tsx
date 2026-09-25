@@ -279,10 +279,29 @@ describe('NotificationsPage', () => {
       expect(records[0].readAt).toBe(readAt);
       expect(
         queryClient
-          .getQueryData<{ items: Notification[] }>(notificationKeys.list('all'))
-          ?.items.find((item) => item.id === unreadId)?.readAt,
+          .getQueryData<{ pages: Array<{ items: Notification[] }> }>(notificationKeys.list('all'))
+          ?.pages.flatMap((page) => page.items).find((item) => item.id === unreadId)?.readAt,
       ).toBeTruthy();
     });
+  });
+
+  it('loads older notification pages only when requested', async () => {
+    const firstPage = { items: [sampleNotifications[0]], nextCursor: unreadId };
+    const secondPage = { items: [sampleNotifications[1]], nextCursor: null };
+    const old = mocks.apiFetch.getMockImplementation()!;
+    mocks.apiFetch.mockImplementation((path: string, ...args: unknown[]) => {
+      if (path === '/notifications?filter=all') return Promise.resolve(firstPage);
+      if (path === `/notifications?filter=all&cursor=${unreadId}`)
+        return Promise.resolve(secondPage);
+      return old(path, ...args);
+    });
+    const user = userEvent.setup();
+    renderPage();
+    expect(await screen.findByRole('button', { name: /Output ready for your review/ })).toBeVisible();
+    expect(screen.queryByRole('button', { name: /You were assigned as Project Lead/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Load older notifications' }));
+    expect(await screen.findByRole('button', { name: /You were assigned as Project Lead/ })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Load older notifications' })).not.toBeInTheDocument();
   });
 
   it('opens a Project-level notification on the existing Project route', async () => {
