@@ -297,7 +297,7 @@ export function NotificationsPage() {
       >
         {active.isPending ? (
           <NotificationsListSkeleton />
-        ) : active.isError && activeItems.length === 0 ? (
+        ) : active.isError && activeItems.length === 0 && !active.hasNextPage ? (
           <div className="notifications-state error" role="alert">
             <h2>Notifications could not be loaded</h2>
             <p>{active.error.message}</p>
@@ -305,7 +305,7 @@ export function NotificationsPage() {
               Try again
             </button>
           </div>
-        ) : activeItems.length === 0 ? (
+        ) : activeItems.length === 0 && !active.hasNextPage ? (
           <div className="notifications-state empty">
             <h2>
               {filter === 'all'
