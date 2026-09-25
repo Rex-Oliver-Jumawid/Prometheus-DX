@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { ConflictException } from '@nestjs/common';
 import type { Member } from '@prisma/client';
 import { describe, expect, it, vi } from 'vitest';
 import type { PrismaService } from '../database/prisma.service';
@@ -27,7 +27,7 @@ const record = {
   updatedAt: new Date('2026-09-24T11:00:00.000Z'),
 };
 
-function setup(member = lead, isProjectMember = false) {
+function setup(member = lead, isProjectMember = false, archivedAt: Date | null = null) {
   const members = isProjectMember || member.id === lead.id ? [{ memberId: member.id }] : [];
   const tx = {
     $queryRaw: vi.fn().mockResolvedValue([]),
@@ -35,7 +35,7 @@ function setup(member = lead, isProjectMember = false) {
       findUnique: vi.fn().mockResolvedValue({
         id: projectId,
         leadMemberId: lead.id,
-        archivedAt: null,
+        archivedAt,
         members,
       }),
     },
@@ -61,7 +61,7 @@ function setup(member = lead, isProjectMember = false) {
       findUnique: vi.fn().mockResolvedValue({
         id: projectId,
         leadMemberId: lead.id,
-        archivedAt: null,
+        archivedAt,
         members,
       }),
     },
@@ -77,7 +77,7 @@ function setup(member = lead, isProjectMember = false) {
 }
 
 describe('ProjectAnnouncementService', () => {
-  it('lists announcements and exposes management only to the Project Lead', async () => {
+  it('lets every authorized employee manage announcements in active Projects', async () => {
     const leadSetup = setup(lead);
     await expect(leadSetup.service.list(lead, projectId)).resolves.toMatchObject({
       canManage: true,
@@ -87,17 +87,17 @@ describe('ProjectAnnouncementService', () => {
 
     const otherSetup = setup(other);
     await expect(otherSetup.service.list(other, projectId)).resolves.toMatchObject({
-      canManage: false,
+      canManage: true,
       canPost: true,
       items: [{ id: announcementId }],
     });
   });
 
-  it('lets Project Members announce without giving them Lead-only pin access', async () => {
+  it('lets Project Members announce and pin', async () => {
     const { service, tx } = setup(other, true);
     await expect(service.list(other, projectId)).resolves.toMatchObject({
       canPost: true,
-      canManage: false,
+      canManage: true,
     });
     await expect(service.create(other, projectId, {
       title: record.title,
@@ -109,8 +109,8 @@ describe('ProjectAnnouncementService', () => {
       }),
     );
     await expect(service.setPinned(other, projectId, announcementId, { pinned: true }))
-      .rejects.toBeInstanceOf(ForbiddenException);
-    expect(tx.projectAnnouncement.update).not.toHaveBeenCalled();
+      .resolves.toMatchObject({ id: announcementId, pinnedAt: '2026-09-24T11:05:00.000Z' });
+    expect(tx.projectAnnouncement.update).toHaveBeenCalledOnce();
   });
 
   it('posts an announcement and writes a safe activity event atomically', async () => {
@@ -142,7 +142,7 @@ describe('ProjectAnnouncementService', () => {
     });
   });
 
-  it('allows non-project employees to announce but not pin', async () => {
+  it('allows non-project employees to announce and pin', async () => {
     const { service, tx } = setup(other);
     await expect(service.create(other, projectId, {
       title: record.title,
@@ -152,7 +152,37 @@ describe('ProjectAnnouncementService', () => {
       data: expect.objectContaining({ memberId: other.id, projectId }),
     }));
     await expect(service.setPinned(other, projectId, announcementId, { pinned: true }))
-      .rejects.toBeInstanceOf(ForbiddenException);
+      .resolves.toMatchObject({ id: announcementId, pinnedAt: '2026-09-24T11:05:00.000Z' });
+  });
+
+  it('returns archived Projects as read-only and rejects pin attempts', async () => {
+    const archived = setup(other, false, new Date('2026-09-25T00:00:00.000Z'));
+    await expect(archived.service.list(other, projectId)).resolves.toMatchObject({
+      canPost: false, canManage: false,
+    });
+    await expect(archived.service.setPinned(other, projectId, announcementId, { pinned: true }))
+      .rejects.toBeInstanceOf(ConflictException);
+    expect(archived.tx.projectAnnouncement.update).not.toHaveBeenCalled();
+  });
+
+  it('records unpin actions by non-project employees', async () => {
+    const outsider = setup(other);
+    outsider.tx.projectAnnouncement.findFirst.mockResolvedValueOnce({
+      id: announcementId, pinnedAt: new Date('2026-09-24T11:05:00.000Z'), title: record.title,
+    });
+    outsider.tx.projectAnnouncement.update.mockResolvedValueOnce({
+      ...record, pinnedAt: null,
+    });
+    const result = await outsider.service.setPinned(other, projectId, announcementId, { pinned: false });
+    expect(result.pinnedAt).toBeNull();
+    expect(outsider.tx.activityLog.create).toHaveBeenCalledWith({
+      data: {
+        actorMemberId: other.id, projectId,
+        entityType: 'ProjectAnnouncement', entityId: announcementId,
+        action: 'PROJECT_ANNOUNCEMENT_UNPINNED',
+        metadata: { title: record.title },
+      },
+    });
   });
 
   it('pins announcements and records the pin in Project Activity', async () => {
