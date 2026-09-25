@@ -123,7 +123,7 @@ describe('ProjectAnnouncementsPanel', () => {
     ));
   });
 
-  it('lets Project Members post without showing Lead-only pin controls', async () => {
+  it('lets non-project employees post without showing Lead-only pin controls', async () => {
     vi.mocked(apiFetch).mockImplementation((path, _schema, options) => {
       if (options?.method === 'POST') return Promise.resolve(announcement);
       if (path.endsWith('/announcements'))
@@ -151,7 +151,7 @@ describe('ProjectAnnouncementsPanel', () => {
     ));
   });
 
-  it('keeps announcement management hidden from non-leads', async () => {
+  it('keeps announcement posting disabled in archived Projects', async () => {
     vi.mocked(apiFetch).mockResolvedValue({
       items: [{ ...announcement, pinnedAt: '2026-09-24T11:05:00.000Z' }],
       canManage: false, canPost: false,
