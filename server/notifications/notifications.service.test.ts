@@ -80,6 +80,7 @@ describe('NotificationsService', () => {
             readAt: null,
           },
         ],
+        nextCursor: null,
       },
     );
     expect(notification.findMany).toHaveBeenCalledWith({
@@ -87,6 +88,7 @@ describe('NotificationsService', () => {
       relationLoadStrategy: 'join',
       select: expect.any(Object),
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: 31,
     });
 
     await service.list(recipientId, { filter: 'unread' });
