@@ -9,6 +9,7 @@ import {
 import type { Request, Response } from 'express';
 import type { ApiErrorResponse } from '../../../shared/contracts/api-error';
 import { safeRoute } from '../middleware/request-metrics';
+import { serverEnvironment } from '../../config/env';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -47,10 +48,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
     };
 
     if (statusCode >= 500) {
-      this.logger.error(
-        `${request.method} ${safeRoute(request)} failed`,
-        exception instanceof Error ? exception.stack : String(exception),
-      );
+      const requestId = String(response.getHeader('X-Request-ID') ?? 'unassigned');
+      const errorType = exception instanceof Error ? exception.name : 'UnknownError';
+      const label = `${request.method} ${safeRoute(request)} failed (${errorType}, requestId=${requestId})`;
+      if (serverEnvironment.nodeEnv === 'production') {
+        // Unexpected exception messages/stacks can embed SQL values or credentials.
+        this.logger.error(label);
+      } else {
+        this.logger.error(label, exception instanceof Error ? exception.stack : undefined);
+      }
     }
 
     response.status(statusCode).json(body);

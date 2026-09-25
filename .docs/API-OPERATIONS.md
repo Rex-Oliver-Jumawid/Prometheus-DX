@@ -22,7 +22,7 @@ Once a scheduled maintenance workflow is available, expired rows may be removed 
 
 ## Log monitoring
 
-Every API response includes `X-Request-ID`. When a request fails with HTTP 500+ or exceeds 1,000 ms, NestJS emits a structured `api_request` warning containing request ID, method, sanitized route, status and elapsed milliseconds. Unexpected exceptions also flow to the existing error filter. URLs with query parameters, request bodies, session tokens and IPs are not deliberately logged in the request metrics.
+Every API response includes `X-Request-ID`. When a request fails with HTTP 500+ or exceeds 1,000 ms, NestJS emits a structured `api_request` warning containing request ID, method, sanitized route, status and elapsed milliseconds. Unexpected exceptions also flow to the existing error filter, correlated by request ID. Production logs record the exception class and sanitized route but omit raw exception messages/stacks that might contain sensitive database values. URLs with query parameters, request bodies, session tokens and IPs are not deliberately logged in the request metrics.
 
 Inspect logs for recurring 5xx events and unusually slow endpoints during staging and controlled production smoke checks. Connect an external alert/retention provider only if one is available; this release does **not** claim that automated alerts or a third-party error dashboard are configured.
 
