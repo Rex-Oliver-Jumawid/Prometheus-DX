@@ -148,8 +148,8 @@
 }
 
 .home-dashboard-grid {
-  width: 100%;
-  max-width: 100%;
+  width: calc(100% + var(--home-top-align-overhang));
+  max-width: none;
   min-width: 0;
   align-self: stretch;
   min-height: 405.703125px;
