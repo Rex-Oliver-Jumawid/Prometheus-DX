@@ -446,3 +446,108 @@
 @media (prefers-reduced-motion: reduce) {
   .schedule-skeleton-line { animation: none; background-size: 100% 100%; }
 }
+
+/* Readable merged calendar with an internally scrolling, sticky day header.
+   Vertical scrolling must happen on this element: a sticky header inside an
+   unconstrained overflow:auto parent cannot stick to the outer page. */
+.schedule-calendar-scroll {
+  max-height: min(74vh, 760px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.schedule-calendar-head-row {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: 72px;
+}
+.schedule-calendar-time-head,
+.schedule-calendar-day-head {
+  padding: 10px 9px;
+  background: rgba(255, 252, 249, .98);
+  color: #39312d;
+  font-size: 13px;
+  line-height: 1.25;
+}
+.schedule-calendar-time-head {
+  position: sticky;
+  left: 0;
+  z-index: 11;
+  font-weight: 800;
+}
+.schedule-calendar-day-head strong {
+  font-size: 14px;
+  line-height: 1.3;
+}
+.schedule-calendar-day-head small {
+  font-size: 11px;
+  line-height: 1.35;
+  color: #625750;
+}
+.schedule-calendar-day-head.rest-day {
+  background: #efeae7;
+  color: #5a4f49;
+}
+.schedule-calendar-day-head.rest-day span {
+  font-size: 10px;
+  line-height: 1.15;
+}
+.schedule-calendar-editing .editor-day-header span {
+  font-size: 10px;
+  line-height: 1.25;
+}
+.schedule-time-axis {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  background: #fffaf6;
+}
+.schedule-time-axis > div {
+  padding: 8px 9px;
+  background: #fffaf6;
+  color: #615750;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+/* Size by each individual lane, not by the number of people in the day.
+   Wide screens can show three members without requiring vertical text. */
+.schedule-calendar-block {
+  container-type: inline-size;
+  padding: 7px 4px 8px;
+}
+.schedule-calendar-block strong {
+  font-size: 12px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.schedule-calendar-block small {
+  margin-top: 4px;
+  font-size: 10px;
+  line-height: 1.25;
+  white-space: normal;
+}
+.schedule-calendar-block.editable {
+  padding-bottom: 16px;
+}
+@container (max-width: 108px) {
+  .schedule-calendar-block small {
+    display: none;
+  }
+}
+@container (max-width: 72px) {
+  .schedule-calendar-block strong {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    overflow-wrap: normal;
+    white-space: nowrap;
+    font-size: 11px;
+    margin-inline: auto;
+  }
+  .schedule-calendar-block small {
+    display: none;
+  }
+}
