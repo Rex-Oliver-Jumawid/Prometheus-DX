@@ -11,6 +11,7 @@ const hasCredentials = Boolean(
 
 type OriginalSchedule = {
   targetWeeklyMinutes: number;
+  restDays: Weekday[];
   blocks: Array<{ weekday: Weekday; startTime: Date; endTime: Date }>;
 } | null;
 
@@ -37,6 +38,7 @@ test.beforeAll(async () => {
   originalSchedule = member.schedule
     ? {
         targetWeeklyMinutes: member.schedule.targetWeeklyMinutes,
+        restDays: [...member.schedule.restDays],
         blocks: member.schedule.blocks.map((block) => ({
           weekday: block.weekday,
           startTime: block.startTime,
@@ -104,6 +106,7 @@ test.afterAll(async () => {
         data: {
           memberId: currentMemberId,
           targetWeeklyMinutes: originalSchedule.targetWeeklyMinutes,
+          restDays: originalSchedule.restDays,
           blocks: { create: originalSchedule.blocks },
         },
       });
