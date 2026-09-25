@@ -13,6 +13,7 @@ import { ProjectChatController } from './project-chat.controller';
 import { ProjectChatService } from './project-chat.service';
 import { ProjectAnnouncementController } from './project-announcement.controller';
 import { ProjectAnnouncementService } from './project-announcement.service';
+import { ApiRateLimitGuard } from '../common/rate-limit';
 
 @Module({
   controllers: [
@@ -32,6 +33,7 @@ import { ProjectAnnouncementService } from './project-announcement.service';
     ProjectActivityService,
     ProjectChatService,
     ProjectAnnouncementService,
+    ApiRateLimitGuard,
   ],
   exports: [ProjectsService],
 })
