@@ -908,7 +908,12 @@ function DepartmentCard({
   onJoin: () => void;
   onEnter: () => void;
 }) {
-  const visibleMembers = department.members.slice(0, 3);
+  const [showAllMembers, setShowAllMembers] = useState(false);
+  const hiddenMemberCount = Math.max(0, department.members.length - 2);
+  const visibleMembers =
+    hiddenMemberCount > 0
+      ? department.members.slice(0, 2)
+      : department.members.slice(0, 3);
   const visibleProjects = department.projects.slice(0, 4);
 
   return (
@@ -929,15 +934,29 @@ function DepartmentCard({
 
       <div className="visiwork-presence-row">
         {visibleMembers.length ? (
-          visibleMembers.map((member) => (
-            <div className="visiwork-presence-card" key={member.id}>
-              <strong title={member.fullName}>{member.fullName}</strong>
-              <span className={member.workingNow ? 'working' : ''}>
-                <i aria-hidden="true" />
-                {member.workingNow ? 'Currently working' : 'Not working'}
-              </span>
-            </div>
-          ))
+          <>
+            {visibleMembers.map((member) => (
+              <div className="visiwork-presence-card" key={member.id}>
+                <strong title={member.fullName}>{member.fullName}</strong>
+                <span className={member.workingNow ? 'working' : ''}>
+                  <i aria-hidden="true" />
+                  {member.workingNow ? 'Currently working' : 'Not working'}
+                </span>
+              </div>
+            ))}
+            {hiddenMemberCount > 0 && (
+              <button
+                type="button"
+                className="visiwork-more-members"
+                aria-label={
+                  'Show ' + hiddenMemberCount + ' more members in ' + department.name
+                }
+                onClick={() => setShowAllMembers(true)}
+              >
+                +{hiddenMemberCount}
+              </button>
+            )}
+          </>
         ) : (
           <div className="visiwork-card-empty">No active members assigned.</div>
         )}
@@ -994,6 +1013,54 @@ function DepartmentCard({
         </button>
       </footer>
     </article>
+      {showAllMembers && (
+        <div
+          className="visiwork-members-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setShowAllMembers(false);
+          }}
+        >
+          <section
+            className="visiwork-members-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={'visiwork-members-title-' + department.id}
+          >
+            <header>
+              <div>
+                <span>DEPARTMENT PRESENCE</span>
+                <h2 id={'visiwork-members-title-' + department.id}>
+                  {department.name}
+                </h2>
+                <p>{department.members.length} members currently assigned to this VisiWork room.</p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close members modal"
+                onClick={() => setShowAllMembers(false)}
+              >
+                ×
+              </button>
+            </header>
+            <div className="visiwork-members-modal-list">
+              {department.members.map((member) => (
+                <div className="visiwork-members-modal-person" key={member.id}>
+                  <span>{initials(member.fullName)}</span>
+                  <div>
+                    <strong>{member.fullName}</strong>
+                    <small>{member.position ?? 'Member'}</small>
+                  </div>
+                  <b className={member.workingNow ? 'working' : ''}>
+                    <i aria-hidden="true" />
+                    {member.workingNow ? 'Currently working' : 'Not working'}
+                  </b>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
   );
 }
 
