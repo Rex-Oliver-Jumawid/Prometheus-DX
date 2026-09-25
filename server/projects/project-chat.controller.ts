@@ -22,16 +22,18 @@ import {
 } from '../../shared/contracts/project-chat';
 import { CurrentMember } from '../auth/current-member.decorator';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
+import { ApiRateLimit, ApiRateLimitGuard } from '../common/rate-limit';
 import { ProjectChatService } from './project-chat.service';
 
 @Controller('projects/:projectId/messages')
-@UseGuards(SupabaseAuthGuard)
+@UseGuards(SupabaseAuthGuard, ApiRateLimitGuard)
 export class ProjectChatController {
   constructor(
     @Inject(ProjectChatService) private readonly chat: ProjectChatService,
   ) {}
 
   @Get('search')
+  @ApiRateLimit({ group: 'project-chat-search', limit: 40, windowSeconds: 60 })
   search(
     @CurrentMember() member: Member,
     @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
@@ -64,6 +66,7 @@ export class ProjectChatController {
   }
 
   @Post()
+  @ApiRateLimit({ group: 'project-chat-send', limit: 20, windowSeconds: 60 })
   send(
     @CurrentMember() member: Member,
     @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
@@ -76,6 +79,7 @@ export class ProjectChatController {
   }
 
   @Patch(':messageId')
+  @ApiRateLimit({ group: 'project-chat-edit', limit: 30, windowSeconds: 60 })
   edit(
     @CurrentMember() member: Member,
     @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
@@ -89,6 +93,7 @@ export class ProjectChatController {
   }
 
   @Delete(':messageId')
+  @ApiRateLimit({ group: 'project-chat-delete', limit: 30, windowSeconds: 60 })
   remove(
     @CurrentMember() member: Member,
     @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
