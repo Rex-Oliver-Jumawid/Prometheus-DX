@@ -76,7 +76,7 @@ The current Project collaboration implementation includes:
 - author-only soft deletion with tombstones that preserve replies and conversation position.
 - Project announcements.
 - announcement posting by every active authorized Prometheus member, including non-project employees.
-- Project Lead-only announcement pinning and unpinning.
+- announcement pinning and unpinning by every active authorized employee in non-archived Projects.
 - a compact Project Members rail.
 - Project Activity using display-safe ActivityLog metadata.
 - company-visible normal Project Activity for every active authorized Prometheus member, including events authored by other employees.
@@ -199,7 +199,7 @@ Project Chat mentions may target only active Project participants represented by
 
 Every active authorized Prometheus member may post a Project announcement in a non-archived Project.
 
-Only the Project Lead may pin or unpin Project announcements.
+Every active authorized Prometheus member may pin or unpin Project announcements in non-archived Projects.
 
 Archived Projects are read-only for Project Chat and announcement mutations.
 
@@ -240,7 +240,7 @@ Automated coverage exists for:
 - stale edit/delete protection.
 - Project Chat mention validation.
 - Project Chat mention notification creation and synchronization.
-- Project announcement posting and Lead-only pinning.
+- company-wide Project announcement posting, pinning and unpinning.
 - company-visible display-safe Project Activity, including non-project members, with strict Project ID isolation.
 - ActivityLog project isolation and pagination.
 - React chat composer behavior.
@@ -361,17 +361,17 @@ Reconnect and focus changes recover current persisted records through refetch.
 
 #### Root cause / constraint
 
-All active authorized members may inspect Projects. The final product decision also permits their participation in general Project Chat and announcements, while keeping workflow edits and Lead-only pinning separate.
+All active authorized members may inspect Projects, participate in general Project Chat, and post, pin or unpin announcements. Project workflow editing remains separately permissioned.
 
 #### Decision
 
 Allow every active authorized member to read and send general Project Chat messages and post announcements in non-archived Projects, regardless of Project Membership.
 
-Reserve announcement pinning for the Project Lead and message editing/deletion for the original author. Project Membership continues to govern Project workflow permissions, not the shared Project conversation.
+Allow all active authorized employees to pin and unpin Project announcements while preserving author-only chat edits/deletions. Project Membership continues to govern Project workflow permissions, not shared Project collaboration.
 
 #### Result
 
-Normal Project Chat and announcement posting are company-wide for active authorized employees. Project relationships continue to control workflow edits and announcement pinning.
+Normal Project Chat and announcement posting/pinning are company-wide for active authorized employees. Project relationships continue to control workflow edits.
 
 ### P9-D06 - Keep normal Project Activity company-visible and sanitize metadata
 
