@@ -7,6 +7,8 @@ This is the operational reference for deploying Prometheus-DX to Vercel with Sup
 The application can build successfully while the database is still on an older schema.
 Database migrations therefore require their own explicit deployment step.
 
+Before a release, review [.docs/RELEASE-READINESS.md](RELEASE-READINESS.md) for backup/restore gates and the verified 2026-09-25 Prisma migration-history discrepancy. Do not run a production migration or migration-history repair merely because this runbook describes the procedure.
+
 ## Production Components
 
 - Vercel - frontend and server deployment
