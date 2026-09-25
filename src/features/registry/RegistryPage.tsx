@@ -1033,6 +1033,31 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
     },
   });
 
+  const removeMember = useMutation({
+    mutationFn: (memberId: string) =>
+      apiFetch(
+        `/registry/members/${memberId}`,
+        RemoveMemberResponseSchema,
+        { accessToken, method: 'DELETE' },
+      ),
+    onSuccess: ({ id }) => {
+      queryClient.setQueryData<RegistryOverviewResponse>(
+        registryOverviewQueryKey,
+        (current) => {
+          if (!current) return current;
+          const nextMembers = current.members.filter(
+            (member) => member.id !== id,
+          );
+          return {
+            departments: withMemberCounts(current.departments, nextMembers),
+            members: nextMembers,
+          };
+        },
+      );
+      refreshProjectCreateOptions();
+    },
+  });
+
   const resendInvitation = useMutation({
     mutationFn: (memberId: string) =>
       apiFetch(
