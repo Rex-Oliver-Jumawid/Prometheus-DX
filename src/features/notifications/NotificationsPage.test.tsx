@@ -183,6 +183,30 @@ describe('NotificationsPage', () => {
     expect(screen.getByText('No notifications yet')).toBeInTheDocument();
   });
 
+  it('keeps older unread history reachable after an empty cached first page', async () => {
+    const olderUnread = { ...sampleNotifications[1], readAt: null };
+    records = [sampleNotifications[0], olderUnread];
+    const original = mocks.apiFetch.getMockImplementation()!;
+    mocks.apiFetch.mockImplementation((path: string, ...args: unknown[]) => {
+      if (path === '/notifications?filter=unread')
+        return Promise.resolve({ items: [], nextCursor: unreadId });
+      if (path === `/notifications?filter=unread&cursor=${unreadId}`)
+        return Promise.resolve({ items: [olderUnread], nextCursor: null });
+      return original(path, ...args);
+    });
+
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole('button', { name: /Output ready for your review/ });
+    await user.click(screen.getByRole('tab', { name: /Unread/ }));
+
+    const loadOlder = await screen.findByRole('button', { name: 'Load older notifications' });
+    expect(loadOlder).toBeVisible();
+    expect(screen.queryByText("You're all caught up")).not.toBeInTheDocument();
+    await user.click(loadOlder);
+    expect(await screen.findByRole('button', { name: /You were assigned as Project Lead/ })).toBeVisible();
+  });
+
   it('filters populated All and Unread lists with distinct unread styling', async () => {
     const user = userEvent.setup();
     renderPage();
