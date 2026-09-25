@@ -910,6 +910,83 @@
   width: min(100%, 640px);
 }
 
+.registry-department-members-dialog {
+  width: min(100%, 560px);
+}
+
+.registry-department-members-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #ece4de;
+}
+
+.registry-department-members-header h2 {
+  margin: 4px 0 0;
+  color: #302925;
+  font-size: 20px;
+}
+
+.registry-department-members-header > div > p:last-child {
+  margin: 5px 0 0;
+  color: #948780;
+  font-size: 9px;
+}
+
+.registry-department-members-list {
+  display: grid;
+  max-height: min(430px, 52dvh);
+  overflow-y: auto;
+  margin-top: 8px;
+  scrollbar-width: thin;
+}
+
+.registry-department-member {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 6px;
+  border-bottom: 1px solid #f0e8e3;
+}
+
+.registry-department-member > span {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #fff0ea;
+  color: #cb4d22;
+  font: 800 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.registry-department-member > div {
+  min-width: 0;
+}
+
+.registry-department-member strong,
+.registry-department-member small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.registry-department-member strong {
+  color: #403733;
+  font-size: 10px;
+}
+
+.registry-department-member small {
+  margin-top: 3px;
+  color: #998c84;
+  font-size: 7.5px;
+}
+
+
 .registry-remove-dialog {
   width: min(100%, 470px);
 }
