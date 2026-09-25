@@ -460,7 +460,7 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  height: 72px;
+  height: 80px;
 }
 .schedule-calendar-time-head,
 .schedule-calendar-day-head {
@@ -477,11 +477,11 @@
   font-weight: 800;
 }
 .schedule-calendar-day-head strong {
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.3;
 }
 .schedule-calendar-day-head small {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.35;
   color: #625750;
 }
@@ -490,11 +490,11 @@
   color: #5a4f49;
 }
 .schedule-calendar-day-head.rest-day span {
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.15;
 }
 .schedule-calendar-editing .editor-day-header span {
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.25;
 }
 .schedule-time-axis {
@@ -507,7 +507,7 @@
   padding: 8px 9px;
   background: #fffaf6;
   color: #615750;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 750;
   line-height: 1.4;
   white-space: nowrap;
@@ -526,7 +526,7 @@
 }
 .schedule-calendar-block small {
   margin-top: 4px;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.25;
   white-space: normal;
 }
@@ -551,3 +551,5 @@
     display: none;
   }
 }
+
+.schedule-calendar-block.short small { display: none; }
