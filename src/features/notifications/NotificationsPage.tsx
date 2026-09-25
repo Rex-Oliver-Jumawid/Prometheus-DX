@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Notification } from '../../../shared/contracts/notification';
@@ -151,19 +151,19 @@ export function NotificationsPage() {
   const navigate = useNavigate();
   const accessToken = session?.access_token;
   const [filter, setFilter] = useState<NotificationFilter>('all');
-  const all = useQuery({
+  const all = useInfiniteQuery({
     ...notificationListQuery('all', accessToken),
     enabled: Boolean(accessToken),
   });
-  const unread = useQuery({
+  const unread = useInfiniteQuery({
     ...notificationListQuery('unread', accessToken),
     enabled: filter === 'unread' && Boolean(accessToken),
   });
-  const mentions = useQuery({
+  const mentions = useInfiniteQuery({
     ...notificationListQuery('mentions', accessToken),
     enabled: filter === 'mentions' && Boolean(accessToken),
   });
-  const projects = useQuery({
+  const projects = useInfiniteQuery({
     ...notificationListQuery('projects', accessToken),
     enabled: filter === 'projects' && Boolean(accessToken),
   });
@@ -181,10 +181,10 @@ export function NotificationsPage() {
         : filter === 'mentions'
           ? mentions
           : projects;
-  const count =
-    unreadCount.data?.count ??
-    all.data?.items.filter((item) => !item.readAt).length ??
-    0;
+  const allItems = all.data?.pages.flatMap((page) => page.items) ?? [];
+  const activeItems = active.data?.pages.flatMap((page) => page.items) ?? [];
+  const count = unreadCount.data?.count ??
+    allItems.filter((item) => !item.readAt).length;
   const error = markRead.error ?? markAllRead.error;
 
   const openNotification = async (notification: Notification, path: string) => {
@@ -235,7 +235,7 @@ export function NotificationsPage() {
           >
             All
             <span className="notifications-filter-count">
-              {all.data?.items.length ?? '…'}
+              {all.data ? allItems.length + (all.hasNextPage ? '+' : '') : '…'}
             </span>
           </button>
           <button
@@ -261,7 +261,9 @@ export function NotificationsPage() {
           >
             Mentions
             <span className="notifications-filter-count">
-              {all.data?.items.filter((item) => item.type === 'VISIWORK_MENTION').length ?? '…'}
+              {all.data ? allItems.filter((item) =>
+                item.type === 'VISIWORK_MENTION' || item.type === 'PROJECT_CHAT_MENTION',
+              ).length + (all.hasNextPage ? '+' : '') : '…'}
             </span>
           </button>
           <button
@@ -275,7 +277,9 @@ export function NotificationsPage() {
           >
             Projects
             <span className="notifications-filter-count">
-              {all.data?.items.filter((item) => item.type !== 'VISIWORK_MENTION').length ?? '…'}
+              {all.data ? allItems.filter((item) =>
+                item.type !== 'VISIWORK_MENTION' && item.type !== 'PROJECT_CHAT_MENTION',
+              ).length + (all.hasNextPage ? '+' : '') : '…'}
             </span>
           </button>
         </div>
@@ -295,7 +299,7 @@ export function NotificationsPage() {
       >
         {active.isPending ? (
           <NotificationsListSkeleton />
-        ) : active.isError ? (
+        ) : active.isError && !active.data ? (
           <div className="notifications-state error" role="alert">
             <h2>Notifications could not be loaded</h2>
             <p>{active.error.message}</p>
@@ -303,7 +307,7 @@ export function NotificationsPage() {
               Try again
             </button>
           </div>
-        ) : active.data.items.length === 0 ? (
+        ) : activeItems.length === 0 ? (
           <div className="notifications-state empty">
             <h2>
               {filter === 'all'
@@ -330,8 +334,9 @@ export function NotificationsPage() {
             )}
           </div>
         ) : (
+          <>
           <ol className="notifications-list" aria-label="Notifications">
-            {active.data.items.map((notification) => (
+            {activeItems.map((notification) => (
               <NotificationRow
                 key={notification.id}
                 notification={notification}
@@ -343,6 +348,21 @@ export function NotificationsPage() {
               />
             ))}
           </ol>
+          {active.hasNextPage && (
+            <div className="notifications-load-more">
+              <button
+                type="button"
+                onClick={() => void active.fetchNextPage()}
+                disabled={active.isFetchingNextPage}
+              >
+                {active.isFetchingNextPage ? 'Loading…' : 'Load older notifications'}
+              </button>
+            </div>
+          )}
+          {active.isFetchNextPageError && (
+            <p role="alert">Older notifications could not be loaded. Try again.</p>
+          )}
+          </>
         )}
       </div>
     </section>
