@@ -80,7 +80,7 @@ The current Project collaboration implementation includes:
 - Project Lead-only announcement pinning and unpinning.
 - a compact Project Members rail.
 - Project Activity using display-safe ActivityLog metadata.
-- company-visible normal Project activity for every active authorized member.
+- Project-wide normal activity for Administrators, the Project Lead, and Project Members, including events authored by other participants.
 - Project Lead and member filtering controls in the Project Activity interface.
 - loading, empty, retry, and skeleton states for collaboration surfaces.
 - automatic polling and query invalidation for Project Chat.
@@ -190,7 +190,9 @@ Project Chat mention notifications navigate to `/projects/:projectId?tab=chat&me
 
 ## Security and Authorization
 
-All active authorized Prometheus members may read normal company-visible Project Chat and Project Activity.
+All active authorized Prometheus members may read normal company-visible Project Chat.
+
+Project Activity is accessible to Administrators, the Project Lead, and Project Members. Both Leads and Members may see every display-safe activity event in their Project, not just events they authored. Non-project Members cannot access a Project's Activity endpoint.
 
 Only the Project Lead or a Project Member may send general Project Chat messages.
 
@@ -242,7 +244,7 @@ Automated coverage exists for:
 - Project Chat mention validation.
 - Project Chat mention notification creation and synchronization.
 - Project announcement posting and Lead-only pinning.
-- company-visible display-safe Project Activity.
+- participant-visible display-safe Project Activity with nonmember API denial.
 - ActivityLog project isolation and pagination.
 - React chat composer behavior.
 - Enter to send and Shift+Enter for a newline.
@@ -376,7 +378,7 @@ Apply the same posting boundary to Project announcements and reserve pinning for
 
 Normal Project visibility remains company-wide while collaboration mutation authority continues to come from canonical Project relationships.
 
-### P9-D06 - Keep normal Project Activity company-visible and sanitize metadata
+### P9-D06 - Give Project participants shared activity visibility and sanitize metadata
 
 **Status:** Accepted
 
@@ -386,17 +388,17 @@ Normal Project visibility remains company-wide while collaboration mutation auth
 
 #### Root cause / constraint
 
-The canonical user flow states that normal Project activity is company-visible, while ActivityLog metadata can contain fields that are not appropriate to expose broadly.
+Release Milestone 2 confirms that non-Lead Project Members see activity created by other participants. Unlike company-visible read-only Project Chat, Project Activity is restricted to Project participants and Administrators, and ActivityLog metadata can contain private details.
 
 #### Decision
 
-Return the Project-wide activity trail to every active authorized member.
+Return the same Project-wide activity trail to Administrators, the Project Lead, and Project Members regardless of event author. Deny the Activity API to unrelated non-project Members. Hide the Activity tab for those viewers while retaining the separate company-visible Project Chat read rule.
 
 Expose only action-specific allow-listed display metadata instead of raw ActivityLog metadata.
 
 #### Result
 
-Project transparency matches the canonical access model without leaking private submission text through the activity endpoint.
+Participants have a shared activity timeline without exposing that timeline to nonmembers or leaking private submission text through the activity endpoint.
 
 ### P9-D07 - Preserve Outcome scope without mixing it into general Project Chat
 
@@ -463,9 +465,9 @@ Keep common semantics aligned, especially author mutation rules, mention lifecyc
 
 A shared collaboration abstraction should be introduced only if it reduces duplication without obscuring room-specific authorization.
 
-Project Activity currently provides the same display-safe company-visible event set to Project Leads and other authorized viewers.
+Project Activity provides the same display-safe event set to Administrators, Project Leads, and Project Members. Ordinary non-project viewers retain company-visible Project Chat, not Project Activity.
 
-If Lead-only activity detail is added later, it should be additive and explicitly documented rather than reducing normal company-visible activity.
+If Lead-only activity detail is added later, it should be additive and explicitly documented rather than reducing participants' shared Project-wide activity.
 
 ## Lessons from the Phase
 
@@ -475,7 +477,7 @@ Durable message state should be correct before realtime delivery is optimized.
 
 Mention notifications must follow the lifecycle of the mention relationship instead of only the initial message-create event.
 
-Company-visible activity can remain useful without exposing raw audit metadata.
+Shared participant activity can remain useful without exposing raw audit metadata.
 
 Keeping the canonical nullable Outcome scope in ProjectMessage avoids coupling general Project Chat to future Outcome discussion.
 
