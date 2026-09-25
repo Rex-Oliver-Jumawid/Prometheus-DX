@@ -135,8 +135,8 @@ export function ProjectChatPanel({
     // Active chats still poll for updates without flashing a loading screen.
     staleTime: 60_000,
     gcTime: 15 * 60_000,
-    refetchInterval: 3_000,
-    refetchIntervalInBackground: true,
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: false,
     refetchOnWindowFocus: 'always',
     refetchOnReconnect: 'always',
   });
