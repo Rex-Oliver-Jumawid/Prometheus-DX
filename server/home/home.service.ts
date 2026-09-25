@@ -50,6 +50,7 @@ export class HomeService {
             select: {
               id: true,
               fullName: true,
+              profileImagePath: true,
               department: {
                 select: { id: true, name: true, shortLabel: true },
               },
