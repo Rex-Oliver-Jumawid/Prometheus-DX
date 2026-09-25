@@ -30,6 +30,7 @@ export class TeamService {
         id: true,
         fullName: true,
         position: true,
+        profileImagePath: true,
         visiworkDepartmentId: true,
         createdAt: true,
         department: {
@@ -86,6 +87,7 @@ export class TeamService {
         id: member.id,
         fullName: member.fullName,
         position: member.position,
+        profileImagePath: member.profileImagePath,
         department: member.department,
         visiworkDepartmentId: member.visiworkDepartmentId,
         workingNow,

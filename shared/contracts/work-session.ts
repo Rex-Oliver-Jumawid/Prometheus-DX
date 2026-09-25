@@ -94,6 +94,7 @@ export const TeamWorkMemberSchema = z.object({
   id: z.string().uuid(),
   fullName: z.string(),
   position: z.string().nullable(),
+  profileImagePath: z.string().nullable(),
   department: z.object({
     id: z.string().uuid(),
     name: z.string(),

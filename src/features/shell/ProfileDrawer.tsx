@@ -8,6 +8,7 @@ import {
 import { apiFetch } from '../../lib/api';
 import { getSupabaseClient } from '../../lib/supabase';
 import { useAuth } from '../auth/auth-context';
+import { teamWorkKeys } from '../work-sessions/work-session-queries';
 import { initialsFor } from './member-display';
 import { useShellStore } from './shell-store';
 
@@ -189,6 +190,7 @@ export function ProfileDrawer({ member }: { member: CurrentMember }) {
         ['current-member', auth.session?.user.id],
         updated,
       );
+      void queryClient.invalidateQueries({ queryKey: teamWorkKeys.all });
       setOpen(false);
     },
   });

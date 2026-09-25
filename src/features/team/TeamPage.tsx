@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/auth-context';
 import { formatClock } from '../schedule/schedule-format';
@@ -13,6 +14,40 @@ function initials(name: string): string {
     .map((part) => part[0])
     .join('')
     .toUpperCase();
+}
+
+function TeamAvatar({
+  fullName,
+  profileImagePath,
+}: {
+  fullName: string;
+  profileImagePath: string | null;
+}) {
+  const [failedImagePath, setFailedImagePath] = useState<string | null>(null);
+  const imageSrc =
+    profileImagePath && failedImagePath !== profileImagePath
+      ? profileImagePath
+      : null;
+
+  return (
+    <span
+      className={`team-avatar${imageSrc ? ' has-image' : ''}`}
+      role="img"
+      aria-label={`${fullName} profile picture`}
+    >
+      {imageSrc ? (
+        <img
+          src={imageSrc}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailedImagePath(imageSrc)}
+        />
+      ) : (
+        initials(fullName)
+      )}
+    </span>
+  );
 }
 
 function memberSubtitle(
@@ -155,9 +190,10 @@ export function TeamPage() {
             <article className="team-card" key={member.id}>
               <div className="team-card-head">
                 <div className="team-person">
-                  <span className="team-avatar" aria-hidden="true">
-                    {initials(member.fullName)}
-                  </span>
+                  <TeamAvatar
+                    fullName={member.fullName}
+                    profileImagePath={member.profileImagePath}
+                  />
                   <div>
                     <strong title={member.fullName}>{member.fullName}</strong>
                     <span

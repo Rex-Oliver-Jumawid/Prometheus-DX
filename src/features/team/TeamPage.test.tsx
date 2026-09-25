@@ -57,6 +57,7 @@ describe('TeamPage', () => {
           id: '11111111-1111-4111-8111-111111111111',
           fullName: 'Member One',
           position: 'Designer',
+          profileImagePath: 'https://example.com/member-one.jpg',
           department: {
             id: '22222222-2222-4222-8222-222222222222',
             name: 'Creative',
@@ -88,6 +89,9 @@ describe('TeamPage', () => {
       ),
     ).toBeInTheDocument();
     expect(await screen.findByText('Member One')).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', { name: 'Member One profile picture' }).querySelector('img'),
+    ).toHaveAttribute('src', 'https://example.com/member-one.jpg');
     expect(screen.getByText('Designer / Creative')).toBeInTheDocument();
     expect(screen.getByText('Working Now')).toBeInTheDocument();
     expect(screen.getByText(/9:00 AM.*1:00 PM/)).toBeInTheDocument();
@@ -119,6 +123,7 @@ describe('TeamPage', () => {
           id: '11111111-1111-4111-8111-111111111111',
           fullName: 'Member One',
           position: null,
+          profileImagePath: null,
           department: {
             id: '22222222-2222-4222-8222-222222222222',
             name: 'Creative',
@@ -135,6 +140,11 @@ describe('TeamPage', () => {
     renderPage();
 
     expect(await screen.findByText('Member One')).toBeInTheDocument();
+    const fallbackAvatar = screen.getByRole('img', {
+      name: 'Member One profile picture',
+    });
+    expect(fallbackAvatar).toHaveTextContent('MO');
+    expect(fallbackAvatar.querySelector('img')).toBeNull();
     expect(screen.getByText('Creative')).toBeInTheDocument();
     expect(screen.getByText('Timed Out')).toBeInTheDocument();
     expect(screen.getByText('Rest day / no schedule')).toBeInTheDocument();

@@ -12,6 +12,7 @@ describe('TeamService', () => {
             id: '11111111-1111-4111-8111-111111111111',
             fullName: 'Member One',
             position: 'Designer',
+            profileImagePath: 'https://example.com/member-one.jpg',
             visiworkDepartmentId: null,
             createdAt: new Date('2026-09-01T00:00:00.000Z'),
             department: {
@@ -56,6 +57,7 @@ describe('TeamService', () => {
     expect(result.members[0]).toMatchObject({
       fullName: 'Member One',
       position: 'Designer',
+      profileImagePath: 'https://example.com/member-one.jpg',
       department: { name: 'Creative' },
       visiworkDepartmentId: null,
       workingNow: true,
