@@ -25,6 +25,15 @@ export const RemoveMemberResponseSchema = z.object({
   id: z.string().uuid(),
 });
 
+export const CompleteAccountSetupRequestSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Enter a valid email address.'),
+  password: z.string().min(8, 'Use at least 8 characters.'),
+});
+
+export const CompleteAccountSetupResponseSchema = z.object({
+  readyToSignIn: z.literal(true),
+});
+
 const DepartmentDetailsRequestSchema = z.object({
   name: z.string().trim().min(1, 'Enter a department name.'),
   shortLabel: z
@@ -49,6 +58,12 @@ export type DeleteDepartmentResponse = z.infer<
   typeof DeleteDepartmentResponseSchema
 >;
 export type RemoveMemberResponse = z.infer<typeof RemoveMemberResponseSchema>;
+export type CompleteAccountSetupRequest = z.infer<
+  typeof CompleteAccountSetupRequestSchema
+>;
+export type CompleteAccountSetupResponse = z.infer<
+  typeof CompleteAccountSetupResponseSchema
+>;
 export type CreateDepartmentRequest = z.infer<
   typeof CreateDepartmentRequestSchema
 >;
