@@ -459,6 +459,97 @@ function RemoveDepartmentDialog({
   );
 }
 
+function DepartmentMembersDialog({
+  department,
+  members,
+  onClose,
+  onEdit,
+}: {
+  department: RegistryDepartment;
+  members: RegistryMember[];
+  onClose: () => void;
+  onEdit: () => void;
+}) {
+  const departmentMembers = members.filter(
+    (member) => member.departmentId === department.id,
+  );
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="registry-dialog-backdrop"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        className="registry-dialog registry-department-members-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="registry-department-members-title"
+      >
+        <header className="registry-department-members-header">
+          <div>
+            <p className="registry-kicker">DEPARTMENT MEMBERS</p>
+            <h2 id="registry-department-members-title">{department.name}</h2>
+            <p>
+              {departmentMembers.length} {departmentMembers.length === 1 ? 'member' : 'members'} assigned to {department.shortLabel}.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="registry-icon-button"
+            aria-label="Close department members"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </header>
+        <div className="registry-department-members-list">
+          {departmentMembers.length ? (
+            departmentMembers.map((member) => (
+              <div className="registry-department-member" key={member.id}>
+                <span aria-hidden="true">{memberInitials(member.fullName)}</span>
+                <div>
+                  <strong>{member.fullName}</strong>
+                  <small>{member.position ?? 'Member'} · {member.email}</small>
+                </div>
+                <b className={'registry-badge status ' + member.status.toLowerCase()}>
+                  {member.status}
+                </b>
+              </div>
+            ))
+          ) : (
+            <p className="registry-form-note">No members are assigned to this department.</p>
+          )}
+        </div>
+        <footer className="registry-dialog-actions">
+          <button type="button" className="registry-secondary-button" onClick={onClose}>
+            Close
+          </button>
+          <button type="button" className="registry-primary-button" onClick={onEdit}>
+            Edit department
+          </button>
+        </footer>
+      </section>
+    </div>,
+    document.body,
+  );
+}
+
 function MemberDialog({
   state,
   departments,
@@ -961,6 +1052,8 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
     useState<MemberDialogState | null>(null);
   const [departmentToRemove, setDepartmentToRemove] =
     useState<RegistryDepartment | null>(null);
+  const [departmentToView, setDepartmentToView] =
+    useState<RegistryDepartment | null>(null);
   const [memberToRemove, setMemberToRemove] = useState<RegistryMember | null>(null);
   const [departmentSearch, setDepartmentSearch] = useState('');
   const [memberSearch, setMemberSearch] = useState('');
@@ -1375,8 +1468,8 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
                   <button
                     type="button"
                     className="registry-department-main"
-                    onClick={() => openEdit(department)}
-                    aria-label={`Edit ${department.name}`}
+                    onClick={() => setDepartmentToView(department)}
+                    aria-label={`View members in ${department.name}`}
                   >
                     <span
                       className="registry-department-icon"
@@ -1646,6 +1739,18 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
         </section>
       </div>
 
+      {departmentToView && (
+        <DepartmentMembersDialog
+          department={departmentToView}
+          members={members.data ?? []}
+          onClose={() => setDepartmentToView(null)}
+          onEdit={() => {
+            const department = departmentToView;
+            setDepartmentToView(null);
+            openEdit(department);
+          }}
+        />
+      )}
       {dialogState && (
         <DepartmentDialog
           state={dialogState}
