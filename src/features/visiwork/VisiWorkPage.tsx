@@ -11,6 +11,7 @@ import {
   useState,
   type FormEvent,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { OutcomeWorkSchema, type OutcomeWork } from '../../../shared/contracts/outcome-work';
 import {
@@ -1016,7 +1017,8 @@ function DepartmentCard({
         </button>
       </footer>
     </article>
-      {showAllMembers && (
+      {showAllMembers &&
+        createPortal(
         <div
           className="visiwork-members-modal-backdrop"
           role="presentation"
@@ -1062,7 +1064,8 @@ function DepartmentCard({
               ))}
             </div>
           </section>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
