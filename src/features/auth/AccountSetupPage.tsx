@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { apiFetch, ApiRequestError } from '../../lib/api';
 import { CompleteAccountSetupResponseSchema } from '../../../shared/contracts/registry';
@@ -55,6 +55,7 @@ function isGmailAddress(email: string) {
 export function AccountSetupPage() {
   const auth = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const invitedEmail =
     new URLSearchParams(location.search).get('email')?.trim().toLowerCase() ??
     '';
