@@ -75,6 +75,7 @@ describe.runIf(runDatabaseIntegration)(
     it('creates, edits, and removes blocks with fresh database reads', async () => {
       await service.replaceMemberSchedule(owner, owner.id, {
         targetWeeklyMinutes: 960,
+        restDays: ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'],
         blocks: [
           { weekday: 'MONDAY', startTime: '09:00', endTime: '17:00' },
           { weekday: 'TUESDAY', startTime: '09:00', endTime: '17:00' },
@@ -84,6 +85,7 @@ describe.runIf(runDatabaseIntegration)(
       await expect(service.getMemberSchedule(owner.id)).resolves.toMatchObject({
         memberId: owner.id,
         targetWeeklyMinutes: 960,
+        restDays: ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'],
         blocks: [
           { weekday: 'MONDAY', startTime: '09:00', endTime: '17:00' },
           { weekday: 'TUESDAY', startTime: '09:00', endTime: '17:00' },
@@ -92,19 +94,23 @@ describe.runIf(runDatabaseIntegration)(
 
       await service.replaceMemberSchedule(owner, owner.id, {
         targetWeeklyMinutes: 240,
+        restDays: [],
         blocks: [{ weekday: 'MONDAY', startTime: '08:00', endTime: '12:00' }],
       });
       await expect(service.getMemberSchedule(owner.id)).resolves.toMatchObject({
         targetWeeklyMinutes: 240,
+        restDays: [],
         blocks: [{ weekday: 'MONDAY', startTime: '08:00', endTime: '12:00' }],
       });
 
       await service.replaceMemberSchedule(owner, owner.id, {
         targetWeeklyMinutes: 0,
+        restDays: ['MONDAY', 'TUESDAY', 'THURSDAY', 'SUNDAY'],
         blocks: [],
       });
       await expect(service.getMemberSchedule(owner.id)).resolves.toMatchObject({
         targetWeeklyMinutes: 0,
+        restDays: ['MONDAY', 'TUESDAY', 'THURSDAY', 'SUNDAY'],
         blocks: [],
       });
     });
