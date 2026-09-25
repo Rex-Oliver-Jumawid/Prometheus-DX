@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import type { ApiErrorResponse } from '../../../shared/contracts/api-error';
+import { safeRoute } from '../middleware/request-metrics';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
