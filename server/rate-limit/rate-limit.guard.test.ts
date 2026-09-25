@@ -1,10 +1,12 @@
 import { HttpException, UnauthorizedException } from '@nestjs/common';
+import { GUARDS_METADATA } from '@nestjs/common/constants';
+import { ProjectAnnouncementController } from '../projects/project-announcement.controller';
 import type { ExecutionContext } from '@nestjs/common';
 import type { Reflector } from '@nestjs/core';
 import { describe, expect, it, vi } from 'vitest';
 import type { PrismaService } from '../database/prisma.service';
 import { ScopedRateLimitGuard } from './rate-limit.guard';
-import type { RateLimitPolicy } from './rate-limit.decorator';
+import { RATE_LIMIT_METADATA, type RateLimitPolicy } from './rate-limit.decorator';
 
 const policy: RateLimitPolicy = { scope: 'chat-send', limit: 2, windowSeconds: 60 };
 const memberId = '22222222-2222-4222-8222-222222222222';
@@ -69,4 +71,19 @@ describe('ScopedRateLimitGuard', () => {
     prisma.$queryRaw.mockRejectedValueOnce(new Error('database unavailable'));
     await expect(guard.canActivate(context)).rejects.toThrow('database unavailable');
   });
+  it('protects company-wide announcement posting and pinning with separate quotas', () => {
+    const post = Reflect.getMetadata(
+      RATE_LIMIT_METADATA, ProjectAnnouncementController.prototype.create,
+    ) as RateLimitPolicy;
+    const pin = Reflect.getMetadata(
+      RATE_LIMIT_METADATA, ProjectAnnouncementController.prototype.setPinned,
+    ) as RateLimitPolicy;
+    expect(post).toEqual({ scope: 'project-announcement-create', limit: 6, windowSeconds: 60 });
+    expect(pin).toEqual({ scope: 'project-announcement-pin', limit: 20, windowSeconds: 60 });
+    expect(Reflect.getMetadata(GUARDS_METADATA, ProjectAnnouncementController.prototype.create))
+      .toContain(ScopedRateLimitGuard);
+    expect(Reflect.getMetadata(GUARDS_METADATA, ProjectAnnouncementController.prototype.setPinned))
+      .toContain(ScopedRateLimitGuard);
+  });
+
 });
