@@ -7,6 +7,7 @@ import {
   type Weekday,
 } from '../../../shared/contracts/schedule';
 import { formatClock } from './schedule-format';
+import { calendarLaneDivider, calendarLaneStyle, layoutScheduleLanes } from './schedule-lanes';
 import {
   EDITOR_END_MINUTES,
   EDITOR_START_MINUTES,
@@ -24,12 +25,13 @@ const DAY_NAMES: Record<Weekday, string> = {
   SATURDAY: 'Saturday',
   SUNDAY: 'Sunday',
 };
-const ROW_HEIGHT = 44;
-const DAY_WIDTH = 127;
-const TIME_WIDTH = 70;
+const ROW_HEIGHT = 54;
+const DAY_WIDTH = 148;
+const TIME_WIDTH = 84;
 
 type Entry = {
   key: string;
+  memberId: string;
   name: string;
   start: number;
   end: number;
@@ -86,6 +88,7 @@ export function EditableTeamCalendar({
     .filter((person) => person.id !== currentMemberId)
     .flatMap((person) =>
       (person.schedule?.blocks ?? []).map((block) => ({
+        memberId: person.id,
         name: person.fullName,
         weekday: block.weekday,
         start: clockTimeToMinutes(block.startTime),
@@ -256,6 +259,7 @@ export function EditableTeamCalendar({
                   .filter((entry) => entry.weekday === day)
                   .map((entry) => ({
                     key: entry.key,
+                    memberId: entry.memberId,
                     name: entry.name,
                     start: entry.start,
                     end: entry.end,
@@ -265,6 +269,7 @@ export function EditableTeamCalendar({
                   block.weekday === day
                     ? [{
                         key: 'own-' + index,
+                        memberId: currentMemberId ?? '__schedule_editor_current_member__',
                         name: currentMemberName,
                         start: clockTimeToMinutes(block.startTime),
                         end: clockTimeToMinutes(block.endTime),
@@ -275,34 +280,38 @@ export function EditableTeamCalendar({
               ]
                 .filter((entry) => entry.end > EDITOR_START_MINUTES && entry.start < 24 * 60)
                 .sort((a, b) => a.start - b.start || a.end - b.end || a.name.localeCompare(b.name));
-              const laneEnds: number[] = [];
-              const placed = entries.map((entry) => {
-                let lane = laneEnds.findIndex((end) => end <= entry.start);
-                if (lane < 0) lane = laneEnds.length;
-                laneEnds[lane] = entry.end;
-                return { ...entry, lane };
-              });
-              const laneCount = Math.max(1, laneEnds.length);
+              // Match the reference: if members overlap at any time today, give
+              // each member one stable lane for every block throughout the day.
+              const ownId = currentMemberId ?? '__schedule_editor_current_member__';
+              const memberOrder = [...members.map((person) => person.id), ownId];
+              const { placed, laneCount, split } = layoutScheduleLanes(entries, memberOrder);
               return (
                 <div
                   className={'schedule-calendar-day' + (restDays.has(day) ? ' rest-day' : '')}
                   aria-label={DAY_NAMES[day]}
                   key={day}
                 >
+                  {split && Array.from({ length: laneCount - 1 }, (_, index) => (
+                    <span
+                      key={'lane-guide-' + index}
+                      className="schedule-calendar-lane-guide"
+                      style={{ left: calendarLaneDivider(index + 1, laneCount) }}
+                      aria-hidden="true"
+                    />
+                  ))}
                   {placed.map((entry) => {
                     const style: CSSProperties = {
-                      top: ((Math.max(entry.start, EDITOR_START_MINUTES) - EDITOR_START_MINUTES) / 60) * ROW_HEIGHT + 6,
-                      height: Math.max(12, ((Math.min(entry.end, 24 * 60) - Math.max(entry.start, EDITOR_START_MINUTES)) / 60) * ROW_HEIGHT - 12),
-                      left: 'calc(' + ((100 / laneCount) * entry.lane) + '% + 6px)',
-                      width: 'calc(' + (100 / laneCount) + '% - 12px)',
+                      top: ((Math.max(entry.start, EDITOR_START_MINUTES) - EDITOR_START_MINUTES) / 60) * ROW_HEIGHT + 4,
+                      height: Math.max(12, ((Math.min(entry.end, 24 * 60) - Math.max(entry.start, EDITOR_START_MINUTES)) / 60) * ROW_HEIGHT - 8),
+                      ...calendarLaneStyle(entry.lane, laneCount),
                     };
                     const own = entry.ownIndex !== null;
                     const isSelected = own && entry.ownIndex === selectedIndex;
                     return (
                       <div
-                        role={own ? 'button' : undefined}
+                        role={own ? 'button' : 'group'}
                         tabIndex={own ? 0 : undefined}
-                        aria-label={own ? 'Select ' + DAY_NAMES[day] + ' schedule block, ' + formatClock(editorClock(entry.start)) + ' to ' + formatClock(editorClock(entry.end)) : undefined}
+                        aria-label={own ? 'Select ' + DAY_NAMES[day] + ' schedule block, ' + formatClock(editorClock(entry.start)) + ' to ' + formatClock(editorClock(entry.end)) : entry.name + ': ' + formatClock(editorClock(entry.start)) + ' to ' + formatClock(editorClock(entry.end))}
                         aria-pressed={own ? isSelected : undefined}
                         onKeyDown={own ? (event) => {
                           if (event.key === 'Enter' || event.key === ' ') {
@@ -311,7 +320,7 @@ export function EditableTeamCalendar({
                           }
                         } : undefined}
                         onPointerDown={own && !disabled ? (event) => startGesture(event, entry.ownIndex!, 'move') : undefined}
-                        className={'schedule-calendar-block' + (own ? ' mine editable' : '') + (isSelected ? ' selected' : '') + (own && entry.ownIndex === draggingIndex ? ' dragging' : '') + (100 / laneCount < 34 ? ' thin' : '')}
+                        className={'schedule-calendar-block' + (own ? ' mine editable' : '') + (isSelected ? ' selected' : '') + (own && entry.ownIndex === draggingIndex ? ' dragging' : '') + (entry.end - entry.start < 90 ? ' short' : '')}
                         key={entry.key}
                         style={style}
                         title={entry.name + ': ' + formatClock(editorClock(entry.start)) + ' - ' + formatClock(editorClock(entry.end))}

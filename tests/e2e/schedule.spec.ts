@@ -11,6 +11,7 @@ const hasCredentials = Boolean(
 
 type OriginalSchedule = {
   targetWeeklyMinutes: number;
+  restDays: Weekday[];
   blocks: Array<{ weekday: Weekday; startTime: Date; endTime: Date }>;
 } | null;
 
@@ -37,6 +38,7 @@ test.beforeAll(async () => {
   originalSchedule = member.schedule
     ? {
         targetWeeklyMinutes: member.schedule.targetWeeklyMinutes,
+        restDays: [...member.schedule.restDays],
         blocks: member.schedule.blocks.map((block) => ({
           weekday: block.weekday,
           startTime: block.startTime,
@@ -104,6 +106,7 @@ test.afterAll(async () => {
         data: {
           memberId: currentMemberId,
           targetWeeklyMinutes: originalSchedule.targetWeeklyMinutes,
+          restDays: originalSchedule.restDays,
           blocks: { create: originalSchedule.blocks },
         },
       });
@@ -167,7 +170,7 @@ test('member configures, refreshes, edits, removes, and returns from Shifts to T
   ).toHaveCount(0);
 
   await page.reload();
-  await expect(page.getByText('8:00 AM - 12:00 PM')).toBeVisible();
+  await expect(page.getByRole('group', { name: /8:00 AM to 12:00 PM/ })).toBeVisible();
   await expect(
     prisma.scheduleBlock.count({
       where: { schedule: { memberId: currentMemberId } },
@@ -194,7 +197,7 @@ test('member configures, refreshes, edits, removes, and returns from Shifts to T
     page.getByRole('heading', { name: 'Configure My Schedule' }),
   ).toHaveCount(0);
   await page.reload();
-  await expect(page.getByText('8:00 AM - 1:00 PM')).toBeVisible();
+  await expect(page.getByRole('group', { name: /8:00 AM to 1:00 PM/ })).toBeVisible();
 
   await page
     .getByRole('button', { name: 'Configure My Schedule' })

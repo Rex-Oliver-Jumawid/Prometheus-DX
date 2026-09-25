@@ -1354,11 +1354,14 @@ MemberSchedule
 id
 member_id
 target_weekly_minutes
+rest_days (explicit weekdays; an empty array means zero rest days)
 created_at
 updated_at
 ```
 
 One active schedule should normally exist per Member.
+Rest-day preferences persist independently of time blocks, so empty workdays and explicitly zero rest days survive reloads.
+On migration, existing schedules receive the last two unscheduled weekdays to preserve legacy behavior.
 
 ---
 

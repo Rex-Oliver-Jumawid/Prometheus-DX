@@ -97,11 +97,17 @@ export class ScheduleService {
       );
     }
 
+    // Older callers omitted rest days and relied on the last two unscheduled
+    // days. An explicit [] must remain [] and survive a save/reload.
+    const restDays = input.restDays ?? WEEKDAYS.filter(
+      (day) => !input.blocks.some((block) => block.weekday === day),
+    ).slice(-2);
+
     const schedule = await this.prisma.$transaction(async (database) => {
       const saved = await database.memberSchedule.upsert({
         where: { memberId },
-        create: { memberId, targetWeeklyMinutes: input.targetWeeklyMinutes },
-        update: { targetWeeklyMinutes: input.targetWeeklyMinutes },
+        create: { memberId, targetWeeklyMinutes: input.targetWeeklyMinutes, restDays },
+        update: { targetWeeklyMinutes: input.targetWeeklyMinutes, restDays },
       });
 
       await database.scheduleBlock.deleteMany({
@@ -151,6 +157,7 @@ export class ScheduleService {
       id: schedule.id,
       memberId: schedule.memberId,
       targetWeeklyMinutes: schedule.targetWeeklyMinutes,
+      restDays: schedule.restDays,
       blocks: [...schedule.blocks]
         .sort(
           (left, right) =>

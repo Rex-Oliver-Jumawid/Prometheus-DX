@@ -48,6 +48,7 @@ describe('ScheduleService', () => {
       id: '33333333-3333-4333-8333-333333333333',
       memberId: '11111111-1111-4111-8111-111111111111',
       targetWeeklyMinutes: 0,
+      restDays: ['TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
       createdAt: new Date('2026-09-18T00:00:00.000Z'),
       updatedAt: new Date('2026-09-18T01:00:00.000Z'),
       blocks: [],
@@ -65,10 +66,16 @@ describe('ScheduleService', () => {
 
     const result = await service.replaceMemberSchedule(member(), member().id, {
       targetWeeklyMinutes: 0,
+      restDays: ['TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
       blocks: [],
     });
 
     expect(transaction).toHaveBeenCalledOnce();
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({
+      create: expect.objectContaining({ restDays: ['TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'] }),
+      update: expect.objectContaining({ restDays: ['TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'] }),
+    }));
+    expect(result.restDays).toEqual(['TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY']);
     expect(deleteMany).toHaveBeenCalledWith({
       where: { scheduleId: '33333333-3333-4333-8333-333333333333' },
     });

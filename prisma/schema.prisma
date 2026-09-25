@@ -244,6 +244,7 @@ model MemberSchedule {
   id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   memberId            String          @unique @map("member_id") @db.Uuid
   targetWeeklyMinutes Int             @map("target_weekly_minutes")
+  restDays            Weekday[]       @default([]) @map("rest_days")
   createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt           DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
   member              Member          @relation(fields: [memberId], references: [id], onDelete: Cascade)

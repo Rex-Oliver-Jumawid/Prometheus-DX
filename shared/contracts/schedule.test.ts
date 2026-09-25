@@ -125,4 +125,11 @@ describe('schedule contracts', () => {
       }).success,
     ).toBe(false);
   });
+  it('accepts zero or four rest days and rejects duplicates and scheduled rest days', () => {
+    const input = { targetWeeklyMinutes: 240, blocks: [{ weekday: 'MONDAY', startTime: '09:00', endTime: '13:00' }] };
+    expect(UpdateScheduleRequestSchema.safeParse({ ...input, restDays: [] }).success).toBe(true);
+    expect(UpdateScheduleRequestSchema.safeParse({ ...input, restDays: ['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'] }).success).toBe(true);
+    expect(UpdateScheduleRequestSchema.safeParse({ ...input, restDays: ['SATURDAY', 'SATURDAY'] }).success).toBe(false);
+    expect(UpdateScheduleRequestSchema.safeParse({ ...input, restDays: ['MONDAY'] }).success).toBe(false);
+  });
 });

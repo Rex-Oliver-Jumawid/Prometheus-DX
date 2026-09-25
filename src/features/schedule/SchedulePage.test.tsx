@@ -247,8 +247,8 @@ describe('SchedulePage', () => {
     const sundayBlock = sunday!.querySelector('.schedule-calendar-block.mine');
     expect(sundayBlock).not.toBeNull();
     expect(sundayBlock).toHaveAttribute('title', 'Member One: 2:00 PM - 5:00 PM');
-    expect(sundayBlock).toHaveStyle({ top: '314px' });
-    expect((sundayBlock as HTMLElement).style.width).toContain('- 12px');
+    expect(sundayBlock).toHaveStyle({ top: '382px' });
+    expect((sundayBlock as HTMLElement).style.width).toContain('- 10px');
     expect(container.querySelectorAll('.schedule-calendar-head-row .rest-day')).toHaveLength(2);
     expect(container.querySelector('.schedule-calendar-day[aria-label="Saturday"]')).toHaveClass('rest-day');
   });
@@ -313,9 +313,7 @@ describe('SchedulePage', () => {
     expect(screen.getByRole('combobox', { name: 'Member' })).toHaveValue(
       '22222222-2222-4222-8222-222222222222',
     );
-    expect(
-      screen.getByText(/for Member Two\./),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Member work history')).toBeInTheDocument();
   });
 
   it('moves from Shifts into Team Schedule configuration and saves a block', async () => {
@@ -449,23 +447,18 @@ describe('SchedulePage', () => {
   });
 
 
-  it('shows a single completion action and keeps editing help collapsed', async () => {
+  it('keeps only the generator and time-block controls in schedule configuration', async () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByRole('heading', { name: "You haven't set your schedule yet" });
     await user.click(screen.getAllByRole('button', { name: 'Configure My Schedule' })[0]);
 
     expect(screen.getAllByRole('button', { name: 'Done configuring' })).toHaveLength(1);
-    expect(screen.queryByRole('button', { name: 'Save Schedule' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Generate initial schedule' })).toBeInTheDocument();
+    expect(screen.getByText('Fine-tune blocks using time inputs')).toBeInTheDocument();
+    expect(screen.queryByText('How to edit blocks')).not.toBeInTheDocument();
+    expect(screen.queryByText('How rest days are saved')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Weekly schedule progress')).toHaveTextContent('Target');
-    const restHelp = screen.getByText('How rest days are saved').closest('details');
-    expect(restHelp).not.toBeNull();
-    expect(restHelp).not.toHaveAttribute('open');
-    await user.click(screen.getByText('How rest days are saved'));
-    expect(restHelp).toHaveAttribute('open');
-    expect(screen.getByText(/Only recurring blocks and your weekly target are saved/)).toBeInTheDocument();
-    await user.click(screen.getByText('How to edit blocks'));
-    expect(screen.getByText(/Drag a block to change its day or time/)).toBeInTheDocument();
   });
 
   it('generates a weekly draft, selects a block, adjusts it and cancels without saving', async () => {
@@ -489,21 +482,25 @@ describe('SchedulePage', () => {
       p === '/schedule/me' && options?.method === 'PUT')).toBe(false);
   });
 
-  it('toggles rest days and rejects exceeding the configured limit', async () => {
+  it('synchronizes the rest-day count when a member clicks calendar day headers', async () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByRole('heading', { name: "You haven't set your schedule yet" });
     await user.click(screen.getAllByRole('button', { name: 'Configure My Schedule' })[0]);
-    await user.clear(screen.getByRole('spinbutton', { name: 'Hours per week' }));
-    await user.type(screen.getByRole('spinbutton', { name: 'Hours per week' }), '20');
     await user.click(screen.getByRole('button', { name: 'Generate initial schedule' }));
+    const count = screen.getByRole('spinbutton', { name: 'Rest days' });
+    expect(count).toHaveValue(2);
     await user.click(screen.getByRole('button', { name: /Saturday: rest day, make workday/ }));
-    expect(screen.getByText('Scheduled 24h / Target 20h')).toBeInTheDocument();
+    expect(count).toHaveValue(1);
     await user.click(screen.getByRole('button', { name: /Monday: workday, make rest day/ }));
-    expect(screen.getByText('Scheduled 20h / Target 20h')).toBeInTheDocument();
+    expect(count).toHaveValue(2);
     await user.click(screen.getByRole('button', { name: /Tuesday: workday, make rest day/ }));
-    expect(screen.getByRole('status')).toHaveTextContent('Unmark another rest day');
-    expect(screen.getByText('Scheduled 20h / Target 20h')).toBeInTheDocument();
+    expect(count).toHaveValue(3);
+    await user.click(screen.getByRole('button', { name: 'Done configuring' }));
+    await waitFor(() => {
+      const saved = mocks.apiFetch.mock.calls.find(([path, , options]) => path === '/schedule/me' && options?.method === 'PUT');
+      expect(saved?.[2]?.body?.restDays).toEqual(['MONDAY', 'TUESDAY', 'SUNDAY']);
+    });
   });
 
   it('does not allow manual day selection onto an existing rest day', async () => {
@@ -619,10 +616,10 @@ describe('SchedulePage', () => {
     });
     fireEvent.pointerMove(stage!, {
       pointerId: 3,
-      clientX: 735,
+      clientX: 840,
       clientY: 100,
     });
-    fireEvent.pointerUp(stage!, { pointerId: 3, clientX: 735, clientY: 100 });
+    fireEvent.pointerUp(stage!, { pointerId: 3, clientX: 840, clientY: 100 });
 
     expect(
       screen.getByRole('button', {
@@ -698,8 +695,50 @@ describe('SchedulePage', () => {
     );
 
     expect(mondayBlocks).toHaveLength(2);
+    expect(container.querySelectorAll('.schedule-calendar-day[aria-label="Monday"] .schedule-calendar-lane-guide')).toHaveLength(1);
     expect((mondayBlocks[0] as HTMLElement).style.width).toContain('50%');
     expect((mondayBlocks[1] as HTMLElement).style.width).toContain('50%');
+  });
+
+  it('lets users clear the rest-day field to zero and saves zero through regeneration', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole('heading', { name: "You haven't set your schedule yet" });
+    await user.click(screen.getAllByRole('button', { name: 'Configure My Schedule' })[0]);
+    const count = screen.getByRole('spinbutton', { name: 'Rest days' });
+    await user.clear(count);
+    expect(count).toHaveValue(null);
+    await user.click(screen.getByRole('button', { name: 'Generate initial schedule' }));
+    expect(count).toHaveValue(0);
+    expect(document.querySelectorAll('.schedule-calendar-editing .editor-day-header.rest-day')).toHaveLength(0);
+    await user.click(screen.getByRole('button', { name: 'Done configuring' }));
+    await waitFor(() => {
+      const saved = mocks.apiFetch.mock.calls.find(([path, , options]) => path === '/schedule/me' && options?.method === 'PUT');
+      expect(saved?.[2]?.body?.restDays).toEqual([]);
+    });
+    await user.click(screen.getByRole('button', { name: 'Configure My Schedule' }));
+    expect(screen.getByRole('spinbutton', { name: 'Rest days' })).toHaveValue(0);
+    expect(document.querySelectorAll('.schedule-calendar-editing .editor-day-header.rest-day')).toHaveLength(0);
+  });
+
+  it('persists four rest days even when other weekdays have no planned blocks', async () => {
+    const user = userEvent.setup();
+    mockExistingSchedule();
+    renderPage();
+    await screen.findByRole('heading', { name: 'Schedule' });
+    await user.click(screen.getByRole('button', { name: 'Configure My Schedule' }));
+    const count = screen.getByRole('spinbutton', { name: 'Rest days' });
+    await user.clear(count);
+    await user.type(count, '4');
+    expect(count).toHaveValue(4);
+    await user.click(screen.getByRole('button', { name: 'Done configuring' }));
+    await waitFor(() => {
+      const saved = mocks.apiFetch.mock.calls.find(([path, , options]) => path === '/schedule/me' && options?.method === 'PUT');
+      expect(saved?.[2]?.body?.restDays).toEqual(['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']);
+    });
+    expect(document.querySelectorAll('.schedule-calendar-head-row .rest-day')).toHaveLength(4);
+    await user.click(screen.getByRole('button', { name: 'Configure My Schedule' }));
+    expect(screen.getByRole('spinbutton', { name: 'Rest days' })).toHaveValue(4);
   });
 
 });

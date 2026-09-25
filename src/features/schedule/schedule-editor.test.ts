@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateInitialSchedule, initialRestDays, isValidEditorPlacement } from './schedule-editor';
+import { generateInitialSchedule, initialRestDays, isValidEditorPlacement, restDaysForCount } from './schedule-editor';
 
 describe('schedule editor placement and generation', () => {
   it('allows independent teammates to overlap because validation only receives own blocks', () => {
@@ -27,5 +27,11 @@ describe('schedule editor placement and generation', () => {
     const incomplete = generateInitialSchedule(2400, 240, rest);
     expect(incomplete.remainingMinutes).toBe(1200);
     expect(initialRestDays(complete.blocks)).toEqual(['SATURDAY', 'SUNDAY']);
+  });
+  it('allows zero rest days and preserves selected days when increasing to four', () => {
+    const weekend = new Set(['SATURDAY' as const, 'SUNDAY' as const]);
+    expect([...restDaysForCount(weekend, 0)]).toEqual([]);
+    expect([...restDaysForCount(weekend, 4)]).toEqual(['SATURDAY', 'SUNDAY', 'FRIDAY', 'THURSDAY']);
+    expect([...restDaysForCount(new Set(['MONDAY' as const, 'WEDNESDAY' as const]), 1)]).toEqual(['WEDNESDAY']);
   });
 });
