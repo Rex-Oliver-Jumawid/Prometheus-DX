@@ -48,20 +48,9 @@ export class BrevoInvitationService implements InvitationDelivery {
     setupUrl.searchParams.set('email', invitation.email);
     const safeName = escapeHtml(invitation.fullName);
     const safeSetupUrl = escapeHtml(setupUrl.toString());
-    // Outlook is stricter than Gmail about loading remote images. Use the
-    // same mark as an inline CID attachment so the brand does not depend on
-    // the mail client fetching a public image URL.
-    const logoResponse = await fetch(
-      new URL('/auth/prometheus-mark.png', appUrl),
+    const safeLogoUrl = escapeHtml(
+      new URL('/auth/prometheus-mark.png', appUrl).toString(),
     );
-    if (!logoResponse.ok) {
-      throw new ServiceUnavailableException(
-        INVITATION_DELIVERY_FAILURE_MESSAGE,
-      );
-    }
-    const logoContent = Buffer.from(
-      await logoResponse.arrayBuffer(),
-    ).toString('base64');
 
     const controller = new AbortController();
     const timeout = setTimeout(
@@ -82,23 +71,20 @@ export class BrevoInvitationService implements InvitationDelivery {
           sender: { email: brevoSenderEmail, name: brevoSenderName },
           to: [{ email: invitation.email, name: invitation.fullName }],
           subject: 'Set up your Prometheus account',
-          attachment: [
-            {
-              name: 'prometheus-mark.png',
-              content: logoContent,
-              contentId: 'prometheus-mark',
-            },
-          ],
           htmlContent: `
             <div style="margin:0;padding:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#2b2522;">
               <div style="max-width:560px;margin:0 auto;padding:32px 24px 28px;">
-                <div style="margin:0 0 26px;">
-                  <img src="cid:prometheus-mark" width="48" height="48" alt="Prometheus" style="display:inline-block;width:48px;height:48px;border:0;border-radius:12px;vertical-align:middle;">
-                  <span style="display:inline-block;margin-left:12px;vertical-align:middle;">
-                    <strong style="display:block;font-family:Georgia,'Times New Roman',serif;font-size:24px;line-height:26px;color:#2b2522;">Prometheus</strong>
-                    <span style="display:block;margin-top:3px;font-size:8px;font-weight:700;letter-spacing:3px;color:#8d7f78;">VIRTUAL OFFICE</span>
-                  </span>
-                </div>
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 26px;border-collapse:collapse;">
+                  <tr>
+                    <td width="48" valign="middle" style="width:48px;vertical-align:middle;">
+                      <img src="${safeLogoUrl}" width="48" height="48" alt="Prometheus" style="display:block;width:48px;height:48px;border:0;border-radius:12px;">
+                    </td>
+                    <td valign="middle" style="padding-left:12px;vertical-align:middle;">
+                      <div style="font-family:Georgia,'Times New Roman',serif;font-size:24px;line-height:26px;font-weight:700;color:#2b2522;">Prometheus</div>
+                      <div style="margin-top:3px;font-size:8px;line-height:10px;font-weight:700;letter-spacing:3px;color:#8d7f78;">VIRTUAL OFFICE</div>
+                    </td>
+                  </tr>
+                </table>
                 <div style="margin:0 0 10px;font-size:10px;line-height:14px;font-weight:700;letter-spacing:3px;color:#d34b1f;">ACCOUNT SETUP</div>
                 <h1 style="margin:0 0 18px;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:38px;font-weight:700;letter-spacing:-0.5px;color:#2b2522;">Welcome to Prometheus</h1>
                 <p style="margin:0 0 12px;font-size:16px;line-height:24px;">Hello ${safeName},</p>
