@@ -573,16 +573,18 @@ Brevo credentials must never be exposed to frontend code.
 
 Prometheus treats PostgreSQL as the collaboration and WorkSession source of truth.
 
-The current release uses TanStack Query polling plus explicit invalidation and focus/reconnect refetching where live visibility matters, including chat, Notifications, unread counts, and Working Now surfaces.
+Project Chat and VisiWork chat use Supabase Realtime Broadcast as a push invalidation transport.
 
-This satisfies the release requirement for automatic live updates without requiring a second message state.
+Message writes, edits, deletes, mentions, permissions, and persistence still flow through NestJS, Prisma, and PostgreSQL.
+Realtime events never become a second source of message state.
+Receiving a chat broadcast invalidates the relevant TanStack Query cache so the client refetches canonical records from the API.
+A low-frequency 30-second safety poll plus focus/reconnect refetching remains in place so a missed or interrupted Realtime event cannot leave persistent chat state stale.
 
-Supabase Realtime remains an optional future transport when push delivery provides material value.
+Notifications, unread counts, and Working Now surfaces continue to use TanStack Query polling and explicit invalidation.
 
 Potential future push candidates include:
 
-- Project and VisiWork chat when lower latency is required.
-- Notification delivery when polling no longer meets scale or latency needs.
+- Notification delivery when lower latency provides material value.
 - Presence indicators that remain supplemental to WorkSession state.
 
 Persistent business state such as messages, Outcome Membership, project access, submissions, project status, notifications, and WorkSessions must remain stored in PostgreSQL and must not rely on ephemeral presence or transport state.
@@ -803,10 +805,11 @@ Supabase Storage
 Future file-bearing flows
 
 LIVE REFRESH
-TanStack Query polling / invalidation / focus and reconnect refetch
+TanStack Query invalidation / focus and reconnect refetch
+30-second chat safety polling
 
-OPTIONAL PUSH TRANSPORT
-Supabase Realtime
+PUSH TRANSPORT
+Supabase Realtime Broadcast for Project Chat and VisiWork chat
 
 EMAIL
 Brevo Transactional Email API

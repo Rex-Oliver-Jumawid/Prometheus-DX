@@ -17,6 +17,7 @@ import {
 } from '../../../shared/contracts/project-chat';
 import { ProjectMembersResponseSchema } from '../../../shared/contracts/project-workflow';
 import { apiFetch } from '../../lib/api';
+import { useRealtimeInvalidation } from '../../lib/use-realtime-invalidation';
 import './project-collaboration.css';
 
 function messageTime(date: string) {
@@ -113,6 +114,18 @@ export function ProjectChatPanel({
   const pinnedToBottom = useRef(true);
   const initiallyScrolled = useRef(false);
   const olderScroll = useRef<{ top: number; height: number; pageCount: number } | null>(null);
+  const broadcastChatChange = useRealtimeInvalidation({
+    topic: 'project-chat:' + projectId,
+    onEvent: () => {
+      void queryClient.invalidateQueries({ queryKey });
+      void queryClient.invalidateQueries({
+        queryKey: ['projects', projectId, 'chat-context'],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['projects', projectId, 'chat-search'],
+      });
+    },
+  });
 
   useEffect(() => {
     setTargetMessageId(initialMessageId ?? null);
@@ -131,12 +144,12 @@ export function ProjectChatPanel({
     initialPageParam: null as string | null,
     getNextPageParam: (page) => page.nextCursor ?? undefined,
     enabled: Boolean(accessToken),
-    // Keep the conversation warm when switching between Project tabs.
-    // Active chats still poll for updates without flashing a loading screen.
+    // Realtime Broadcast handles normal chat delivery. Keep a low-frequency
+    // safety poll so a dropped event cannot leave persistent state stale.
     staleTime: 60_000,
     gcTime: 15 * 60_000,
-    refetchInterval: 3_000,
-    refetchIntervalInBackground: true,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
     refetchOnWindowFocus: 'always',
     refetchOnReconnect: 'always',
   });
@@ -203,6 +216,7 @@ export function ProjectChatPanel({
       setTargetMessageId(null);
       pinnedToBottom.current = true;
       await queryClient.invalidateQueries({ queryKey });
+      broadcastChatChange();
     },
     onError: () => {
       void queryClient.invalidateQueries({ queryKey });
@@ -238,6 +252,7 @@ export function ProjectChatPanel({
           queryKey: ['projects', projectId, 'chat-context', targetMessageId],
         });
       }
+      broadcastChatChange();
     },
     onError: () => {
       void queryClient.invalidateQueries({ queryKey });
@@ -267,6 +282,7 @@ export function ProjectChatPanel({
           queryKey: ['projects', projectId, 'chat-context', targetMessageId],
         });
       }
+      broadcastChatChange();
     },
     onError: () => {
       void queryClient.invalidateQueries({ queryKey });

@@ -25,6 +25,7 @@ import {
   type VisiWorkMessage,
 } from '../../../shared/contracts/visiwork';
 import { apiFetch } from '../../lib/api';
+import { useRealtimeInvalidation } from '../../lib/use-realtime-invalidation';
 import { useAuth } from '../auth/auth-context';
 import {
   projectWorkflowQuery,
@@ -167,6 +168,18 @@ function RoomPanel({
     ? '/visiwork/departments/' + departmentId + '/messages'
     : '/visiwork/messages';
   const targetMessageId = searchParams.get('message');
+  const broadcastChatChange = useRealtimeInvalidation({
+    topic: 'visiwork-chat:' + roomKey,
+    onEvent: () => {
+      void queryClient.invalidateQueries({ queryKey });
+      void queryClient.invalidateQueries({
+        queryKey: ['visiwork', 'message-context'],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['visiwork', 'message-search', roomKey],
+      });
+    },
+  });
 
   const messages = useInfiniteQuery({
     queryKey,
@@ -180,9 +193,9 @@ function RoomPanel({
     initialPageParam: null as string | null,
     getNextPageParam: (page) => page.nextCursor ?? undefined,
     enabled: Boolean(accessToken),
-    staleTime: 750,
-    refetchInterval: 1_500,
-    refetchIntervalInBackground: true,
+    staleTime: 5_000,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
     refetchOnWindowFocus: 'always',
     refetchOnReconnect: 'always',
   });
@@ -196,9 +209,9 @@ function RoomPanel({
         { accessToken },
       ),
     enabled: Boolean(accessToken && targetMessageId),
-    staleTime: 750,
-    refetchInterval: targetMessageId ? 1_500 : false,
-    refetchIntervalInBackground: true,
+    staleTime: 5_000,
+    refetchInterval: false,
+    refetchIntervalInBackground: false,
     refetchOnWindowFocus: 'always',
     refetchOnReconnect: 'always',
     retry: false,
@@ -231,6 +244,7 @@ function RoomPanel({
       setSelectedMentions([]);
       pinnedToBottom.current = true;
       await queryClient.invalidateQueries({ queryKey });
+      broadcastChatChange();
     },
   });
 
@@ -258,6 +272,7 @@ function RoomPanel({
       setEditMentions([]);
       setMessageMenuId(null);
       await queryClient.invalidateQueries({ queryKey: ['visiwork'] });
+      broadcastChatChange();
     },
   });
 
@@ -272,6 +287,7 @@ function RoomPanel({
       setPendingDeleteMessage(null);
       setEditingMessageId(null);
       await queryClient.invalidateQueries({ queryKey: ['visiwork'] });
+      broadcastChatChange();
     },
   });
 
