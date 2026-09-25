@@ -138,7 +138,7 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
     }
     const otherProjectView = await activity.list(participant, secondProjectId);
     expect(otherProjectView.items.map((item) => item.id).toContain(foreignLogId);
-    expect(otherProjectView.items.map((item) => item.id).not.toContain(leadLogId);
+    expect(otherProjectView.items.map((item) => item.id)).not.toContain(leadLogId);
     await expect(activity.list(participant, projectId, foreignLogId))
       .rejects.toBeInstanceOf(BadRequestException);
   });
