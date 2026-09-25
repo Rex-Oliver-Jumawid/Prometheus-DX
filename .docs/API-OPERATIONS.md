@@ -4,12 +4,14 @@ Release Milestone 3 adds quotas to mutation and search endpoints and structured 
 
 ## Endpoint-specific quotas
 
-These quotas count **per authenticated member** across every Vercel function instance through the same PostgreSQL table. Quotas use a fixed window beginning with the first request. A 429 response includes `Retry-After` in seconds.
+These quotas count **per authenticated member** across every Vercel function instance through the same PostgreSQL table. Announcement limits are shared across Projects per member so employees outside a Project have the same limits as its Project Lead and assigned Members. Quotas use a fixed window beginning with the first request. A 429 response includes `Retry-After` in seconds.
 
 | Operation | Limit | Period |
 | --- | ---: | --- |
 | Project Chat send | 30 | 60 seconds |
 | Project Chat search | 60 | 60 seconds |
+| Project announcement creation (all Projects) | 6 | 60 seconds |
+| Project announcement pin/unpin (all Projects) | 20 | 60 seconds |
 | VisiWork General/Department send (shared) | 30 | 60 seconds |
 | VisiWork search | 60 | 60 seconds |
 | Registry member creation and invitation resend (shared) | 20 | 1 hour |
