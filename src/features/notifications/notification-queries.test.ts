@@ -10,7 +10,7 @@ describe('notification live-refresh query policy', () => {
     const query = notificationListQuery('mentions', 'token');
 
     expect(query.refetchInterval).toBe(NOTIFICATION_REFRESH_INTERVAL_MS);
-    expect(query.refetchIntervalInBackground).toBe(true);
+    expect(query.refetchIntervalInBackground).toBe(false);
     expect(query.refetchOnWindowFocus).toBe('always');
     expect(query.refetchOnReconnect).toBe('always');
   });
@@ -19,7 +19,7 @@ describe('notification live-refresh query policy', () => {
     const query = notificationUnreadCountQuery('token');
 
     expect(query.refetchInterval).toBe(NOTIFICATION_REFRESH_INTERVAL_MS);
-    expect(query.refetchIntervalInBackground).toBe(true);
+    expect(query.refetchIntervalInBackground).toBe(false);
     expect(query.refetchOnWindowFocus).toBe('always');
     expect(query.refetchOnReconnect).toBe('always');
   });
