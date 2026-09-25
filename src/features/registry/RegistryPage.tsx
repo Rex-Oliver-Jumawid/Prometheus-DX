@@ -1101,6 +1101,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
         },
       );
       refreshProjectCreateOptions();
+      setMemberToRemove(null);
     },
   });
 
@@ -1623,10 +1624,8 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
                               }
                               onClick={(event) => {
                                 event.stopPropagation();
-                                const confirmed = window.confirm(
-                                  `Remove ${member.fullName}? Their account access will be revoked, but historical work stays preserved. You can add ${member.email} again later to send a new setup invitation.`,
-                                );
-                                if (confirmed) removeMember.mutate(member.id);
+                                removeMember.reset();
+                                setMemberToRemove(member);
                               }}
                               onKeyDown={(event) => event.stopPropagation()}
                             >
@@ -1663,6 +1662,20 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
           removeError={deleteDepartment.error}
           onClose={closeRemoveDepartment}
           onConfirm={confirmRemoveDepartment}
+        />
+      )}
+      {memberToRemove && (
+        <RemoveMemberDialog
+          member={memberToRemove}
+          isRemoving={removeMember.isPending}
+          removeError={removeMember.error}
+          onClose={() => {
+            if (!removeMember.isPending) {
+              removeMember.reset();
+              setMemberToRemove(null);
+            }
+          }}
+          onConfirm={() => removeMember.mutate(memberToRemove.id)}
         />
       )}
       {memberDialogState && (
