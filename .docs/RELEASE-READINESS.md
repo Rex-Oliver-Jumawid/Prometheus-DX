@@ -7,6 +7,8 @@
 - Connected Supabase project: Prometheus-DX in `ap-south-1` (Mumbai), healthy, organization on the Free plan.
 - Database reports **27 completed Prisma migrations**. The Project Chat Outcome reference column exists. The new Milestone 3 API-rate-limit table is **not** in production and must remain undeployed until approved.
 - [Supabase's backup guidance](https://supabase.com/docs/guides/platform/backups) recommends regular off-site manual exports for Free projects. Paid-plan daily backup/PITR functionality must not be assumed here.
+- Supabase's security advisor flagged one unqualified trigger search path and inherited browser-role execution of an auto-RLS event-trigger function. A **draft follow-up migration** pins the trusted search path and revokes public execution where the platform-managed function exists; production remains untouched. The RLS-without-policies findings are expected for server-only tables whose browser roles have no grants, but should be checked again after migration.
+- Supabase Auth leaked-password checking is a **Pro-only feature** and is disabled on this Free project. Verify the available minimum-length/complexity controls, invitation restrictions and password recovery as the Free-plan alternative; do not label leaked-password checking enabled.
 - Current GitHub `main` (inspection snapshot) is `4812c02ded61141990db6782556ae479ab04b10d`. Subsequent release commits must be identified again immediately before approval. GitHub/Vercel check success alone does not identify the live production deployment.
 - Live Vercel `/api/health` and `/api/health/database` could not be independently reached from the review environment. A successful **read-only** Supabase connection does not replace the live API test.
 
@@ -16,7 +18,7 @@
 2. PR #36: Project-wide Lead/Member Activity with Administrator access, denied unrelated member Activity reads; Chat read-only visibility for nonmembers stays separate; GitHub CI passed.
 3. PR #38: Notifications pagination and reduced collaboration polling; GitHub CI passed.
 4. PR #41: PostgreSQL API quota migration and request monitoring; GitHub CI passed.
-5. Release-readiness PR: isolated application-schema backup/restore drill and this checklist.
+5. Release-readiness PR: isolated application-schema backup/restore drill, follow-up database function security migration and this checklist.
 
 All changes stay in draft branches until the owner explicitly approves individual merges. **Do not run the new rate-limit API code against a database that has not received its migration.**
 
@@ -53,6 +55,8 @@ The CI `Backup and Restore Drill` proves the scripted public-schema backup/resto
 - [ ] Auth user and Storage recovery procedures verified independently.
 - [ ] Owner authorizes production database migration and a release commit.
 - [ ] Explicit Prisma `migrate deploy` applied against production **before** releasing code that requires the rate-limit table. Inspect `prisma migrate status` and verify the table exists.
+- [ ] After explicit migration approval, recheck the Supabase security advisor and confirm the trigger has a fixed search path and the auto-RLS event-trigger function no longer grants browser-role EXECUTE (if present).
+- [ ] On Free Supabase Auth, review minimum password length/complexity and document the residual lack of paid leaked-password protection.
 - [ ] Verify release commit SHA equals the intended Vercel **Production** deployment, not merely a Ready Preview build.
 - [ ] With test identities, check login, Home, Projects, cross-member Activity, Project Chat/announcements, Notifications, Schedule/Team, VisiWork, Reports, session expiry and logout. Nonmember Activity must reject direct API requests.
 - [ ] Read live `GET /api/health` and `GET /api/health/database` and review server logs for request IDs, 429 responses and unexpected 5xx errors.
