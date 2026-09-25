@@ -147,7 +147,8 @@ Apply these checks to every page in this phase:
 | F9-41 | Project Member announcement | Post an announcement as a Project Member. | Announcement persists and is visible in the Project Chat sidebar. |
 | F9-42 | Announcement pin authority | Attempt pinning as a Project Member, then as the Project Lead. | Member cannot pin; Project Lead can pin and unpin. |
 | F9-43 | Archived Project collaboration | Archive a Project and attempt Chat and announcement mutations. | Existing communication remains readable and new mutations are rejected. |
-| F9-44 | Company-visible Project Activity | Open Activity as the Lead, a Project Member, and an unrelated active authorized member. | Each can view the same normal Project activity trail for that Project. |
+| F9-44 | Shared Project Activity | Open Activity as the Lead and a Project Member; perform an action as a different Project Member. | Both participants can view the same normal Project activity trail, including the other member's event. |
+| F9-47 | Project Activity outsider denial | Open the Project as an unrelated active authorized member and attempt the Activity tab and direct API. | The Activity tab is hidden and the API rejects unrelated non-project Members, while read-only general Project Chat remains available. |
 | F9-45 | Activity metadata safety | Trigger submission/workflow activity whose stored audit metadata contains private details. | The Project Activity API exposes only approved display-safe fields and does not expose private submission text. |
 | F9-46 | General versus Outcome message scope | Verify general Project Chat after an Outcome-scoped ProjectMessage fixture exists. | General Project Chat returns only messages whose `outcome_id` is null. |
 
@@ -212,7 +213,7 @@ User A and User B open the same authorized collaboration room
 - [x] Project Chat follows the approved Project communication rules.
 - [x] Project Chat mention notifications stay synchronized after mention edits and message deletion.
 - [x] Project announcements follow Project Member posting and Project Lead pinning rules.
-- [x] Normal Project Activity remains company-visible without exposing unsafe audit metadata.
+- [x] Normal Project Activity is shared across Project Leads and Members, restricted from unrelated viewers, and excludes unsafe audit metadata.
 - [x] General Project Chat excludes Outcome-scoped Project messages.
 - [x] Automatic live message updates do not require manual reload during normal connected use.
 - [x] Reconnect/focus refresh recovers persistent state without creating duplicate history.
