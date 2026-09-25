@@ -21,7 +21,7 @@ Presence is not a substitute for Work Sessions.
 
 Collaboration currently spans VisiWork General and Department chat together with Project Chat.
 
-Project Chat is company-visible for reading, while general Project Chat and announcement writes are restricted to the Project Lead or Project Members.
+Project Chat is company-visible for reading and writing. Every active authorized employee may post Project Chat messages and announcements, even without Project Membership.
 Only the Project Lead may pin or unpin Project announcements.
 
 Room permissions must continue to follow the approved room-specific communication rules.
@@ -54,7 +54,7 @@ Prepare:
 - A member with access to the target Department chat
 - A member without access where a room is restricted
 - A Project participant or viewer according to the final Project Chat rule
-- A Project viewer who is not a Project Member
+- An active authorized employee who is not a Project Member (must be able to view Activity, send chat and post announcements)
 - A Project Member
 - A Project Lead
 
@@ -135,7 +135,7 @@ Apply these checks to every page in this phase:
 
 | ID | Test | Steps | Expected Result |
 | --- | --- | --- | --- |
-| F9-32 | Company-visible Project Chat | Open the same Project as an active authorized user who is not the Lead or a Project Member. | Existing general Project Chat is readable, while the composer remains disabled. |
+| F9-32 | Company-wide Project Chat | Open the same Project as an active authorized user who is not the Lead or a Project Member. | Existing general Project Chat is readable, the composer is enabled, and sent messages persist. |
 | F9-33 | Project Member send | Open Project Chat as a Project Member and send a valid message. | Message persists and appears in the same Project conversation. |
 | F9-34 | Project Lead send | Open Project Chat as the Project Lead and send a valid message. | Message persists and appears in the same Project conversation. |
 | F9-35 | Project reply | Reply to an existing Project Chat message. | Reply persists with the correct parent preview and cannot reference a message from another Project. |
@@ -144,11 +144,11 @@ Apply these checks to every page in this phase:
 | F9-38 | Add mention during edit | Edit an existing Project Chat message to add a valid mention. | The mention relationship is created and the newly mentioned member receives a Project Chat mention notification. |
 | F9-39 | Remove mention during edit | Edit a Project Chat message to remove an existing mention. | The mention relationship and its obsolete Project Chat mention notification are removed. |
 | F9-40 | Delete mentioned message | Delete the author's Project Chat message after mentioning another member. | A tombstone preserves message position and replies, deleted text is not searchable, and Project Chat mention notifications for that message are removed. |
-| F9-41 | Project Member announcement | Post an announcement as a Project Member. | Announcement persists and is visible in the Project Chat sidebar. |
+| F9-41 | Company-wide Project announcement | Post announcements as a Project Member and an unrelated active authorized employee. | Both announcements persist and are visible in the Project Chat sidebar without granting pin authority. |
 | F9-42 | Announcement pin authority | Attempt pinning as a Project Member, then as the Project Lead. | Member cannot pin; Project Lead can pin and unpin. |
 | F9-43 | Archived Project collaboration | Archive a Project and attempt Chat and announcement mutations. | Existing communication remains readable and new mutations are rejected. |
-| F9-44 | Shared Project Activity | Open Activity as the Lead and a Project Member; perform an action as a different Project Member. | Both participants can view the same normal Project activity trail, including the other member's event. |
-| F9-47 | Project Activity outsider denial | Open the Project as an unrelated active authorized member and attempt the Activity tab and direct API. | The Activity tab is hidden and the API rejects unrelated non-project Members, while read-only general Project Chat remains available. |
+| F9-44 | Company-visible Project Activity | Open Activity as the Lead, Project Member and an unrelated active authorized member after a participant performs an action. | All three see the same display-safe activity timeline, including events created by other employees. |
+| F9-47 | Non-project employee collaboration | Open the Project as an unrelated active authorized member, read Activity through the tab and direct API, send a chat message and post an announcement. | All actions are allowed for non-archived Projects; the employee still cannot pin announcements or edit another member's messages. |
 | F9-45 | Activity metadata safety | Trigger submission/workflow activity whose stored audit metadata contains private details. | The Project Activity API exposes only approved display-safe fields and does not expose private submission text. |
 | F9-46 | General versus Outcome message scope | Verify general Project Chat after an Outcome-scoped ProjectMessage fixture exists. | General Project Chat returns only messages whose `outcome_id` is null. |
 
@@ -192,7 +192,7 @@ User A and User B open the same authorized collaboration room
 -> navigation returns to the exact room and message
 -> User A edits and then deletes one of their own messages
 -> User B sees the persisted mutation state
--> Project Chat is readable company-wide but writable only by its Project Lead or Project Members
+-> Project Chat and announcements are readable and writable company-wide for active authorized employees; pinning remains Lead-only
 -> Project Chat replies, search, mentions, edit/delete, announcements, and Activity follow their approved Project rules
 -> mention notifications stay synchronized with Project Chat edits and deletion
 -> clearing a search removes its highlight
@@ -212,8 +212,8 @@ User A and User B open the same authorized collaboration room
 - [x] Edit/delete rules are enforced by the backend and soft deletion preserves conversation integrity.
 - [x] Project Chat follows the approved Project communication rules.
 - [x] Project Chat mention notifications stay synchronized after mention edits and message deletion.
-- [x] Project announcements follow Project Member posting and Project Lead pinning rules.
-- [x] Normal Project Activity is shared across Project Leads and Members, restricted from unrelated viewers, and excludes unsafe audit metadata.
+- [x] Project announcements accept posts from all active authorized employees and reserve pinning for the Project Lead.
+- [x] Normal Project Activity is visible company-wide to active authorized employees and excludes unsafe audit metadata.
 - [x] General Project Chat excludes Outcome-scoped Project messages.
 - [x] Automatic live message updates do not require manual reload during normal connected use.
 - [x] Reconnect/focus refresh recovers persistent state without creating duplicate history.
