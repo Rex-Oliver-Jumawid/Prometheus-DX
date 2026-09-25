@@ -1466,10 +1466,7 @@ function CalendarDay({
 
   // Keep one stable lane per member across the whole day, as in
   // .model/finalmodel.html, rather than reusing a lane after someone leaves.
-  const memberOrder = [
-    ...(currentMemberId ? [currentMemberId] : []),
-    ...members.map((member) => member.id),
-  ];
+  const memberOrder = members.map((member) => member.id);
   const { placed: positioned, laneCount, split } = layoutScheduleLanes(entries, memberOrder);
 
   return (
@@ -1510,6 +1507,14 @@ function CalendarDay({
             }
             key={block.id}
             style={style}
+            role="group"
+            aria-label={
+              calendarMember.fullName +
+              ', ' +
+              formatClock(block.startTime) +
+              ' to ' +
+              formatClock(block.endTime)
+            }
             title={
               calendarMember.fullName +
               ': ' +
