@@ -71,18 +71,23 @@ function withMemberCounts(
 
 function DepartmentDialog({
   state,
+  members,
   isSaving,
   saveError,
   onClose,
   onSave,
 }: {
   state: DepartmentDialogState;
+  members: RegistryMember[];
   isSaving: boolean;
   saveError: unknown;
   onClose: () => void;
   onSave: (input: CreateDepartmentRequest) => Promise<void>;
 }) {
   const department = state.mode === 'edit' ? state.department : undefined;
+  const departmentMembers = department
+    ? members.filter((member) => member.departmentId === department.id)
+    : [];
   const dialogRef = useRef<HTMLElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(
     document.activeElement instanceof HTMLElement
@@ -258,6 +263,37 @@ function DepartmentDialog({
               <small>{errors.description.message}</small>
             )}
           </label>
+
+          {state.mode === 'edit' && (
+            <section className="registry-edit-members" aria-labelledby="registry-edit-members-title">
+              <div className="registry-edit-members-heading">
+                <div>
+                  <p className="registry-kicker">DEPARTMENT MEMBERS</p>
+                  <h3 id="registry-edit-members-title">
+                    {departmentMembers.length} {departmentMembers.length === 1 ? 'member' : 'members'}
+                  </h3>
+                </div>
+              </div>
+              <div className="registry-edit-members-list">
+                {departmentMembers.length ? (
+                  departmentMembers.map((member) => (
+                    <div className="registry-department-member" key={member.id}>
+                      <span aria-hidden="true">{memberInitials(member.fullName)}</span>
+                      <div>
+                        <strong>{member.fullName}</strong>
+                        <small>{member.position ?? 'Member'} · {member.email}</small>
+                      </div>
+                      <b className={'registry-badge status ' + member.status.toLowerCase()}>
+                        {member.status}
+                      </b>
+                    </div>
+                  ))
+                ) : (
+                  <p className="registry-form-note">No members are assigned to this department.</p>
+                )}
+              </div>
+            </section>
+          )}
 
           {Boolean(saveError) && (
             <p className="registry-form-error" role="alert">
@@ -1754,6 +1790,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
       {dialogState && (
         <DepartmentDialog
           state={dialogState}
+          members={members.data ?? []}
           isSaving={saveDepartment.isPending}
           saveError={saveDepartment.error}
           onClose={closeDialog}
