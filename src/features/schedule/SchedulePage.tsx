@@ -753,17 +753,6 @@ export function SchedulePage() {
             </div>
           </div>
 
-          <div className="shift-comparison-heading">
-            <div>
-              <p className="page-kicker">PLANNED VS ACTUAL</p>
-              <strong>{currentRange}</strong>
-              <p>
-                Planned commitment compared with actual Time In / Time Out sessions for{' '}
-                {selectedMember?.fullName ?? 'this member'}.
-              </p>
-            </div>
-          </div>
-
           <div className="shift-stat-grid">
             <ShiftStat label="Scheduled" value={formatMinutes(scheduledMinutes)} note="Effective planned hours" />
             <ShiftStat label="Worked" value={formatHours(workedSeconds)} note="Recorded Time In / Out" />
