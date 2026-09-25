@@ -326,6 +326,7 @@ export function ProjectChatPanel({
   const pageCount = messages.data?.pages.length ?? 0;
   const firstMessageId = ordered[0]?.id;
   const lastMessageId = ordered[ordered.length - 1]?.id;
+  const hasTargetMessage = ordered.some((message) => message.id === targetMessageId);
 
   useLayoutEffect(() => {
     const composer = composerRef.current;
@@ -359,7 +360,7 @@ export function ProjectChatPanel({
   // viewport so selecting a search result never jumps the entire workspace.
   useLayoutEffect(() => {
     if (!targetMessageId || messages.isPending) return;
-    if (!ordered.some((message) => message.id === targetMessageId)) return;
+    if (!hasTargetMessage) return;
     const frame = window.requestAnimationFrame(() => {
       const thread = threadRef.current;
       const target = thread?.querySelector<HTMLElement>(
@@ -375,7 +376,7 @@ export function ProjectChatPanel({
       thread.scrollTop += centeredOffset;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [targetMessageId, messages.isPending, ordered.length, context.data, jumpRevision]);
+  }, [targetMessageId, messages.isPending, hasTargetMessage, context.data, jumpRevision]);
 
   function updateBody(value: string) {
     setBody(value);
