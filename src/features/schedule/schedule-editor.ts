@@ -78,3 +78,13 @@ export function generateInitialSchedule(
   }
   return { blocks, remainingMinutes };
 }
+
+/** Keep explicit rest-day selections in sync with the numeric editor. */
+export function restDaysForCount(current: ReadonlySet<Weekday>, requested: number): Set<Weekday> {
+  const count = Math.max(0, Math.min(6, Math.trunc(requested)));
+  if (count === 0) return new Set();
+  const selected = WEEKDAYS.filter((day) => current.has(day));
+  if (selected.length >= count) return new Set(selected.slice(-count));
+  const added = [...WEEKDAYS].reverse().filter((day) => !current.has(day));
+  return new Set([...selected, ...added.slice(0, count - selected.length)]);
+}
