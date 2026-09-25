@@ -94,7 +94,7 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
     });
     expect(ProjectAnnouncementsResponseSchema.parse(viewerAnnouncements)).toEqual({
       items: [],
-      canManage: false,
+      canManage: true,
       canPost: true,
     });
   });
@@ -143,19 +143,19 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
       .rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('lets unrelated employees post announcements but reserves pinning for the Lead', async () => {
+  it('lets unrelated employees post, pin and unpin announcements', async () => {
     const announcements = new ProjectAnnouncementService(db);
     const posted = await announcements.create(viewer, projectId, {
       title: 'Company update', body: 'Shared with every employee.',
     });
     expect(posted.author.id).toBe(viewer.id);
     expect((await announcements.list(viewer, projectId))).toMatchObject({
-      canPost: true, canManage: false,
+      canPost: true, canManage: true,
     });
     await expect(announcements.setPinned(viewer, projectId, posted.id, { pinned: true }))
-      .rejects.toBeInstanceOf(ForbiddenException);
-    await expect(announcements.setPinned(lead, projectId, posted.id, { pinned: true }))
-      .resolves.toMatchObject({ id: posted.id });
+      .resolves.toMatchObject({ id: posted.id, pinnedAt: expect.any(String) });
+    await expect(announcements.setPinned(participant, projectId, posted.id, { pinned: false }))
+      .resolves.toMatchObject({ id: posted.id, pinnedAt: null });
   });
 
   it('persists replies, restricts author edits and isolates other Project messages', async () => {
