@@ -25,6 +25,7 @@ import {
 } from '../work-sessions/work-session-queries';
 import { formatClock } from './schedule-format';
 import { EditableTeamCalendar } from './EditableTeamCalendar';
+import { calendarLaneDivider, calendarLaneStyle, layoutScheduleLanes } from './schedule-lanes';
 import {
   EDITOR_END_MINUTES,
   EDITOR_START_MINUTES,
@@ -53,7 +54,7 @@ const DAY_LABELS: Record<Weekday, string> = {
 
 const CALENDAR_START_MINUTES = 7 * 60;
 const CALENDAR_END_MINUTES = 24 * 60;
-const CALENDAR_ROW_HEIGHT = 44;
+const CALENDAR_ROW_HEIGHT = 54;
 
 function minutesToClock(minutes: number): string {
   if (minutes === 24 * 60) return '00:00';
@@ -1443,6 +1444,7 @@ function CalendarDay({
         .filter((block) => block.weekday === day)
         .map((block) => ({
           calendarMember,
+          memberId: calendarMember.id,
           block,
           start: clockTimeToMinutes(block.startTime),
           end: clockTimeToMinutes(block.endTime),
@@ -1462,14 +1464,13 @@ function CalendarDay({
         left.calendarMember.fullName.localeCompare(right.calendarMember.fullName),
     );
 
-  const laneEnds: number[] = [];
-  const positioned = entries.map((entry) => {
-    let lane = laneEnds.findIndex((end) => end <= entry.start);
-    if (lane === -1) lane = laneEnds.length;
-    laneEnds[lane] = entry.end;
-    return { ...entry, lane };
-  });
-  const laneCount = Math.max(1, laneEnds.length);
+  // Keep one stable lane per member across the whole day, as in
+  // .model/finalmodel.html, rather than reusing a lane after someone leaves.
+  const memberOrder = [
+    ...(currentMemberId ? [currentMemberId] : []),
+    ...members.map((member) => member.id),
+  ];
+  const { placed: positioned, laneCount, split } = layoutScheduleLanes(entries, memberOrder);
 
   return (
     <div
@@ -1480,20 +1481,24 @@ function CalendarDay({
       }
       aria-label={DAY_LABELS[day]}
     >
+      {split && Array.from({ length: laneCount - 1 }, (_, index) => (
+        <span
+          key={'lane-guide-' + index}
+          className="schedule-calendar-lane-guide"
+          style={{ left: calendarLaneDivider(index + 1, laneCount) }}
+          aria-hidden="true"
+        />
+      ))}
       {positioned.map(({ calendarMember, block, start, end, lane }) => {
         const visibleStart = Math.max(start, CALENDAR_START_MINUTES);
         const visibleEnd = Math.min(end, CALENDAR_END_MINUTES);
         const top =
           ((visibleStart - CALENDAR_START_MINUTES) / 60) * CALENDAR_ROW_HEIGHT;
         const height = ((visibleEnd - visibleStart) / 60) * CALENDAR_ROW_HEIGHT;
-        const width = 100 / laneCount;
-        // Inset every edge so the block border and selection outline stay
-        // wholly inside the day, even at 7 AM or at the end of the grid.
         const style = {
-          top: top + 6,
-          height: Math.max(12, height - 12),
-          left: 'calc(' + lane * width + '% + 6px)',
-          width: 'calc(' + width + '% - 12px)',
+          top: top + 4,
+          height: Math.max(28, height - 8),
+          ...calendarLaneStyle(lane, laneCount),
         } satisfies CSSProperties;
 
         return (
