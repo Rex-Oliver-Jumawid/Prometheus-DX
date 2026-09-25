@@ -109,7 +109,19 @@ describe('RegistryService invitation behavior', () => {
     expect(database.department.findMany).toHaveBeenCalledWith({
       include: {
         _count: {
-          select: { members: true, projects: true, outcomes: true },
+          select: {
+            members: {
+              where: {
+                NOT: {
+                  status: 'DEACTIVATED',
+                  authUserId: null,
+                  invitationSentAt: null,
+                },
+              },
+            },
+            projects: true,
+            outcomes: true,
+          },
         },
       },
       orderBy: [{ name: 'asc' }, { createdAt: 'asc' }],
