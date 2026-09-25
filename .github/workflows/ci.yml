@@ -114,3 +114,6 @@ jobs:
 
       - name: Project Chat PostgreSQL integration
         run: pnpm exec vitest run server/projects/project-chat.integration.test.ts
+
+      - name: Schedule PostgreSQL integration
+        run: pnpm exec vitest run server/schedule/schedule.service.integration.test.ts
