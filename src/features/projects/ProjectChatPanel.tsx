@@ -826,7 +826,7 @@ export function ProjectChatPanel({
                       }
                     }}
                     disabled={!canWrite || send.isPending}
-                    title={!canWrite ? 'Only Project Members and the Project Lead can send messages.' : undefined}
+                    title={!canWrite ? 'Archived Projects are read-only.' : undefined}
                   />
                   {canWrite && mentionSuggestions.length > 0 && (
                     <div className="pw-chat-mention-menu" role="listbox">
