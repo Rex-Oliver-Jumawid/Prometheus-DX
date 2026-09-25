@@ -313,9 +313,7 @@ describe('SchedulePage', () => {
     expect(screen.getByRole('combobox', { name: 'Member' })).toHaveValue(
       '22222222-2222-4222-8222-222222222222',
     );
-    expect(
-      screen.getByText(/for Member Two\./),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Member work history')).toBeInTheDocument();
   });
 
   it('moves from Shifts into Team Schedule configuration and saves a block', async () => {
