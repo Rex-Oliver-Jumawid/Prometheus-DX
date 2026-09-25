@@ -1,4 +1,7 @@
-import type { Project } from '../../../shared/contracts/project';
+import type {
+  Project,
+  ProjectDepartmentSummary,
+} from '../../../shared/contracts/project';
 import type {
   Outcome,
   ProjectWorkflowResponse,
@@ -132,6 +135,7 @@ export function buildVisiWorkModel(
   projects: Project[],
   workflows: ProjectWorkflowResponse[],
   team: TeamWorkSummaryResponse,
+  departmentOptions: ProjectDepartmentSummary[] = [],
 ): VisiWorkModel {
   const workflowsByProject = workflowByProject(workflows);
   const teamById = new Map(team.members.map((member) => [member.id, member]));
@@ -178,6 +182,9 @@ export function buildVisiWorkModel(
     { id: string; name: string; shortLabel: string }
   >();
 
+  for (const department of departmentOptions) {
+    departmentMap.set(department.id, department);
+  }
   for (const member of team.members) {
     departmentMap.set(member.department.id, member.department);
   }

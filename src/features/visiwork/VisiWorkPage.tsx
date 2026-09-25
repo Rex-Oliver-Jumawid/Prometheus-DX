@@ -28,6 +28,7 @@ import { apiFetch } from '../../lib/api';
 import { useRealtimeInvalidation } from '../../lib/use-realtime-invalidation';
 import { useAuth } from '../auth/auth-context';
 import {
+  projectCreateOptionsQuery,
   projectWorkflowQuery,
   projectsListQuery,
 } from '../projects/project-queries';
@@ -1310,6 +1311,7 @@ export function VisiWorkPage() {
   const selectedDepartmentId = searchParams.get('department');
 
   const projects = useQuery(projectsListQuery(accessToken));
+  const createOptions = useQuery(projectCreateOptionsQuery(accessToken));
   const team = useQuery({
     ...teamWorkSummaryQuery(accessToken),
     refetchInterval: 30_000,
@@ -1339,8 +1341,13 @@ export function VisiWorkPage() {
     (query) => query.isError && !query.data,
   )?.error;
 
-  const model = team.data
-    ? buildVisiWorkModel(projects.data ?? [], workflows, team.data)
+  const model = team.data && createOptions.data
+    ? buildVisiWorkModel(
+        projects.data ?? [],
+        workflows,
+        team.data,
+        createOptions.data.departments,
+      )
     : null;
 
   const selectedDepartment = model?.departments.find(
@@ -1384,12 +1391,18 @@ export function VisiWorkPage() {
     if (data) workByOutcome.set(ref.outcomeId, data);
   });
 
-  if (projects.isPending || team.isPending || waitingForWorkflows) {
+  if (
+    projects.isPending ||
+    createOptions.isPending ||
+    team.isPending ||
+    waitingForWorkflows
+  ) {
     return <VisiWorkSkeleton />;
   }
 
   if (
     (projects.isError && !projects.data) ||
+    (createOptions.isError && !createOptions.data) ||
     (team.isError && !team.data) ||
     workflowError ||
     !team.data ||
@@ -1397,6 +1410,7 @@ export function VisiWorkPage() {
   ) {
     const message =
       projects.error?.message ??
+      createOptions.error?.message ??
       team.error?.message ??
       (workflowError instanceof Error ? workflowError.message : null) ??
       'VisiWork data could not be loaded.';
@@ -1409,6 +1423,7 @@ export function VisiWorkPage() {
           type="button"
           onClick={() => {
             void projects.refetch();
+            void createOptions.refetch();
             void team.refetch();
             workflowQueries.forEach((query) => void query.refetch());
           }}

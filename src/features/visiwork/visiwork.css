@@ -178,14 +178,13 @@
 }
 
 .visiwork-department-title strong {
-  overflow: hidden;
   color: #24201d;
   font-size: 14px;
   font-weight: 850;
   letter-spacing: -0.15px;
   line-height: 17px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .visiwork-department-title small {
