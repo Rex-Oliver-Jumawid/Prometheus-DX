@@ -7,11 +7,13 @@ import {
   INVITATION_DELIVERY,
 } from './invitation.service';
 import { serverEnvironment } from '../config/env';
+import { ApiRateLimitGuard } from '../common/rate-limit';
 
 @Module({
   controllers: [RegistryController],
   providers: [
     RegistryService,
+    ApiRateLimitGuard,
     BrevoInvitationService,
     DisabledInvitationService,
     {
