@@ -17,10 +17,11 @@ import {
 } from '../../shared/contracts/project-announcement';
 import { CurrentMember } from '../auth/current-member.decorator';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
+import { ApiRateLimit, ApiRateLimitGuard } from '../common/rate-limit';
 import { ProjectAnnouncementService } from './project-announcement.service';
 
 @Controller('projects/:projectId/announcements')
-@UseGuards(SupabaseAuthGuard)
+@UseGuards(SupabaseAuthGuard, ApiRateLimitGuard)
 export class ProjectAnnouncementController {
   constructor(
     @Inject(ProjectAnnouncementService)
@@ -36,6 +37,7 @@ export class ProjectAnnouncementController {
   }
 
   @Post()
+  @ApiRateLimit({ group: 'project-announcement-create', limit: 6, windowSeconds: 60 })
   create(
     @CurrentMember() member: Member,
     @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
@@ -50,6 +52,7 @@ export class ProjectAnnouncementController {
   }
 
   @Patch(':announcementId/pin')
+  @ApiRateLimit({ group: 'project-announcement-pin', limit: 20, windowSeconds: 60 })
   setPinned(
     @CurrentMember() member: Member,
     @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
