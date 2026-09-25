@@ -909,11 +909,13 @@ function DepartmentCard({
   onEnter: () => void;
 }) {
   const [showAllMembers, setShowAllMembers] = useState(false);
-  const hiddenMemberCount = Math.max(0, department.members.length - 2);
-  const visibleMembers =
-    hiddenMemberCount > 0
-      ? department.members.slice(0, 2)
-      : department.members.slice(0, 3);
+  const hasMemberOverflow = department.members.length > 3;
+  const hiddenMemberCount = hasMemberOverflow
+    ? department.members.length - 2
+    : 0;
+  const visibleMembers = hasMemberOverflow
+    ? department.members.slice(0, 2)
+    : department.members.slice(0, 3);
   const visibleProjects = department.projects.slice(0, 4);
 
   return (
