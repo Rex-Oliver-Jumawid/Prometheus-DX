@@ -17,6 +17,7 @@ export const NotificationTypeSchema = z.enum([
 export const NotificationListQuerySchema = z
   .object({
     filter: z.enum(['all', 'unread', 'mentions', 'projects']).default('all'),
+    cursor: z.string().uuid().optional(),
   })
   .strict();
 
@@ -64,6 +65,7 @@ export const NotificationSchema = z.object({
 
 export const NotificationListResponseSchema = z.object({
   items: z.array(NotificationSchema),
+  nextCursor: z.string().uuid().nullable().optional(),
 });
 
 export const NotificationUnreadCountResponseSchema = z.object({
