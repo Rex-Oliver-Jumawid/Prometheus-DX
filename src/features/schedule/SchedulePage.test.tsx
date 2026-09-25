@@ -247,8 +247,8 @@ describe('SchedulePage', () => {
     const sundayBlock = sunday!.querySelector('.schedule-calendar-block.mine');
     expect(sundayBlock).not.toBeNull();
     expect(sundayBlock).toHaveAttribute('title', 'Member One: 2:00 PM - 5:00 PM');
-    expect(sundayBlock).toHaveStyle({ top: '314px' });
-    expect((sundayBlock as HTMLElement).style.width).toContain('- 12px');
+    expect(sundayBlock).toHaveStyle({ top: '382px' });
+    expect((sundayBlock as HTMLElement).style.width).toContain('- 10px');
     expect(container.querySelectorAll('.schedule-calendar-head-row .rest-day')).toHaveLength(2);
     expect(container.querySelector('.schedule-calendar-day[aria-label="Saturday"]')).toHaveClass('rest-day');
   });
