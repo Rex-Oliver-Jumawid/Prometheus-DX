@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
-import { ApiRequestError } from '../../lib/api';
+import { apiFetch, ApiRequestError } from '../../lib/api';
+import { CompleteAccountSetupResponseSchema } from '../../../shared/contracts/registry';
 import { getSupabaseClient } from '../../lib/supabase';
 import { useAuth } from './auth-context';
 import { GoogleIcon } from './LoginPage';
@@ -114,19 +115,33 @@ export function AccountSetupPage() {
       return;
     }
 
-    const client = getSupabaseClient();
-    if (!client) {
-      setGlobalError(
-        'Account setup is not configured. Contact your administrator.',
+    try {
+      await apiFetch(
+        '/registry/account-setup',
+        CompleteAccountSetupResponseSchema,
+        {
+          method: 'POST',
+          body: {
+            email: parsed.data.email,
+            password: parsed.data.password,
+          },
+        },
       );
-      return;
+      navigate('/login', {
+        replace: true,
+        state: {
+          message: 'Account created. Sign in with your new password.',
+          email: parsed.data.email,
+        },
+      });
+    } catch (error) {
+      setGlobalError(
+        error instanceof Error
+          ? error.message
+          : 'The account could not be created. Try again.',
+      );
     }
-
-    const { data, error } = await client.auth.signUp({
-      email: parsed.data.email,
-      password: parsed.data.password,
-      options: { emailRedirectTo: `${window.location.origin}/login` },
-    });
+  });
     if (error) {
       setGlobalError(
         'Account setup could not be completed. Sign in if you already have an account, or contact your administrator.',
