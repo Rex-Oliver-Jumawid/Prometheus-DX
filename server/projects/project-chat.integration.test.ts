@@ -20,6 +20,7 @@ let secondProjectId = '';
 let lead: Awaited<ReturnType<typeof db.member.create>>;
 let participant: typeof lead;
 let viewer: typeof lead;
+let admin: typeof lead;
 
 describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
   beforeAll(async () => {
@@ -27,12 +28,13 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
       data: { name: runId, shortLabel: 'CHAT' },
     });
     departmentId = department.id;
-    [lead, participant, viewer] = await Promise.all(
-      ['lead', 'participant', 'viewer'].map((label) => db.member.create({
+    [lead, participant, viewer, admin] = await Promise.all(
+      ['lead', 'participant', 'viewer', 'admin'].map((label) => db.member.create({
         data: {
           email: runId + '-' + label + '@example.com',
           fullName: label,
           status: 'ACTIVE',
+          workspaceRole: label === 'admin' ? 'ADMINISTRATOR' : 'MEMBER',
           departmentId,
         },
       })),
@@ -97,7 +99,7 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
     });
   });
 
-  it('exposes company-visible safe Project activity to every authorized member', async () => {
+  it('shares safe Project activity with participants and admins but denies unrelated members', async () => {
     const leadLogId = randomUUID();
     const memberLogId = randomUUID();
     const foreignLogId = randomUUID();
@@ -121,18 +123,22 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
       ],
     });
     const activity = new ProjectActivityService(db);
-    const [leadView, memberView, outsiderView] = await Promise.all([
+    const [leadView, memberView, adminView] = await Promise.all([
       activity.list(lead, projectId),
       activity.list(participant, projectId),
-      activity.list(viewer, projectId),
+      activity.list(admin, projectId),
     ]);
-    for (const view of [leadView, memberView, outsiderView]) {
+    for (const view of [leadView, memberView, adminView]) {
       expect(ProjectActivityPageSchema.parse(view).scope).toBe('PROJECT');
       expect(view.items.map((item) => item.id)).toEqual(
         expect.arrayContaining([leadLogId, memberLogId]),
       );
       expect(view.items.some((item) => item.id === foreignLogId)).toBe(false);
     }
+    await expect(activity.list(viewer, projectId))
+      .rejects.toBeInstanceOf(ForbiddenException);
+    await expect(activity.list(participant, secondProjectId))
+      .rejects.toBeInstanceOf(ForbiddenException);
     await expect(activity.list(participant, projectId, foreignLogId))
       .rejects.toBeInstanceOf(BadRequestException);
   });
