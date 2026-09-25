@@ -185,6 +185,7 @@ const team: TeamWorkSummaryResponse = {
       id: member.id,
       fullName: member.fullName,
       position: 'Developer',
+      profileImagePath: null,
       department: {
         id: engineeringId,
         name: 'Engineering',
@@ -200,6 +201,7 @@ const team: TeamWorkSummaryResponse = {
       id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
       fullName: 'Ana Mendoza',
       position: 'Designer',
+      profileImagePath: null,
       department: { id: designId, name: 'Design', shortLabel: 'DSN' },
       visiworkDepartmentId: null,
       workingNow: false,
