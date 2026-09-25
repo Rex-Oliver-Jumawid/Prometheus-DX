@@ -123,7 +123,7 @@ Deleting a Project Chat message removes its Project Chat mention notifications w
 
 Project Activity is derived from the existing append-only ActivityLog rather than a second collaboration event store.
 
-The Project Activity API exposes only explicitly allow-listed display metadata so private submission content stored in ActivityLog metadata is not leaked through the company-visible activity surface.
+The Project Activity API exposes only explicitly allow-listed display metadata so private submission content stored in ActivityLog metadata is not leaked through the Project participant activity surface.
 
 Current automatic refresh behavior uses TanStack Query polling and invalidation.
 
