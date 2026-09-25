@@ -571,6 +571,16 @@ model OutcomeSubmission {
   @@map("outcome_submissions")
 }
 
+model ApiRateLimit {
+  keyHash     String   @id @map("key_hash")
+  windowStart DateTime @map("window_start") @db.Timestamptz(6)
+  hitCount    Int      @default(0) @map("hit_count")
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@index([windowStart])
+  @@map("api_rate_limits")
+}
+
 model ActivityLog {
   id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   actorMemberId String?  @map("actor_member_id") @db.Uuid
