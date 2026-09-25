@@ -917,6 +917,7 @@ function DepartmentCard({
   const visibleProjects = department.projects.slice(0, 4);
 
   return (
+    <>
     <article className="visiwork-department-card">
       <header>
         <div className="visiwork-department-title">
@@ -1061,6 +1062,7 @@ function DepartmentCard({
           </section>
         </div>
       )}
+    </>
   );
 }
 
