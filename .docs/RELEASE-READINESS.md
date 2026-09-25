@@ -49,7 +49,7 @@ The CI `Backup and Restore Drill` proves the scripted public-schema backup/resto
 - [x] Milestone 2 CI and Project Activity authorization regression passed on PR #36.
 - [x] Milestone 3 notification/polling CI passed on PR #38.
 - [x] Milestone 3 quota/migration CI passed on PR #41.
-- [ ] Isolated backup/restore script passes its own CI drill.
+- [x] Isolated backup/restore script passed its PostgreSQL 17 CI drill with synthetic data (see [workflow run](https://github.com/Rex-Oliver-Jumawid/Prometheus-DX/actions/runs/36084952973)).
 - [ ] Production app-schema backup created, encrypted and retained off-site.
 - [ ] Production data restore rehearsed on an isolated non-production database, including non-sensitive data counts.
 - [ ] Auth user and Storage recovery procedures verified independently.
