@@ -9,14 +9,17 @@ describe('configureNestApplication', () => {
     const setGlobalPrefix = vi.fn();
     const enableCors = vi.fn();
     const useGlobalFilters = vi.fn();
+    const use = vi.fn();
     const app = {
       setGlobalPrefix,
       enableCors,
       useGlobalFilters,
+      use,
     } as unknown as INestApplication;
 
     configureNestApplication(app);
 
+    expect(use).toHaveBeenCalledWith(expect.any(Function));
     expect(setGlobalPrefix).toHaveBeenCalledWith(API_GLOBAL_PREFIX);
     expect(enableCors).toHaveBeenCalledWith({
       origin: serverEnvironment.clientOrigins,
