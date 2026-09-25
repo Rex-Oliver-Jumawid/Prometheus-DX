@@ -29,7 +29,7 @@ jobs:
           node-version-file: .nvmrc
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Check project configuration
         run: pnpm project:doctor
@@ -112,5 +112,5 @@ jobs:
       - name: Apply production migrations
         run: pnpm prisma:migrate:deploy
 
-      - name: Project Chat PostgreSQL integration
-        run: pnpm exec vitest run server/projects/project-chat.integration.test.ts
+      - name: Collaboration and API quota PostgreSQL integration
+        run: pnpm exec vitest run server/projects/project-chat.integration.test.ts server/rate-limit/rate-limit.guard.integration.test.ts

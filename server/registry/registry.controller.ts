@@ -21,6 +21,8 @@ import { RolesGuard } from '../auth/roles.guard';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { WorkspaceRoles } from '../auth/workspace-roles.decorator';
 import { RegistryService } from './registry.service';
+import { ScopedRateLimitGuard } from '../rate-limit/rate-limit.guard';
+import { RateLimit } from '../rate-limit/rate-limit.decorator';
 
 @Controller('registry')
 @UseGuards(SupabaseAuthGuard, RolesGuard)
@@ -88,6 +90,8 @@ export class RegistryController {
   }
 
   @Post('members')
+  @UseGuards(ScopedRateLimitGuard)
+  @RateLimit({ scope: 'registry-invitation', limit: 20, windowSeconds: 3600 })
   createMember(@Body() body: unknown) {
     const parsed = CreateMemberRequestSchema.safeParse(body);
     if (!parsed.success) {
@@ -115,6 +119,8 @@ export class RegistryController {
   }
 
   @Post('members/:memberId/invitation')
+  @UseGuards(ScopedRateLimitGuard)
+  @RateLimit({ scope: 'registry-invitation', limit: 20, windowSeconds: 3600 })
   resendMemberInvitation(
     @Param('memberId', new ParseUUIDPipe({ version: '4' })) memberId: string,
   ) {

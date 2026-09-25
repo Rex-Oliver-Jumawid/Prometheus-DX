@@ -5,7 +5,9 @@
 This is the operational reference for deploying Prometheus-DX to Vercel with Supabase PostgreSQL/Auth and Brevo email delivery.
 
 The application can build successfully while the database is still on an older schema.
-Database migrations therefore require their own explicit deployment step.
+Database migrations therefore require their own explicit deployment step. **Production currently has a missing tracked Outcome-scope migration entry and a legacy applied notifications migration that is missing from source control.** See the verified migration-history discrepancy in [RELEASE-READINESS.md](RELEASE-READINESS.md) before running any production migration command.
+
+The pre-release sign-off checklist, Free-plan backup/restore limitations and isolated recovery drill are documented in [RELEASE-READINESS.md](RELEASE-READINESS.md). Finish the backup gate and obtain the owner's separate approval before any production changes.
 
 ## Production Components
 
@@ -37,15 +39,17 @@ Do not assume a successful Vercel build means production database migrations wer
 For a change that includes a Prisma migration:
 
 ```text
-1. Verify code and migration locally/CI
-2. Apply tracked migration to production database
-3. Verify migration state and critical invariants
-4. Deploy application code
-5. Run API/database health checks
-6. Run production smoke test
+1. Verify code, migration and isolated backup/restore drill locally/CI
+2. Verify an encrypted, off-site production backup and a practiced recovery path
+3. Obtain explicit approval for the production migration and deployment
+4. Reconcile verified, already-present Outcome-scope schema and investigate the legacy notification migration-history mismatch before applying anything pending
+5. Apply only the approved genuinely pending migrations; verify migration state, quota-table existence and critical invariants
+6. Deploy the exact approved application commit
+7. Run API/database health checks and authenticated production smoke tests
+8. Record the deployed SHA, health responses and release sign-off
 ```
 
-For a change with no migration, step 2 is not required.
+For a change with no migration, step 4 is not required. Backup/restore verification is still required for the release gate.
 
 Never hand-edit production tables as a substitute for a tracked migration unless an emergency recovery is explicitly documented and reconciled back into Prisma migration history.
 
@@ -126,6 +130,8 @@ A successful provider request is not the same as Member activation.
 Member activation remains tied to account setup and authenticated linkage.
 
 ## Prisma Deployment
+
+For the consolidated release, do **not** invoke `prisma migrate deploy` against production before verifying a successful encrypted production backup, restoring it into an isolated environment, and following the migration-history reconciliation section of `RELEASE-READINESS.md`. Never solve a missing historical migration by fabricating SQL or deleting production migration records.
 
 Generate the client:
 

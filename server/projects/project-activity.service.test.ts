@@ -21,7 +21,7 @@ const event = {
 };
 
 function setup(options: {
-  project?: { id: string; leadMemberId: string } | null;
+  project?: { id: string; leadMemberId: string; members: Array<{ memberId: string }> } | null;
   matchingCursor?: { id: string; createdAt: Date } | null;
   rows?: Array<
     Omit<typeof event, 'outcomeId' | 'metadata'> & {
@@ -32,7 +32,7 @@ function setup(options: {
   >;
 } = {}) {
   const db = {
-    project: { findUnique: vi.fn().mockResolvedValue(options.project === undefined ? { id: projectId, leadMemberId: member.id } : options.project) },
+    project: { findUnique: vi.fn().mockResolvedValue(options.project === undefined ? { id: projectId, leadMemberId: member.id, members: [] } : options.project) },
     activityLog: {
       findFirst: vi.fn().mockResolvedValue(options.matchingCursor === undefined ? { id: cursor, createdAt: event.createdAt } : options.matchingCursor),
       findMany: vi.fn().mockResolvedValue(options.rows ?? [event]),
@@ -71,8 +71,8 @@ describe('ProjectActivityService', () => {
 
   it('returns the same display-safe Project activity to non-leads', async () => {
     const { db, service } = setup({
-      project: { id: projectId, leadMemberId: member.id },
-      rows: [{ ...event, actorMember: { id: contributor.id, fullName: 'Contributor' } }],
+      project: { id: projectId, leadMemberId: member.id, members: [{ memberId: contributor.id }] },
+      rows: [{ ...event, actorMember: { id: member.id, fullName: 'Project Lead' } }],
     });
     const response = await service.list(contributor, projectId, cursor);
     expect(response.scope).toBe('PROJECT');
@@ -93,12 +93,30 @@ describe('ProjectActivityService', () => {
       }),
     );
     const foreignCursor = setup({
-      project: { id: projectId, leadMemberId: member.id },
+      project: { id: projectId, leadMemberId: member.id, members: [{ memberId: contributor.id }] },
       matchingCursor: null,
     });
     await expect(foreignCursor.service.list(contributor, projectId, cursor))
       .rejects.toBeInstanceOf(BadRequestException);
     expect(foreignCursor.db.activityLog.findMany).not.toHaveBeenCalled();
+  });
+
+  it('shares sanitized Project Activity with non-project authorized members', async () => {
+    const outsider = { id: '77777777-7777-4777-8777-777777777777', workspaceRole: 'MEMBER' } as Member;
+    const { db, service } = setup();
+    const response = await service.list(outsider, projectId);
+    expect(response.scope).toBe('PROJECT');
+    expect(response.items).toHaveLength(1);
+    expect(response.items[0].metadata).toEqual({});
+    expect(db.activityLog.findMany).toHaveBeenCalledOnce();
+  });
+
+  it('allows an Administrator to inspect an authorized Project without membership', async () => {
+    const admin = { id: '88888888-8888-4888-8888-888888888888', workspaceRole: 'ADMINISTRATOR' } as Member;
+    const { service } = setup();
+    const result = await service.list(admin, projectId);
+    expect(result.scope).toBe('PROJECT');
+    expect(result.items).toHaveLength(1);
   });
 
   it('paginates using a cursor belonging to this project', async () => {

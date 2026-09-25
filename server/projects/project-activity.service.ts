@@ -47,7 +47,7 @@ function safeMetadata(action: string, raw: unknown): Record<string, string> {
   return result;
 }
 
-/** Every active authorized member may read the display-safe Project activity trail. */
+/** Every active authorized employee may read the same display-safe Project activity trail. */
 @Injectable()
 export class ProjectActivityService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}

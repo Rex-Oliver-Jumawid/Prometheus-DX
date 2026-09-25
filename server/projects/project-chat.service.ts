@@ -63,25 +63,17 @@ export class ProjectChatService {
   }
 
   private canWrite(
-    member: Member,
+    _member: Member,
     project: Awaited<ReturnType<ProjectChatService['projectFor']>>,
   ) {
-    return (
-      project.archivedAt === null &&
-      (project.leadMemberId === member.id || project.members.length > 0)
-    );
+    return project.archivedAt === null;
   }
 
   private requireWrite(
-    member: Member,
     project: Awaited<ReturnType<ProjectChatService['projectFor']>>,
   ) {
     if (project.archivedAt !== null)
       throw new ConflictException('Archived Projects are read-only.');
-    if (!this.canWrite(member, project))
-      throw new ForbiddenException(
-        'Only the Project Lead and Project Members may send or edit chat messages.',
-      );
   }
 
   /** Resolve only active people assigned to this Project, never arbitrary workspace IDs. */
@@ -248,7 +240,7 @@ export class ProjectChatService {
       // Check authorization and persist the message while holding it.
       await db.$queryRaw`SELECT id FROM projects WHERE id = ${projectId}::uuid FOR UPDATE`;
       const project = await this.projectFor(member, projectId, db);
-      this.requireWrite(member, project);
+      this.requireWrite(project);
       if (input.parentMessageId) {
         const parent = await db.projectMessage.findFirst({
           where: {
@@ -302,7 +294,7 @@ export class ProjectChatService {
     return this.prisma.$transaction(async (db) => {
       await db.$queryRaw`SELECT id FROM projects WHERE id = ${projectId}::uuid FOR UPDATE`;
       const project = await this.projectFor(member, projectId, db);
-      this.requireWrite(member, project);
+      this.requireWrite(project);
       const original = await db.projectMessage.findFirst({
         where: { id: messageId, projectId, outcomeId: null },
         select: {
@@ -408,7 +400,7 @@ export class ProjectChatService {
     return this.prisma.$transaction(async (db) => {
       await db.$queryRaw`SELECT id FROM projects WHERE id = ${projectId}::uuid FOR UPDATE`;
       const project = await this.projectFor(member, projectId, db);
-      this.requireWrite(member, project);
+      this.requireWrite(project);
       const original = await db.projectMessage.findFirst({
         where: { id: messageId, projectId, outcomeId: null },
         select: { id: true, memberId: true, editedAt: true, deletedAt: true },

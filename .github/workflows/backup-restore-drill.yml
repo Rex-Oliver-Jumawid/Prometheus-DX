@@ -1,0 +1,88 @@
+name: Backup and Restore Drill
+
+on:
+  pull_request:
+    paths:
+      - 'prisma/**'
+      - 'scripts/backup-restore-drill.sh'
+      - '.github/workflows/backup-restore-drill.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  restore-drill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      PGPASSWORD: postgres
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create Supabase-compatible browser roles
+        run: |
+          psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE anon NOLOGIN;
+          CREATE ROLE authenticated NOLOGIN;
+          SQL
+
+      - name: Apply complete tracked migration history
+        run: pnpm prisma:migrate:deploy
+
+      - name: Create a non-sensitive restore fixture
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c \
+            "INSERT INTO public.departments (name, short_label) VALUES ('__backup_restore_drill__', 'DRILL')"
+          createdb -h 127.0.0.1 -U postgres prometheus_restore
+
+      - name: Back up and restore into the isolated local database
+        env:
+          SOURCE_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+          RESTORE_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/prometheus_restore
+          BACKUP_OUTPUT_DIR: ${{ runner.temp }}/private-restore-drill
+        run: |
+          mkdir -p "$BACKUP_OUTPUT_DIR"
+          docker run --rm --network host \
+            --volume "$PWD:/workspace:ro" \
+            --volume "$BACKUP_OUTPUT_DIR:/backups" \
+            --env SOURCE_DATABASE_URL \
+            --env RESTORE_DATABASE_URL \
+            --env BACKUP_OUTPUT_DIR=/backups \
+            postgres:17 bash /workspace/scripts/backup-restore-drill.sh
+
+      - name: Verify data and migration history survived restoration
+        run: |
+          RESTORE_URL=postgresql://postgres:postgres@127.0.0.1:5432/prometheus_restore
+          test "$(psql "$RESTORE_URL" -At -c "SELECT count(*) FROM departments WHERE name='__backup_restore_drill__'")" = "1"
+          test "$(psql "$RESTORE_URL" -At -c "SELECT count(*) FROM _prisma_migrations WHERE finished_at IS NOT NULL")" -gt 25
+          test "$(psql "$RESTORE_URL" -At -c "SELECT count(*) FROM api_rate_limit_buckets")" = "0"

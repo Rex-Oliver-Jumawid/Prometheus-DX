@@ -1,6 +1,5 @@
 import {
   ConflictException,
-  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -36,10 +35,8 @@ export class ProjectAnnouncementService {
     if (!project) throw new NotFoundException('Project not found.');
     return {
       ...project,
-      canManage: project.leadMemberId === member.id && project.archivedAt === null,
-      canPost:
-        project.archivedAt === null &&
-        (project.leadMemberId === member.id || project.members.length > 0),
+      canManage: project.archivedAt === null,
+      canPost: project.archivedAt === null,
     };
   }
 
@@ -107,8 +104,6 @@ export class ProjectAnnouncementService {
       if (!project) throw new NotFoundException('Project not found.');
       if (project.archivedAt)
         throw new ConflictException('Archived Projects are read-only.');
-      if (project.leadMemberId !== member.id && project.members.length === 0)
-        throw new ForbiddenException('Only Project Members and the Project Lead may post announcements.');
 
       const announcement = await db.projectAnnouncement.create({
         data: {
@@ -145,13 +140,11 @@ export class ProjectAnnouncementService {
       await db.$queryRaw`SELECT id FROM projects WHERE id = ${projectId}::uuid FOR UPDATE`;
       const project = await db.project.findUnique({
         where: { id: projectId },
-        select: { id: true, leadMemberId: true, archivedAt: true },
+        select: { id: true, archivedAt: true },
       });
       if (!project) throw new NotFoundException('Project not found.');
       if (project.archivedAt)
         throw new ConflictException('Archived Projects are read-only.');
-      if (project.leadMemberId !== member.id)
-        throw new ForbiddenException('Only the Project Lead may pin announcements.');
 
       const existing = await db.projectAnnouncement.findFirst({
         where: { id: announcementId, projectId },

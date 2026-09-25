@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from './database/database.module';
+import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { RegistryModule } from './registry/registry.module';
@@ -14,6 +15,7 @@ import { VisiWorkModule } from './visiwork/visiwork.module';
 @Module({
   imports: [
     DatabaseModule,
+    RateLimitModule,
     HealthModule,
     AuthModule,
     RegistryModule,

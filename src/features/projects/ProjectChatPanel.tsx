@@ -135,8 +135,11 @@ export function ProjectChatPanel({
     // Active chats still poll for updates without flashing a loading screen.
     staleTime: 60_000,
     gcTime: 15 * 60_000,
-    refetchInterval: 3_000,
-    refetchIntervalInBackground: true,
+    // Deep history remains live at a lower cadence without background fan-out.
+    refetchInterval: (query) =>
+      ((query.state.data as { pages?: unknown[] } | undefined)?.pages?.length ?? 0) > 2
+        ? 15_000 : 5_000,
+    refetchIntervalInBackground: false,
     refetchOnWindowFocus: 'always',
     refetchOnReconnect: 'always',
   });
@@ -326,6 +329,7 @@ export function ProjectChatPanel({
   const pageCount = messages.data?.pages.length ?? 0;
   const firstMessageId = ordered[0]?.id;
   const lastMessageId = ordered[ordered.length - 1]?.id;
+  const hasTargetMessage = ordered.some((message) => message.id === targetMessageId);
 
   useLayoutEffect(() => {
     const composer = composerRef.current;
@@ -359,7 +363,7 @@ export function ProjectChatPanel({
   // viewport so selecting a search result never jumps the entire workspace.
   useLayoutEffect(() => {
     if (!targetMessageId || messages.isPending) return;
-    if (!ordered.some((message) => message.id === targetMessageId)) return;
+    if (!hasTargetMessage) return;
     const frame = window.requestAnimationFrame(() => {
       const thread = threadRef.current;
       const target = thread?.querySelector<HTMLElement>(
@@ -375,7 +379,7 @@ export function ProjectChatPanel({
       thread.scrollTop += centeredOffset;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [targetMessageId, messages.isPending, ordered.length, context.data, jumpRevision]);
+  }, [targetMessageId, messages.isPending, hasTargetMessage, context.data, jumpRevision]);
 
   function updateBody(value: string) {
     setBody(value);
@@ -822,7 +826,7 @@ export function ProjectChatPanel({
                       }
                     }}
                     disabled={!canWrite || send.isPending}
-                    title={!canWrite ? 'Only Project Members and the Project Lead can send messages.' : undefined}
+                    title={!canWrite ? 'Archived Projects are read-only.' : undefined}
                   />
                   {canWrite && mentionSuggestions.length > 0 && (
                     <div className="pw-chat-mention-menu" role="listbox">

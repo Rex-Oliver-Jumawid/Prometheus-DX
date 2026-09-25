@@ -444,16 +444,16 @@ export function ProjectOverviewPage() {
               Chat
             </button>
             <button
-              className={`tab-btn ${activeTab === 'activity' ? 'active' : ''}`}
-              type="button"
-              role="tab"
-              id="pw-activity-tab"
-              aria-selected={activeTab === 'activity'}
-              aria-controls="pw-activity-panel"
-              onClick={() => chooseTab('activity')}
-            >
-              Activity
-            </button>
+                className={`tab-btn ${activeTab === 'activity' ? 'active' : ''}`}
+                type="button"
+                role="tab"
+                id="pw-activity-tab"
+                aria-selected={activeTab === 'activity'}
+                aria-controls="pw-activity-panel"
+                onClick={() => chooseTab('activity')}
+              >
+                Activity
+              </button>
           </nav>
         </div>
       )}

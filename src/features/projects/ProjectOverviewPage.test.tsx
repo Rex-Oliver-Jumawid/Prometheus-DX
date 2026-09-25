@@ -7,6 +7,10 @@ import { apiFetch } from '../../lib/api';
 import { ProjectOverviewPage } from './ProjectOverviewPage';
 
 const projectId = '11111111-1111-4111-8111-111111111111';
+const auth = vi.hoisted(() => ({
+  memberId: '22222222-2222-4222-8222-222222222222',
+  workspaceRole: 'MEMBER' as 'MEMBER' | 'ADMINISTRATOR',
+}));
 const projectMemberId = '44444444-4444-4444-8444-444444444444';
 const projectMembersResponse = {
   projectId,
@@ -60,7 +64,8 @@ const project: Project = {
 vi.mock('../auth/auth-context', () => ({
   useAuth: () => ({
     member: {
-      id: project.lead.id,
+      id: auth.memberId,
+      workspaceRole: auth.workspaceRole,
       fullName: project.lead.fullName,
       email: project.lead.email,
     },
@@ -76,13 +81,13 @@ vi.mock('../../lib/api', async (importOriginal) => ({
   apiFetch: vi.fn(),
 }));
 
-function renderPage() {
+function renderPage(initialPath = `/projects/${projectId}`) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[`/projects/${projectId}`]}>
+      <MemoryRouter initialEntries={[initialPath]}>
         <Routes>
           <Route
             path="/projects/:projectId"
@@ -97,6 +102,8 @@ function renderPage() {
 
 describe('ProjectOverviewPage status mutation', () => {
   beforeEach(() => {
+    auth.memberId = project.lead.id;
+    auth.workspaceRole = 'MEMBER';
     vi.mocked(apiFetch).mockImplementation((path: string) => {
       if (path.endsWith('/workflow')) {
         return Promise.resolve({
@@ -202,6 +209,104 @@ describe('ProjectOverviewPage status mutation', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Content' }));
     expect(screen.getByRole('tab', { name: 'Content' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.queryByRole('heading', { name: 'Project Activity' })).not.toBeInTheDocument();
+  });
+
+  it('shows other participants\' events to ordinary Project Members', async () => {
+    auth.memberId = projectMemberId;
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path.endsWith('/workflow')) return Promise.resolve({ projectId, canManageStructure: false, stages: [] });
+      if (path === `/projects/${projectId}/activity`) return Promise.resolve({
+        items: [{
+          id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          actor: { id: project.lead.id, fullName: 'Project Lead' },
+          outcomeId: null, entityType: 'Stage', entityId: projectId,
+          action: 'STAGE_CREATED', metadata: { name: 'Review' },
+          createdAt: '2026-09-19T13:00:00.000Z',
+        }], nextCursor: null, scope: 'PROJECT',
+      });
+      if (path === `/projects/${projectId}`) return Promise.resolve({
+        ...project, isParticipating: true, currentMemberAccess: 'CAN_VIEW',
+      });
+      return Promise.resolve({});
+    });
+    renderPage();
+    fireEvent.click(await screen.findByRole('tab', { name: 'Activity' }));
+    expect(await screen.findByText(/created a stage/)).toBeVisible();
+    expect(screen.getByText('Project Lead · Project')).toBeVisible();
+  });
+
+  it('opens the full Project Activity timeline for non-project employees', async () => {
+    auth.memberId = '77777777-7777-4777-8777-777777777777';
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path === `/projects/${projectId}`) return Promise.resolve(project);
+      if (path.endsWith('/workflow'))
+        return Promise.resolve({ projectId, canManageStructure: false, stages: [] });
+      if (path === `/projects/${projectId}/activity`) return Promise.resolve({
+        scope: 'PROJECT', nextCursor: null,
+        items: [{
+          id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          actor: { id: projectMemberId, fullName: 'Project Member' },
+          outcomeId: null, entityType: 'Stage', entityId: projectId,
+          action: 'STAGE_CREATED', metadata: { name: 'Initial' },
+          createdAt: '2026-09-19T13:00:00.000Z',
+        }],
+      });
+      return Promise.resolve({});
+    });
+    renderPage(`/projects/${projectId}?tab=activity`);
+    expect(await screen.findByRole('tab', { name: 'Activity' })).toHaveAttribute('aria-selected', 'true');
+    expect(await screen.findByText(/created a stage/)).toBeVisible();
+    expect(apiFetch).toHaveBeenCalledWith(
+      `/projects/${projectId}/activity`, expect.anything(), expect.anything(),
+    );
+  });
+
+  it('enables Chat and announcements for active employees outside the Project', async () => {
+    const outsiderId = '77777777-7777-4777-8777-777777777777';
+    auth.memberId = outsiderId;
+    vi.mocked(apiFetch).mockImplementation((path: string, _schema, options) => {
+      if (path === `/projects/${projectId}`)
+        return Promise.resolve({ ...project, isParticipating: false, currentMemberAccess: null, canChangeStatus: false });
+      if (path.endsWith('/workflow'))
+        return Promise.resolve({ projectId, canManageStructure: false, stages: [] });
+      if (path === `/projects/${projectId}/members`)
+        return Promise.resolve({ ...projectMembersResponse, canManageAccess: false });
+      if (path === `/projects/${projectId}/messages` && options?.method === 'POST')
+        return Promise.resolve({ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' });
+      if (path === `/projects/${projectId}/messages`)
+        return Promise.resolve({ items: [], nextCursor: null, canWrite: true });
+      if (path === `/projects/${projectId}/announcements` && options?.method === 'POST')
+        return Promise.resolve({ id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' });
+      if (path === `/projects/${projectId}/announcements`)
+        return Promise.resolve({ items: [], canManage: false, canPost: true });
+      return Promise.resolve({});
+    });
+
+    renderPage(`/projects/${projectId}?tab=chat`);
+    const input = await screen.findByRole('textbox', { name: 'Message' });
+    expect(input).toBeEnabled();
+    fireEvent.change(input, { target: { value: 'Company-wide chat update' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
+    await waitFor(() => expect(apiFetch).toHaveBeenCalledWith(
+      `/projects/${projectId}/messages`, expect.anything(),
+      expect.objectContaining({ method: 'POST', body: {
+        body: 'Company-wide chat update', parentMessageId: null, mentionMemberIds: [],
+      } }),
+    ));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Announce' }));
+    expect(screen.queryByRole('button', { name: 'Pin announcement' })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Announcement title' }), {
+      target: { value: 'Shared guidance' },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Announcement details' }), {
+      target: { value: 'Everyone can contribute.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => expect(apiFetch).toHaveBeenCalledWith(
+      `/projects/${projectId}/announcements`, expect.anything(),
+      expect.objectContaining({ method: 'POST' }),
+    ));
   });
 
   it('shows persistent Project Chat and sends a message for a writable member', async () => {

@@ -24,6 +24,8 @@ import {
 import { CurrentMember } from '../auth/current-member.decorator';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { VisiWorkService } from './visiwork.service';
+import { ScopedRateLimitGuard } from '../rate-limit/rate-limit.guard';
+import { RateLimit } from '../rate-limit/rate-limit.decorator';
 
 @Controller('visiwork')
 @UseGuards(SupabaseAuthGuard)
@@ -56,6 +58,8 @@ export class VisiWorkController {
   }
 
   @Get('messages/search')
+  @UseGuards(ScopedRateLimitGuard)
+  @RateLimit({ scope: 'visiwork-search', limit: 60, windowSeconds: 60 })
   searchMessages(
     @CurrentMember() member: Member,
     @Query() query: unknown,
@@ -113,6 +117,8 @@ export class VisiWorkController {
   }
 
   @Post('messages')
+  @UseGuards(ScopedRateLimitGuard)
+  @RateLimit({ scope: 'visiwork-send', limit: 30, windowSeconds: 60 })
   sendGeneralMessage(
     @CurrentMember() member: Member,
     @Body() body: unknown,
@@ -141,6 +147,8 @@ export class VisiWorkController {
   }
 
   @Post('departments/:departmentId/messages')
+  @UseGuards(ScopedRateLimitGuard)
+  @RateLimit({ scope: 'visiwork-send', limit: 30, windowSeconds: 60 })
   sendDepartmentMessage(
     @CurrentMember() member: Member,
     @Param('departmentId', new ParseUUIDPipe({ version: '4' }))

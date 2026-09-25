@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import type { PrismaService } from '../database/prisma.service';
 import { NotificationsService } from './notifications.service';
@@ -80,6 +80,7 @@ describe('NotificationsService', () => {
             readAt: null,
           },
         ],
+        nextCursor: null,
       },
     );
     expect(notification.findMany).toHaveBeenCalledWith({
@@ -87,6 +88,7 @@ describe('NotificationsService', () => {
       relationLoadStrategy: 'join',
       select: expect.any(Object),
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: 41,
     });
 
     await service.list(recipientId, { filter: 'unread' });
@@ -95,6 +97,43 @@ describe('NotificationsService', () => {
         where: { recipientMemberId: recipientId, readAt: null },
       }),
     );
+  });
+
+  it('uses recipient-scoped keyset cursors and limits list page size', async () => {
+    const { service, notification } = fixture();
+    const rows = Array.from({ length: 41 }, (_, i) => ({
+      id: `33333333-3333-4333-8333-${String(41 - i).padStart(12, '0')}`,
+      type: 'PROJECT_LEAD_ASSIGNED', data: {}, createdAt, readAt: null,
+      actorMember: { id: otherId, fullName: 'Project Lead' },
+      project: null, outcome: null,
+    }));
+    notification.findMany.mockResolvedValueOnce(rows);
+    const first = await service.list(recipientId, { filter: 'all' });
+    expect(first.items).toHaveLength(40);
+    expect(first.nextCursor).toBe(rows[39].id);
+    expect(notification.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ take: 41, where: { recipientMemberId: recipientId } }),
+    );
+
+    notification.findFirst.mockResolvedValueOnce({ id: rows[39].id, createdAt });
+    notification.findMany.mockResolvedValueOnce([rows[40]]);
+    const second = await service.list(recipientId, { filter: 'all', cursor: first.nextCursor! });
+    expect(second.items.map((item) => item.id)).toEqual([rows[40].id]);
+    expect(second.nextCursor).toBeNull();
+    expect(notification.findMany).toHaveBeenLastCalledWith(expect.objectContaining({
+      where: { recipientMemberId: recipientId, OR: [
+        { createdAt: { lt: createdAt } },
+        { createdAt, id: { lt: rows[39].id } },
+      ] },
+    }));
+  });
+
+  it('rejects a cursor that does not belong to the recipient', async () => {
+    const { service, notification } = fixture();
+    notification.findFirst.mockResolvedValueOnce(null);
+    await expect(service.list(otherId, { filter: 'all', cursor: notificationId }))
+      .rejects.toBeInstanceOf(BadRequestException);
+    expect(notification.findMany).not.toHaveBeenCalled();
   });
 
   it('counts unread notifications only for the current recipient', async () => {

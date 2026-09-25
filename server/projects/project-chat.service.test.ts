@@ -106,28 +106,33 @@ function setup(options: {
 }
 
 describe('ProjectChatService', () => {
-  it('lets authorized viewers read messages but not post', async () => {
+  it('allows non-project employees to read and send without editing another author', async () => {
     const { service, db } = setup();
     const response = await service.list(viewer, projectId);
-    expect(response.canWrite).toBe(false);
+    expect(response.canWrite).toBe(true);
     expect(response.items[0]).toMatchObject({
-      id: messageId,
-      author: message.member,
-      body: 'Weekly update',
-      canEdit: false,
+      id: messageId, author: message.member,
+      body: 'Weekly update', canEdit: false,
     });
     await expect(service.send(viewer, projectId, { body: 'Hello', parentMessageId: null }))
-      .rejects.toBeInstanceOf(ForbiddenException);
-    expect(db.projectMessage.create).not.toHaveBeenCalled();
+      .resolves.toMatchObject({ id: messageId });
+    expect(db.projectMessage.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ memberId: viewerId, body: 'Hello' }),
+    }));
+    await expect(service.edit(viewer, projectId, messageId, {
+      body: 'Not my message', expectedEditedAt: null,
+    })).rejects.toBeInstanceOf(ForbiddenException);
   });
 
-  it('allows the Lead and Project Members to send without granting viewers write access', async () => {
+  it('allows the Lead and Project Members to send alongside unrelated employees', async () => {
     const { service, db } = setup();
     await expect(service.send(lead, projectId, { body: 'Lead update', parentMessageId: null }))
       .resolves.toMatchObject({ id: messageId });
     await expect(service.send(member, projectId, { body: 'Member update', parentMessageId: null }))
       .resolves.toMatchObject({ id: messageId });
-    expect(db.projectMessage.create).toHaveBeenCalledTimes(2);
+    await expect(service.send(viewer, projectId, { body: 'Company update', parentMessageId: null }))
+      .resolves.toMatchObject({ id: messageId });
+    expect(db.projectMessage.create).toHaveBeenCalledTimes(3);
     expect(db.projectMessage.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: {
@@ -184,7 +189,7 @@ describe('ProjectChatService', () => {
     expect(db.notification.createMany).not.toHaveBeenCalled();
   });
 
-  it('checks permissions after locking the Project, so a revoked Member cannot post', async () => {
+  it('permits chat after Project membership revocation because access is company-wide', async () => {
     const { service, db } = setup();
     let releaseLock!: () => void;
     db.$queryRaw.mockImplementation(
@@ -196,8 +201,8 @@ describe('ProjectChatService', () => {
       id: projectId, leadMemberId: leadId, archivedAt: null, members: [],
     });
     releaseLock();
-    await expect(attempt).rejects.toBeInstanceOf(ForbiddenException);
-    expect(db.projectMessage.create).not.toHaveBeenCalled();
+    await expect(attempt).resolves.toMatchObject({ id: messageId });
+    expect(db.projectMessage.create).toHaveBeenCalledOnce();
   });
 
   it('uses a timestamp and UUID boundary for older messages', async () => {

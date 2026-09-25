@@ -23,6 +23,8 @@ import {
 import { CurrentMember } from '../auth/current-member.decorator';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { ProjectChatService } from './project-chat.service';
+import { ScopedRateLimitGuard } from '../rate-limit/rate-limit.guard';
+import { RateLimit } from '../rate-limit/rate-limit.decorator';
 
 @Controller('projects/:projectId/messages')
 @UseGuards(SupabaseAuthGuard)
@@ -32,6 +34,8 @@ export class ProjectChatController {
   ) {}
 
   @Get('search')
+  @UseGuards(ScopedRateLimitGuard)
+  @RateLimit({ scope: 'project-chat-search', limit: 60, windowSeconds: 60 })
   search(
     @CurrentMember() member: Member,
     @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
@@ -64,6 +68,8 @@ export class ProjectChatController {
   }
 
   @Post()
+  @UseGuards(ScopedRateLimitGuard)
+  @RateLimit({ scope: 'project-chat-send', limit: 30, windowSeconds: 60 })
   send(
     @CurrentMember() member: Member,
     @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
