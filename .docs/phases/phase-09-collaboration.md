@@ -16,7 +16,7 @@ This is the chosen Phase 9 live-update strategy.
 
 A separate Supabase Realtime transport is not required for current release completion because the product requirement allows realtime **or automatic live updates**, and persistent refetch provides missed-event recovery.
 
-Current Project Chat refresh behavior polls every 3 seconds, refreshes in the background, and forces refetch on focus and reconnect.
+Project Chat and VisiWork now reduce background polling while preserving foreground updates and refetch on focus and reconnect.
 
 Notifications now refresh the active inbox and global unread count every 15 seconds, including background polling, and force refetch on focus and reconnect.
 This makes new collaboration notifications appear without requiring a manual page refresh while keeping persisted Notification rows authoritative.
@@ -62,8 +62,7 @@ The current Project collaboration implementation includes:
 
 - a Project Chat tab inside the shared Project Workspace.
 - persisted general Project Chat.
-- company-visible read access for active authorized Prometheus members.
-- write access restricted to the Project Lead and Project Members.
+- company-visible read and write access for every active authorized Prometheus member, including employees not assigned to the Project.
 - archived Project read-only enforcement.
 - message replies.
 - deterministic cursor pagination.
@@ -76,11 +75,11 @@ The current Project collaboration implementation includes:
 - optimistic-concurrency checks for stale edits and deletes.
 - author-only soft deletion with tombstones that preserve replies and conversation position.
 - Project announcements.
-- announcement posting by the Project Lead or Project Members.
+- announcement posting by every active authorized Prometheus member, including non-project employees.
 - Project Lead-only announcement pinning and unpinning.
 - a compact Project Members rail.
 - Project Activity using display-safe ActivityLog metadata.
-- Project-wide normal activity for Administrators, the Project Lead, and Project Members, including events authored by other participants.
+- company-visible normal Project Activity for every active authorized Prometheus member, including events authored by other employees.
 - Project Lead and member filtering controls in the Project Activity interface.
 - loading, empty, retry, and skeleton states for collaboration surfaces.
 - automatic polling and query invalidation for Project Chat.
@@ -123,7 +122,7 @@ Deleting a Project Chat message removes its Project Chat mention notifications w
 
 Project Activity is derived from the existing append-only ActivityLog rather than a second collaboration event store.
 
-The Project Activity API exposes only explicitly allow-listed display metadata so private submission content stored in ActivityLog metadata is not leaked through the Project participant activity surface.
+The company-visible Project Activity API exposes only explicitly allow-listed display metadata so private submission content stored in ActivityLog metadata is not leaked to employees outside the Project.
 
 Current automatic refresh behavior uses TanStack Query polling and invalidation.
 
@@ -190,17 +189,15 @@ Project Chat mention notifications navigate to `/projects/:projectId?tab=chat&me
 
 ## Security and Authorization
 
-All active authorized Prometheus members may read normal company-visible Project Chat.
+All active authorized Prometheus members may read and contribute to normal company-visible Project Chat and view the same display-safe Project Activity timeline, even without Project Membership. Direct Activity API requests follow the same rule.
 
-Project Activity is accessible to Administrators, the Project Lead, and Project Members. Both Leads and Members may see every display-safe activity event in their Project, not just events they authored. Non-project Members cannot access a Project's Activity endpoint.
-
-Only the Project Lead or a Project Member may send general Project Chat messages.
+Every active authorized Prometheus member may send general Project Chat messages in a non-archived Project.
 
 Only the message author may edit or delete their own Project Chat message.
 
 Project Chat mentions may target only active Project participants represented by the Project Lead or Project Membership.
 
-Only the Project Lead or a Project Member may post a Project announcement.
+Every active authorized Prometheus member may post a Project announcement in a non-archived Project.
 
 Only the Project Lead may pin or unpin Project announcements.
 
@@ -244,7 +241,7 @@ Automated coverage exists for:
 - Project Chat mention validation.
 - Project Chat mention notification creation and synchronization.
 - Project announcement posting and Lead-only pinning.
-- participant-visible display-safe Project Activity with nonmember API denial.
+- company-visible display-safe Project Activity, including non-project members, with strict Project ID isolation.
 - ActivityLog project isolation and pagination.
 - React chat composer behavior.
 - Enter to send and Shift+Enter for a newline.
@@ -354,7 +351,7 @@ Supabase Realtime remains optional future optimization rather than a release dep
 Message mutations and WorkSession-backed visibility refresh across active clients without creating a second state store.
 Reconnect and focus changes recover current persisted records through refetch.
 
-### P9-D05 - Keep Project Chat authorization aligned with derived Project Membership
+### P9-D05 - Support company-wide Project Chat and announcements
 
 **Status:** Accepted
 
@@ -368,17 +365,15 @@ All active authorized members may inspect Projects, but company-wide read access
 
 #### Decision
 
-Allow every active authorized member to read general Project Chat.
+Allow every active authorized member to read and send general Project Chat messages and post announcements in non-archived Projects, regardless of Project Membership.
 
-Allow writes only for the Project Lead or a derived Project Member.
-
-Apply the same posting boundary to Project announcements and reserve pinning for the Project Lead.
+Reserve announcement pinning for the Project Lead and message editing/deletion for the original author. Project Membership continues to govern Project workflow permissions, not the shared Project conversation.
 
 #### Result
 
 Normal Project visibility remains company-wide while collaboration mutation authority continues to come from canonical Project relationships.
 
-### P9-D06 - Give Project participants shared activity visibility and sanitize metadata
+### P9-D06 - Keep normal Project Activity company-visible and sanitize metadata
 
 **Status:** Accepted
 
@@ -388,17 +383,17 @@ Normal Project visibility remains company-wide while collaboration mutation auth
 
 #### Root cause / constraint
 
-Release Milestone 2 confirms that non-Lead Project Members see activity created by other participants. Unlike company-visible read-only Project Chat, Project Activity is restricted to Project participants and Administrators, and ActivityLog metadata can contain private details.
+The release's final authorization decision makes normal Project Activity company-visible to all active authorized employees, including non-project members. ActivityLog metadata can contain private submission details and therefore requires display-safe projection.
 
 #### Decision
 
-Return the same Project-wide activity trail to Administrators, the Project Lead, and Project Members regardless of event author. Deny the Activity API to unrelated non-project Members. Hide the Activity tab for those viewers while retaining the separate company-visible Project Chat read rule.
+Return the same Project-wide activity trail to every active authorized member regardless of Project Membership or event author. Show the Activity tab to all authorized employees, enforce Project ID isolation, and preserve the display-safe metadata allowlist.
 
 Expose only action-specific allow-listed display metadata instead of raw ActivityLog metadata.
 
 #### Result
 
-Participants have a shared activity timeline without exposing that timeline to nonmembers or leaking private submission text through the activity endpoint.
+Every authorized employee has a shared activity timeline without leaking private submission text through the Activity endpoint.
 
 ### P9-D07 - Preserve Outcome scope without mixing it into general Project Chat
 
@@ -465,9 +460,9 @@ Keep common semantics aligned, especially author mutation rules, mention lifecyc
 
 A shared collaboration abstraction should be introduced only if it reduces duplication without obscuring room-specific authorization.
 
-Project Activity provides the same display-safe event set to Administrators, Project Leads, and Project Members. Ordinary non-project viewers retain company-visible Project Chat, not Project Activity.
+Project Activity provides the same display-safe event set to all authorized employees. Project Membership does not restrict Project Chat, announcement posting or Activity viewing.
 
-If Lead-only activity detail is added later, it should be additive and explicitly documented rather than reducing participants' shared Project-wide activity.
+If Lead-only activity detail is added later, it should be additive and explicitly documented rather than reducing company-wide display-safe Project Activity.
 
 ## Lessons from the Phase
 
@@ -477,7 +472,7 @@ Durable message state should be correct before realtime delivery is optimized.
 
 Mention notifications must follow the lifecycle of the mention relationship instead of only the initial message-create event.
 
-Shared participant activity can remain useful without exposing raw audit metadata.
+Shared company-wide activity can remain useful without exposing raw audit metadata.
 
 Keeping the canonical nullable Outcome scope in ProjectMessage avoids coupling general Project Chat to future Outcome discussion.
 
