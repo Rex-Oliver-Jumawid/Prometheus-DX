@@ -279,8 +279,9 @@ describe('NotificationsPage', () => {
       expect(records[0].readAt).toBe(readAt);
       expect(
         queryClient
-          .getQueryData<{ items: Notification[] }>(notificationKeys.list('all'))
-          ?.items.find((item) => item.id === unreadId)?.readAt,
+          .getQueryData<{ pages: Array<{ items: Notification[] }> }>(notificationKeys.list('all'))
+          ?.pages.flatMap((page) => page.items)
+          .find((item) => item.id === unreadId)?.readAt,
       ).toBeTruthy();
     });
   });
