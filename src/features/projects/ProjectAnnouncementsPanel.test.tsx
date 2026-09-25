@@ -123,20 +123,26 @@ describe('ProjectAnnouncementsPanel', () => {
     ));
   });
 
-  it('lets non-project employees post without showing Lead-only pin controls', async () => {
+  it('lets non-project employees post and unpin announcements', async () => {
     vi.mocked(apiFetch).mockImplementation((path, _schema, options) => {
       if (options?.method === 'POST') return Promise.resolve(announcement);
+      if (options?.method === 'PATCH') return Promise.resolve(announcement);
       if (path.endsWith('/announcements'))
         return Promise.resolve({
           items: [{ ...announcement, pinnedAt: '2026-09-24T11:05:00.000Z' }],
-          canManage: false,
+          canManage: true,
           canPost: true,
         });
       return Promise.reject(new Error('Unexpected API request'));
     });
     renderPanel();
     fireEvent.click(await screen.findByRole('button', { name: 'Announce' }));
-    expect(screen.queryByRole('button', { name: 'Unpin announcement' })).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: 'Unpin announcement' }));
+    await waitFor(() => expect(apiFetch).toHaveBeenCalledWith(
+      '/projects/' + projectId + '/announcements/' + announcementId + '/pin',
+      expect.anything(),
+      expect.objectContaining({ method: 'PATCH', body: { pinned: false } }),
+    ));
     fireEvent.change(screen.getByRole('textbox', { name: 'Announcement title' }), {
       target: { value: announcement.title },
     });
