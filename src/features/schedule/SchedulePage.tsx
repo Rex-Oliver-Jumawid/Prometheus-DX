@@ -380,7 +380,7 @@ function SchedulePageSkeleton() {
 export function SchedulePage() {
   const { member, session } = useAuth();
   const queryClient = useQueryClient();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const requestedMemberId = searchParams.get('member');
   const requestedView = searchParams.get('view');
   const [view, setView] = useState<'team' | 'shifts'>(() =>
@@ -431,8 +431,8 @@ export function SchedulePage() {
       setView('shifts');
       return;
     }
-    if (!selectedMemberId && member?.id) setSelectedMemberId(member.id);
-  }, [member?.id, requestedMemberId, selectedMemberId]);
+    if (member?.id) setSelectedMemberId((current) => current || member.id);
+  }, [member?.id, requestedMemberId]);
 
   const mutation = useMutation({
     mutationFn: (input: UpdateScheduleRequest) =>
@@ -764,8 +764,15 @@ export function SchedulePage() {
                 <select
                   value={selectedMember?.id ?? ''}
                   onChange={(event) => {
-                    setSelectedMemberId(event.target.value);
+                    const nextMemberId = event.target.value;
+                    setSelectedMemberId(nextMemberId);
                     setSelectedDay(null);
+                    setSearchParams((current) => {
+                      const next = new URLSearchParams(current);
+                      next.set('view', 'shifts');
+                      next.set('member', nextMemberId);
+                      return next;
+                    }, { replace: true });
                   }}
                 >
                   {members.map((item) => (
