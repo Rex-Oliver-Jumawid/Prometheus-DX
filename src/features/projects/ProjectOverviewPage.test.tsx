@@ -235,12 +235,30 @@ describe('ProjectOverviewPage status mutation', () => {
     expect(screen.getByText('Project Lead · Project')).toBeVisible();
   });
 
-  it('hides Activity from nonmembers, including direct activity links', async () => {
+  it('opens the full Project Activity timeline for non-project employees', async () => {
     auth.memberId = '77777777-7777-4777-8777-777777777777';
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path === `/projects/${projectId}`) return Promise.resolve(project);
+      if (path.endsWith('/workflow'))
+        return Promise.resolve({ projectId, canManageStructure: false, stages: [] });
+      if (path === `/projects/${projectId}/activity`) return Promise.resolve({
+        scope: 'PROJECT', nextCursor: null,
+        items: [{
+          id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          actor: { id: projectMemberId, fullName: 'Project Member' },
+          outcomeId: null, entityType: 'Stage', entityId: projectId,
+          action: 'STAGE_CREATED', metadata: { name: 'Initial' },
+          createdAt: '2026-09-19T13:00:00.000Z',
+        }],
+      });
+      return Promise.resolve({});
+    });
     renderPage(`/projects/${projectId}?tab=activity`);
-    expect(await screen.findByText('Project Activity is available to Project Members and Leads.')).toBeVisible();
-    expect(screen.queryByRole('tab', { name: 'Activity' })).not.toBeInTheDocument();
-    expect(vi.mocked(apiFetch).mock.calls.some(([path]) => path === `/projects/${projectId}/activity`)).toBe(false);
+    expect(await screen.findByRole('tab', { name: 'Activity' })).toHaveAttribute('aria-selected', 'true');
+    expect(await screen.findByText(/created a stage/)).toBeVisible();
+    expect(apiFetch).toHaveBeenCalledWith(
+      `/projects/${projectId}/activity`, expect.anything(), expect.anything(),
+    );
   });
 
   it('shows persistent Project Chat and sends a message for a writable member', async () => {
