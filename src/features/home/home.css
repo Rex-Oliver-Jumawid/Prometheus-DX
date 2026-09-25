@@ -446,6 +446,18 @@
     monospace;
 }
 
+.home-working-avatar.has-image {
+  overflow: hidden;
+  background: #eee7e2;
+}
+
+.home-working-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
 .home-working-row > span:nth-child(2) {
   min-width: 0;
 }
