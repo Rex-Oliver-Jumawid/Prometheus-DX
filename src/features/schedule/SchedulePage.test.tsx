@@ -616,10 +616,10 @@ describe('SchedulePage', () => {
     });
     fireEvent.pointerMove(stage!, {
       pointerId: 3,
-      clientX: 735,
+      clientX: 840,
       clientY: 100,
     });
-    fireEvent.pointerUp(stage!, { pointerId: 3, clientX: 735, clientY: 100 });
+    fireEvent.pointerUp(stage!, { pointerId: 3, clientX: 840, clientY: 100 });
 
     expect(
       screen.getByRole('button', {
@@ -695,6 +695,7 @@ describe('SchedulePage', () => {
     );
 
     expect(mondayBlocks).toHaveLength(2);
+    expect(container.querySelectorAll('.schedule-calendar-day[aria-label="Monday"] .schedule-calendar-lane-guide')).toHaveLength(1);
     expect((mondayBlocks[0] as HTMLElement).style.width).toContain('50%');
     expect((mondayBlocks[1] as HTMLElement).style.width).toContain('50%');
   });
