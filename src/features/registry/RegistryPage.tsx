@@ -1460,9 +1460,11 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
 
           {members.isSuccess && members.data.length > 0 && (
             <>
-              {resendInvitation.isError && (
+              {(resendInvitation.isError || removeMember.isError) && (
                 <div className="registry-form-error" role="alert">
-                  {messageFromError(resendInvitation.error)}
+                  {messageFromError(
+                    removeMember.error ?? resendInvitation.error,
+                  )}
                 </div>
               )}
               {filteredMembers.length === 0 ? (
@@ -1479,6 +1481,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
                         <th>Department</th>
                         <th>Access</th>
                         <th>Authentication</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1563,6 +1566,29 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
                                       : 'Send invitation'}
                                 </button>
                               )}
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="registry-member-remove-action"
+                              disabled={
+                                removeMember.isPending &&
+                                removeMember.variables === member.id
+                              }
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                const confirmed = window.confirm(
+                                  `Remove ${member.fullName}? Their account access will be revoked, but historical work stays preserved. You can add ${member.email} again later to send a new setup invitation.`,
+                                );
+                                if (confirmed) removeMember.mutate(member.id);
+                              }}
+                              onKeyDown={(event) => event.stopPropagation()}
+                            >
+                              {removeMember.isPending &&
+                              removeMember.variables === member.id
+                                ? 'Removing...'
+                                : 'Remove'}
+                            </button>
                           </td>
                         </tr>
                       ))}
