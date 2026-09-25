@@ -142,19 +142,6 @@ export function AccountSetupPage() {
       );
     }
   });
-    if (error) {
-      setGlobalError(
-        'Account setup could not be completed. Sign in if you already have an account, or contact your administrator.',
-      );
-      return;
-    }
-
-    if (!data.session) {
-      setSuccessMessage(
-        'Check your email to confirm the account, then sign in to finish linking your Prometheus membership.',
-      );
-    }
-  });
 
   async function continueWithGoogle() {
     if (oauthLoading || isSubmitting) return;
