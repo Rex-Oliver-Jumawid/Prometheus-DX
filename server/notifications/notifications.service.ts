@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
@@ -18,6 +19,8 @@ import type {
   NotificationUnreadCountResponse,
 } from '../../shared/contracts/notification';
 import { PrismaService } from '../database/prisma.service';
+
+const NOTIFICATION_PAGE_SIZE = 30;
 
 const notificationSelect = {
   id: true,
@@ -107,13 +110,38 @@ export class NotificationsService {
       where.type = { notIn: ['VISIWORK_MENTION', 'PROJECT_CHAT_MENTION'] };
     }
 
+    const previous = query.cursor
+      ? await this.prisma.notification.findFirst({
+          where: { ...where, id: query.cursor },
+          select: { id: true, createdAt: true },
+        })
+      : null;
+    if (query.cursor && !previous)
+      throw new BadRequestException('Invalid notification cursor.');
+
     const records = await this.prisma.notification.findMany({
-      where,
+      where: {
+        ...where,
+        ...(previous
+          ? {
+              OR: [
+                { createdAt: { lt: previous.createdAt } },
+                { createdAt: previous.createdAt, id: { lt: previous.id } },
+              ],
+            }
+          : {}),
+      },
       relationLoadStrategy: 'join',
       select: notificationSelect,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: NOTIFICATION_PAGE_SIZE + 1,
     });
-    return { items: records.map(toNotification) };
+    const hasMore = records.length > NOTIFICATION_PAGE_SIZE;
+    const items = records.slice(0, NOTIFICATION_PAGE_SIZE);
+    return {
+      items: items.map(toNotification),
+      nextCursor: hasMore ? items[items.length - 1].id : null,
+    };
   }
 
   async unreadCount(
