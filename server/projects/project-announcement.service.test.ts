@@ -88,7 +88,7 @@ describe('ProjectAnnouncementService', () => {
     const otherSetup = setup(other);
     await expect(otherSetup.service.list(other, projectId)).resolves.toMatchObject({
       canManage: false,
-      canPost: false,
+      canPost: true,
       items: [{ id: announcementId }],
     });
   });
@@ -142,15 +142,17 @@ describe('ProjectAnnouncementService', () => {
     });
   });
 
-  it('prevents nonmembers from posting announcements', async () => {
+  it('allows non-project employees to announce but not pin', async () => {
     const { service, tx } = setup(other);
-    await expect(
-      service.create(other, projectId, {
-        title: record.title,
-        body: record.body,
-      }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
-    expect(tx.projectAnnouncement.create).not.toHaveBeenCalled();
+    await expect(service.create(other, projectId, {
+      title: record.title,
+      body: record.body,
+    })).resolves.toMatchObject({ id: announcementId });
+    expect(tx.projectAnnouncement.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ memberId: other.id, projectId }),
+    }));
+    await expect(service.setPinned(other, projectId, announcementId, { pinned: true }))
+      .rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('pins announcements and records the pin in Project Activity', async () => {
