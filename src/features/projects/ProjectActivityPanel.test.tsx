@@ -70,7 +70,7 @@ describe('ProjectActivityPanel', () => {
     expect(await screen.findByText('No activity has been recorded yet.')).toBeVisible();
   });
 
-  it('shows company-visible Project Activity to a non-lead viewer', async () => {
+  it('shows only the member\'s own actions in My Activity', async () => {
     const teammate = { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', fullName: 'Teammate' };
     vi.mocked(apiFetch).mockResolvedValue({
       items: [
@@ -80,35 +80,32 @@ describe('ProjectActivityPanel', () => {
           actor: teammate, action: 'TASK_COMPLETED', metadata: { title: 'Unrelated task' } },
       ],
       nextCursor: null,
-      scope: 'PROJECT',
+      scope: 'PERSONAL',
     });
     renderActivity({ isLead: false, currentMemberId: actor.id });
-    expect(await screen.findByRole('heading', { name: 'Project Activity' })).toBeVisible();
-    expect(screen.getByText('PROJECT AUDIT TRAIL')).toBeVisible();
-    expect(await screen.findByText(/created a feature/)).toBeVisible();
-    expect(screen.getByText(/completed a task/)).toBeVisible();
-    expect(screen.getByRole('combobox', { name: 'Member' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Reviews' })).toBeInTheDocument();
-    const outcomeLinks = screen.getAllByRole('link', { name: 'View outcome' });
-    expect(outcomeLinks).toHaveLength(2);
-    for (const link of outcomeLinks) {
-      expect(link).toHaveAttribute(
-        'href',
-        '/projects/' + projectId + '/outcomes/' + outcomeId,
-      );
-    }
+    expect(await screen.findByRole('heading', { name: 'My Activity' })).toBeVisible();
+    expect(screen.getByText('PERSONAL PROJECT HISTORY')).toBeVisible();
+    expect(screen.getByText('Added feature')).toBeVisible();
+    expect(screen.getByText('Added feature: Search')).toBeVisible();
+    expect(screen.queryByText('Unrelated task')).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Member' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reviews' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View outcome' })).toHaveAttribute(
+      'href',
+      '/projects/' + projectId + '/outcomes/' + outcomeId,
+    );
   });
 
   it('uses the empty-history card when Project Activity has no recorded actions', async () => {
     vi.mocked(apiFetch).mockResolvedValue({
       items: [],
       nextCursor: null,
-      scope: 'PROJECT',
+      scope: 'PERSONAL',
     });
     const { container } = renderActivity({ isLead: false });
     expect(await screen.findByText('No activity has been recorded yet.')).toBeVisible();
     expect(container.querySelector('.pw-activity-empty-state')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Project Activity' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'My Activity' })).toBeVisible();
     expect(screen.getByText('0')).toBeVisible();
   });
 
