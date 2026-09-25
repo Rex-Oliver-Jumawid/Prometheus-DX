@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type {
   HomeDashboardResponse,
@@ -122,10 +123,25 @@ function ProjectGroup({
 }
 
 function WorkingMember({ member }: { member: HomeWorkingMember }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const imageSrc = member.profileImagePath && !imageFailed
+    ? member.profileImagePath
+    : null;
+
   return (
     <li className="home-working-row">
-      <span className="home-working-avatar" aria-hidden="true">
-        {initials(member.fullName)}
+      <span className={"home-working-avatar" + (imageSrc ? " has-image" : "")} aria-hidden="true">
+        {imageSrc ? (
+          <img
+            src={imageSrc}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          initials(member.fullName)
+        )}
       </span>
       <span>
         <strong>{member.fullName}</strong>
