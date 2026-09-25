@@ -361,7 +361,7 @@ Reconnect and focus changes recover current persisted records through refetch.
 
 #### Root cause / constraint
 
-All active authorized members may inspect Projects, but company-wide read access must not silently become Project communication write access.
+All active authorized members may inspect Projects. The final product decision also permits their participation in general Project Chat and announcements, while keeping workflow edits and Lead-only pinning separate.
 
 #### Decision
 
@@ -371,7 +371,7 @@ Reserve announcement pinning for the Project Lead and message editing/deletion f
 
 #### Result
 
-Normal Project visibility remains company-wide while collaboration mutation authority continues to come from canonical Project relationships.
+Normal Project Chat and announcement posting are company-wide for active authorized employees. Project relationships continue to control workflow edits and announcement pinning.
 
 ### P9-D06 - Keep normal Project Activity company-visible and sanitize metadata
 
