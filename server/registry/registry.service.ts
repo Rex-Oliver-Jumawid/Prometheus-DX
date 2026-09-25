@@ -5,8 +5,10 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { createClient } from '@supabase/supabase-js';
 import type {
   CreateDepartmentRequest,
   CreateMemberRequest,
@@ -16,6 +18,7 @@ import type {
   UpdateDepartmentRequest,
   UpdateMemberRequest,
 } from '../../shared/contracts/registry';
+import { serverEnvironment } from '../config/env';
 import { PrismaService } from '../database/prisma.service';
 import {
   INVITATION_DELIVERY,
@@ -44,7 +47,19 @@ export class RegistryService {
     const departments = await this.prisma.department.findMany({
       include: {
         _count: {
-          select: { members: true, projects: true, outcomes: true },
+          select: {
+            members: {
+              where: {
+                NOT: {
+                  status: 'DEACTIVATED',
+                  authUserId: null,
+                  invitationSentAt: null,
+                },
+              },
+            },
+            projects: true,
+            outcomes: true,
+          },
         },
       },
       orderBy: [{ name: 'asc' }, { createdAt: 'asc' }],
@@ -159,6 +174,13 @@ export class RegistryService {
 
   async listMembers(): Promise<RegistryMember[]> {
     const members = await this.prisma.member.findMany({
+      where: {
+        NOT: {
+          status: 'DEACTIVATED',
+          authUserId: null,
+          invitationSentAt: null,
+        },
+      },
       include: { department: true },
       orderBy: [{ fullName: 'asc' }, { createdAt: 'asc' }],
     });
@@ -168,6 +190,43 @@ export class RegistryService {
 
   async createMember(input: CreateMemberRequest): Promise<RegistryMember> {
     await this.assertDepartmentExists(input.departmentId);
+
+    const removedMember = await this.prisma.member.findFirst({
+      where: {
+        email: { equals: input.email, mode: 'insensitive' },
+        status: 'DEACTIVATED',
+        authUserId: null,
+        invitationSentAt: null,
+      },
+      select: { id: true },
+    });
+
+    if (removedMember) {
+      const restored = await this.prisma.member.update({
+        where: { id: removedMember.id },
+        data: {
+          email: input.email,
+          fullName: input.fullName,
+          departmentId: input.departmentId,
+          position: input.position,
+          workspaceRole: input.workspaceRole,
+          status: 'INVITED',
+          deactivatedAt: null,
+          invitationSentAt: null,
+        },
+        include: { department: true },
+      });
+
+      try {
+        return await this.deliverInvitation(restored.id);
+      } catch {
+        this.logger.warn(
+          `Invitation delivery is pending for restored member ${restored.id}.`,
+        );
+        return this.toMember(restored);
+      }
+    }
+
     await this.assertEmailAvailable(input.email);
 
     try {
@@ -254,6 +313,63 @@ export class RegistryService {
     } catch (error) {
       this.rethrowMemberWriteError(error);
     }
+  }
+
+  async removeMember(
+    memberId: string,
+    actingMemberId: string,
+  ): Promise<{ id: string }> {
+    if (memberId === actingMemberId) {
+      throw new BadRequestException(
+        'You cannot remove your own administrator account.',
+      );
+    }
+
+    const member = await this.prisma.member.findUnique({
+      where: { id: memberId },
+      select: { id: true, authUserId: true },
+    });
+    if (!member) throw new NotFoundException('Member not found.');
+
+    if (member.authUserId) {
+      const supabaseUrl = serverEnvironment.supabaseUrl;
+      const serviceRoleKey = serverEnvironment.supabaseServiceRoleKey;
+      if (!supabaseUrl || !serviceRoleKey) {
+        throw new ServiceUnavailableException(
+          'Member removal is unavailable because Supabase admin credentials are not configured.',
+        );
+      }
+
+      const admin = createClient(supabaseUrl, serviceRoleKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+          detectSessionInUrl: false,
+        },
+      });
+      const { error } = await admin.auth.admin.deleteUser(member.authUserId);
+      if (error) {
+        this.logger.error(
+          `Failed to remove Supabase Auth user for member ${member.id}: ${error.message}`,
+        );
+        throw new ServiceUnavailableException(
+          'The member account could not be removed from authentication. Try again.',
+        );
+      }
+    }
+
+    await this.prisma.member.update({
+      where: { id: member.id },
+      data: {
+        authUserId: null,
+        status: 'DEACTIVATED',
+        invitationSentAt: null,
+        deactivatedAt: new Date(),
+        visiworkDepartmentId: null,
+      },
+    });
+
+    return { id: member.id };
   }
 
   async sendMemberInvitation(memberId: string): Promise<RegistryMember> {
