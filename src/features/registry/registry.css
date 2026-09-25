@@ -935,6 +935,31 @@
   font-size: 9px;
 }
 
+.registry-edit-members {
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.registry-edit-members-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  padding-bottom: 7px;
+  border-bottom: 1px solid #ece4de;
+}
+
+.registry-edit-members-heading h3 {
+  margin: 3px 0 0;
+  color: #403733;
+  font-size: 12px;
+}
+
+.registry-edit-members-list {
+  max-height: 190px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
 .registry-department-members-list {
   display: grid;
   max-height: min(430px, 52dvh);
