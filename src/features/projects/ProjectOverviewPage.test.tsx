@@ -261,6 +261,54 @@ describe('ProjectOverviewPage status mutation', () => {
     );
   });
 
+  it('enables Chat and announcements for active employees outside the Project', async () => {
+    const outsiderId = '77777777-7777-4777-8777-777777777777';
+    auth.memberId = outsiderId;
+    vi.mocked(apiFetch).mockImplementation((path: string, _schema, options) => {
+      if (path === `/projects/${projectId}`)
+        return Promise.resolve({ ...project, isParticipating: false, currentMemberAccess: null, canChangeStatus: false });
+      if (path.endsWith('/workflow'))
+        return Promise.resolve({ projectId, canManageStructure: false, stages: [] });
+      if (path === `/projects/${projectId}/members`)
+        return Promise.resolve({ ...projectMembersResponse, canManageAccess: false });
+      if (path === `/projects/${projectId}/messages` && options?.method === 'POST')
+        return Promise.resolve({ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' });
+      if (path === `/projects/${projectId}/messages`)
+        return Promise.resolve({ items: [], nextCursor: null, canWrite: true });
+      if (path === `/projects/${projectId}/announcements` && options?.method === 'POST')
+        return Promise.resolve({ id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' });
+      if (path === `/projects/${projectId}/announcements`)
+        return Promise.resolve({ items: [], canManage: false, canPost: true });
+      return Promise.resolve({});
+    });
+
+    renderPage(`/projects/${projectId}?tab=chat`);
+    const input = await screen.findByRole('textbox', { name: 'Message' });
+    expect(input).toBeEnabled();
+    fireEvent.change(input, { target: { value: 'Company-wide chat update' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
+    await waitFor(() => expect(apiFetch).toHaveBeenCalledWith(
+      `/projects/${projectId}/messages`, expect.anything(),
+      expect.objectContaining({ method: 'POST', body: {
+        body: 'Company-wide chat update', parentMessageId: null, mentionMemberIds: [],
+      } }),
+    ));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Announce' }));
+    expect(screen.queryByRole('button', { name: 'Pin announcement' })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Announcement title' }), {
+      target: { value: 'Shared guidance' },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Announcement details' }), {
+      target: { value: 'Everyone can contribute.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => expect(apiFetch).toHaveBeenCalledWith(
+      `/projects/${projectId}/announcements`, expect.anything(),
+      expect.objectContaining({ method: 'POST' }),
+    ));
+  });
+
   it('shows persistent Project Chat and sends a message for a writable member', async () => {
     const existing = {
       id: '55555555-5555-4555-8555-555555555555',
