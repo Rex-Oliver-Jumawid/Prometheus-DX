@@ -227,6 +227,8 @@ export function ProjectOverviewPage() {
   }
 
   const value = project.data;
+  const canReadActivity = member?.workspaceRole === 'ADMINISTRATOR' ||
+    value.lead.id === member?.id || value.isParticipating;
   const statusError = updateStatus.isError
     ? errorMessage(updateStatus.error)
     : null;
@@ -443,17 +445,19 @@ export function ProjectOverviewPage() {
             >
               Chat
             </button>
-            <button
-              className={`tab-btn ${activeTab === 'activity' ? 'active' : ''}`}
-              type="button"
-              role="tab"
-              id="pw-activity-tab"
-              aria-selected={activeTab === 'activity'}
-              aria-controls="pw-activity-panel"
-              onClick={() => chooseTab('activity')}
-            >
-              Activity
-            </button>
+            {canReadActivity && (
+              <button
+                className={`tab-btn ${activeTab === 'activity' ? 'active' : ''}`}
+                type="button"
+                role="tab"
+                id="pw-activity-tab"
+                aria-selected={activeTab === 'activity'}
+                aria-controls="pw-activity-panel"
+                onClick={() => chooseTab('activity')}
+              >
+                Activity
+              </button>
+            )}
           </nav>
         </div>
       )}
@@ -501,16 +505,22 @@ export function ProjectOverviewPage() {
           </div>
         </div>
       ) : activeTab === 'activity' ? (
-        <div id="pw-activity-panel" role="tabpanel" aria-labelledby="pw-activity-tab">
-          <ProjectActivityPanel
-            key={projectId}
-            projectId={projectId!}
-            accessToken={accessToken}
-            currentMemberId={member?.id}
-            currentMemberName={member?.fullName}
-            isLead={value.lead.id === member?.id}
-          />
-        </div>
+        canReadActivity ? (
+          <div id="pw-activity-panel" role="tabpanel" aria-labelledby="pw-activity-tab">
+            <ProjectActivityPanel
+              key={projectId}
+              projectId={projectId!}
+              accessToken={accessToken}
+              currentMemberId={member?.id}
+              currentMemberName={member?.fullName}
+              isLead={value.lead.id === member?.id}
+            />
+          </div>
+        ) : (
+          <div id="pw-activity-panel" role="tabpanel" aria-label="Activity unavailable">
+            <p className="pw-collaboration-state">Project Activity is available to Project Members and Leads.</p>
+          </div>
+        )
       ) : (
         <div id="pw-content-panel" role="tabpanel" aria-labelledby="pw-content-tab">
           <ProjectWorkflow
