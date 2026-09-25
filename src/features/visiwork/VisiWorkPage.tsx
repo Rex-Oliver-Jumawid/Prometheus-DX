@@ -180,9 +180,12 @@ function RoomPanel({
     initialPageParam: null as string | null,
     getNextPageParam: (page) => page.nextCursor ?? undefined,
     enabled: Boolean(accessToken),
-    staleTime: 750,
-    refetchInterval: 1_500,
-    refetchIntervalInBackground: true,
+    staleTime: 3_000,
+    // Older history stays cached without refetching every page on each timer.
+    refetchInterval: (query) =>
+      ((query.state.data as { pages?: unknown[] } | undefined)?.pages?.length ?? 0) > 2
+        ? false : 5_000,
+    refetchIntervalInBackground: false,
     refetchOnWindowFocus: 'always',
     refetchOnReconnect: 'always',
   });
@@ -196,9 +199,10 @@ function RoomPanel({
         { accessToken },
       ),
     enabled: Boolean(accessToken && targetMessageId),
-    staleTime: 750,
-    refetchInterval: targetMessageId ? 1_500 : false,
-    refetchIntervalInBackground: true,
+    staleTime: 10_000,
+    // Context is resolved on search/deep-link and revalidated on focus/reconnect.
+    refetchInterval: false,
+    refetchIntervalInBackground: false,
     refetchOnWindowFocus: 'always',
     refetchOnReconnect: 'always',
     retry: false,
