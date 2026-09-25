@@ -181,10 +181,10 @@ function RoomPanel({
     getNextPageParam: (page) => page.nextCursor ?? undefined,
     enabled: Boolean(accessToken),
     staleTime: 3_000,
-    // Older history stays cached without refetching every page on each timer.
+    // Older history remains live on a lower cadence to reduce request fan-out.
     refetchInterval: (query) =>
       ((query.state.data as { pages?: unknown[] } | undefined)?.pages?.length ?? 0) > 2
-        ? false : 5_000,
+        ? 15_000 : 5_000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: 'always',
     refetchOnReconnect: 'always',

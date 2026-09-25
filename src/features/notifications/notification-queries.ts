@@ -42,11 +42,11 @@ export function notificationListQuery(
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     staleTime: NOTIFICATION_REFRESH_INTERVAL_MS,
-    // A deep, manually expanded history must not refetch every older page on a timer.
+    // Deep history stays live with a slower foreground refresh to reduce request fan-out.
     // The sidebar unread count continues refreshing; focus/reconnect restores the inbox.
     refetchInterval: (query) =>
       ((query.state.data as InfiniteData<NotificationListResponse> | undefined)?.pages.length ?? 0) > 1
-        ? false
+        ? 60_000
         : NOTIFICATION_REFRESH_INTERVAL_MS,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: 'always',
