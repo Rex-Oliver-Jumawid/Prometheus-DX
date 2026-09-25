@@ -63,9 +63,18 @@ export function findScheduleConflict(
 export const UpdateScheduleRequestSchema = z
   .object({
     targetWeeklyMinutes: z.number().int().min(0).max(10_080),
+    // Optional for existing API callers. New editor saves explicit rest days,
+    // including an intentional empty selection.
+    restDays: z.array(WeekdaySchema).max(6).optional(),
     blocks: z.array(ScheduleBlockInputSchema).max(28),
   })
   .superRefine((value, context) => {
+    if (value.restDays && new Set(value.restDays).size !== value.restDays.length) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: 'Rest days must be unique.', path: ['restDays'] });
+    }
+    if (value.restDays?.some((day) => value.blocks.some((block) => block.weekday === day))) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: 'A rest day cannot contain scheduled blocks.', path: ['restDays'] });
+    }
     value.blocks.forEach((block, index) => {
       if (
         clockTimeToMinutes(block.startTime) >= clockTimeToMinutes(block.endTime)
@@ -98,6 +107,8 @@ export const MemberScheduleSchema = z.object({
   id: z.string().uuid(),
   memberId: z.string().uuid(),
   targetWeeklyMinutes: z.number().int().min(0),
+  // Existing fixtures and older responses may omit this; the API now always returns it.
+  restDays: z.array(WeekdaySchema).optional(),
   blocks: z.array(ScheduleBlockSchema),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
