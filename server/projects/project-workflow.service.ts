@@ -898,7 +898,7 @@ export class ProjectWorkflowService {
   }
 
   private toOutcome(outcome: OutcomeRecord, currentMemberId: string): Outcome {
-    const tasks = outcome.features.flatMap((feature) => feature.tasks);
+    const tasks = (outcome.features ?? []).flatMap((feature) => feature.tasks);
     const completedTasks = tasks.filter((task) => task.status === 'DONE').length;
     const workProgress =
       outcome.lifecycleStatus === 'ACCEPTED'
