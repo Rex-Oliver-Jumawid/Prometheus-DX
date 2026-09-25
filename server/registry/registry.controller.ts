@@ -19,11 +19,12 @@ import {
 } from '../../shared/contracts/registry';
 import { RolesGuard } from '../auth/roles.guard';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
+import { ApiRateLimit, ApiRateLimitGuard } from '../common/rate-limit';
 import { WorkspaceRoles } from '../auth/workspace-roles.decorator';
 import { RegistryService } from './registry.service';
 
 @Controller('registry')
-@UseGuards(SupabaseAuthGuard, RolesGuard)
+@UseGuards(SupabaseAuthGuard, RolesGuard, ApiRateLimitGuard)
 @WorkspaceRoles('ADMINISTRATOR')
 export class RegistryController {
   constructor(
@@ -88,6 +89,7 @@ export class RegistryController {
   }
 
   @Post('members')
+  @ApiRateLimit({ group: 'registry-member-create', limit: 20, windowSeconds: 3600 })
   createMember(@Body() body: unknown) {
     const parsed = CreateMemberRequestSchema.safeParse(body);
     if (!parsed.success) {
@@ -115,6 +117,7 @@ export class RegistryController {
   }
 
   @Post('members/:memberId/invitation')
+  @ApiRateLimit({ group: 'registry-invitation', limit: 5, windowSeconds: 3600 })
   resendMemberInvitation(
     @Param('memberId', new ParseUUIDPipe({ version: '4' })) memberId: string,
   ) {
