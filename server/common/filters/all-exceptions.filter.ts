@@ -46,10 +46,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
     };
 
     if (statusCode >= 500) {
-      this.logger.error(
-        `${request.method} ${request.originalUrl} failed`,
-        exception instanceof Error ? exception.stack : String(exception),
+      // Never log raw query strings, credentials or unreviewed exception messages.
+      const route = request.path.replace(
+        /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+        ':id',
       );
+      this.logger.error(JSON.stringify({
+        event: 'api_exception', method: request.method, route, statusCode,
+        exceptionType: exception instanceof Error ? exception.name : 'Unknown',
+      }));
     }
 
     response.status(statusCode).json(body);
