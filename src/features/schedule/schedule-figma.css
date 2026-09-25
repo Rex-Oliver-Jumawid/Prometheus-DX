@@ -446,3 +446,27 @@
 @media (prefers-reduced-motion: reduce) {
   .schedule-skeleton-line { animation: none; background-size: 100% 100%; }
 }
+
+
+/* Schedule table readability and frozen day headings. */
+.schedule-calendar-scroll {
+  max-height: min(72vh, 760px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.schedule-calendar-head-row {
+  z-index: 12;
+  top: 0;
+  height: 58px;
+  box-shadow: 0 5px 14px rgba(55,39,31,.07);
+}
+.schedule-calendar-time-head,
+.schedule-calendar-day-head { font-size: 10px; }
+.schedule-calendar-time-head { font-weight: 800; }
+.schedule-calendar-day-head strong { font-size: 11px; }
+.schedule-calendar-day-head small { margin-top: 3px; font-size: 8px; }
+.schedule-calendar-day-head.rest-day span { margin-top: 3px; font-size: 6.5px; }
+.schedule-time-axis > div { font-size: 8px; }
+.schedule-calendar-block strong { font-size: 8.5px; line-height: 1.2; }
+.schedule-calendar-block small { margin-top: 4px; font-size: 7px; line-height: 1.2; }
+.schedule-calendar-editing .editor-day-header span { font-size: 7px; }

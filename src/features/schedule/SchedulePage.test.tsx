@@ -449,7 +449,7 @@ describe('SchedulePage', () => {
   });
 
 
-  it('shows a single completion action and keeps editing help collapsed', async () => {
+  it('shows a single completion action without extra help panels', async () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByRole('heading', { name: "You haven't set your schedule yet" });
@@ -458,14 +458,9 @@ describe('SchedulePage', () => {
     expect(screen.getAllByRole('button', { name: 'Done configuring' })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Save Schedule' })).not.toBeInTheDocument();
     expect(screen.getByLabelText('Weekly schedule progress')).toHaveTextContent('Target');
-    const restHelp = screen.getByText('How rest days are saved').closest('details');
-    expect(restHelp).not.toBeNull();
-    expect(restHelp).not.toHaveAttribute('open');
-    await user.click(screen.getByText('How rest days are saved'));
-    expect(restHelp).toHaveAttribute('open');
-    expect(screen.getByText(/Only recurring blocks and your weekly target are saved/)).toBeInTheDocument();
-    await user.click(screen.getByText('How to edit blocks'));
-    expect(screen.getByText(/Drag a block to change its day or time/)).toBeInTheDocument();
+    expect(screen.queryByText('How rest days are saved')).not.toBeInTheDocument();
+    expect(screen.queryByText('How to edit blocks')).not.toBeInTheDocument();
+    expect(screen.getByText('Fine-tune blocks using time inputs')).toBeInTheDocument();
   });
 
   it('generates a weekly draft, selects a block, adjusts it and cancels without saving', async () => {
@@ -489,21 +484,66 @@ describe('SchedulePage', () => {
       p === '/schedule/me' && options?.method === 'PUT')).toBe(false);
   });
 
-  it('toggles rest days and rejects exceeding the configured limit', async () => {
+  it('keeps the rest-day count synchronized with day-header toggles', async () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByRole('heading', { name: "You haven't set your schedule yet" });
     await user.click(screen.getAllByRole('button', { name: 'Configure My Schedule' })[0]);
+    const restDaysInput = screen.getByRole('spinbutton', { name: 'Rest days' });
+    expect(restDaysInput).toHaveValue(2);
+
     await user.clear(screen.getByRole('spinbutton', { name: 'Hours per week' }));
     await user.type(screen.getByRole('spinbutton', { name: 'Hours per week' }), '20');
     await user.click(screen.getByRole('button', { name: 'Generate initial schedule' }));
     await user.click(screen.getByRole('button', { name: /Saturday: rest day, make workday/ }));
+    expect(restDaysInput).toHaveValue(1);
     expect(screen.getByText('Scheduled 24h / Target 20h')).toBeInTheDocument();
+
     await user.click(screen.getByRole('button', { name: /Monday: workday, make rest day/ }));
+    expect(restDaysInput).toHaveValue(2);
     expect(screen.getByText('Scheduled 20h / Target 20h')).toBeInTheDocument();
+
     await user.click(screen.getByRole('button', { name: /Tuesday: workday, make rest day/ }));
-    expect(screen.getByRole('status')).toHaveTextContent('Unmark another rest day');
-    expect(screen.getByText('Scheduled 20h / Target 20h')).toBeInTheDocument();
+    expect(restDaysInput).toHaveValue(3);
+    expect(screen.getByText('Scheduled 16h / Target 20h')).toBeInTheDocument();
+  });
+
+  it('allows clearing rest days to zero and persists the exact selection', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole('heading', { name: "You haven't set your schedule yet" });
+    await user.click(screen.getAllByRole('button', { name: 'Configure My Schedule' })[0]);
+
+    const restDaysInput = screen.getByRole('spinbutton', { name: 'Rest days' });
+    await user.clear(restDaysInput);
+    expect(restDaysInput).toHaveValue(null);
+    await user.tab();
+    expect(restDaysInput).toHaveValue(0);
+
+    await user.clear(restDaysInput);
+    await user.type(restDaysInput, '4');
+    expect(restDaysInput).toHaveValue(4);
+    await user.click(screen.getByRole('button', { name: 'Done configuring' }));
+
+    await waitFor(() => {
+      const writes = mocks.apiFetch.mock.calls.filter(([path, , options]) =>
+        path === '/schedule/me' && options?.method === 'PUT');
+      expect(writes).toHaveLength(1);
+      expect(writes[0][2].body.restDays).toHaveLength(4);
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Configure My Schedule' }));
+    expect(screen.getByRole('spinbutton', { name: 'Rest days' })).toHaveValue(4);
+    await user.clear(screen.getByRole('spinbutton', { name: 'Rest days' }));
+    await user.tab();
+    await user.click(screen.getByRole('button', { name: 'Done configuring' }));
+
+    await waitFor(() => {
+      const writes = mocks.apiFetch.mock.calls.filter(([path, , options]) =>
+        path === '/schedule/me' && options?.method === 'PUT');
+      expect(writes).toHaveLength(2);
+      expect(writes[1][2].body.restDays).toEqual([]);
+    });
   });
 
   it('does not allow manual day selection onto an existing rest day', async () => {

@@ -615,10 +615,10 @@ Phase 6 is safe to merge into `main` without starting Phase 7 automatically.
 Configure My Schedule edits a local React Hook Form draft above the merged Team Schedule calendar.
 The calendar supports pointer-based movement, day changes, duration resizing, and keyboard-accessible selection with button-based adjustments.
 Only the signed-in member's blocks are editable; concurrent teammates' blocks occupy separate visual lanes.
-Day-header toggles and the Rest days count are draft-only editing constraints.
-The current `/schedule/me` contract persists recurring blocks and the weekly target, not explicit rest-day preferences; on reentry, empty days are inferred as rest.
-Changing a rest day into a workday does not persist a standalone workday unless it receives a scheduled block.
-Lowering the Rest days count releases excess rest days, retaining later days where possible.
+Day-header toggles and the Rest days input stay synchronized in both directions.
+The `/schedule/me` contract persists recurring blocks, the weekly target, and the exact rest-day selection, including zero rest days.
+Changing a day between rest and work updates the persisted preference independently of whether that workday currently has a time block.
+Changing the Rest days number reconciles the selected day set and removes draft blocks that land on newly selected rest days.
 The draft is submitted once through `PUT /schedule/me` when configuration is completed; cancellation discards changes.
 
 
@@ -632,10 +632,9 @@ A move onto a rest day is rejected when another own block remains on the source 
 Invalid pointer placements roll back to the gesture's original draft rather than preserving a partially valid intermediate position.
 Horizontal drag distance is derived from the rendered calendar width with the existing fixed geometry retained only as a test and layout fallback.
 
-Rest days remain configuration-draft state because the Phase 6 backend persists recurring Schedule blocks rather than an explicit rest-day entity.
-No migration or API field was added for rest days.
-After a saved schedule is reopened, the editor infers at most the trailing two unscheduled days as the initial rest-day guidance instead of presenting every empty weekday as explicitly persisted rest.
-This avoids claiming that an unsupported rest-day preference was saved independently of recurring blocks.
+Rest days are stored on MemberSchedule as an explicit Weekday array.
+Migration `20260925233000_schedule_rest_days` backfills existing schedules with the previous trailing-two inference so existing users keep their prior visible behavior.
+New saves preserve the exact selected rest days, so values such as zero or four survive configuration reentry without being reduced to the legacy two-day inference.
 
 The initial empty schedule target now matches the interaction reference at 20 hours per week.
 The weekly target input follows the interaction reference range of 1 through 119 whole hours.
@@ -647,22 +646,21 @@ Focused component coverage was expanded for pointer movement, resizing, rest-day
 ## Schedule editor layout refinement
 
 Configure My Schedule now uses a compact settings row, a clearly separated weekly-progress indicator, and a selected-block panel with accessible adjustment controls.
-Large rest-day persistence and editing instructions moved into collapsed help disclosures; the explanation remains available before saving.
+The extra rest-day and block-editing help disclosures were removed so the configuration surface stays focused on schedule generation, selected time blocks, and optional time inputs.
 The sole `Done configuring` action is in the draft footer next to `Cancel`, eliminating the duplicate save controls previously shown in the header and settings row.
 The footer states that modifications are drafts until submitted through `PUT /schedule/me`.
 Focused component and browser test selectors follow the footer action and expand the optional fine-tuning form when needed.
-The interaction and backend contracts remain unchanged; rest days are inferred from recurring blocks when configuration is reopened.
+The interaction contract now includes explicit rest days, and the editor restores the persisted selection when configuration is reopened.
 
 ## Schedule editor visual and rest-day consistency
 
 The configuration inputs and footer buttons use compact workspace-scale controls.
 The merged desktop week uses available horizontal space and retains a minimum scrollable grid width.
 Both editable and read-only schedule blocks are inset by six pixels at each edge and use opaque backgrounds so their borders and labels remain distinct from the hour grid.
-The normal Team Schedule infers rest markers from the signed-in member's unscheduled days rather than treating Saturday and Sunday as permanently rest, and the legend identifies them as personal.
+The normal Team Schedule uses the signed-in member's persisted rest-day markers, with legacy inference only as a compatibility fallback for older payloads, and the legend identifies them as personal.
 The fine-tuning dropdown disables rest-day destinations; changing a rest day to a workday via its header is required before assigning planned blocks there.
 All draft block updates reconcile the rest-day set, and final submission still validates against conflicting rest days.
-Time In remains independent of planned availability. A session recorded on an unscheduled or inferred rest day contributes to actual work in Shifts but never creates a planned block.
-These inferred labels do not represent independently persisted rest-day preferences.
+Time In remains independent of planned availability. A session recorded on a rest day contributes to actual work in Shifts but never creates a planned block or changes the saved rest-day preference.
 
 ## Figma-aligned page gutters, compact setup notice and loading skeleton
 

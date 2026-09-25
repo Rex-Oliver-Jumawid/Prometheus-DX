@@ -397,7 +397,7 @@ export function SchedulePage() {
   const [selectedDay, setSelectedDay] = useState<Weekday | null>(null);
   const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(null);
   const [restDays, setRestDays] = useState<Set<Weekday>>(() => new Set(['SATURDAY', 'SUNDAY']));
-  const [restDayCount, setRestDayCount] = useState(2);
+  const [restDayCount, setRestDayCount] = useState<number | null>(2);
   const [dailyHours, setDailyHours] = useState(4);
   const [editorMessage, setEditorMessage] = useState('');
 
@@ -467,9 +467,9 @@ export function SchedulePage() {
     setSelectedMemberId(member?.id ?? '');
     const saved = mineQuery.data?.schedule ?? null;
     form.reset(defaultFormValues(saved));
-    const inferred = initialRestDays(saved?.blocks ?? []);
-    setRestDays(new Set(inferred));
-    setRestDayCount(Math.min(6, inferred.length));
+    const savedRestDays = saved?.restDays ?? initialRestDays(saved?.blocks ?? []);
+    setRestDays(new Set(savedRestDays));
+    setRestDayCount(savedRestDays.length);
     setDailyHours(4);
     setSelectedBlockIndex(null);
     setEditorMessage('');
@@ -480,11 +480,15 @@ export function SchedulePage() {
 
   const submitSchedule = (input: UpdateScheduleRequest) => {
     if (mutation.isPending) return;
-    if (input.blocks.some((block) => restDays.has(block.weekday))) {
+    const payload: UpdateScheduleRequest = {
+      ...input,
+      restDays: WEEKDAYS.filter((day) => restDays.has(day)),
+    };
+    if (payload.blocks.some((block) => restDays.has(block.weekday))) {
       setFormError('A rest day cannot contain your schedule blocks. Mark it as a workday first.');
       return;
     }
-    const parsed = UpdateScheduleRequestSchema.safeParse(input);
+    const parsed = UpdateScheduleRequestSchema.safeParse(payload);
     if (!parsed.success) {
       setFormError(parsed.error.issues[0]?.message ?? 'Check the schedule values.');
       return;
@@ -501,15 +505,47 @@ export function SchedulePage() {
     const allowedRestDays = new Set(nextRestDays ?? restDays);
     for (const block of next) allowedRestDays.delete(block.weekday);
     setRestDays(allowedRestDays);
+    setRestDayCount(allowedRestDays.size);
     setFormError(null);
+  };
+
+  const applyRestDayCount = (count: number) => {
+    const bounded = Math.max(0, Math.min(6, Math.trunc(count)));
+    let next = new Set(restDays);
+
+    if (next.size > bounded) {
+      const kept = bounded === 0
+        ? []
+        : WEEKDAYS.filter((day) => next.has(day)).slice(-bounded);
+      next = new Set(kept);
+    } else if (next.size < bounded) {
+      for (const day of [...WEEKDAYS].reverse()) {
+        if (!next.has(day)) next.add(day);
+        if (next.size === bounded) break;
+      }
+    }
+
+    const nextBlocks = watchedBlocks.filter((block) => !next.has(block.weekday));
+    form.setValue('blocks', nextBlocks, { shouldDirty: true, shouldValidate: true });
+    setRestDays(next);
+    setRestDayCount(bounded);
+    setSelectedBlockIndex(null);
+    setFormError(null);
+    setEditorMessage(
+      bounded === 0
+        ? 'Rest days cleared. All seven days are available for scheduling.'
+        : 'Rest days set to ' + bounded + '. Blocks on rest days were removed from the draft.',
+    );
   };
 
   const generateWeek = () => {
     const target = Math.max(60, Math.min(7_140, Number.isFinite(targetMinutes) ? targetMinutes : 60));
-    // As in finalmodel.html, generation uses the selected number of rest days
-    // and starts with the trailing days of the week; manual toggles apply afterward.
-    const generatedRest = new Set<Weekday>(WEEKDAYS.slice(7 - restDayCount));
+    // Generation uses the selected number of rest days and starts with the
+    // trailing days of the week; manual header toggles can then refine them.
+    const count = Math.max(0, Math.min(6, restDayCount ?? 0));
+    const generatedRest = new Set<Weekday>(count === 0 ? [] : WEEKDAYS.slice(7 - count));
     setRestDays(generatedRest);
+    setRestDayCount(count);
     const result = generateInitialSchedule(target, dailyHours * 60, generatedRest);
     blocks.replace(result.blocks);
     setSelectedBlockIndex(result.blocks.length ? 0 : null);
@@ -526,7 +562,6 @@ export function SchedulePage() {
     const next = new Set(restDays);
     if (next.has(day)) {
       next.delete(day);
-      setRestDays(next);
       if (!watchedBlocks.some((block) => block.weekday === day)) {
         const duration = Math.max(
           60,
@@ -544,14 +579,15 @@ export function SchedulePage() {
           weekday: day,
           startTime: editorClock(start),
           endTime: editorClock(start + duration),
-        }]);
+        }], next);
+      } else {
+        setRestDays(next);
+        setRestDayCount(next.size);
       }
       setEditorMessage(DAY_LABELS[day] + ' is now a workday.');
     } else {
-      if (next.size >= restDayCount) {
-        setEditorMessage(
-          'You selected ' + restDayCount + ' rest days. Unmark another rest day or increase the Rest days setting first.',
-        );
+      if (next.size >= 6) {
+        setEditorMessage('A schedule needs at least one workday, so at most six days can be marked as rest.');
         return;
       }
       next.add(day);
@@ -562,8 +598,7 @@ export function SchedulePage() {
         const selected = watchedBlocks[selectedBlockIndex];
         setSelectedBlockIndex(selected ? nextBlocks.indexOf(selected) : null);
       }
-      setDraftBlocks(nextBlocks);
-      setRestDays(next);
+      setDraftBlocks(nextBlocks, next);
       setEditorMessage(DAY_LABELS[day] + ' is now a rest day. Redistribute those hours to another workday.');
     }
     setFormError(null);
@@ -628,7 +663,9 @@ export function SchedulePage() {
   const ownSchedule = mineQuery.data?.schedule ?? ownMember?.schedule ?? null;
   // Rest preferences are not persisted independently. Infer only unscheduled
   // days for the signed-in member, never hard-code weekends as rest.
-  const displayedRestDays = new Set(initialRestDays(ownSchedule?.blocks ?? []));
+  const displayedRestDays = new Set(
+    ownSchedule?.restDays ?? initialRestDays(ownSchedule?.blocks ?? []),
+  );
   const departments = Array.from(
     new Map(members.map((item) => [item.department.id, item.department])).values(),
   ).sort((left, right) => left.name.localeCompare(right.name));
@@ -987,17 +1024,17 @@ export function SchedulePage() {
                     min="0"
                     max="6"
                     step="1"
-                    value={restDayCount}
+                    value={restDayCount ?? ''}
                     onChange={(event) => {
-                       const count = Math.max(0, Math.min(6, Math.trunc(Number(event.target.value) || 0)));
-                       setRestDayCount(count);
-                       if (restDays.size > count) {
-                         // Prefer retaining trailing weekend rest days when lowering the limit.
-                         const kept = WEEKDAYS.filter((day) => restDays.has(day)).slice(-count);
-                         setRestDays(new Set(count ? kept : []));
-                         setEditorMessage('Reduced rest days to ' + count + '. Newly opened days can receive blocks.');
-                       }
-                     }}
+                      if (event.target.value === '') {
+                        setRestDayCount(null);
+                        return;
+                      }
+                      applyRestDayCount(Number(event.target.value));
+                    }}
+                    onBlur={() => {
+                      if (restDayCount === null) applyRestDayCount(0);
+                    }}
                   />
                 </label>
                 <button type="button" className="schedule-button primary" disabled={mutation.isPending} onClick={generateWeek}>
@@ -1024,16 +1061,6 @@ export function SchedulePage() {
                 </div>
               </div>
               {editorMessage && <p className="schedule-editor-message" role="status">{editorMessage}</p>}
-              <div className="schedule-config-disclosures">
-                <details>
-                  <summary>How to edit blocks</summary>
-                  <p>Drag a block to change its day or time. Resize it using the bottom handle, or use the adjustment buttons. Click a day header to change its rest status. A rest day cannot contain your planned blocks.</p>
-                </details>
-                <details>
-                  <summary>How rest days are saved</summary>
-                  <p>Only recurring blocks and your weekly target are saved. Unscheduled days are inferred as rest next time; empty workdays do not persist. You can still Time In and record actual hours on any day, including a rest day.</p>
-                </details>
-              </div>
               <div className="schedule-config-advanced">
                 <details>
                   <summary>Fine-tune blocks using time inputs</summary>
@@ -1099,9 +1126,9 @@ export function SchedulePage() {
                   <button type="button" className="schedule-button" disabled={mutation.isPending} onClick={() => {
                   const saved = mineQuery.data?.schedule ?? null;
                   form.reset(defaultFormValues(saved));
-                  const inferred = initialRestDays(saved?.blocks ?? []);
-                  setRestDays(new Set(inferred));
-                  setRestDayCount(Math.min(6, inferred.length));
+                  const savedRestDays = saved?.restDays ?? initialRestDays(saved?.blocks ?? []);
+                  setRestDays(new Set(savedRestDays));
+                  setRestDayCount(savedRestDays.length);
                   setDailyHours(4);
                   setSelectedBlockIndex(null);
                   setEditorMessage('');
