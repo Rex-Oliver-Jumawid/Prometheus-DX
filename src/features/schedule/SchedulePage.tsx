@@ -1500,7 +1500,8 @@ function CalendarDay({
           <div
             className={
               'schedule-calendar-block' +
-              (calendarMember.id === currentMemberId ? ' mine' : '')
+              (calendarMember.id === currentMemberId ? ' mine' : '') +
+              (visibleEnd - visibleStart < 90 ? ' short' : '')
             }
             key={block.id}
             style={style}
