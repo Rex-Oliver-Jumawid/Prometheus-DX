@@ -232,7 +232,7 @@ describe('ProjectOverviewPage status mutation', () => {
     renderPage();
     fireEvent.click(await screen.findByRole('tab', { name: 'Activity' }));
     expect(await screen.findByText(/created a stage/)).toBeVisible();
-    expect(screen.getByText(/Project Lead/)).toBeVisible();
+    expect(screen.getByText('Project Lead · Project')).toBeVisible();
   });
 
   it('hides Activity from nonmembers, including direct activity links', async () => {
