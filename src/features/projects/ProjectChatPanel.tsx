@@ -135,8 +135,11 @@ export function ProjectChatPanel({
     // Active chats still poll for updates without flashing a loading screen.
     staleTime: 60_000,
     gcTime: 15 * 60_000,
-    refetchInterval: 3_000,
-    refetchIntervalInBackground: true,
+    // Avoid repeatedly refetching deep history; focus and reconnect always recover it.
+    refetchInterval: (query) =>
+      ((query.state.data as { pages?: unknown[] } | undefined)?.pages?.length ?? 0) > 2
+        ? false : 5_000,
+    refetchIntervalInBackground: false,
     refetchOnWindowFocus: 'always',
     refetchOnReconnect: 'always',
   });
