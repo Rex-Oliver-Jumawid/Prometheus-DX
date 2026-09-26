@@ -539,6 +539,15 @@
   font-weight: 800;
   white-space: nowrap;
 }
+/* Keep the timer separate from the working-member avatars.
+   The active timer occupies the lower-right of the original-size panel. */
+.attendance-control.active .attendance-topline time {
+  position: absolute;
+  right: 8px;
+  bottom: 7px;
+  z-index: 2;
+  font-variant-numeric: tabular-nums;
+}
 /* Match the warm department-presence palette without changing the edge widget. */
 .attendance-people-popover {
   position: absolute;
