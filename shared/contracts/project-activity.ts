@@ -5,6 +5,7 @@ export const ProjectActivitySchema = z.object({
   actor: z.object({
     id: z.string().uuid(),
     fullName: z.string(),
+    profileImagePath: z.string().nullable().optional(),
   }).nullable(),
   outcomeId: z.string().uuid().nullable(),
   outcomeTitle: z.string().nullable(),
