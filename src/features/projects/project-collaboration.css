@@ -2233,3 +2233,14 @@
   color: #bd492b;
   font: 700 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+.pw-activity-actor { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.pw-activity-member-avatar {
+  flex: 0 0 19px;
+  width: 19px;
+  height: 19px;
+  border-radius: 6px;
+  background: #f3ebe6;
+  color: #bd492b;
+  font: 700 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
