@@ -290,10 +290,22 @@ export function WorkAttendanceControl() {
           className="attendance-people-popover"
           aria-label="Working members"
         >
-          <div className="attendance-people-heading">
-            <strong>Working now</strong>
-            <span>{workingMembers.length}</span>
-          </div>
+          <header className="attendance-people-heading">
+            <div>
+              <span className="attendance-people-eyebrow">TEAM PRESENCE</span>
+              <h2>Working now</h2>
+              <p>
+                {workingMembers.length} {workingMembers.length === 1 ? 'member' : 'members'} currently working
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-label="Close working members"
+              onClick={() => setPeopleOpen(false)}
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+          </header>
           {team.isError ? (
             <div className="attendance-people-state" role="alert">
               <span>Could not load working members.</span>
@@ -331,7 +343,7 @@ export function WorkAttendanceControl() {
                     <strong>{member.fullName}</strong>
                     <small>{member.position || member.department.name}</small>
                   </span>
-                  <span className="attendance-people-status">Working</span>
+                  <span className="attendance-people-status"><i aria-hidden="true" />Working</span>
                 </li>
               ))}
             </ul>
