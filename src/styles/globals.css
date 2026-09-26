@@ -1734,3 +1734,35 @@ button:disabled {
     overscroll-behavior-y: contain;
   }
 }
+
+/* Mac trackpad pinch-zoom changes the visual viewport without changing CSS
+   media queries. Extend the scrollable document by the hidden visual-viewport
+   width, without stretching the application layout or introducing a second
+   horizontal scroll container. */
+html.zoom-pan-active {
+  overflow-x: auto !important;
+  overscroll-behavior-x: none;
+}
+
+html.zoom-pan-active body {
+  overflow: visible !important;
+  position: relative;
+}
+
+html.zoom-pan-active body::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--zoom-pan-spacer-start);
+  width: var(--zoom-pan-spacer-width);
+  height: 1px;
+  pointer-events: none;
+}
+
+html.zoom-pan-active .workspace-shell {
+  overflow: visible !important;
+}
+
+html.zoom-pan-active .workspace-content-scroll {
+  overscroll-behavior-x: auto;
+}
