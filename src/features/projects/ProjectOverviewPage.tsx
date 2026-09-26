@@ -418,8 +418,7 @@ export function ProjectOverviewPage() {
         </div>
       </section>
 
-      {!outcomeId && (
-        <div className="tabs-wrap pw-tabs-wrap">
+      <div className="tabs-wrap pw-tabs-wrap">
           <nav className="tabs pw-tabs" role="tablist" aria-label="Project sections">
             <button
               className={`tab-btn ${activeTab === 'content' ? 'active' : ''}`}
@@ -456,9 +455,8 @@ export function ProjectOverviewPage() {
             </button>
           </nav>
         </div>
-      )}
 
-      {outcomeId ? (
+      {activeTab === 'content' && outcomeId ? (
         <ProjectWorkflow
           projectId={projectId!}
           outcomeId={outcomeId}
