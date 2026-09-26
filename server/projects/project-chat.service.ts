@@ -19,7 +19,7 @@ import { PrismaService } from '../database/prisma.service';
 import { writeNotifications } from '../notifications/notification-writer';
 
 const PAGE_SIZE = 30;
-const personSelect = { id: true, fullName: true, email: true } as const;
+const personSelect = { id: true, fullName: true, email: true, profileImagePath: true } as const;
 const messageInclude = {
   member: { select: personSelect },
   parent: {
