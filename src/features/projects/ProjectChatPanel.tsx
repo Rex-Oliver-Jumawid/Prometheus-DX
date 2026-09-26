@@ -18,6 +18,7 @@ import {
 import { ProjectMembersResponseSchema } from '../../../shared/contracts/project-workflow';
 import { apiFetch } from '../../lib/api';
 import { useRealtimeInvalidation } from '../../lib/use-realtime-invalidation';
+import { MemberAvatar } from '../shell/MemberAvatar';
 import './project-collaboration.css';
 
 function messageTime(date: string) {
@@ -29,16 +30,6 @@ function messageTime(date: string) {
 
 function errorMessage(value: unknown) {
   return value instanceof Error ? value.message : 'Please try again.';
-}
-
-function initials(name: string) {
-  return name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('');
 }
 
 function escapeRegExp(value: string) {
@@ -85,7 +76,7 @@ export function ProjectChatPanel({
 }: {
   projectId: string;
   projectName: string;
-  projectLead?: { id: string; fullName: string; email: string };
+  projectLead?: { id: string; fullName: string; email: string; profileImagePath?: string | null };
   currentMemberId?: string;
   accessToken?: string;
   initialMessageId?: string | null;
@@ -653,9 +644,11 @@ export function ProjectChatPanel({
                       message.deletedAt ? 'pw-chat-message--deleted' : '',
                     ].filter(Boolean).join(' ')}
                   >
-                    <div className="pw-chat-avatar" aria-hidden="true">
-                      {initials(message.author.fullName) || '?'}
-                    </div>
+                    <MemberAvatar
+                      name={message.author.fullName}
+                      profileImagePath={message.author.profileImagePath}
+                      className="pw-chat-avatar"
+                    />
                     <div className="pw-chat-body">
                       <div className="pw-chat-message-meta">
                         <strong>{message.author.fullName}</strong>
@@ -749,7 +742,7 @@ export function ProjectChatPanel({
                                     role="option"
                                     onClick={() => selectEditMention(candidate)}
                                   >
-                                    <span>{initials(candidate.fullName)}</span>
+                                    <MemberAvatar name={candidate.fullName} profileImagePath={candidate.profileImagePath} />
                                     <strong>{candidate.fullName}</strong>
                                   </button>
                                 ))}
@@ -849,7 +842,7 @@ export function ProjectChatPanel({
                           role="option"
                           onClick={() => selectMention(candidate)}
                         >
-                          <span>{initials(candidate.fullName)}</span>
+                          <MemberAvatar name={candidate.fullName} profileImagePath={candidate.profileImagePath} />
                           <strong>{candidate.fullName}</strong>
                         </button>
                       ))}
