@@ -87,7 +87,7 @@ export class ProjectActivityService {
           : {}),
       },
       include: {
-        actorMember: { select: { id: true, fullName: true } },
+        actorMember: { select: { id: true, fullName: true, profileImagePath: true } },
         outcome: { select: { title: true } },
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
