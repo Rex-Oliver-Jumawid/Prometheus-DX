@@ -473,9 +473,12 @@
   width: 100%;
 }
 .attendance-control:not(.correction):not(.error):not(.pending) .attendance-content {
-  /* Shift the status copy toward the center without narrowing its text area. */
-  padding-left: 22px;
-  padding-right: 58px;
+  /* Keep the original horizontal alignment; center the copy vertically. */
+  align-items: center;
+  padding-right: 70px;
+}
+.attendance-control:not(.correction):not(.error):not(.pending) .attendance-dot {
+  margin-top: 0;
 }
 .attendance-people {
   position: absolute;
