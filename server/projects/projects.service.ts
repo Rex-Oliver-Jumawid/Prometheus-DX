@@ -22,8 +22,8 @@ import { PrismaService } from '../database/prisma.service';
 import { writeNotifications } from '../notifications/notification-writer';
 
 const projectInclude = {
-  createdByMember: { select: { id: true, fullName: true, email: true } },
-  leadMember: { select: { id: true, fullName: true, email: true } },
+  createdByMember: { select: { id: true, fullName: true, email: true, profileImagePath: true } },
+  leadMember: { select: { id: true, fullName: true, email: true, profileImagePath: true } },
   departments: {
     include: {
       department: { select: { id: true, name: true, shortLabel: true } },
@@ -62,9 +62,9 @@ function projectListSelect(currentMemberId: string) {
     createdAt: true,
     updatedAt: true,
     createdByMember: {
-      select: { id: true, fullName: true, email: true },
+      select: { id: true, fullName: true, email: true, profileImagePath: true },
     },
-    leadMember: { select: { id: true, fullName: true, email: true } },
+    leadMember: { select: { id: true, fullName: true, email: true, profileImagePath: true } },
     departments: {
       include: {
         department: { select: { id: true, name: true, shortLabel: true } },
@@ -120,7 +120,7 @@ export class ProjectsService {
     const [leads, departments] = await Promise.all([
       this.prisma.member.findMany({
         where: { status: MemberStatus.ACTIVE },
-        select: { id: true, fullName: true, email: true },
+        select: { id: true, fullName: true, email: true, profileImagePath: true },
         orderBy: [{ fullName: 'asc' }, { id: 'asc' }],
       }),
       this.prisma.department.findMany({
