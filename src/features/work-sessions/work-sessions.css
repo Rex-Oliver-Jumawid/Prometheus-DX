@@ -473,7 +473,9 @@
   width: 100%;
 }
 .attendance-control:not(.correction):not(.error):not(.pending) .attendance-content {
-  padding-right: 70px;
+  /* Shift the status copy toward the center without narrowing its text area. */
+  padding-left: 22px;
+  padding-right: 58px;
 }
 .attendance-people {
   position: absolute;
