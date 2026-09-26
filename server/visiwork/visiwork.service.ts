@@ -23,9 +23,9 @@ const PAGE_SIZE = 40;
 const DELETED_MESSAGE_BODY = '[deleted]';
 
 const messageInclude = {
-  member: { select: { id: true, fullName: true } },
+  member: { select: { id: true, fullName: true, profileImagePath: true } },
   mentions: {
-    include: { member: { select: { id: true, fullName: true } } },
+    include: { member: { select: { id: true, fullName: true, profileImagePath: true } } },
   },
 } satisfies Prisma.VisiWorkMessageInclude;
 
