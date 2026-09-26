@@ -143,17 +143,29 @@ test('desktop browser zoom retains horizontal and vertical panning', async ({ pa
   await page.goto('/schedule');
   await expect(page.getByRole('heading', { name: 'Schedule', exact: true })).toBeVisible();
 
+  // Exercise real horizontal and vertical wheel input. Programmatic scrollTo
+  // can pass even when overflow:hidden prevents trackpad panning.
+  await expect(page.getByRole('link', { name: 'Projects' })).toBeVisible();
   await expect.poll(() => page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth,
   )).toBeGreaterThan(0);
-  await page.evaluate(() => window.scrollTo({ left: 320, top: 0 }));
+
+  await page.mouse.move(70, 200);
+  await page.mouse.wheel(320, 0);
   await expect.poll(() => page.evaluate(() => window.scrollX)).toBeGreaterThan(0);
 
   const content = page.locator('.workspace-content-scroll');
   await expect.poll(() => content.evaluate((element) =>
+    element.scrollWidth - element.clientWidth,
+  )).toBeGreaterThan(0);
+  await page.mouse.move(500, 240);
+  await page.mouse.wheel(250, 0);
+  await expect.poll(() => content.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+
+  await expect.poll(() => content.evaluate((element) =>
     element.scrollHeight - element.clientHeight,
   )).toBeGreaterThan(0);
-  await content.evaluate((element) => { element.scrollTop = 240; });
+  await page.mouse.wheel(0, 320);
   await expect.poll(() => content.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
 });
 
