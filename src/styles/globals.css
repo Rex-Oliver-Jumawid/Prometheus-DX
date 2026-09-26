@@ -1707,14 +1707,13 @@ button:disabled {
   }
 }
 
-/* When desktop browser zoom narrows the viewport, the document alone owns
-   horizontal panning. Keep vertical scrolling inside the workspace and
-   prevent its inner panel from competing for the horizontal trackpad gesture.
-   Make the canvas wide enough to fit the existing workspace contents. */
+/* A zoomed desktop needs one native two-dimensional pan surface. Let the
+   document scroll in both axes and let the outer workspace grow naturally.
+   Do not intercept wheel events or route vertical movement to a fixed-height
+   inner panel: that prevents vertical panning on Mac trackpads. */
 @media (max-width: 1179px) and (hover: hover) and (pointer: fine) {
   html {
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: auto;
     overscroll-behavior-x: none;
   }
 
@@ -1724,45 +1723,49 @@ button:disabled {
 
   .workspace-shell {
     min-width: 1360px;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .workspace-main {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .workspace-content {
+    height: auto;
+    max-height: none;
+    min-height: calc(100dvh - 24px);
     overflow: visible;
   }
 
   .workspace-content-scroll {
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior-x: auto;
-    overscroll-behavior-y: contain;
+    height: auto;
+    overflow: visible;
+    overscroll-behavior: auto;
+  }
+
+  .workspace-content-inner {
+    height: auto;
+    min-height: 0;
   }
 }
 
-/* Mac trackpad pinch-zoom changes the visual viewport without changing CSS
-   media queries. Extend the scrollable document by the hidden visual-viewport
-   width, without stretching the application layout or introducing a second
-   horizontal scroll container. */
-html.zoom-pan-active {
-  overflow-x: auto !important;
-  overscroll-behavior-x: none;
-}
+/* Trackpad pinch zoom changes the visual viewport without necessarily
+   changing CSS breakpoints. Preserve native browser pinch and visual-viewport
+   panning instead of overriding wheel gestures with JavaScript. */
+@media (min-width: 1180px) and (hover: hover) and (pointer: fine) {
+  html {
+    overflow-x: auto;
+  }
 
-html.zoom-pan-active body {
-  overflow: visible !important;
-  position: relative;
-}
+  body {
+    overflow: visible;
+  }
 
-html.zoom-pan-active body::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: var(--zoom-pan-spacer-start);
-  width: var(--zoom-pan-spacer-width);
-  height: 1px;
-  pointer-events: none;
-}
-
-html.zoom-pan-active .workspace-shell {
-  overflow: visible !important;
-}
-
-html.zoom-pan-active .workspace-content-scroll {
-  overscroll-behavior-x: auto;
+  .workspace-shell {
+    overflow: visible;
+  }
 }
