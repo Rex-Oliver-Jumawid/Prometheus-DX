@@ -1707,12 +1707,14 @@ button:disabled {
   }
 }
 
-/* Browser zoom on a desktop shrinks the CSS viewport. The root document
-   owns horizontal scrolling so a trackpad swipe never has to cross nested
-   horizontal scroll boundaries before the canvas moves. */
-@media (hover: hover) and (pointer: fine) {
+/* When desktop browser zoom narrows the viewport, the document alone owns
+   horizontal panning. Keep vertical scrolling inside the workspace and
+   prevent its inner panel from competing for the horizontal trackpad gesture.
+   Make the canvas wide enough to fit the existing workspace contents. */
+@media (max-width: 1179px) and (hover: hover) and (pointer: fine) {
   html {
-    overflow: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
     overscroll-behavior-x: none;
   }
 
@@ -1721,45 +1723,14 @@ button:disabled {
   }
 
   .workspace-shell {
-    min-width: 1180px;
+    min-width: 1360px;
     overflow: visible;
   }
 
   .workspace-content-scroll {
     overflow-x: hidden;
-  }
-}
-
-/* At browser zoom (or a narrow desktop window), use the document as the
-   single two-dimensional scroll surface. Keep the desktop navigation instead
-   of switching to the mobile layout based on the zoomed CSS viewport. */
-@media (max-width: 1179px) and (hover: hover) and (pointer: fine) {
-  .workspace-shell {
-    height: auto;
-    min-height: 100dvh;
-  }
-
-  .workspace-main {
-    height: auto;
-    min-height: 100dvh;
-    overflow: visible;
-  }
-
-  .workspace-content {
-    height: auto;
-    max-height: none;
-    min-height: calc(100dvh - 24px);
-    overflow: visible;
-  }
-
-  .workspace-content-scroll {
-    height: auto;
-    overflow: visible;
-    overscroll-behavior: auto;
-  }
-
-  .workspace-content-inner {
-    height: auto;
-    min-width: 0;
+    overflow-y: auto;
+    overscroll-behavior-x: auto;
+    overscroll-behavior-y: contain;
   }
 }
