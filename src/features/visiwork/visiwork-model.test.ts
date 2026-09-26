@@ -203,6 +203,26 @@ const team: TeamWorkSummaryResponse = {
 };
 
 describe('buildVisiWorkModel', () => {
+  it('preserves profile images for department members and working presence', () => {
+    const withPhotos: TeamWorkSummaryResponse = {
+      ...team,
+      members: team.members.map((member) =>
+        member.id === nico.id
+          ? { ...member, profileImagePath: '/member-photos/nico.png' }
+          : member,
+      ),
+    };
+    const model = buildVisiWorkModel(projects, workflows, withPhotos);
+    const department = model.departments.find((item) => item.id === rd.id);
+    expect(department?.members.find((member) => member.id === nico.id)?.profileImagePath)
+      .toBe('/member-photos/nico.png');
+    expect(department?.workingMembers[0]?.profileImagePath)
+      .toBe('/member-photos/nico.png');
+    expect(
+      model.departments.find((item) => item.id === creatives.id)?.members[0]?.profileImagePath,
+    ).toBeNull();
+  });
+
   it('derives department presence and project progress from canonical records', () => {
     const model = buildVisiWorkModel(projects, workflows, team);
     const department = model.departments.find((item) => item.id === rd.id);
