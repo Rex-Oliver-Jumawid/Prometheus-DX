@@ -302,6 +302,41 @@ describe('SchedulePage', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows another active member\'s recorded daily hours and actual timeline', async () => {
+    const originalRequest = mocks.apiFetch.getMockImplementation();
+    mocks.apiFetch.mockImplementation((...args) => {
+      const [path] = args;
+      if (path === '/work-sessions/members/22222222-2222-4222-8222-222222222222/history') {
+        return Promise.resolve({
+          timezone: 'Asia/Manila',
+          weekStart: '2026-09-20T16:00:00.000Z',
+          weekEnd: '2026-09-27T16:00:00.000Z',
+          totalDurationSeconds: 7_200,
+          sessions: [{
+            id: '66666666-6666-4666-8666-666666666666',
+            memberId: '22222222-2222-4222-8222-222222222222',
+            timeIn: '2026-09-26T01:00:00.000Z',
+            timeOut: '2026-09-26T03:00:00.000Z',
+            status: 'COMPLETED',
+            durationSeconds: 7_200,
+            createdAt: '2026-09-26T01:00:00.000Z',
+            updatedAt: '2026-09-26T03:00:00.000Z',
+          }],
+        });
+      }
+      return originalRequest!(...args);
+    });
+
+    const { container } = renderPage(
+      '/schedule?view=shifts&member=22222222-2222-4222-8222-222222222222',
+    );
+    expect(await screen.findByText('2h / 0h')).toBeInTheDocument();
+    const saturday = Array.from(container.querySelectorAll('.shift-day-row'))
+      .find((row) => row.textContent?.includes('Saturday'));
+    expect(saturday?.querySelectorAll('.timeline-track[aria-label="Actual timeline"] i.actual')).toHaveLength(1);
+    expect(container.querySelector('.shift-stat-grid')).not.toHaveTextContent('—');
+  });
+
   it('opens Shifts with the requested Team member selected', async () => {
     renderPage(
       '/schedule?view=shifts&member=22222222-2222-4222-8222-222222222222',

@@ -13,6 +13,9 @@ export const workSessionKeys = {
     ['work-sessions', 'history', week ?? 'current'] as const,
 };
 
+export const memberWorkSessionHistoryKey = (memberId: string, week?: string) =>
+  ['work-sessions', 'member-history', memberId, week ?? 'current'] as const;
+
 export const teamWorkKeys = {
   all: ['team-work'] as const,
   summary: (week?: string) => ['team-work', week ?? 'current'] as const,
@@ -46,6 +49,25 @@ export function workSessionHistoryQuery(accessToken?: string, week?: string) {
         { accessToken },
       ),
     staleTime: 10_000,
+  });
+}
+
+export function memberWorkSessionHistoryQuery(
+  accessToken?: string,
+  memberId?: string,
+  week?: string,
+) {
+  return queryOptions({
+    queryKey: memberWorkSessionHistoryKey(memberId ?? '', week),
+    queryFn: () =>
+      apiFetch(
+        `/work-sessions/members/${encodeURIComponent(memberId ?? '')}/history${week ? `?week=${week}` : ''}`,
+        WorkSessionHistoryResponseSchema,
+        { accessToken },
+      ),
+    enabled: Boolean(accessToken && memberId),
+    staleTime: 5_000,
+    refetchInterval: 5_000,
   });
 }
 

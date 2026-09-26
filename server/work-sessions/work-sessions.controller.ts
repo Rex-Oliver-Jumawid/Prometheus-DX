@@ -51,6 +51,21 @@ export class WorkSessionsController {
     return this.workSessionsService.getHistory(member, parsed.data.week);
   }
 
+  // All authenticated workspace members can compare an active teammate's
+  // attendance with their shared recurring schedule. Writes remain owner-only.
+  @Get('members/:memberId/history')
+  memberHistory(
+    @CurrentMember() member: Member,
+    @Param('memberId', new ParseUUIDPipe({ version: '4' })) memberId: string,
+    @Query() query: unknown,
+  ) {
+    const parsed = WorkSessionWeekQuerySchema.safeParse(query);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues[0]?.message);
+    }
+    return this.workSessionsService.getMemberHistory(member, memberId, parsed.data.week);
+  }
+
   @Post(':workSessionId/corrections')
   correct(
     @CurrentMember() member: Member,

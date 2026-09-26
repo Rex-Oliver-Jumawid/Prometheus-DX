@@ -7,6 +7,7 @@ import {
   formatManilaDateTime,
 } from '../work-sessions/work-session-format';
 import {
+  memberWorkSessionHistoryQuery,
   teamWorkSummaryQuery,
   workSessionHistoryQuery,
 } from '../work-sessions/work-session-queries';
@@ -77,8 +78,11 @@ export function ShiftsComparison({
     ?? members[0];
   const isMine = selected?.id === currentMemberId;
   const historyQuery = useQuery({
-    ...workSessionHistoryQuery(accessToken, week),
-    enabled: Boolean(isMine && accessToken),
+    ...(isMine
+      ? workSessionHistoryQuery(accessToken, week)
+      : memberWorkSessionHistoryQuery(accessToken, selected?.id, week)),
+    enabled: Boolean(selected?.id && accessToken),    // Inactive requests stay isolated per member.
+    refetchInterval: 5_000,
   });
   const teamQuery = useQuery(teamWorkSummaryQuery(accessToken, week));
   const summary = teamQuery.data?.members.find(
@@ -89,22 +93,20 @@ export function ShiftsComparison({
       compareWeek(
         week,
         selected?.schedule ?? null,
-        isMine ? (historyQuery.data?.sessions ?? []) : [],
+        historyQuery.data?.sessions ?? [],
       ),
-    [week, selected?.schedule, isMine, historyQuery.data?.sessions],
+    [week, selected?.schedule, historyQuery.data?.sessions],
   );
   const selectedDayData = comparison.days.find((day) => day.dateKey === selectedDay);
-  const historyReady = isMine && historyQuery.isSuccess;
+  const historyReady = historyQuery.isSuccess;
   const worked = historyReady
     ? comparison.workedSeconds
     : summary?.actualWorkedSeconds;
   const scheduled = comparison.plannedMinutes;
   const hasActualDailyData = historyReady;
-  const correctionCount = isMine
-    ? (historyQuery.data?.sessions ?? []).filter(
-        (session) => session.status === 'NEEDS_CORRECTION',
-      ).length
-    : 0;
+  const correctionCount = (historyQuery.data?.sessions ?? []).filter(
+    (session) => session.status === 'NEEDS_CORRECTION',
+  ).length;
 
   function moveWeek(amount: number) {
     setWeek((previous) => changeWeek(previous, amount));
@@ -188,7 +190,7 @@ export function ShiftsComparison({
           <article>
             <span>Worked</span>
             <strong>
-              {teamQuery.isPending || (isMine && historyQuery.isPending)
+              {teamQuery.isPending || historyQuery.isPending
                 ? '…'
                 : worked === undefined
                   ? '—'
@@ -199,7 +201,7 @@ export function ShiftsComparison({
           <article>
             <span>Variance</span>
             <strong>
-              {worked === undefined || (isMine && !historyReady)
+              {worked === undefined || (historyQuery.isPending && !summary)
                 ? '—'
                 : signedHours(worked - scheduled * 60)}
             </strong>
@@ -211,9 +213,7 @@ export function ShiftsComparison({
               {historyReady ? formatHours(comparison.overlapSeconds) : '—'}
             </strong>
             <small>
-              {isMine
-                ? 'Worked inside planned windows'
-                : 'Detailed sessions available to their owner'}
+              Worked inside planned windows
             </small>
           </article>
         </div>
@@ -230,7 +230,7 @@ export function ShiftsComparison({
             <button onClick={() => void teamQuery.refetch()}>Try again</button>
           </div>
         )}
-        {isMine && historyQuery.isError && (
+        {historyQuery.isError && (
           <div className="work-history-error" role="alert">
             <span>Work history unavailable: {historyQuery.error.message}</span>
             <button onClick={() => void historyQuery.refetch()}>Try again</button>
@@ -243,9 +243,7 @@ export function ShiftsComparison({
           <div>
             <h2>Week comparison</h2>
             <p>
-              {isMine
-                ? 'Select any day to inspect planned windows and recorded sessions.'
-                : 'Planned daily availability and authorized weekly work totals.'}
+              Select any day to inspect planned windows and recorded sessions.
             </p>
           </div>
           <div className="shift-timeline-key">
@@ -322,11 +320,11 @@ export function ShiftsComparison({
                         ))
                       ) : (
                         <p>
-                          {isMine
-                            ? historyQuery.isPending
-                              ? 'Loading sessions…'
-                              : 'No recorded sessions'
-                            : 'Detailed sessions are private to their owner.'}
+                          {historyQuery.isPending
+                            ? 'Loading sessions…'
+                            : historyQuery.isError
+                              ? 'Work history unavailable'
+                              : 'No recorded sessions'}
                         </p>
                       )}
                     </div>
@@ -337,8 +335,8 @@ export function ShiftsComparison({
           })}
         </div>
         <p className="shift-privacy-note">
-          Times use Asia/Manila. Actual daily records are shown only for your
-          own sessions. Recurring planned hours are not attendance records.
+          Times use Asia/Manila. Active teammates can view shared attendance.
+          Recurring planned hours are not attendance records.
         </p>
       </div>
     </section>

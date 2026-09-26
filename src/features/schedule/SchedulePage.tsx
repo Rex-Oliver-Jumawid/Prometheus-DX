@@ -20,6 +20,7 @@ import { apiFetch } from '../../lib/api';
 import { useAuth } from '../auth/auth-context';
 import { formatHours, formatManilaDateTime } from '../work-sessions/work-session-format';
 import {
+  memberWorkSessionHistoryQuery,
   teamWorkSummaryQuery,
   workSessionHistoryQuery,
 } from '../work-sessions/work-session-queries';
@@ -403,9 +404,19 @@ export function SchedulePage() {
 
   const teamQuery = useQuery(teamScheduleQuery(session?.access_token));
   const mineQuery = useQuery(myScheduleQuery(session?.access_token));
+  const selectedMember = useMemo(
+    () =>
+      teamQuery.data?.members.find((item) => item.id === selectedMemberId) ??
+      teamQuery.data?.members.find((item) => item.id === member?.id) ??
+      teamQuery.data?.members[0],
+    [member?.id, selectedMemberId, teamQuery.data?.members],
+  );
   const historyQuery = useQuery({
-    ...workSessionHistoryQuery(session?.access_token, weekParam),
-    enabled: view === 'shifts',
+    ...(selectedMember?.id && selectedMember.id !== member?.id
+      ? memberWorkSessionHistoryQuery(session?.access_token, selectedMember.id, weekParam)
+      : workSessionHistoryQuery(session?.access_token, weekParam)),
+    enabled: view === 'shifts' && Boolean(session?.access_token && selectedMember?.id),
+    refetchInterval: view === 'shifts' ? 5_000 : false,
   });
   const teamWorkQuery = useQuery({
     ...teamWorkSummaryQuery(session?.access_token, weekParam),
@@ -449,14 +460,6 @@ export function SchedulePage() {
       setEditorMessage('');
     },
   });
-
-  const selectedMember = useMemo(
-    () =>
-      teamQuery.data?.members.find((item) => item.id === selectedMemberId) ??
-      teamQuery.data?.members.find((item) => item.id === member?.id) ??
-      teamQuery.data?.members[0],
-    [member?.id, selectedMemberId, teamQuery.data?.members],
-  );
 
   const selectedWorkMember = teamWorkQuery.data?.members.find(
     (item) => item.id === selectedMember?.id,
@@ -693,17 +696,12 @@ export function SchedulePage() {
   const shiftsDateLabels = weekDateLabels(currentWeek);
   const scheduledMinutes = selectedWorkMember?.scheduledMinutes ?? 0;
   const workedSeconds =
-    selectedMember?.id === member?.id
-      ? historyQuery.data?.totalDurationSeconds ?? selectedWorkMember?.actualWorkedSeconds ?? 0
-      : selectedWorkMember?.actualWorkedSeconds ?? 0;
+    historyQuery.data?.totalDurationSeconds ?? selectedWorkMember?.actualWorkedSeconds ?? 0;
   const varianceSeconds = workedSeconds - scheduledMinutes * 60;
-  const overlapSeconds =
-    selectedMember?.id === member?.id
-      ? (historyQuery.data?.sessions ?? []).reduce(
-          (total, item) => total + sessionOverlapSeconds(item, selectedMember?.schedule ?? null),
-          0,
-        )
-      : 0;
+  const overlapSeconds = (historyQuery.data?.sessions ?? []).reduce(
+    (total, item) => total + sessionOverlapSeconds(item, selectedMember?.schedule ?? null),
+    0,
+  );
 
   const shiftWeek = (days: number) => {
     const next = addDaysYmd(currentWeek, days);
@@ -803,14 +801,16 @@ export function SchedulePage() {
             <ShiftStat label="Variance" value={formatSignedHours(varianceSeconds)} note="Worked minus scheduled" />
             <ShiftStat
               label="Schedule overlap"
-              value={selectedMember?.id === member?.id ? formatHours(overlapSeconds) : '—'}
-              note={
-                selectedMember?.id === member?.id
-                  ? 'Worked inside planned windows'
-                  : 'Detailed overlap is available for your own sessions'
-              }
+              value={historyQuery.isSuccess ? formatHours(overlapSeconds) : '—'}
+              note="Worked inside planned windows"
             />
           </div>
+
+          {historyQuery.isError && (
+            <p role="alert">
+              Work history unavailable. <button type="button" onClick={() => void historyQuery.refetch()}>Retry</button>
+            </p>
+          )}
 
           <section className="shift-week-card">
             <header>
@@ -846,7 +846,7 @@ export function SchedulePage() {
                   (total, segment) => total + segment.endMinutes - segment.startMinutes,
                   0,
                 );
-                const hasActualTimeline = selectedMember?.id === member?.id;
+                const hasActualTimeline = historyQuery.isSuccess;
                 const actualSegments = hasActualTimeline
                   ? actualTimelineSegments(historyQuery.data, weekday)
                   : [];
@@ -890,9 +890,7 @@ export function SchedulePage() {
             <DayInspector
               weekday={selectedDay}
               schedule={selectedMember?.schedule ?? null}
-              history={
-                selectedMember?.id === member?.id ? historyQuery.data : undefined
-              }
+              history={historyQuery.data}
               dateLabel={shiftsDateLabels[selectedDay]}
             />
           )}

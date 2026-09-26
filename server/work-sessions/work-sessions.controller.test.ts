@@ -16,6 +16,20 @@ describe('WorkSessionsController', () => {
     expect(timeIn).toHaveBeenCalledWith(member);
   });
 
+  it('passes the signed-in member to the shared history authorization check', () => {
+    const getMemberHistory = vi.fn();
+    const controller = new WorkSessionsController({
+      getMemberHistory,
+    } as unknown as WorkSessionsService);
+    const member = { id: '11111111-1111-4111-8111-111111111111' } as Member;
+    controller.memberHistory(member, '22222222-2222-4222-8222-222222222222', {
+      week: '2026-09-21',
+    });
+    expect(getMemberHistory).toHaveBeenCalledWith(
+      member, '22222222-2222-4222-8222-222222222222', '2026-09-21',
+    );
+  });
+
   it('rejects malformed correction input before the service', () => {
     const correct = vi.fn();
     const controller = new WorkSessionsController({

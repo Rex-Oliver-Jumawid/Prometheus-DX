@@ -139,6 +139,45 @@ describe('WorkSessionsService', () => {
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
+  it('shares an active teammate\'s persisted weekly sessions with another member', async () => {
+    const teammateId = '33333333-3333-4333-8333-333333333333';
+    const findFirst = vi.fn().mockResolvedValue({ id: teammateId });
+    const findMany = vi.fn().mockResolvedValue([session({
+      memberId: teammateId,
+      status: 'COMPLETED',
+      timeOut: new Date('2026-09-18T02:00:00.000Z'),
+    })]);
+    const prisma = {
+      member: { findFirst },
+      workSession: { updateMany: vi.fn().mockResolvedValue({ count: 0 }), findMany },
+    } as unknown as PrismaService;
+
+    const result = await new WorkSessionsService(prisma).getMemberHistory(
+      currentMember, teammateId, '2026-09-18',
+    );
+    expect(findFirst).toHaveBeenCalledWith({
+      where: { id: teammateId, status: 'ACTIVE' },
+      select: { id: true },
+    });
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ memberId: teammateId }),
+    }));
+    expect(result.totalDurationSeconds).toBe(7200);
+    expect(result.sessions[0].memberId).toBe(teammateId);
+  });
+
+  it('does not share a deactivated or unknown teammate\'s detailed history', async () => {
+    const findMany = vi.fn();
+    const prisma = {
+      member: { findFirst: vi.fn().mockResolvedValue(null) },
+      workSession: { findMany },
+    } as unknown as PrismaService;
+    await expect(new WorkSessionsService(prisma).getMemberHistory(
+      currentMember, '33333333-3333-4333-8333-333333333333',
+    )).rejects.toThrow('Active member not found.');
+    expect(findMany).not.toHaveBeenCalled();
+  });
+
   it('keeps multiple weekly sessions separate and totals exact duration', async () => {
     const prisma = {
       workSession: {

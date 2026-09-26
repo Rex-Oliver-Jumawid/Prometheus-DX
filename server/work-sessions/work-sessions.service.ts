@@ -122,12 +122,36 @@ export class WorkSessionsService {
     member: Member,
     week?: string,
   ): Promise<WorkSessionHistoryResponse> {
+    return this.historyForMember(member.id, week);
+  }
+
+  async getMemberHistory(
+    requester: Member,
+    memberId: string,
+    week?: string,
+  ): Promise<WorkSessionHistoryResponse> {
+    if (requester.id !== memberId) {
+      // Team summary already exposes active teammates' weekly work totals.
+      // Restrict detailed history to the same active workspace population.
+      const target = await this.prisma.member.findFirst({
+        where: { id: memberId, status: 'ACTIVE' },
+        select: { id: true },
+      });
+      if (!target) throw new NotFoundException('Active member not found.');
+    }
+    return this.historyForMember(memberId, week);
+  }
+
+  private async historyForMember(
+    memberId: string,
+    week?: string,
+  ): Promise<WorkSessionHistoryResponse> {
     const now = new Date();
-    await this.refreshStaleSessions(now, member.id);
+    await this.refreshStaleSessions(now, memberId);
     const { start, end } = getWeekWindow(referenceDateForWeek(week));
     const sessions = await this.prisma.workSession.findMany({
       where: {
-        memberId: member.id,
+        memberId,
         timeIn: { gte: start, lt: end },
       },
       orderBy: [{ timeIn: 'desc' }, { id: 'desc' }],
