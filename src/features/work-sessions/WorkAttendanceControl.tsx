@@ -302,7 +302,9 @@ export function WorkAttendanceControl() {
               aria-label="Close working members"
               onClick={() => setPeopleOpen(false)}
             >
-              <span aria-hidden="true">×</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
             </button>
           </header>
           {team.isError ? (
