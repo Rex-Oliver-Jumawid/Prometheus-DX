@@ -1707,15 +1707,13 @@ button:disabled {
   }
 }
 
-/* Desktop browser zoom reduces the CSS viewport, but should not turn the
-   application into the mobile navigation layout or clip inaccessible content.
-   Keep a pannable desktop canvas below the compact-layout breakpoint. */
-/* Browser zoom can narrow the layout viewport well before the mobile
-   breakpoint. Never trap desktop trackpad gestures at the document or
-   inner glass frame: both horizontal and vertical scrolling must chain. */
+/* Browser zoom on a desktop shrinks the CSS viewport. The root document
+   owns horizontal scrolling so a trackpad swipe never has to cross nested
+   horizontal scroll boundaries before the canvas moves. */
 @media (hover: hover) and (pointer: fine) {
   html {
     overflow: auto;
+    overscroll-behavior-x: none;
   }
 
   body {
@@ -1728,11 +1726,40 @@ button:disabled {
   }
 
   .workspace-content-scroll {
-    overflow: auto;
+    overflow-x: hidden;
+  }
+}
+
+/* At browser zoom (or a narrow desktop window), use the document as the
+   single two-dimensional scroll surface. Keep the desktop navigation instead
+   of switching to the mobile layout based on the zoomed CSS viewport. */
+@media (max-width: 1179px) and (hover: hover) and (pointer: fine) {
+  .workspace-shell {
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  .workspace-main {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .workspace-content {
+    height: auto;
+    max-height: none;
+    min-height: calc(100dvh - 24px);
+    overflow: visible;
+  }
+
+  .workspace-content-scroll {
+    height: auto;
+    overflow: visible;
     overscroll-behavior: auto;
   }
 
   .workspace-content-inner {
-    min-width: 960px;
+    height: auto;
+    min-width: 0;
   }
 }
