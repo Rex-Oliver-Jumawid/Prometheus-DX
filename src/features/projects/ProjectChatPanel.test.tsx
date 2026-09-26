@@ -59,6 +59,29 @@ function renderChat(initialMessageId?: string, currentMemberId?: string) {
 describe('ProjectChatPanel interactions', () => {
   beforeEach(() => { vi.mocked(apiFetch).mockReset(); });
 
+  it('renders the author profile picture and preserves initials fallback', async () => {
+    vi.mocked(apiFetch).mockImplementation((path) => {
+      if (path.endsWith('/members'))
+        return Promise.resolve({ projectId, members: [], canManageAccess: false });
+      if (path.endsWith('/messages'))
+        return Promise.resolve({
+          items: [{ ...existing, author: { ...author, profileImagePath: '/profiles/project-member.png' } }],
+          nextCursor: null,
+          canWrite: true,
+        });
+      return Promise.reject(new Error('Unexpected API request'));
+    });
+    const { container } = renderChat();
+    const avatar = await waitFor(() => {
+      const node = container.querySelector('.pw-chat-avatar');
+      expect(node?.querySelector('img')).toHaveAttribute('src', '/profiles/project-member.png');
+      return node!;
+    });
+    fireEvent.error(avatar.querySelector('img')!);
+    expect(avatar.querySelector('img')).toHaveAttribute('hidden');
+    expect(avatar).toHaveTextContent('PM');
+  });
+
   it('renders the conversation skeleton while the first message request is pending', () => {
     vi.mocked(apiFetch).mockImplementation((path) => {
       if (path.endsWith('/members'))
