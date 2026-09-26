@@ -27,6 +27,15 @@ const activeResponse = {
   },
 };
 
+const emptyTeamResponse = {
+  timezone: 'Asia/Manila',
+  asOf: '2026-09-18T04:00:00.000Z',
+  weekStart: '2026-09-14T00:00:00.000Z',
+  weekEnd: '2026-09-21T00:00:00.000Z',
+  summary: { memberCount: 0, workingNowCount: 0, scheduledMinutes: 0, actualWorkedSeconds: 0 },
+  members: [],
+};
+
 function renderControl() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -59,7 +68,9 @@ describe('WorkAttendanceControl', () => {
     const currentPromise = new Promise<typeof activeResponse>((resolve) => {
       resolveCurrent = resolve;
     });
-    mocks.apiFetch.mockReturnValue(currentPromise);
+    mocks.apiFetch.mockImplementation((path: string) =>
+      path === '/team' ? Promise.resolve(emptyTeamResponse) : currentPromise,
+    );
     renderControl();
 
     const attendance = screen.getByLabelText('Time attendance');
@@ -79,6 +90,7 @@ describe('WorkAttendanceControl', () => {
     let resolveTimeOut: (value: typeof activeResponse) => void = () =>
       undefined;
     mocks.apiFetch.mockImplementation((path: string) => {
+      if (path === '/team') return Promise.resolve(emptyTeamResponse);
       if (!path) return Promise.resolve(activeResponse);
       if (path === '/work-sessions/current')
         return Promise.resolve(activeResponse);
@@ -107,6 +119,7 @@ describe('WorkAttendanceControl', () => {
   it('times in from the no-active-session state', async () => {
     const user = userEvent.setup();
     mocks.apiFetch.mockImplementation((path: string) => {
+      if (path === '/team') return Promise.resolve(emptyTeamResponse);
       if (!path) return Promise.resolve(activeResponse);
       if (path === '/work-sessions/current') {
         return Promise.resolve({ ...activeResponse, session: null });
@@ -131,10 +144,14 @@ describe('WorkAttendanceControl', () => {
   });
 
   it('shows the minimum self-correction workflow for stale sessions', async () => {
-    mocks.apiFetch.mockResolvedValue({
-      ...activeResponse,
-      session: { ...activeResponse.session, status: 'NEEDS_CORRECTION' },
-    });
+    mocks.apiFetch.mockImplementation((path: string) =>
+      path === '/team'
+        ? Promise.resolve(emptyTeamResponse)
+        : Promise.resolve({
+            ...activeResponse,
+            session: { ...activeResponse.session, status: 'NEEDS_CORRECTION' },
+          }),
+    );
     renderControl();
 
     expect(await screen.findByText('Correction required')).toBeInTheDocument();
