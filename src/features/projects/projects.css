@@ -3269,7 +3269,8 @@
   font-weight: 750;
 }
 .workflow-outcome-details {
-  margin-top: 24px;
+  /* Match the spacing between Content tabs and the Project Stages board. */
+  margin-top: 0;
 }
 .project-members-panel {
   min-width: 0;
