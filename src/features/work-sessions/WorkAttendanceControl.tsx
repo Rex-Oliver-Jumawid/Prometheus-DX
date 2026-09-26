@@ -322,7 +322,7 @@ export function WorkAttendanceControl() {
               No team members have an active work session.
             </p>
           ) : (
-            <ul className="attendance-people-list">
+            <ul className={`attendance-people-list${workingMembers.length > 3 ? " is-scrollable" : ""}`}>
               {workingMembers.map((member) => (
                 <li key={member.id}>
                   <span className="attendance-person-avatar">
