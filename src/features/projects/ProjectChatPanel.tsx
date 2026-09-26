@@ -655,10 +655,15 @@ export function ProjectChatPanel({
                       />
                     )}
                     <div className="pw-chat-body">
-                      {(!ownMessage || (message.editedAt && !message.deletedAt) ||
-                        (canWrite && (message.canEdit || message.canDelete) && !message.deletedAt)) && (
                       <div className="pw-chat-message-meta">
-                        {!ownMessage && <strong>{message.author.fullName}</strong>}
+                        {ownMessage ? (
+                          <span className="pw-chat-own-label">
+                            You <span aria-hidden="true">·</span>
+                            <time dateTime={message.createdAt}>{messageTime(message.createdAt)}</time>
+                          </span>
+                        ) : (
+                          <strong>{message.author.fullName}</strong>
+                        )}
                         {message.editedAt && !message.deletedAt && (
                           <span className="pw-chat-edited">Edited</span>
                         )}
@@ -700,7 +705,6 @@ export function ProjectChatPanel({
                           </div>
                         )}
                       </div>
-                      )}
 
                       {message.replyTo && (
                         <div className="pw-chat-in-reply-to">
@@ -780,7 +784,7 @@ export function ProjectChatPanel({
                               <MessageBody message={message} />
                             )}
                           </p>
-                          {canWrite && !message.deletedAt && (
+                          {canWrite && !message.deletedAt && !ownMessage && (
                             <div className="pw-chat-actions">
                               <button type="button" onClick={() => setReplyTo(message)}>Reply</button>
                             </div>
@@ -788,9 +792,11 @@ export function ProjectChatPanel({
                         </>
                       )}
                     </div>
-                    <time className="pw-chat-message-time" dateTime={message.createdAt}>
-                      {messageTime(message.createdAt)}
-                    </time>
+                    {!ownMessage && (
+                      <time className="pw-chat-message-time" dateTime={message.createdAt}>
+                        {messageTime(message.createdAt)}
+                      </time>
+                    )}
                   </li>
                 );
               })}

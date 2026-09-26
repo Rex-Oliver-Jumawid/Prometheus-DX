@@ -2244,3 +2244,33 @@
   color: #bd492b;
   font: 700 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+/* Match the compact outgoing General Chat bubbles. */
+.pw-chat-panel .pw-chat-message--own {
+  min-width: 0;
+  width: fit-content;
+  max-width: min(72%, 340px);
+  padding: 9px 10px 10px;
+}
+.pw-chat-panel .pw-chat-message--own .pw-chat-message-meta {
+  min-height: 0;
+  margin: 0 0 5px;
+  gap: 7px;
+}
+.pw-chat-panel .pw-chat-own-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: #92857e;
+  font: 600 9px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: nowrap;
+}
+.pw-chat-panel .pw-chat-own-label time {
+  font: inherit;
+  color: inherit;
+}
+.pw-chat-panel .pw-chat-message--own .pw-chat-message-options { align-self: center; }
+@media (max-width: 620px) {
+  .pw-chat-panel .pw-chat-message--own { max-width: 88%; }
+}

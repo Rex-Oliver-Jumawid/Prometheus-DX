@@ -282,7 +282,7 @@ describe('ProjectChatPanel interactions', () => {
     expect(screen.queryByRole('button', { name: 'Message options' })).not.toBeInTheDocument();
   });
 
-  it('keeps the author and timestamp in separate rows and aligns an own read-only message', async () => {
+  it('shows a compact You and timestamp header on an own read-only message', async () => {
     vi.mocked(apiFetch).mockResolvedValue({
       items: [{ ...existing, canEdit: false, canDelete: false }],
       nextCursor: null,
@@ -291,10 +291,31 @@ describe('ProjectChatPanel interactions', () => {
     renderChat(undefined, author.id);
     const row = (await screen.findByText('Initial update')).closest('li');
     expect(row).toHaveClass('pw-chat-message--own');
-    expect(row?.querySelector('.pw-chat-message-meta strong')).toHaveTextContent('Project Member');
-    expect(row?.querySelector('.pw-chat-message-meta time')).toBeNull();
-    expect(row?.querySelector(':scope > time.pw-chat-message-time')).toBeInTheDocument();
+    expect(row?.querySelector('.pw-chat-own-label')).toHaveTextContent(/You.*AM/);
+    expect(row?.querySelector('.pw-chat-own-label time')).toHaveAttribute('datetime', existing.createdAt);
+    expect(row?.querySelector('.pw-chat-message-meta strong')).toBeNull();
+    expect(row?.querySelector(':scope > time.pw-chat-message-time')).toBeNull();
+    expect(row?.querySelector('.pw-chat-actions')).toBeNull();
     expect(screen.getByRole('textbox', { name: 'Message' })).toBeDisabled();
+  });
+
+  it('keeps sender message options without a redundant avatar, name, or Reply action', async () => {
+    vi.mocked(apiFetch).mockImplementation((path) => {
+      if (path.endsWith('/members'))
+        return Promise.resolve({ projectId, members: [], canManageAccess: false });
+      if (path.endsWith('/messages'))
+        return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
+      return Promise.reject(new Error('Unexpected API request: ' + path));
+    });
+    renderChat(undefined, author.id);
+    const row = (await screen.findByText('Initial update')).closest('li');
+    expect(row).toHaveClass('pw-chat-message--own');
+    expect(row?.querySelector('.pw-chat-avatar')).toBeNull();
+    expect(row?.querySelector('.pw-chat-message-meta strong')).toBeNull();
+    expect(row?.querySelector('.pw-chat-own-label')).toHaveTextContent('You');
+    expect(row?.querySelector('.pw-chat-message-time')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Reply' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Message options' })).toBeVisible();
   });
 
   it('opens an older message directly from a Project Chat notification link', async () => {
