@@ -3,6 +3,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ProjectActivityPageSchema, type ProjectActivity } from '../../../shared/contracts/project-activity';
 import { apiFetch } from '../../lib/api';
+import { MemberAvatar } from '../shell/MemberAvatar';
 import './project-collaboration.css';
 
 const descriptions: Record<string, string> = {
@@ -314,7 +315,10 @@ export function ProjectActivityPanel({
                     <div className="pw-activity-entry-top">
                       {personal
                         ? <strong className="pw-activity-personal-action">{personalAction(item.action)}</strong>
-                        : <span>{item.actor?.fullName ?? 'System'} · {eventCategory(item.action)}</span>}
+                        : <span className="pw-activity-actor">
+                            {item.actor && <MemberAvatar name={item.actor.fullName} profileImagePath={item.actor.profileImagePath} className="pw-activity-member-avatar" />}
+                            {item.actor?.fullName ?? 'System'} · {eventCategory(item.action)}
+                          </span>}
                       <time dateTime={item.createdAt}>{eventTime(item.createdAt)}</time>
                     </div>
                     {personal ? (
