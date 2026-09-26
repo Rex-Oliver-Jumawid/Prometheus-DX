@@ -34,9 +34,9 @@
 html {
   min-width: 320px;
   background: rgb(var(--page-background));
-  /* Prevent the document from scrolling on desktop; the content panel
-     scrolls internally. Mobile restores overflow via the media query below. */
-  overflow: hidden;
+  /* Match PiercingCorner: let the browser own page-level panning, including
+     native trackpad pinch-zoom and horizontal scrolling at desktop zoom. */
+  overflow: auto;
 }
 
 body {
@@ -44,7 +44,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background: rgb(var(--page-background));
-  overflow: hidden;
+  overflow: visible;
 }
 
 button,
@@ -1026,7 +1026,8 @@ button:disabled {
   min-width: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  overscroll-behavior: contain;
+  /* Permit horizontal wheel gestures to reach the document scrollport. */
+  overscroll-behavior: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(86, 72, 64, 0.26) transparent;
 }
@@ -1700,72 +1701,11 @@ button:disabled {
 }
 
 @media (max-width: 980px) and (min-width: 701px) and (hover: none) {
-  .sidebar-unread-badge {
-    position: absolute;
-    top: -2px;
-    right: -3px;
-  }
-}
-
-/* A zoomed desktop needs one native two-dimensional pan surface. Let the
-   document scroll in both axes and let the outer workspace grow naturally.
-   Do not intercept wheel events or route vertical movement to a fixed-height
-   inner panel: that prevents vertical panning on Mac trackpads. */
+  .sidebar-unre/* Like PiercingCorner, keep the outer shell bounded and scroll the main
+   content vertically inside it. At desktop browser zoom, only the document
+   scrolls horizontally: no competing nested x-scroll area or wheel handler. */
 @media (max-width: 1179px) and (hover: hover) and (pointer: fine) {
-  html {
-    overflow: auto;
-    overscroll-behavior-x: none;
-  }
-
-  body {
-    overflow: visible;
-  }
-
   .workspace-shell {
     min-width: 1360px;
-    height: auto;
-    min-height: 100dvh;
-    overflow: visible;
-  }
-
-  .workspace-main {
-    height: auto;
-    min-height: 100dvh;
-    overflow: visible;
-  }
-
-  .workspace-content {
-    height: auto;
-    max-height: none;
-    min-height: calc(100dvh - 24px);
-    overflow: visible;
-  }
-
-  .workspace-content-scroll {
-    height: auto;
-    overflow: visible;
-    overscroll-behavior: auto;
-  }
-
-  .workspace-content-inner {
-    height: auto;
-    min-height: 0;
-  }
-}
-
-/* Trackpad pinch zoom changes the visual viewport without necessarily
-   changing CSS breakpoints. Preserve native browser pinch and visual-viewport
-   panning instead of overriding wheel gestures with JavaScript. */
-@media (min-width: 1180px) and (hover: hover) and (pointer: fine) {
-  html {
-    overflow-x: auto;
-  }
-
-  body {
-    overflow: visible;
-  }
-
-  .workspace-shell {
-    overflow: visible;
   }
 }
