@@ -205,7 +205,6 @@ export function WorkAttendanceControl() {
         <span className="attendance-edge-panel">
           <span className="attendance-progress" aria-hidden="true" />
           <span className="attendance-content">
-            <span className="attendance-dot" aria-hidden="true" />
             <span className="attendance-copy">
               <span className="attendance-topline">
                 <strong>
