@@ -22,7 +22,6 @@ import { formatHours, formatManilaDateTime } from '../work-sessions/work-session
 import {
   memberWorkSessionHistoryQuery,
   teamWorkSummaryQuery,
-  workSessionHistoryQuery,
 } from '../work-sessions/work-session-queries';
 import { formatClock } from './schedule-format';
 import { EditableTeamCalendar } from './EditableTeamCalendar';
@@ -412,9 +411,12 @@ export function SchedulePage() {
     [member?.id, selectedMemberId, teamQuery.data?.members],
   );
   const historyQuery = useQuery({
-    ...(selectedMember?.id && selectedMember.id !== member?.id
-      ? memberWorkSessionHistoryQuery(session?.access_token, selectedMember.id, weekParam)
-      : workSessionHistoryQuery(session?.access_token, weekParam)),
+    ...memberWorkSessionHistoryQuery(
+      session?.access_token,
+      selectedMember?.id,
+      member?.id,
+      weekParam,
+    ),
     enabled: view === 'shifts' && Boolean(session?.access_token && selectedMember?.id),
     refetchInterval: view === 'shifts' ? 5_000 : false,
   });

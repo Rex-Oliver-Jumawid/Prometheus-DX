@@ -13,8 +13,11 @@ export const workSessionKeys = {
     ['work-sessions', 'history', week ?? 'current'] as const,
 };
 
-export const memberWorkSessionHistoryKey = (memberId: string, week?: string) =>
-  ['work-sessions', 'member-history', memberId, week ?? 'current'] as const;
+export const memberWorkSessionHistoryKey = (
+  memberId: string,
+  currentMemberId: string,
+  week?: string,
+) => ['work-sessions', 'member-history', currentMemberId, memberId, week ?? 'current'] as const;
 
 export const teamWorkKeys = {
   all: ['team-work'] as const,
@@ -55,13 +58,16 @@ export function workSessionHistoryQuery(accessToken?: string, week?: string) {
 export function memberWorkSessionHistoryQuery(
   accessToken?: string,
   memberId?: string,
+  currentMemberId?: string,
   week?: string,
 ) {
   return queryOptions({
-    queryKey: memberWorkSessionHistoryKey(memberId ?? '', week),
+    queryKey: memberWorkSessionHistoryKey(memberId ?? '', currentMemberId ?? '', week),
     queryFn: () =>
       apiFetch(
-        `/work-sessions/members/${encodeURIComponent(memberId ?? '')}/history${week ? `?week=${week}` : ''}`,
+        `${memberId === currentMemberId
+          ? '/work-sessions/history'
+          : `/work-sessions/members/${encodeURIComponent(memberId ?? '')}/history`}${week ? `?week=${week}` : ''}`,
         WorkSessionHistoryResponseSchema,
         { accessToken },
       ),

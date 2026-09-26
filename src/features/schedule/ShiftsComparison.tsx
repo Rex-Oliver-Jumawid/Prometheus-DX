@@ -9,7 +9,6 @@ import {
 import {
   memberWorkSessionHistoryQuery,
   teamWorkSummaryQuery,
-  workSessionHistoryQuery,
 } from '../work-sessions/work-session-queries';
 import { formatClock } from './schedule-format';
 import {
@@ -76,12 +75,9 @@ export function ShiftsComparison({
   const selected = members.find((member) => member.id === selectedMemberId)
     ?? members.find((member) => member.id === currentMemberId)
     ?? members[0];
-  const isMine = selected?.id === currentMemberId;
   const historyQuery = useQuery({
-    ...(isMine
-      ? workSessionHistoryQuery(accessToken, week)
-      : memberWorkSessionHistoryQuery(accessToken, selected?.id, week)),
-    enabled: Boolean(selected?.id && accessToken),    // Inactive requests stay isolated per member.
+    ...memberWorkSessionHistoryQuery(accessToken, selected?.id, currentMemberId, week),
+    enabled: Boolean(selected?.id && accessToken),
     refetchInterval: 5_000,
   });
   const teamQuery = useQuery(teamWorkSummaryQuery(accessToken, week));
