@@ -457,12 +457,14 @@ export function ProjectOverviewPage() {
         </div>
 
       {activeTab === 'content' && outcomeId ? (
-        <ProjectWorkflow
-          projectId={projectId!}
-          outcomeId={outcomeId}
-          accessToken={accessToken}
-          isLead={workflow.data?.canManageStructure ?? false}
-        />
+        <div id="pw-content-panel" role="tabpanel" aria-labelledby="pw-content-tab">
+          <ProjectWorkflow
+            projectId={projectId!}
+            outcomeId={outcomeId}
+            accessToken={accessToken}
+            isLead={workflow.data?.canManageStructure ?? false}
+          />
+        </div>
       ) : activeTab === 'chat' ? (
         <div id="pw-chat-panel" role="tabpanel" aria-labelledby="pw-chat-tab">
           <div className="pw-chat-page-heading">
