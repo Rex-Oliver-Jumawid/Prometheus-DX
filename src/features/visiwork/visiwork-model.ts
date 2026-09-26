@@ -15,6 +15,7 @@ export interface VisiWorkMember {
   id: string;
   fullName: string;
   position: string | null;
+  profileImagePath: string | null;
   workingNow: boolean;
 }
 
@@ -209,6 +210,7 @@ export function buildVisiWorkModel(
           id: member.id,
           fullName: member.fullName,
           position: member.position,
+          profileImagePath: member.profileImagePath,
           workingNow: member.workingNow,
         }))
         .sort(
