@@ -34,9 +34,9 @@
 html {
   min-width: 320px;
   background: rgb(var(--page-background));
-  /* Match PiercingCorner: let the browser own page-level panning, including
-     native trackpad pinch-zoom and horizontal scrolling at desktop zoom. */
-  overflow: auto;
+  /* Prevent the document from scrolling on desktop; the content panel
+     scrolls internally. Mobile restores overflow via the media query below. */
+  overflow: hidden;
 }
 
 body {
@@ -44,7 +44,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background: rgb(var(--page-background));
-  overflow: visible;
+  overflow: hidden;
 }
 
 button,
@@ -1026,8 +1026,7 @@ button:disabled {
   min-width: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  /* Permit horizontal wheel gestures to reach the document scrollport. */
-  overscroll-behavior: auto;
+  overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: rgba(86, 72, 64, 0.26) transparent;
 }
@@ -1484,7 +1483,7 @@ button:disabled {
     display: none;
   }
 }
-@media (max-width: 980px) and (min-width: 701px) and (hover: none) {
+@media (max-width: 980px) and (min-width: 701px) {
   .workspace-shell {
     --sidebar-width: 88px;
   }
@@ -1533,7 +1532,7 @@ button:disabled {
     right: -4px;
   }
 }
-@media (max-width: 700px) and (hover: none) {
+@media (max-width: 700px) {
   /* On mobile the sidebar overlays, so the shell becomes a normal block.
      Restore document-level scrolling (the browser page scrolls on mobile). */
   html,
@@ -1700,12 +1699,10 @@ button:disabled {
   font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 980px) and (min-width: 701px) and (hover: none) {
-  .sidebar-unre/* Like PiercingCorner, keep the outer shell bounded and scroll the main
-   content vertically inside it. At desktop browser zoom, only the document
-   scrolls horizontally: no competing nested x-scroll area or wheel handler. */
-@media (max-width: 1179px) and (hover: hover) and (pointer: fine) {
-  .workspace-shell {
-    min-width: 1360px;
+@media (max-width: 980px) and (min-width: 701px) {
+  .sidebar-unread-badge {
+    position: absolute;
+    top: -2px;
+    right: -3px;
   }
 }
