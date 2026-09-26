@@ -634,21 +634,26 @@ export function ProjectChatPanel({
             >
               {ordered.map((message) => {
                 const targeted = message.id === targetMessageId;
+                const ownMessage = currentMemberId
+                  ? message.author.id === currentMemberId
+                  : message.canEdit;
                 return (
                   <li
                     key={message.id}
                     data-message-id={message.id}
                     className={[
-                      (currentMemberId ? message.author.id === currentMemberId : message.canEdit) ? 'pw-chat-message pw-chat-message--own' : 'pw-chat-message',
+                      ownMessage ? 'pw-chat-message pw-chat-message--own' : 'pw-chat-message',
                       targeted ? 'pw-chat-message--targeted' : '',
                       message.deletedAt ? 'pw-chat-message--deleted' : '',
                     ].filter(Boolean).join(' ')}
                   >
-                    <MemberAvatar
-                      name={message.author.fullName}
-                      profileImagePath={message.author.profileImagePath}
-                      className="pw-chat-avatar"
-                    />
+                    {!ownMessage && (
+                      <MemberAvatar
+                        name={message.author.fullName}
+                        profileImagePath={message.author.profileImagePath}
+                        className="pw-chat-avatar"
+                      />
+                    )}
                     <div className="pw-chat-body">
                       <div className="pw-chat-message-meta">
                         <strong>{message.author.fullName}</strong>
