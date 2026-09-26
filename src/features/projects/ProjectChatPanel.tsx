@@ -655,8 +655,10 @@ export function ProjectChatPanel({
                       />
                     )}
                     <div className="pw-chat-body">
+                      {(!ownMessage || (message.editedAt && !message.deletedAt) ||
+                        (canWrite && (message.canEdit || message.canDelete) && !message.deletedAt)) && (
                       <div className="pw-chat-message-meta">
-                        <strong>{message.author.fullName}</strong>
+                        {!ownMessage && <strong>{message.author.fullName}</strong>}
                         {message.editedAt && !message.deletedAt && (
                           <span className="pw-chat-edited">Edited</span>
                         )}
@@ -698,6 +700,7 @@ export function ProjectChatPanel({
                           </div>
                         )}
                       </div>
+                      )}
 
                       {message.replyTo && (
                         <div className="pw-chat-in-reply-to">
