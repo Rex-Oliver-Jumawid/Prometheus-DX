@@ -25,6 +25,7 @@ import {
 } from './navigation';
 import { Avatar, ProfileDrawer } from './ProfileDrawer';
 import { useShellStore } from './shell-store';
+import { installZoomPan } from './zoom-pan';
 
 export function AppShell() {
   const { member, session, signOut } = useAuth();
@@ -42,6 +43,8 @@ export function AppShell() {
     enabled: Boolean(accessToken && member),
   });
   const unreadCount = unreadNotifications.data?.count ?? 0;
+
+  useEffect(() => installZoomPan(), []);
 
   useEffect(() => {
     if (!accountMenuOpen) return undefined;
