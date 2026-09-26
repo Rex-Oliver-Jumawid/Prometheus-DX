@@ -73,6 +73,7 @@ describe('VisiWorkService', () => {
       visiWorkMessage: {
         findMany: vi.fn().mockResolvedValue([
           storedMessage({
+            member: { id: memberId, fullName: 'Member One', profileImagePath: '/profiles/member-one.png' },
             mentions: [
               {
                 memberId: mentionedMemberId,
@@ -88,6 +89,7 @@ describe('VisiWorkService', () => {
 
     expect(result.items[0]).toMatchObject({
       body: 'Morning team',
+      author: { profileImagePath: '/profiles/member-one.png' },
       mentions: [{ id: mentionedMemberId, fullName: 'Oliver' }],
     });
   });
