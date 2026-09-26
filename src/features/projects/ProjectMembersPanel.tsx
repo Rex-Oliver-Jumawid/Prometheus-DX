@@ -7,6 +7,7 @@ import {
 } from '../../../shared/contracts/project-workflow';
 import type { ProjectAccessLevel } from '../../../shared/contracts/project';
 import { apiFetch } from '../../lib/api';
+import { MemberAvatar } from '../shell/MemberAvatar';
 
 const membersKey = (projectId: string) =>
   ['projects', 'members', projectId] as const;
@@ -26,7 +27,7 @@ export function ProjectMembersPanel({
   projectId: string;
   accessToken?: string;
   compact?: boolean;
-  projectLead?: { id: string; fullName: string; email: string };
+  projectLead?: { id: string; fullName: string; email: string; profileImagePath?: string | null };
 }) {
   const queryClient = useQueryClient();
   const members = useQuery({
@@ -111,7 +112,7 @@ export function ProjectMembersPanel({
       </div>
       {compact && projectLead && (
         <div className="pw-chat-lead-row">
-          <span className="pw-chat-member-avatar" aria-hidden="true">{projectLead.fullName.trim().split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase()}</span>
+          <MemberAvatar name={projectLead.fullName} profileImagePath={projectLead.profileImagePath} className="pw-chat-member-avatar" />
           <div className="pw-chat-member-identity"><strong>{projectLead.fullName}</strong><small>Project Lead</small></div>
           <span className="pw-chat-member-role">Project Lead</span>
         </div>
@@ -158,13 +159,7 @@ export function ProjectMembersPanel({
             return (
               <article className="project-member-row" key={item.member.id}>
                 <div className="project-member-identity">
-                  <span aria-hidden="true">
-                    {item.member.fullName
-                      .split(/\s+/)
-                      .map((part) => part[0])
-                      .slice(0, 2)
-                      .join('')}
-                  </span>
+                  <MemberAvatar name={item.member.fullName} profileImagePath={item.member.profileImagePath} />
                   <div>
                     <h3>{item.member.fullName}</h3>
                     <p>{item.member.email}</p>
