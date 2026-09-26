@@ -78,7 +78,7 @@ test('non-Gmail invited member account setup preserves the invited email and req
     page.getByRole('button', { name: 'Continue with Google' }),
   ).toHaveCount(0);
   await page.getByLabel('Create password').fill('password-one');
-  await page.getByLabel('Confirm password').fill('password-two');
+  await page.getByLabel('Confirm password', { exact: true }).fill('password-two');
   await page.getByRole('button', { name: 'Create password account' }).click();
   await expect(page.getByText('Passwords must match.')).toBeVisible();
 });
@@ -95,7 +95,7 @@ test('Gmail invited member account setup offers Google without password setup', 
   );
   await expect(page.getByLabel('Invited email')).toHaveAttribute('readonly');
   await expect(page.getByLabel('Create password')).toHaveCount(0);
-  await expect(page.getByLabel('Confirm password')).toHaveCount(0);
+  await expect(page.getByLabel('Confirm password', { exact: true })).toHaveCount(0);
   await expect(
     page.getByRole('button', { name: 'Create password account' }),
   ).toHaveCount(0);
