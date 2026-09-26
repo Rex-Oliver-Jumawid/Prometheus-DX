@@ -71,6 +71,17 @@ vi.mock('../auth/auth-context', () => ({
   }),
 }));
 
+// Navigation tests focus on the project/outcome shell, not delivery editors.
+vi.mock('./OutcomeWorkArea', () => ({
+  OutcomeWorkArea: () => <div>Outcome work</div>,
+}));
+vi.mock('./OutcomeDeliveryPanel', () => ({
+  OutcomeDeliveryPanel: () => <div>Outcome delivery</div>,
+}));
+vi.mock('./OutcomeContextRail', () => ({
+  OutcomeContextRail: () => <aside>Outcome context</aside>,
+}));
+
 vi.mock('../../lib/api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/api')>()),
   apiFetch: vi.fn(),
@@ -256,6 +267,80 @@ describe('ProjectOverviewPage status mutation', () => {
         }),
       ),
     );
+  });
+
+  it('keeps the selected Outcome when switching to Chat and Activity, then returns to stages via Back to Content', async () => {
+    const outcomeId = '55555555-5555-4555-8555-555555555555';
+    const stageId = '66666666-6666-4666-8666-666666666666';
+    const workflow = {
+      projectId,
+      canManageStructure: false,
+      stages: [{
+        id: stageId,
+        projectId,
+        name: 'Development',
+        description: null,
+        position: 0,
+        outcomes: [{
+          id: outcomeId,
+          stageId,
+          title: 'Landing page design',
+          description: 'Finish design',
+          position: 0,
+          lifecycleStatus: 'OPEN',
+          isJoined: false,
+          isLocked: false,
+          hasForReview: false,
+          workProgress: 0,
+          departments: [],
+          acceptanceCriteria: [],
+          prerequisites: [],
+          members: [],
+          createdAt: '2026-09-18T00:00:00.000Z',
+          updatedAt: '2026-09-18T00:00:00.000Z',
+        }],
+        createdAt: '2026-09-18T00:00:00.000Z',
+        updatedAt: '2026-09-18T00:00:00.000Z',
+      }],
+    };
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path === `/projects/${projectId}/workflow`) return Promise.resolve(workflow);
+      if (path === `/projects/${projectId}/messages`)
+        return Promise.resolve({ items: [], nextCursor: null, canWrite: true });
+      if (path === `/projects/${projectId}/announcements`)
+        return Promise.resolve({ items: [], canManage: true });
+      if (path === `/projects/${projectId}/members`)
+        return Promise.resolve(projectMembersResponse);
+      if (path === `/projects/${projectId}/activity`)
+        return Promise.resolve({ items: [], nextCursor: null });
+      if (path === `/projects/${projectId}`) return Promise.resolve(project);
+      return Promise.resolve({});
+    });
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={[`/projects/${projectId}/outcomes/${outcomeId}`]}>
+          <Routes>
+            <Route path="/projects/:projectId/outcomes/:outcomeId" element={<ProjectOverviewPage />} />
+            <Route path="/projects/:projectId" element={<ProjectOverviewPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Landing page design' })).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Content' })).toHaveAttribute('aria-selected', 'true');
+    fireEvent.click(screen.getByRole('tab', { name: 'Chat' }));
+    expect(await screen.findByRole('heading', { name: 'Project chat' })).toBeVisible();
+    fireEvent.click(screen.getByRole('tab', { name: 'Activity' }));
+    expect(screen.getByRole('tab', { name: 'Activity' })).toHaveAttribute('aria-selected', 'true');
+    fireEvent.click(screen.getByRole('tab', { name: 'Content' }));
+    expect(await screen.findByRole('heading', { name: 'Landing page design' })).toBeVisible();
+    fireEvent.click(screen.getByRole('link', { name: 'Back to Project Workspace' }));
+    expect(await screen.findByRole('heading', { name: 'Development' })).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Content' })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('resets unsent Chat drafts when navigating directly between Projects', async () => {

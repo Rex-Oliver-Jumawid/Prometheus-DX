@@ -462,3 +462,289 @@
     animation: none;
   }
 }
+
+/* Keep the original 236 x 58 attendance control. Avatars occupy its right side. */
+.attendance-control:not(.correction):not(.error):not(.pending) .attendance-row {
+  position: relative;
+  width: 100%;
+  min-height: 58px;
+}
+.attendance-control:not(.correction):not(.error):not(.pending) .attendance-main {
+  width: 100%;
+}
+.attendance-control:not(.correction):not(.error):not(.pending) .attendance-content {
+  /* Shift the text slightly left without changing vertical alignment or avatars. */
+  align-items: center;
+  padding-left: 17px;
+  padding-right: 70px;
+}
+.attendance-people {
+  position: absolute;
+  top: 6px;
+  right: 5px;
+  z-index: 4;
+}
+.attendance-people-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 28px;
+  min-height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  cursor: pointer;
+}
+.attendance-people-trigger:focus-visible {
+  outline: 2px solid #367e53;
+  outline-offset: 2px;
+}
+.attendance-person-avatar {
+  position: relative;
+  display: grid;
+  flex: 0 0 23px;
+  width: 23px;
+  height: 23px;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #eaf0ff;
+  color: #405774;
+  font-size: 7px;
+  font-weight: 800;
+}
+.attendance-people-trigger .attendance-person-avatar + .attendance-person-avatar {
+  margin-left: -7px;
+}
+.attendance-person-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.attendance-person-online {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid #fff;
+  border-radius: 50%;
+  background: #159e55;
+}
+.attendance-people-more,
+.attendance-people-empty-count {
+  padding-left: 3px;
+  color: #647087;
+  font-size: 8px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+/* Keep the timer separate from the working-member avatars.
+   The active timer occupies the lower-right of the original-size panel. */
+.attendance-control.active .attendance-topline time {
+  position: absolute;
+  right: 8px;
+  bottom: 7px;
+  z-index: 2;
+  font-variant-numeric: tabular-nums;
+}
+/* Match the warm department-presence palette without changing the edge widget. */
+.attendance-people-popover {
+  position: absolute;
+  right: 5px;
+  bottom: calc(100% + 8px);
+  width: min(248px, calc(100vw - 24px));
+  max-height: min(360px, 60vh);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(221, 207, 198, 0.95);
+  border-radius: 16px;
+  background: #fffdfa;
+  box-shadow: 0 18px 50px rgba(48, 35, 28, 0.2);
+  color: #443a35;
+  text-align: left;
+}
+.attendance-people-heading {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid #ece3dd;
+  background: #fffdfa;
+}
+.attendance-people-heading > div {
+  min-width: 0;
+}
+.attendance-people-eyebrow {
+  display: block;
+  color: #cb4d22;
+  font: 800 8px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 1px;
+}
+.attendance-people-heading h2 {
+  margin: 6px 0 3px;
+  color: #302824;
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+.attendance-people-heading p {
+  margin: 0;
+  color: #93867f;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.attendance-people-heading > button {
+  display: grid;
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #e2d7d0;
+  border-radius: 8px;
+  background: #fff;
+  color: #746860;
+  cursor: pointer;
+}
+.attendance-people-heading > button svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+.attendance-people-heading > button:hover {
+  background: #f8eee8;
+}
+.attendance-people-heading > button:focus-visible {
+  outline: 2px solid #cb4d22;
+  outline-offset: 2px;
+}
+.attendance-people-list {
+  display: grid;
+  gap: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin: 0;
+  padding: 4px 9px 9px;
+  list-style: none;
+}
+.attendance-people-list.is-scrollable {
+  /* Show three member rows; additional members scroll within the list. */
+  max-height: min(164px, calc(60vh - 90px));
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #d8c8bd transparent;
+}
+.attendance-people-list.is-scrollable::-webkit-scrollbar {
+  width: 5px;
+}
+.attendance-people-list.is-scrollable::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #d8c8bd;
+}
+.attendance-people-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 4px;
+}
+.attendance-people-list li + li {
+  border-top: 1px solid #f0e9e4;
+}
+.attendance-people-list .attendance-person-avatar {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 10px;
+  background: #f3ebe6;
+  color: #bd492b;
+  font: 800 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.attendance-people-list .attendance-person-avatar img {
+  border-radius: 10px;
+}
+.attendance-people-list .attendance-person-online {
+  display: none;
+}
+.attendance-people-member-copy {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 4px;
+}
+.attendance-people-member-copy strong,
+.attendance-people-member-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.attendance-people-member-copy strong {
+  color: #443a35;
+  font-size: 11px;
+  font-weight: 750;
+}
+.attendance-people-member-copy small {
+  color: #9b8e87;
+  font-size: 9px;
+}
+.attendance-people-status {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  color: #47825f;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.attendance-people-status i {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: #58a273;
+}
+.attendance-people-state {
+  overflow-y: auto;
+  margin: 0;
+  padding: 16px;
+  color: #93867f;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.attendance-people-state button {
+  margin-left: 8px;
+  color: #bd492b;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+}
+.attendance-control.correction .attendance-row {
+  position: relative;
+  width: 100%;
+}
+.attendance-control.correction .attendance-people {
+  top: 8px;
+  right: 8px;
+}
+.attendance-control.correction .attendance-content {
+  padding-right: 70px;
+}
+@media (max-width: 700px) {
+  .attendance-control:not(.correction):not(.error):not(.pending) .attendance-main {
+    width: 100%;
+  }
+}

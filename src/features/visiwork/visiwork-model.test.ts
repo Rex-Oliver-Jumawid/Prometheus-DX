@@ -252,8 +252,8 @@ describe('buildVisiWorkModel', () => {
     );
 
     expect(
-      rdDepartment?.members.find((member) => member.id === nico.id)?.workingNow,
-    ).toBe(false);
+      rdDepartment?.members.find((member) => member.id === nico.id),
+    ).toBeUndefined();
     expect(
       creativeDepartment?.members.find((member) => member.id === nico.id),
     ).toMatchObject({

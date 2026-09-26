@@ -16,6 +16,7 @@ import {
 } from './work-session-format';
 import {
   currentWorkSessionQuery,
+  teamWorkSummaryQuery,
   teamWorkKeys,
   workSessionKeys,
 } from './work-session-queries';
@@ -25,14 +26,19 @@ export function WorkAttendanceControl() {
   const { session } = useAuth();
   const queryClient = useQueryClient();
   const current = useQuery(currentWorkSessionQuery(session?.access_token));
+  const team = useQuery(teamWorkSummaryQuery(session?.access_token));
   const [now, setNow] = useState(() => Date.now());
   const [expanded, setExpanded] = useState(false);
   const [edgeOpen, setEdgeOpen] = useState(false);
+  const [peopleOpen, setPeopleOpen] = useState(false);
   const attendanceRef = useRef<HTMLElement>(null);
   const [reason, setReason] = useState('');
   const [correctedTimeIn, setCorrectedTimeIn] = useState('');
   const [correctedTimeOut, setCorrectedTimeOut] = useState('');
 
+  const workingMembers = team.data?.members.filter((member) => member.workingNow) ?? [];
+  const visibleMembers = workingMembers.slice(0, 3);
+  const remainingCount = workingMembers.length - visibleMembers.length;
   const active = current.data?.session ?? null;
   const activeId = active?.id;
   const activeStatus = active?.status;
@@ -63,12 +69,22 @@ export function WorkAttendanceControl() {
         !attendanceRef.current.contains(target)
       ) {
         setEdgeOpen(false);
+        setPeopleOpen(false);
       }
     };
 
     document.addEventListener('pointerdown', closeFromOutside);
     return () => document.removeEventListener('pointerdown', closeFromOutside);
   }, [edgeOpen]);
+
+  useEffect(() => {
+    if (!peopleOpen) return undefined;
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPeopleOpen(false);
+    };
+    document.addEventListener('keydown', onEscape);
+    return () => document.removeEventListener('keydown', onEscape);
+  }, [peopleOpen]);
 
   const refreshAffectedQueries = async () => {
     await Promise.all([
@@ -164,6 +180,7 @@ export function WorkAttendanceControl() {
       className={`attendance-control attendance-edge-time${active?.status === 'OPEN' ? ' active' : ''}${active?.status === 'NEEDS_CORRECTION' ? ' correction' : ''}${edgeOpen ? ' edge-open' : ''}`}
       aria-label="Time attendance"
     >
+      <div className="attendance-row">
       <button
         className="attendance-main"
         type="button"
@@ -188,7 +205,6 @@ export function WorkAttendanceControl() {
         <span className="attendance-edge-panel">
           <span className="attendance-progress" aria-hidden="true" />
           <span className="attendance-content">
-            <span className="attendance-dot" aria-hidden="true" />
             <span className="attendance-copy">
               <span className="attendance-topline">
                 <strong>
@@ -222,6 +238,119 @@ export function WorkAttendanceControl() {
           </span>
         </span>
       </button>
+
+      <div className="attendance-people">
+        <button
+          type="button"
+          className="attendance-people-trigger"
+          aria-label={`View working members, ${workingMembers.length} working now`}
+          aria-expanded={peopleOpen}
+          aria-controls="attendance-people-list"
+          onClick={() => {
+            setEdgeOpen(true);
+            setPeopleOpen((open) => !open);
+          }}
+        >
+          {visibleMembers.map((member) => (
+            <span
+              className="attendance-person-avatar"
+              key={member.id}
+              title={member.fullName}
+            >
+              {member.profileImagePath ? (
+                <img src={member.profileImagePath} alt="" />
+              ) : (
+                member.fullName
+                  .trim()
+                  .split(/\s+/)
+                  .slice(0, 2)
+                  .map((part) => part[0])
+                  .join('')
+                  .toUpperCase()
+              )}
+              <span className="attendance-person-online" />
+            </span>
+          ))}
+          {remainingCount > 0 && (
+            <span className="attendance-people-more">+{remainingCount}</span>
+          )}
+          {workingMembers.length === 0 && (
+            <span className="attendance-people-empty-count">
+              {team.isPending ? '...' : '0 working'}
+            </span>
+          )}
+        </button>
+      </div>
+      </div>
+
+      {peopleOpen && (
+        <section
+          id="attendance-people-list"
+          className="attendance-people-popover"
+          aria-label="Working members"
+        >
+          <header className="attendance-people-heading">
+            <div>
+              <span className="attendance-people-eyebrow">TEAM PRESENCE</span>
+              <h2>Working now</h2>
+              <p>
+                {workingMembers.length} {workingMembers.length === 1 ? 'member' : 'members'} currently working
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-label="Close working members"
+              onClick={() => setPeopleOpen(false)}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          </header>
+          {team.isError ? (
+            <div className="attendance-people-state" role="alert">
+              <span>Could not load working members.</span>
+              <button type="button" onClick={() => void team.refetch()}>
+                Retry
+              </button>
+            </div>
+          ) : team.isPending ? (
+            <p className="attendance-people-state" role="status">
+              Loading working members...
+            </p>
+          ) : workingMembers.length === 0 ? (
+            <p className="attendance-people-state">
+              No team members have an active work session.
+            </p>
+          ) : (
+            <ul className={`attendance-people-list${workingMembers.length > 3 ? " is-scrollable" : ""}`}>
+              {workingMembers.map((member) => (
+                <li key={member.id}>
+                  <span className="attendance-person-avatar">
+                    {member.profileImagePath ? (
+                      <img src={member.profileImagePath} alt="" />
+                    ) : (
+                      member.fullName
+                        .trim()
+                        .split(/\s+/)
+                        .slice(0, 2)
+                        .map((part) => part[0])
+                        .join('')
+                        .toUpperCase()
+                    )}
+                    <span className="attendance-person-online" />
+                  </span>
+                  <span className="attendance-people-member-copy">
+                    <strong>{member.fullName}</strong>
+                    <small>{member.position || member.department.name}</small>
+                  </span>
+                  <span className="attendance-people-status"><i aria-hidden="true" />Working</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       {(mutation.isError || correction.isError) && (
         <p className="attendance-error" role="alert">

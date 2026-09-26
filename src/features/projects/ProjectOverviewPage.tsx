@@ -418,8 +418,7 @@ export function ProjectOverviewPage() {
         </div>
       </section>
 
-      {!outcomeId && (
-        <div className="tabs-wrap pw-tabs-wrap">
+      <div className="tabs-wrap pw-tabs-wrap">
           <nav className="tabs pw-tabs" role="tablist" aria-label="Project sections">
             <button
               className={`tab-btn ${activeTab === 'content' ? 'active' : ''}`}
@@ -456,15 +455,16 @@ export function ProjectOverviewPage() {
             </button>
           </nav>
         </div>
-      )}
 
-      {outcomeId ? (
-        <ProjectWorkflow
-          projectId={projectId!}
-          outcomeId={outcomeId}
-          accessToken={accessToken}
-          isLead={workflow.data?.canManageStructure ?? false}
-        />
+      {activeTab === 'content' && outcomeId ? (
+        <div id="pw-content-panel" role="tabpanel" aria-labelledby="pw-content-tab">
+          <ProjectWorkflow
+            projectId={projectId!}
+            outcomeId={outcomeId}
+            accessToken={accessToken}
+            isLead={workflow.data?.canManageStructure ?? false}
+          />
+        </div>
       ) : activeTab === 'chat' ? (
         <div id="pw-chat-panel" role="tabpanel" aria-labelledby="pw-chat-tab">
           <div className="pw-chat-page-heading">
