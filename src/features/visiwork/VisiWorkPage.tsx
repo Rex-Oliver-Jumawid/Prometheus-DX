@@ -1051,7 +1051,17 @@ function DepartmentCard({
             <div className="visiwork-members-modal-list">
               {department.members.map((member) => (
                 <div className="visiwork-members-modal-person" key={member.id}>
-                  <span>{initials(member.fullName)}</span>
+                  <span className="visiwork-member-avatar">
+                    <span>{initials(member.fullName)}</span>
+                    {member.profileImagePath && (
+                      <img
+                        src={member.profileImagePath}
+                        alt=""
+                        loading="lazy"
+                        onError={(event) => { event.currentTarget.hidden = true; }}
+                      />
+                    )}
+                  </span>
                   <div>
                     <strong>{member.fullName}</strong>
                     <small>{member.position ?? 'Member'}</small>
