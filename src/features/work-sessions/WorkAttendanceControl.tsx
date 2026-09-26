@@ -273,7 +273,7 @@ export function WorkAttendanceControl() {
             </span>
           ))}
           {remainingCount > 0 && (
-            <span className="attendance-people-more">+${remainingCount}</span>
+            <span className="attendance-people-more">+{remainingCount}</span>
           )}
           {workingMembers.length === 0 && (
             <span className="attendance-people-empty-count">
