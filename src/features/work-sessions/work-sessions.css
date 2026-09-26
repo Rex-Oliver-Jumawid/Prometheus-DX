@@ -542,49 +542,77 @@
 .attendance-people-popover {
   position: absolute;
   right: 5px;
-  bottom: calc(100% + 10px);
-  width: min(300px, calc(100vw - 24px));
-  max-height: min(390px, 60vh);
-  overflow: auto;
-  padding: 13px;
-  border: 1px solid #e4e7eb;
-  border-radius: 16px;
-  background: #fff;
-  box-shadow: 0 12px 36px rgba(30, 39, 52, 0.18);
-  color: #343c49;
+  bottom: calc(100% + 8px);
+  width: min(260px, calc(100vw - 24px));
+  max-height: min(320px, 55vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 10px;
+  border: 1px solid rgba(185, 199, 207, 0.65);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 12px 32px rgba(31, 53, 62, 0.15);
+  color: #35404b;
+  text-align: left;
 }
 .attendance-people-heading {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  padding: 1px 2px 10px;
-  font-size: 13px;
+  gap: 10px;
+  padding: 2px 3px 9px;
+  border-bottom: 1px solid #edf0f2;
 }
-.attendance-people-heading span { color: #69778b; }
+.attendance-people-heading strong {
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: -0.015em;
+}
+.attendance-people-heading span {
+  display: grid;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 6px;
+  place-items: center;
+  border-radius: 999px;
+  background: #eff5f0;
+  color: #39734c;
+  font-size: 10px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
 .attendance-people-list {
   display: grid;
-  gap: 8px;
+  gap: 2px;
   margin: 0;
-  padding: 0;
+  padding: 5px 0 0;
   list-style: none;
 }
 .attendance-people-list li {
   display: flex;
-  gap: 9px;
   align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 7px 5px;
+  border-radius: 9px;
+}
+.attendance-people-list li + li {
+  border-top: 1px solid #f1f3f4;
 }
 .attendance-people-list .attendance-person-avatar {
-  flex-basis: 36px;
-  width: 36px;
-  height: 36px;
-  font-size: 11px;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  background: #eaf0ff;
+  font-size: 10px;
 }
 .attendance-people-list .attendance-person-online {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
 }
 .attendance-people-member-copy {
   display: grid;
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
   gap: 3px;
 }
@@ -594,17 +622,36 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.attendance-people-member-copy strong { font-size: 12px; }
-.attendance-people-member-copy small { font-size: 10px; color: #738096; }
-.attendance-people-status { font-size: 10px; color: #26844b; }
+.attendance-people-member-copy strong {
+  color: #35404b;
+  font-size: 11px;
+  font-weight: 750;
+}
+.attendance-people-member-copy small {
+  color: #84909b;
+  font-size: 10px;
+}
+.attendance-people-status {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #ebf7ef;
+  color: #287747;
+  font-size: 9px;
+  font-weight: 700;
+}
 .attendance-people-state {
   margin: 0;
-  padding: 10px 2px;
+  padding: 14px 3px 5px;
   color: #687588;
   font-size: 11px;
+  line-height: 1.5;
 }
 .attendance-people-state button {
-  margin-left: 10px;
+  margin-left: 8px;
+  color: #287747;
+  font: inherit;
+  font-weight: 700;
   text-decoration: underline;
 }
 .attendance-control.correction .attendance-row {
