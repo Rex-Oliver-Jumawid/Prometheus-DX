@@ -19,6 +19,7 @@ export const ProjectMemberSummarySchema = z.object({
   id: z.string().uuid(),
   fullName: z.string().min(1),
   email: z.string().email(),
+  profileImagePath: z.string().nullable().optional(),
 });
 
 export const ProjectStageSummarySchema = z.object({
