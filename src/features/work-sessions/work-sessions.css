@@ -618,6 +618,20 @@
   padding: 4px 9px 9px;
   list-style: none;
 }
+.attendance-people-list.is-scrollable {
+  /* Show three member rows; additional members scroll within the list. */
+  max-height: min(164px, calc(60vh - 90px));
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #d8c8bd transparent;
+}
+.attendance-people-list.is-scrollable::-webkit-scrollbar {
+  width: 5px;
+}
+.attendance-people-list.is-scrollable::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #d8c8bd;
+}
 .attendance-people-list li {
   display: flex;
   align-items: center;
