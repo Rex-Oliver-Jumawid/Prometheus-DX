@@ -462,3 +462,175 @@
     animation: none;
   }
 }
+
+/* The working-members control shares the expanded attendance edge card. */
+.attendance-control:not(.correction):not(.error):not(.pending) {
+  width: min(440px, calc(100vw - 12px));
+}
+.attendance-row {
+  display: flex;
+  align-items: stretch;
+  min-height: 58px;
+  overflow: hidden;
+  border-radius: 16px 0 0 16px;
+}
+.attendance-row .attendance-main {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+}
+.attendance-people {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 4px 10px 4px 4px;
+  border: 1px solid rgba(116, 116, 116, 0.13);
+  border-left: 0;
+  border-right: 0;
+  background: rgba(246, 246, 246, 0.96);
+}
+.attendance-people-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 62px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.attendance-people-trigger:focus-visible {
+  outline: 2px solid #367e53;
+  outline-offset: 3px;
+  border-radius: 20px;
+}
+.attendance-person-avatar {
+  position: relative;
+  display: grid;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #eaf0ff;
+  color: #405774;
+  font-size: 10px;
+  font-weight: 800;
+}
+.attendance-people-trigger .attendance-person-avatar + .attendance-person-avatar {
+  margin-left: -8px;
+}
+.attendance-person-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.attendance-person-online {
+  position: absolute;
+  right: -2px;
+  bottom: -1px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #159e55;
+}
+.attendance-people-more,
+.attendance-people-empty-count {
+  padding-left: 7px;
+  color: #647087;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.attendance-people-popover {
+  position: absolute;
+  right: 10px;
+  bottom: calc(100% + 10px);
+  width: min(316px, calc(100vw - 24px));
+  max-height: min(390px, 60vh);
+  overflow: auto;
+  padding: 13px;
+  border: 1px solid #e4e7eb;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 12px 36px rgba(30, 39, 52, 0.18);
+  color: #343c49;
+}
+.attendance-people-heading {
+  display: flex;
+  justify-content: space-between;
+  padding: 1px 2px 10px;
+  font-size: 13px;
+}
+.attendance-people-heading span {
+  color: #69778b;
+}
+.attendance-people-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.attendance-people-list li {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+.attendance-people-list .attendance-person-avatar {
+  flex-basis: 36px;
+  width: 36px;
+  height: 36px;
+}
+.attendance-people-member-copy {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 3px;
+}
+.attendance-people-member-copy strong,
+.attendance-people-member-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.attendance-people-member-copy strong { font-size: 12px; }
+.attendance-people-member-copy small { font-size: 10px; color: #738096; }
+.attendance-people-status { font-size: 10px; color: #26844b; }
+.attendance-people-state {
+  margin: 0;
+  padding: 10px 2px;
+  color: #687588;
+  font-size: 11px;
+}
+.attendance-people-state button {
+  margin-left: 10px;
+  text-decoration: underline;
+}
+.attendance-control.active .attendance-people {
+  border-color: rgba(83, 146, 98, 0.27);
+  background: rgba(248, 253, 249, 0.96);
+}
+.attendance-control.correction .attendance-row {
+  display: block;
+}
+.attendance-control.correction .attendance-people {
+  border: 0;
+  padding: 6px 12px;
+}
+@media (max-width: 700px) {
+  .attendance-control:not(.correction):not(.error):not(.pending) {
+    width: min(410px, calc(100vw - 12px));
+  }
+  .attendance-person-avatar {
+    flex-basis: 28px;
+    width: 28px;
+    height: 28px;
+  }
+  .attendance-people {
+    padding-right: 6px;
+  }
+}
