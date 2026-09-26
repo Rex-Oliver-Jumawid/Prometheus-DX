@@ -14,7 +14,7 @@ import type {
 } from '../../shared/contracts/project-announcement';
 import { PrismaService } from '../database/prisma.service';
 
-const authorSelect = { id: true, fullName: true, email: true } as const;
+const authorSelect = { id: true, fullName: true, email: true, profileImagePath: true } as const;
 
 @Injectable()
 export class ProjectAnnouncementService {
@@ -46,7 +46,7 @@ export class ProjectAnnouncementService {
   private toAnnouncement(record: {
     id: string;
     projectId: string;
-    member: { id: string; fullName: string; email: string };
+    member: { id: string; fullName: string; email: string; profileImagePath: string | null };
     title: string;
     body: string;
     pinnedAt: Date | null;
