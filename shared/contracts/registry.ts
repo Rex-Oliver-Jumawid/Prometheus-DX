@@ -88,6 +88,7 @@ export const RegistryMemberSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
   fullName: z.string().min(1),
+  profileImagePath: z.string().nullable(),
   departmentId: z.string().uuid(),
   department: z.object({
     id: z.string().uuid(),

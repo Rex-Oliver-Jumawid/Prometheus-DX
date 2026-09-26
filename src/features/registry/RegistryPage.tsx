@@ -20,6 +20,7 @@ import {
 } from '../../../shared/contracts/registry';
 import { apiFetch } from '../../lib/api';
 import { projectCreateOptionsQuery } from '../projects/project-queries';
+import { MemberAvatar } from '../shell/MemberAvatar';
 import {
   registryOverviewQuery,
   registryOverviewQueryKey,
@@ -278,7 +279,7 @@ function DepartmentDialog({
                 {departmentMembers.length ? (
                   departmentMembers.map((member) => (
                     <div className="registry-department-member" key={member.id}>
-                      <span aria-hidden="true">{memberInitials(member.fullName)}</span>
+                      <MemberAvatar name={member.fullName} profileImagePath={member.profileImagePath} />
                       <div>
                         <strong>{member.fullName}</strong>
                         <small>{member.position ?? 'Member'} · {member.email}</small>
@@ -979,15 +980,6 @@ function RemoveMemberDialog({
   );
 }
 
-function memberInitials(fullName: string): string {
-  return fullName
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('');
-}
-
 export function RegistryPage({ accessToken }: { accessToken?: string }) {
   const queryClient = useQueryClient();
   const [dialogState, setDialogState] = useState<DepartmentDialogState | null>(
@@ -1584,7 +1576,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
                         >
                           <td>
                             <div className="registry-member-identity">
-                              <span>{memberInitials(member.fullName)}</span>
+                              <MemberAvatar name={member.fullName} profileImagePath={member.profileImagePath} />
                               <div>
                                 <strong>{member.fullName}</strong>
                                 <small>{member.email}</small>

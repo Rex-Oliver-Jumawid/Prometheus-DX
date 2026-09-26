@@ -559,6 +559,7 @@ export class RegistryService {
     authUserId: string | null;
     email: string;
     fullName: string;
+    profileImagePath: string | null;
     departmentId: string;
     department: { id: string; name: string; shortLabel: string };
     position: string | null;
@@ -572,6 +573,7 @@ export class RegistryService {
       id: member.id,
       email: member.email,
       fullName: member.fullName,
+      profileImagePath: member.profileImagePath,
       departmentId: member.departmentId,
       department: member.department,
       position: member.position,
