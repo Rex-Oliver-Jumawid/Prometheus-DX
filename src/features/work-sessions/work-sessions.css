@@ -473,12 +473,10 @@
   width: 100%;
 }
 .attendance-control:not(.correction):not(.error):not(.pending) .attendance-content {
-  /* Keep the original horizontal alignment; center the copy vertically. */
+  /* Keep the text in place after removing its redundant status dot. */
   align-items: center;
+  padding-left: 23px;
   padding-right: 70px;
-}
-.attendance-control:not(.correction):not(.error):not(.pending) .attendance-dot {
-  margin-top: 0;
 }
 .attendance-people {
   position: absolute;
