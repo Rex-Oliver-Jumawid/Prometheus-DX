@@ -71,6 +71,17 @@ vi.mock('../auth/auth-context', () => ({
   }),
 }));
 
+// Navigation tests focus on the project/outcome shell, not delivery editors.
+vi.mock('./OutcomeWorkArea', () => ({
+  OutcomeWorkArea: () => <div>Outcome work</div>,
+}));
+vi.mock('./OutcomeDeliveryPanel', () => ({
+  OutcomeDeliveryPanel: () => <div>Outcome delivery</div>,
+}));
+vi.mock('./OutcomeContextRail', () => ({
+  OutcomeContextRail: () => <aside>Outcome context</aside>,
+}));
+
 vi.mock('../../lib/api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/api')>()),
   apiFetch: vi.fn(),
