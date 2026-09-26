@@ -133,6 +133,30 @@ async function signIn(page: Page) {
   await expect(page).not.toHaveURL(/\/login$/, { timeout: 15_000 });
 }
 
+test('desktop browser zoom retains horizontal and vertical panning', async ({ page }) => {
+  test.skip(!hasCredentials, 'Requires configured Prometheus E2E credentials.');
+  await signIn(page);
+
+  // A narrow CSS viewport simulates desktop browser zoom without replacing
+  // the desktop pointer with a mobile touch device.
+  await page.setViewportSize({ width: 640, height: 620 });
+  await page.goto('/schedule');
+  await expect(page.getByRole('heading', { name: 'Schedule', exact: true })).toBeVisible();
+
+  await expect.poll(() => page.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  )).toBeGreaterThan(0);
+  await page.evaluate(() => window.scrollTo({ left: 320, top: 0 }));
+  await expect.poll(() => page.evaluate(() => window.scrollX)).toBeGreaterThan(0);
+
+  const content = page.locator('.workspace-content-scroll');
+  await expect.poll(() => content.evaluate((element) =>
+    element.scrollHeight - element.clientHeight,
+  )).toBeGreaterThan(0);
+  await content.evaluate((element) => { element.scrollTop = 240; });
+  await expect.poll(() => content.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+});
+
 test('member configures, refreshes, edits, removes, and returns from Shifts to Team configuration', async ({
   page,
 }) => {
