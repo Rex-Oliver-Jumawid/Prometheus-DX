@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../../lib/api';
+import { MemberAvatar } from '../shell/MemberAvatar';
 import { OutcomeWorkSchema } from '../../../shared/contracts/outcome-work';
 import { OutcomeDeliverySchema } from '../../../shared/contracts/outcome-delivery';
 
@@ -12,6 +13,7 @@ type OutcomePrerequisite = {
 type OutcomeMember = {
   id: string;
   fullName: string;
+  profileImagePath?: string | null;
 };
 
 type OutcomeDepartment = {
@@ -180,9 +182,11 @@ export function OutcomeContextRail({
           <div className="side-title">Ownership</div>
         </div>
         <div className="ownership-profile">
-          <div className="ownership-avatar" aria-hidden="true">
-            {avatarInitials}
-          </div>
+          {primaryMember ? (
+            <MemberAvatar name={primaryMember.fullName} profileImagePath={primaryMember.profileImagePath} className="ownership-avatar" />
+          ) : (
+            <div className="ownership-avatar" aria-hidden="true">{avatarInitials}</div>
+          )}
           <div className="ownership-info">
             <div className="meta-label">Department</div>
             <strong>{departmentText}</strong>
