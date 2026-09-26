@@ -156,7 +156,7 @@ describe('ProjectsService', () => {
     });
     expect(database.member.findMany).toHaveBeenCalledWith({
       where: { status: MemberStatus.ACTIVE },
-      select: { id: true, fullName: true, email: true },
+      select: { id: true, fullName: true, email: true, profileImagePath: true },
       orderBy: [{ fullName: 'asc' }, { id: 'asc' }],
     });
     expect(database.department.findMany).toHaveBeenCalledWith({
