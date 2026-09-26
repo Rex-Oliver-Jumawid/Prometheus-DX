@@ -49,7 +49,7 @@ const outcomeInclude = {
   },
   members: {
     include: {
-      member: { select: { id: true, fullName: true, email: true } },
+      member: { select: { id: true, fullName: true, email: true, profileImagePath: true } },
     },
     orderBy: { joinedAt: 'asc' as const },
   },
@@ -122,6 +122,7 @@ export class ProjectWorkflowService {
             id: true,
             fullName: true,
             email: true,
+            profileImagePath: true,
             outcomeMemberships: {
               where: { outcome: { stage: { projectId } } },
               select: { outcome: { select: { id: true, title: true } } },
@@ -140,6 +141,7 @@ export class ProjectWorkflowService {
           id: member.id,
           fullName: member.fullName,
           email: member.email,
+          profileImagePath: member.profileImagePath,
         },
         accessLevel,
         outcomes: member.outcomeMemberships.map(({ outcome }) => outcome),
