@@ -8,6 +8,7 @@ import {
   type ProjectAnnouncement,
 } from '../../../shared/contracts/project-announcement';
 import { apiFetch } from '../../lib/api';
+import { MemberAvatar } from '../shell/MemberAvatar';
 import './project-collaboration.css';
 
 function displayTime(value: string) {
@@ -242,7 +243,8 @@ export function ProjectAnnouncementsPanel({
                 <h3>{announcement.title}</h3>
                 <p>{announcement.body}</p>
                 <footer>
-                  {announcement.author.fullName} · {pinned ? 'Project guidance' : displayTime(announcement.createdAt)}
+                  <MemberAvatar name={announcement.author.fullName} profileImagePath={announcement.author.profileImagePath} className="pw-announcement-avatar" />
+                  <span>{announcement.author.fullName} · {pinned ? 'Project guidance' : displayTime(announcement.createdAt)}</span>
                 </footer>
               </article>
             );
