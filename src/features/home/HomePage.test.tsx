@@ -65,6 +65,7 @@ const data: HomeDashboardResponse = {
     {
       id: member.id,
       fullName: member.fullName,
+      profileImagePath: member.profileImagePath,
       department: member.department,
     },
   ],
