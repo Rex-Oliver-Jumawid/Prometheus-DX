@@ -28,6 +28,7 @@ import {
 import { apiFetch } from '../../lib/api';
 import { useRealtimeInvalidation } from '../../lib/use-realtime-invalidation';
 import { useAuth } from '../auth/auth-context';
+import { MemberAvatar } from '../shell/MemberAvatar';
 import {
   projectCreateOptionsQuery,
   projectWorkflowQuery,
@@ -143,7 +144,7 @@ function RoomPanel({
   accessToken?: string;
   currentMemberId?: string;
   departmentId?: string;
-  mentionMembers: Array<{ id: string; fullName: string }>;
+  mentionMembers: Array<{ id: string; fullName: string; profileImagePath?: string | null }>;
 }) {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -600,9 +601,11 @@ function RoomPanel({
                 key={message.id}
               >
                 {!ownMessage && (
-                  <span className="visiwork-room-avatar">
-                    {initials(message.author.fullName)}
-                  </span>
+                  <MemberAvatar
+                    name={message.author.fullName}
+                    profileImagePath={message.author.profileImagePath}
+                    className="visiwork-room-avatar"
+                  />
                 )}
                 <div className={message.deletedAt ? 'deleted' : ''}>
                   <div className="visiwork-message-meta">
@@ -695,7 +698,7 @@ function RoomPanel({
                                 role="option"
                                 onClick={() => selectEditMention(candidate)}
                               >
-                                <span>{initials(candidate.fullName)}</span>
+                                <MemberAvatar name={candidate.fullName} profileImagePath={candidate.profileImagePath} />
                                 <strong>{candidate.fullName}</strong>
                               </button>
                             ))}
@@ -777,7 +780,7 @@ function RoomPanel({
                     role="option"
                     onClick={() => selectMention(candidate)}
                   >
-                    <span>{initials(candidate.fullName)}</span>
+                    <MemberAvatar name={candidate.fullName} profileImagePath={candidate.profileImagePath} />
                     <strong>{candidate.fullName}</strong>
                   </button>
                 ))}
@@ -1051,17 +1054,7 @@ function DepartmentCard({
             <div className="visiwork-members-modal-list">
               {department.members.map((member) => (
                 <div className="visiwork-members-modal-person" key={member.id}>
-                  <span className="visiwork-member-avatar">
-                    <span>{initials(member.fullName)}</span>
-                    {member.profileImagePath && (
-                      <img
-                        src={member.profileImagePath}
-                        alt=""
-                        loading="lazy"
-                        onError={(event) => { event.currentTarget.hidden = true; }}
-                      />
-                    )}
-                  </span>
+                  <MemberAvatar name={member.fullName} profileImagePath={member.profileImagePath} className="visiwork-member-avatar" />
                   <div>
                     <strong>{member.fullName}</strong>
                     <small>{member.position ?? 'Member'}</small>
@@ -1361,6 +1354,7 @@ function DepartmentView({
           mentionMembers={department.members.map((departmentMember) => ({
             id: departmentMember.id,
             fullName: departmentMember.fullName,
+            profileImagePath: departmentMember.profileImagePath,
           }))}
         />
       </div>
@@ -1606,6 +1600,7 @@ export function VisiWorkPage() {
           mentionMembers={team.data.members.map((teamMember) => ({
             id: teamMember.id,
             fullName: teamMember.fullName,
+            profileImagePath: teamMember.profileImagePath,
           }))}
         />
       </div>
