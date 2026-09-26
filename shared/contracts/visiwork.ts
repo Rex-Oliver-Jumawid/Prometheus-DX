@@ -21,6 +21,7 @@ export type VisiWorkPresenceResponse = z.infer<
 export const VisiWorkMessageAuthorSchema = z.object({
   id: z.string().uuid(),
   fullName: z.string().min(1),
+  profileImagePath: z.string().nullable().optional(),
 });
 
 export const VisiWorkMessageSchema = z.object({
