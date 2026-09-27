@@ -71,6 +71,10 @@ test('landing brand returns to top with matching rounded logos and pill CTAs', a
   await nav.getByRole('link', { name: 'Prometheus, back to top' }).click();
   await expect(page).toHaveURL(/#top$/);
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(5);
+
+  // Footer branding should navigate to the same real document-top anchor.
+  await page.locator('.footer .brand').click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(5);
 });
 
 test('mobile navigation opens and closes on section selection', async ({ page }) => {
