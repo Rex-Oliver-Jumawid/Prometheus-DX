@@ -56,7 +56,10 @@ export function LandingPage() {
 
   return (
     <div id="landing-root">
-      <header className={`site-header${scrolled ? " is-scrolled" : ""}`} id="top">
+      {/* Anchor must sit in normal flow: sticky headers are already visible and
+          do not scroll the document back to the start when targeted. */}
+      <div id="top" aria-hidden="true" />
+      <header className={`site-header${scrolled ? " is-scrolled" : ""}`}>
           <nav className="nav wrap" aria-label="Main navigation" ref={navRef}>
             <a className="brand" href="#top" aria-label="Prometheus, back to top">
               <span className="brand-icon"><span className="mark" aria-hidden="true"></span></span>
