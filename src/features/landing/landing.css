@@ -30,7 +30,25 @@
     #landing-root .site-header { position: sticky; top: 0; height: 82px; z-index: 100; background: white; border-bottom: 1px solid var(--rule); transition: background .28s ease, border-color .28s ease; }
     #landing-root .site-header.is-scrolled { background: transparent; border-color: transparent; }
     #landing-root .site-header .nav { width: min(1080px, calc(100% - 112px)); margin-inline: auto; }
-    #landing-root .site-header.is-scrolled .nav { width: min(980px, calc(100% - 144px)); height: 68px; padding-inline: 22px; transform: translateY(8px); background: rgba(255,255,255,.98); border: 1px solid #eae8e6; border-radius: 18px; box-shadow: 0 15px 45px rgba(35,30,27,.105), 0 2px 8px rgba(35,30,27,.04); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+    #landing-root .site-header.is-scrolled .nav {
+      width: min(980px, calc(100% - 144px));
+      height: 68px;
+      padding-inline: 22px;
+      transform: translateY(8px);
+      background: rgba(255, 255, 255, .62);
+      border: 1px solid rgba(255, 255, 255, .76);
+      border-radius: 999px;
+      backdrop-filter: blur(26px) saturate(180%);
+      -webkit-backdrop-filter: blur(26px) saturate(180%);
+      box-shadow:
+        0 15px 38px rgba(35, 30, 27, .10),
+        0 3px 9px rgba(35, 30, 27, .045),
+        inset 0 1px 0 rgba(255, 255, 255, .95),
+        inset 0 -1px 0 rgba(255, 255, 255, .30);
+    }
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      #landing-root .site-header.is-scrolled .nav { background: rgba(255, 255, 255, .94); }
+    }
     #landing-root .site-header .brand-icon { width: 40px; height: 40px; border-radius: 14px; overflow: hidden; background: var(--red); box-shadow: 0 8px 20px rgba(192,46,46,.14); }
     #landing-root .site-header .brand-icon .mark { border-radius: 14px; background-size: cover; background-position: center; }
     #landing-root .nav { display: flex; align-items: center; position: relative; height: 82px; gap: 38px; transition: width .3s ease, height .3s ease, padding .3s ease, transform .3s ease, border-radius .3s ease, box-shadow .3s ease, background .3s ease; }
@@ -56,7 +74,7 @@
     #landing-root h1 em { font-weight: 400; color: var(--red); }
     #landing-root .hero-description { max-width: 440px; font-size: 17px; line-height: 1.7; color: #544942; margin: 0; }
     #landing-root .hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 27px; margin-top: 37px; }
-    #landing-root .action-primary { display: inline-flex; align-items: center; justify-content: space-between; gap: 28px; min-height: 55px; padding: 0 22px; color: white; background: var(--red); border-radius: 999px; font-size: 13px; font-weight: 700; transition: background .15s ease, transform .15s ease; }
+    #landing-root .action-primary { display: inline-flex; align-items: center; justify-content: space-between; gap: 28px; min-height: 55px; padding: 0 22px; color: white; background: var(--red); border-radius: 0; font-size: 13px; font-weight: 700; transition: background .15s ease, transform .15s ease; }
     #landing-root .action-primary:hover { background: var(--red-deep); transform: translateY(-2px); }
     #landing-root .action-text { display: inline-flex; gap: 16px; align-items: center; border-bottom: 1px solid var(--ink); padding-bottom: 6px; font-size: 13px; font-weight: 700; transition: color .15s ease; }
     #landing-root .action-text:hover { color: var(--red); }
@@ -342,7 +360,7 @@
       #landing-root .site-header { height: 69px; }
       #landing-root .site-header .nav { width: calc(100% - 28px); }
       #landing-root .nav { height: 69px; gap: 12px; }
-      #landing-root .site-header.is-scrolled .nav { width: calc(100% - 24px); height: 60px; padding-inline: 14px; transform: translateY(5px); border-radius: 16px; }
+      #landing-root .site-header.is-scrolled .nav { width: calc(100% - 24px); height: 60px; padding-inline: 14px; transform: translateY(5px); border-radius: 999px; }
       #landing-root .brand-icon { width: 41px; height: 41px; }
       #landing-root .site-header .brand-icon, #landing-root .site-header .brand-icon .mark { border-radius: 14px; }
       #landing-root .brand-name { font-size: 18px; }

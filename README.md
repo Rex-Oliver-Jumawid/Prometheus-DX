@@ -103,12 +103,13 @@ If a lesson changes a product or architecture rule, update the canonical source 
 
 The deployed site root (`/`) waits for session and member verification.
 It opens `/workspace` for authorized members and shows the public landing page to signed-out visitors.
-The explicit `/landing` route always shows the public page, including from the workspace brand.
+The explicit `/landing` route always shows the public page, including for signed-in members who visit it directly.
 Its implementation lives in `src/features/landing/`, with its stylesheet and artwork under `public/landing/`.
 The `.model/landing-page.html` file is a design reference only, not read or served at runtime.
 
 Visitors can follow **Open Prometheus** to `/login`, then enter the authenticated Home dashboard at `/workspace`.
-The login brand links to `/landing`; signing out still leads to `/login`.
+The workspace brand navigates to Home at `/workspace`, while the login brand links to `/landing`.
+Signing out still leads to `/login`.
 Existing protected feature URLs, such as `/projects` and `/schedule`, stay unchanged.
 The old `/landing-page.html` address redirects to `/landing`.
 The public page, sign-in, and protected workspace are delivered by one Vite SPA using the existing Vercel rewrite.

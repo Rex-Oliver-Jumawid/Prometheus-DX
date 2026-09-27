@@ -73,7 +73,7 @@ const sampleNotifications: Notification[] = [
 
 let records: Notification[];
 
-function renderShell() {
+function renderShell(initialRoute = '/') {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -82,11 +82,11 @@ function renderShell() {
   });
   const result = render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/']}>
+      <MemoryRouter initialEntries={[initialRoute]}>
         <Routes>
           <Route element={<AppShell />}>
             <Route path="/" element={<h1>Home placeholder</h1>} />
-          <Route path="/landing" element={<h1>Public landing page</h1>} />
+            <Route path="/workspace" element={<h1>Home placeholder</h1>} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route
               path="/projects/:projectId/outcomes/:outcomeId"
@@ -143,17 +143,16 @@ describe('AppShell notification utility badge', () => {
     );
   });
 
-  it('opens the public landing page from the workspace brand', async () => {
+  it('returns to Home when the workspace brand is clicked from another page', async () => {
     const user = userEvent.setup();
-    renderShell();
+    renderShell('/notifications');
+    await screen.findByRole('heading', { name: 'Notifications' });
     await user.click(
       screen.getByRole('link', {
-        name: 'Prometheus Virtual Office, view landing page',
+        name: 'Prometheus Virtual Office, go to Home',
       }),
     );
-    expect(
-      screen.getByRole('heading', { name: 'Public landing page' }),
-    ).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Home placeholder' })).toBeVisible();
   });
 
   it('hides the badge at zero and preserves Member utility visibility', async () => {
