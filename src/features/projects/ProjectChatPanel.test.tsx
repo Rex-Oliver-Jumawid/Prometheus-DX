@@ -65,13 +65,13 @@ describe('ProjectChatPanel interactions', () => {
         return Promise.resolve({ projectId, members: [], canManageAccess: false });
       if (path.endsWith('/messages'))
         return Promise.resolve({
-          items: [{ ...existing, author: { ...author, profileImagePath: '/profiles/project-member.png' } }],
+          items: [{ ...existing, canEdit: false, canDelete: false, author: { ...author, profileImagePath: '/profiles/project-member.png' } }],
           nextCursor: null,
           canWrite: true,
         });
       return Promise.reject(new Error('Unexpected API request'));
     });
-    const { container } = renderChat();
+    const { container } = renderChat(undefined, projectLead.id);
     const avatar = await waitFor(() => {
       const node = container.querySelector('.pw-chat-avatar');
       expect(node?.querySelector('img')).toHaveAttribute('src', '/profiles/project-member.png');
@@ -158,12 +158,12 @@ describe('ProjectChatPanel interactions', () => {
         parentMessageId: messageId,
       });
       if (typeof path === 'string' && path.endsWith('/messages'))
-        return Promise.resolve({ items: [existing], nextCursor: null, canWrite: true });
+        return Promise.resolve({ items: [{ ...existing, canEdit: false, canDelete: false }], nextCursor: null, canWrite: true });
       if (typeof path === 'string' && path.endsWith('/members'))
         return Promise.resolve({ projectId, members: [], canManageAccess: false });
       return Promise.reject(new Error('Unexpected API request: ' + path + '\n' + new Error().stack));
     });
-    renderChat();
+    renderChat(undefined, projectLead.id);
     fireEvent.click(await screen.findByRole('button', { name: 'Reply' }));
     expect(screen.getByText('Replying to Project Member')).toBeVisible();
     fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), {
