@@ -8,8 +8,7 @@
   min-width: 0;
   padding: 0 0 28px;
   color: #302925;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    'Segoe UI', sans-serif;
+  font-family: var(--workspace-font-body);
 }
 
 .visiwork-page {
@@ -328,7 +327,7 @@
 .visiwork-mini-project-heading b {
   flex: 0 0 auto;
   color: #a24829;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 9.75px;
   line-height: 13px;
 }
@@ -362,7 +361,7 @@
   border-radius: 999px;
   background: #eef5f0;
   color: #4b7458;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 8.8px;
   line-height: 11px;
   white-space: nowrap;
@@ -456,7 +455,7 @@
 
 .visiwork-project-card > header span {
   color: #9a8e87;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7.5px;
   font-weight: 800;
   letter-spacing: 0.72px;
@@ -468,7 +467,7 @@
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.52);
   color: #756a64;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7px;
   font-weight: 700;
 }
@@ -512,14 +511,14 @@
 .visiwork-project-progress span,
 .visiwork-project-metrics span {
   color: #988c85;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7px;
   letter-spacing: 0.32px;
 }
 
 .visiwork-project-progress strong {
   color: #a24829;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 9px;
 }
 
@@ -579,7 +578,7 @@
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.5);
   color: #6f625b;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7.5px;
 }
 
@@ -634,7 +633,7 @@
 
 .visiwork-room-header span {
   color: #cb4d22;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 9.25px;
   font-weight: 800;
   letter-spacing: 1.11px;
@@ -660,7 +659,7 @@
 .visiwork-room-header b {
   flex: 0 0 auto;
   color: #4e805f;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 9.25px;
   font-weight: 800;
   white-space: nowrap;
@@ -693,7 +692,7 @@
   border-radius: 8px;
   background: #f0e8e2;
   color: #60534c;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 8.5px;
   font-weight: 800;
 }
@@ -721,7 +720,7 @@
   display: block;
   overflow: hidden;
   color: #a29993;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 8px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -922,7 +921,7 @@
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.58);
   color: #81756f;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7px;
   letter-spacing: 0.48px;
 }
@@ -1072,7 +1071,7 @@
 .visiwork-project-inline-progress > span:last-child {
   flex: 0 0 auto;
   color: #7c6f68;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 8.5px;
 }
 
@@ -1099,7 +1098,7 @@
 
 .visiwork-stage > header span {
   color: #9a8f88;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7.5px;
 }
 
@@ -1143,7 +1142,7 @@
 
 .visiwork-outcome > span {
   color: #81746d;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7.5px;
   text-transform: uppercase;
   white-space: nowrap;
@@ -1164,7 +1163,7 @@
 
 .visiwork-state > span {
   color: #cb4d22;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.8px;
@@ -1537,7 +1536,7 @@
   border-radius: 8px;
   background: #f0e8e2;
   color: #6b5e56;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7.5px;
   font-weight: 800;
 }
@@ -1590,7 +1589,7 @@
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.72);
   color: #7f726a;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 6.8px;
   font-weight: 800;
   line-height: 9px;
@@ -1878,7 +1877,7 @@
 
 .visiwork-members-modal > header span {
   color: #cb4d22;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7px;
   font-weight: 800;
   letter-spacing: 1px;
@@ -1938,7 +1937,7 @@
   border-radius: 10px;
   background: #f3ebe6;
   color: #bd492b;
-  font-family: Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 8px;
   font-weight: 800;
 }

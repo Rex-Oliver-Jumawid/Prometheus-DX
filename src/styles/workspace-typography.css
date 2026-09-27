@@ -1,0 +1,38 @@
+/*
+ * Landing-page-inspired typefaces for the authenticated workspace only.
+ * Authentication routes sit outside .workspace-shell and retain their fonts.
+ */
+.workspace-shell {
+  --workspace-font-heading: Georgia, 'Times New Roman', serif;
+  --workspace-font-body: Arial, Helvetica, sans-serif;
+  --workspace-font-label: 'Courier New', Courier, monospace;
+  font-family: var(--workspace-font-body);
+}
+
+/* Feature CSS can load after the shell; headings keep the editorial typeface. */
+.workspace-shell :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--workspace-font-heading) !important;
+}
+
+.workspace-shell :is(
+  .shell-brand strong,
+  .home-summary-card > strong,
+  .reports-metric-card > strong,
+  .reports-pipeline-cell strong
+) {
+  font-family: var(--workspace-font-heading);
+}
+
+.workspace-shell :is(
+  .page-kicker,
+  .shell-brand span,
+  .member-avatar,
+  .profile-settings-eyebrow
+) {
+  font-family: var(--workspace-font-label);
+}
+
+/* This tiny group heading functions as an uppercase label, not a page title. */
+.workspace-shell .home-project-group-heading h3 {
+  font-family: var(--workspace-font-label) !important;
+}

@@ -5,6 +5,7 @@ import { AppProviders } from './app/AppProviders';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
 import { router } from './routes/router';
 import './styles/globals.css';
+import './styles/workspace-typography.css';
 
 const root = document.getElementById('root');
 
