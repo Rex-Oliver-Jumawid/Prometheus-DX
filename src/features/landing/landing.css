@@ -17,7 +17,7 @@
     }
     #landing-root *, #landing-root *::before, #landing-root *::after { box-sizing: border-box; }
     html:has(#landing-root) { scroll-behavior: smooth; scroll-padding-top: 88px; }
-    #landing-root { margin: 0; min-width: 320px; overflow-x: hidden; }
+    #landing-root { margin: 0; min-width: 320px; overflow-x: clip; }
     #landing-root a { color: inherit; text-decoration: none; }
     #landing-root button { font: inherit; cursor: pointer; }
     #landing-root a:focus-visible, #landing-root button:focus-visible { outline: 3px solid var(--ember); outline-offset: 4px; }
@@ -460,4 +460,7 @@
       #landing-root .product-caption { flex-direction: column; gap: 5px; }
     }
   
-html:has(#landing-root), body:has(#landing-root) { overflow: auto !important; background: white; }
+/* Keep document scrolling on html. Neither body nor the landing root may
+   become a non-scrolling overflow ancestor of the sticky site header. */
+html:has(#landing-root) { overflow: auto !important; background: white; }
+body:has(#landing-root) { overflow: visible !important; background: white; }
