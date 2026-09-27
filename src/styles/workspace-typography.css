@@ -1,8 +1,14 @@
 /*
- * Landing-page-inspired typefaces for the authenticated workspace only.
- * Authentication routes sit outside .workspace-shell and retain their fonts.
+ * Landing-page-inspired typefaces for the authenticated workspace and
+ * its dialogs, which are rendered outside the shell through React portals.
+ * Authentication screens retain their existing typography.
  */
-.workspace-shell {
+:is(
+  .workspace-shell,
+  .projects-dialog-backdrop,
+  .registry-dialog-backdrop,
+  .visiwork-members-modal-backdrop
+) {
   --workspace-font-heading: Georgia, 'Times New Roman', serif;
   --workspace-font-body: Arial, Helvetica, sans-serif;
   --workspace-font-label: 'Courier New', Courier, monospace;
@@ -10,7 +16,12 @@
 }
 
 /* Feature CSS can load after the shell; headings keep the editorial typeface. */
-.workspace-shell :is(h1, h2, h3, h4, h5, h6) {
+:is(
+  .workspace-shell,
+  .projects-dialog-backdrop,
+  .registry-dialog-backdrop,
+  .visiwork-members-modal-backdrop
+) :is(h1, h2, h3, h4, h5, h6) {
   font-family: var(--workspace-font-heading) !important;
 }
 
