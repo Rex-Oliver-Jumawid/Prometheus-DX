@@ -345,7 +345,7 @@ export function ProjectChatPanel({
   // When a reply banner appears, reveal the entire composer without requiring
   // the user to manually scroll the surrounding workspace.
   useLayoutEffect(() => {
-    if (replyTo) composerFormRef.current?.scrollIntoView({ block: 'nearest' });
+    if (replyTo) composerFormRef.current?.scrollIntoView?.({ block: 'nearest' });
   }, [replyTo]);
 
   useLayoutEffect(() => {
