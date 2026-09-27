@@ -83,7 +83,7 @@ export function AccountSetupPage() {
     }
   }, [location.search]);
 
-  if (auth.member) return <Navigate replace to="/" />;
+  if (auth.member) return <Navigate replace to="/workspace" />;
   if (
     auth.session &&
     auth.memberError instanceof ApiRequestError &&

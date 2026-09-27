@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { Navigate, createBrowserRouter } from 'react-router-dom';
 import { AccessDeniedPage } from '../features/auth/AccessDeniedPage';
 import { AccountSetupPage } from '../features/auth/AccountSetupPage';
 import { AuthGate } from '../features/auth/AuthGate';
@@ -7,6 +7,7 @@ import { LoginPage } from '../features/auth/LoginPage';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { FoundationPage } from '../features/foundation/FoundationPage';
 import { HomePage } from '../features/home/HomePage';
+import { LandingPage } from '../features/landing/LandingPage';
 import { ProjectsPage } from '../features/projects/ProjectsPage';
 import { NotFoundPage } from '../features/foundation/NotFoundPage';
 import { AppShell } from '../features/shell/AppShell';
@@ -21,6 +22,8 @@ import {
 } from './route-modules';
 
 export const router = createBrowserRouter([
+  { path: '/', element: <LandingPage /> },
+  { path: '/landing-page.html', element: <Navigate replace to="/" /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/forgot-password', element: <ForgotPasswordPage /> },
   { path: '/reset-password', element: <ResetPasswordPage /> },
@@ -41,7 +44,7 @@ export const router = createBrowserRouter([
       {
         element: <AppShell />,
         children: [
-          { path: '/', element: <HomePage /> },
+          { path: '/workspace', element: <HomePage /> },
           { path: '/projects', element: <ProjectsPage /> },
           { path: '/projects/:projectId', lazy: loadProjectOverviewRoute },
           {

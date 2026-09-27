@@ -15,6 +15,10 @@ describe('shell navigation', () => {
     ).not.toContain('Registry');
   });
 
+  it('keeps the signed-in Home dashboard separate from the public landing route', () => {
+    expect(navigationForRole('MEMBER').find((item) => item.label === 'Home')?.path).toBe('/workspace');
+  });
+
   it('keeps VisiWork and Reports & Analytics as separate primary destinations', () => {
     const navigation = navigationForRole('MEMBER');
 

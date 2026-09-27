@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from './auth-context';
 import { resolveProtectedState } from './auth-routing';
@@ -17,15 +16,6 @@ export function AuthLoading({
   );
 }
 
-function PublicLandingRedirect() {
-  useEffect(() => {
-    // This is a standalone HTML document, not a React Router route.
-    window.location.replace('/landing-page.html');
-  }, []);
-
-  return <AuthLoading label="Opening Prometheus…" />;
-}
-
 export function AuthGate() {
   const auth = useAuth();
   const location = useLocation();
@@ -38,11 +28,7 @@ export function AuthGate() {
   });
 
   if (state === 'loading') return <AuthLoading />;
-  if (state === 'login') {
-    // Keep deep links going to sign-in, but show the landing page to visitors.
-    if (location.pathname === '/' && !location.search) {
-      return <PublicLandingRedirect />;
-    }
+  if (state === 'login')
     return (
       <Navigate
         replace
@@ -50,7 +36,6 @@ export function AuthGate() {
         state={{ returnTo: location.pathname + location.search }}
       />
     );
-  }
   if (state === 'denied') return <Navigate replace to="/access-denied" />;
   if (state === 'authorized') return <Outlet />;
 
