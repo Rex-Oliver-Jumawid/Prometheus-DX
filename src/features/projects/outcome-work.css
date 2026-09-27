@@ -74,7 +74,7 @@
   border: 1px solid #ded3cc;
   border-radius: 999px;
   color: #6f655f;
-  font: 400 9px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 9px var(--workspace-font-label);
 }
 
 .pw-outcome-details-trigger {
@@ -83,7 +83,7 @@
   background: #fffdfa;
   border-color: #d5c7bd;
   color: #574a44;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 10px;
   font-weight: 750;
   cursor: pointer;
@@ -176,7 +176,7 @@
 .workspace-kicker-row .kicker {
   margin: 0;
   color: #cb4d22;
-  font: 800 8.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 800 8.5px var(--workspace-font-label);
   letter-spacing: 0.04em;
 }
 
@@ -238,7 +238,7 @@
   align-items: center;
   padding: 3px 7px;
   border-radius: 4px;
-  font: 400 9px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 9px var(--workspace-font-label);
   text-transform: capitalize;
 }
 
@@ -306,7 +306,7 @@
 
 .acceptance-label {
   color: #667085;
-  font: 800 8.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 800 8.5px var(--workspace-font-label);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -585,7 +585,7 @@
 }
 
 .outcome-task-count {
-  font: 400 9px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 9px var(--workspace-font-label);
   color: #667085;
 }
 
@@ -670,7 +670,7 @@
 }
 
 .outcome-task-status {
-  font: 400 8.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 8.5px var(--workspace-font-label);
   color: #98a2b3;
   text-transform: capitalize;
   flex-shrink: 0;
@@ -929,7 +929,7 @@
   align-items: center;
   padding: 3px 6px;
   border-radius: 4px;
-  font: 400 8.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 8.5px var(--workspace-font-label);
   text-transform: capitalize;
 }
 
@@ -1146,7 +1146,7 @@
   border-radius: 999px;
   background: #f6f1ed;
   color: #6f655f;
-  font: 400 9px/12.6px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 9px/12.6px var(--workspace-font-label);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -1304,7 +1304,7 @@
   border-radius: 999px;
   background: #fff4ee;
   color: #b64b27;
-  font: 400 8px/11px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 8px/11px var(--workspace-font-label);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -1345,7 +1345,7 @@
 }
 
 .pw-output-current-label {
-  font: 400 8.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 8.5px var(--workspace-font-label);
   color: #9a8f88;
   text-transform: uppercase;
 }
@@ -1370,7 +1370,7 @@
 
 .field-label {
   color: #667085;
-  font: 400 9px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 9px var(--workspace-font-label);
   text-transform: uppercase;
 }
 
@@ -1509,7 +1509,7 @@
   border: 1px solid #ded3cc;
   border-radius: 999px;
   color: #6f655f;
-  font: 400 8.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 8.5px var(--workspace-font-label);
 }
 
 .empty-submissions {
@@ -1554,7 +1554,7 @@
 }
 
 .outcome-sub-version-badge {
-  font: 800 9.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 800 9.5px var(--workspace-font-label);
   color: #514741;
 }
 
@@ -1562,7 +1562,7 @@
   display: inline-block;
   padding: 2px 5px;
   border-radius: 3px;
-  font: 400 8.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 8.5px var(--workspace-font-label);
 }
 
 .outcome-sub-status-badge.for_review {
@@ -1634,7 +1634,7 @@
 
 .side-title {
   color: #101828;
-  font: 800 9.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 800 9.5px var(--workspace-font-label);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -1721,7 +1721,7 @@
   color: #ffffff;
   display: grid;
   place-items: center;
-  font: 800 9.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 800 9.5px var(--workspace-font-label);
 }
 
 .ownership-info {
@@ -1729,7 +1729,7 @@
 }
 
 .meta-label {
-  font: 400 8.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 8.5px var(--workspace-font-label);
   color: #8a7c73;
   text-transform: uppercase;
 }
@@ -1769,13 +1769,13 @@
   background: #f6f1ed;
   border: 1px solid #ded3cc;
   border-radius: 999px;
-  font: 400 8.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 8.5px var(--workspace-font-label);
   color: #6f655f;
   overflow-wrap: anywhere;
 }
 
 .prereq-status {
-  font: 400 8px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 8px var(--workspace-font-label);
 }
 
 .prereq-status.resolved {
@@ -1828,7 +1828,7 @@
 }
 
 .rail-activity-time {
-  font: 400 8.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 8.5px var(--workspace-font-label);
   color: #98a2b3;
   margin-top: 2px;
 }
@@ -2093,7 +2093,7 @@
 .submission-record-kicker {
   display: block;
   color: #7c7068;
-  font: 700 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 700 9px/1.2 var(--workspace-font-label);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -2151,7 +2151,7 @@
 .submission-record-field > span {
   display: block;
   color: #8a7f78;
-  font: 700 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 700 9px/1.2 var(--workspace-font-label);
   letter-spacing: 0.04em;
 }
 
@@ -2207,7 +2207,7 @@
 .submission-record-outcome span {
   display: block;
   color: #8a7f78;
-  font: 700 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 700 9px/1.2 var(--workspace-font-label);
 }
 
 .submission-record-outcome strong {
@@ -2246,7 +2246,7 @@
   border: 1px solid #dfcec4;
   border-radius: 5px;
   color: #8c5a45;
-  font: 400 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 9px/1 var(--workspace-font-label);
 }
 
 .submission-record-status-card p {
@@ -2369,7 +2369,7 @@
 .outcome-review-step {
   display: block;
   color: #766a63;
-  font: 700 9px/1.25 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 700 9px/1.25 var(--workspace-font-label);
   letter-spacing: 0.02em;
 }
 
@@ -2407,7 +2407,7 @@
 
 .outcome-review-submission-list article span {
   color: #8a7f78;
-  font: 400 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 8px/1 var(--workspace-font-label);
 }
 
 .outcome-review-submission-list .outcome-output-content,
@@ -2439,7 +2439,7 @@
 
 .outcome-review-panel-head > span:last-child {
   color: #8a7f78;
-  font: 400 8px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 8px/1.2 var(--workspace-font-label);
 }
 
 .outcome-review-criteria-list {
@@ -2490,7 +2490,7 @@
   border-radius: 7px;
   background: #fff;
   color: #3f3733;
-  font: 400 10px/1.45 Inter, system-ui, sans-serif;
+  font: 400 10px/1.45 var(--workspace-font-body);
   resize: vertical;
   outline: 0;
 }

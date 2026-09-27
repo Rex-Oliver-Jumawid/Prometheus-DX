@@ -99,6 +99,17 @@ If a prototype feature requires a field or relationship missing from the current
 The phase journals are historical implementation records rather than a replacement for canonical requirements.
 If a lesson changes a product or architecture rule, update the canonical source of truth as well as the journal.
 
+## Public landing and authenticated workspace
+
+The deployed site root (`/`) is the public React landing page for every visitor, including signed-in users.
+Its implementation lives in `src/features/landing/`, with its own stylesheet and artwork under `public/landing/`.
+The `.model/landing-page.html` file is a design reference only, not read or served at runtime.
+
+Visitors can follow **Open Prometheus** to `/login`, then enter the authenticated Home dashboard at `/workspace`.
+Existing protected feature URLs, such as `/projects` and `/schedule`, stay unchanged.
+The old `/landing-page.html` address redirects to `/`.
+The public page, sign-in, and protected workspace are delivered by one Vite SPA using the existing Vercel rewrite.
+
 ## Local development setup
 
 Requirements:

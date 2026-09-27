@@ -36,7 +36,7 @@
   top: 50%;
   transform: translateY(-50%);
   color: #98a2b3;
-  font-family: Menlo, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 14px;
   pointer-events: none;
   line-height: 1;
@@ -50,7 +50,7 @@
   border-radius: 10px;
   background: #ffffff;
   color: #3f3834;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 11px;
   outline: 0;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.02);
@@ -90,7 +90,7 @@
   padding: 7px 18px;
   border-radius: 999px;
   color: #857a73;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 10.5px;
   font-weight: 650;
   cursor: pointer;
@@ -115,7 +115,7 @@
   border-radius: 11px;
   background: #cb4d22;
   color: #ffffff;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 11px;
   font-weight: 750;
   cursor: pointer;
@@ -226,7 +226,7 @@
 
 .vw-group-check {
   display: block;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 9px;
   font-weight: 800;
   color: #ffffff;
@@ -242,7 +242,7 @@
 
 .vw-group-star {
   display: block;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 7px;
   font-weight: 900;
   line-height: 1;
@@ -258,7 +258,7 @@
 
 .vw-group-dot {
   display: block;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 13px;
   font-weight: 900;
   line-height: 8px;
@@ -267,7 +267,7 @@
 
 .vw-project-group-name {
   color: #403b38;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
@@ -276,7 +276,7 @@
 
 .vw-project-group-count {
   color: #69635f;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 10px;
   font-weight: 500;
   line-height: 1;
@@ -314,7 +314,7 @@
   border-radius: 11px;
   background: #faf7f4;
   color: #9b8f88;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 10px;
   text-align: center;
   padding: 14px;
@@ -363,7 +363,7 @@
 
 .vw-overview-project-kicker {
   color: #a0958e;
-  font-family: Menlo, SFMono-Regular, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7.5px;
   font-weight: 800;
   text-transform: uppercase;
@@ -374,7 +374,7 @@
 .vw-overview-project-title {
   margin: 4px 0 0;
   color: #24201d;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 13px;
   font-weight: 850;
   line-height: 1.25;
@@ -394,7 +394,7 @@
   border-radius: 999px;
   background: #fff4ef;
   color: #cb4d22;
-  font-family: Menlo, SFMono-Regular, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7px;
   font-weight: 800;
   text-transform: uppercase;
@@ -407,7 +407,7 @@
   border-radius: 999px;
   background: #faf7f4;
   color: #766a63;
-  font-family: Menlo, SFMono-Regular, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7px;
   font-weight: 750;
   text-transform: uppercase;
@@ -418,7 +418,7 @@
 .vw-overview-project-desc {
   margin: 7px 0 0;
   color: #8d817a;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 9.5px;
   line-height: 1.5;
   min-height: 28px;
@@ -446,7 +446,7 @@
 
 .vw-overview-progress-head span {
   color: #8f837c;
-  font-family: Menlo, SFMono-Regular, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7.2px;
   font-weight: 700;
   text-transform: uppercase;
@@ -455,7 +455,7 @@
 
 .vw-overview-progress-head strong {
   color: #a24829;
-  font-family: Menlo, SFMono-Regular, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 9px;
   font-weight: 850;
 }
@@ -493,7 +493,7 @@
 
 .vw-overview-meta-label {
   color: #a0958e;
-  font-family: Menlo, SFMono-Regular, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 6.8px;
   font-weight: 750;
   text-transform: uppercase;
@@ -503,7 +503,7 @@
 .vw-overview-meta-value {
   margin-top: 3px;
   color: #514741;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 8.8px;
   font-weight: 750;
   line-height: 1.35;
@@ -525,7 +525,7 @@
   border-radius: 999px;
   background: #faf7f4;
   color: #6e625b;
-  font-family: Menlo, SFMono-Regular, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7px;
   font-weight: 700;
   white-space: nowrap;
@@ -546,7 +546,7 @@
   border-radius: 999px;
   background: #eef5f0;
   color: #4b7458;
-  font-family: Menlo, SFMono-Regular, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7px;
   font-weight: 700;
 }
@@ -560,7 +560,7 @@
 
 .vw-overview-no-workers {
   color: #a0968f;
-  font-family: Menlo, SFMono-Regular, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7.5px;
   line-height: 1.4;
 }
@@ -571,7 +571,7 @@
   gap: 4px;
   margin-top: 9px;
   color: #8f837c;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 7.8px;
   white-space: nowrap;
   overflow: hidden;
@@ -594,7 +594,7 @@
 
 .vw-overview-project-foot span {
   color: #9c918a;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 7.5px;
 }
 
@@ -603,7 +603,7 @@
   background: transparent;
   padding: 2px 0;
   color: #cb4d22;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 9px;
   font-weight: 750;
   cursor: pointer;
@@ -712,7 +712,7 @@
 .vw-archive-head strong {
   display: block;
   color: #3d3733;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 11px;
   font-weight: 700;
 }
@@ -721,7 +721,7 @@
   display: block;
   margin-top: 3px;
   color: #968b84;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 8px;
   font-weight: 400;
 }
@@ -733,7 +733,7 @@
   border-radius: 999px;
   background: #f7f4f2;
   color: #766b64;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7.5px;
   font-weight: 750;
   line-height: 1;
@@ -765,7 +765,7 @@
 
 .vw-archive-project-title {
   color: #3e3733;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 11px;
   font-weight: 800;
 }
@@ -773,7 +773,7 @@
 .vw-archive-project-desc {
   margin-top: 4px;
   color: #93877f;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 8.5px;
   line-height: 1.45;
   max-width: 620px;
@@ -786,7 +786,7 @@
 
 .vw-archive-meta-label {
   color: #a0958e;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7px;
   font-weight: 750;
   text-transform: uppercase;
@@ -796,7 +796,7 @@
 .vw-archive-meta-value {
   margin-top: 3px;
   color: #554b45;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 9px;
   font-weight: 700;
 }
@@ -814,7 +814,7 @@
   border-radius: 999px;
   background: #faf8f6;
   color: #736861;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 7.5px;
 }
 
@@ -823,7 +823,7 @@
   border: 0;
   background: transparent;
   color: #cf4b22;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 9.5px;
   font-weight: 800;
   padding: 7px 0;
@@ -841,7 +841,7 @@
   padding: 38px 18px;
   text-align: center;
   color: #9b8f88;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 10px;
 }
 
@@ -867,9 +867,7 @@
   margin: 0;
   color: #f4511e;
   font:
-    800 10px/1 ui-monospace,
-    SFMono-Regular,
-    monospace;
+    800 10px/1 var(--workspace-font-label);
   letter-spacing: 0.1em;
 }
 .projects-dialog h2 {
@@ -970,7 +968,7 @@
 
 .pw-project-kicker {
   color: #f4511e;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 8px;
   font-weight: 800;
   text-transform: uppercase;
@@ -981,7 +979,7 @@
 .pw-project-header h1 {
   margin: 0;
   color: #24201d;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 20px;
   font-weight: 750;
   line-height: 1.15;
@@ -992,7 +990,7 @@
   max-width: 760px;
   margin: 5px 0 0;
   color: #837872;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 11px;
   line-height: 1.5;
 }
@@ -1029,7 +1027,7 @@
   gap: 5px;
   flex-shrink: 0;
   color: #7b7068;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 11px;
   font-weight: 500;
   text-decoration: none;
@@ -1057,7 +1055,7 @@
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(228, 223, 218, 0.85);
   box-shadow: 0 2px 8px rgba(47, 35, 29, 0.04);
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 11px;
   /* Responsive: pill never gets so wide it crowds out the back link */
   max-width: min(640px, 55vw);
@@ -1126,7 +1124,7 @@
 .pw-project-meta-card > span:first-child {
   display: block;
   color: #9a8d86;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7.5px;
   font-weight: 750;
   text-transform: uppercase;
@@ -1138,7 +1136,7 @@
   display: block;
   margin-top: 4px;
   color: #4b423d;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 11px;
   font-weight: 760;
 }
@@ -1175,7 +1173,7 @@
   background: rgba(255, 255, 255, 0.85);
   color: #534943;
   padding: 5px 7px;
-  font-family: Inter, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 10px;
   font-weight: 600;
   margin-top: 2px;
@@ -1195,7 +1193,7 @@
   border: 1px solid #e5dfda;
   background: #f7f4f2;
   color: #776d67;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 8px;
   font-weight: 750;
   text-transform: uppercase;
@@ -1237,7 +1235,7 @@
   padding: 6px 14px;
   border-radius: 999px;
   color: #756b64;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -1267,7 +1265,7 @@
   padding: 2px 6px;
   border-radius: 999px;
   background: #f0e6de;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 8px;
   color: #6e625b;
   font-weight: 700;
@@ -1291,7 +1289,7 @@
 .content-board-toolbar .toolbar-title {
   margin: 0;
   color: #282320;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 13.5px;
   font-weight: 750;
   line-height: 18.9px;
@@ -1301,7 +1299,7 @@
 .content-board-toolbar .toolbar-sub {
   margin-top: 3px;
   color: #887d76;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 10.5px;
   font-weight: 400;
   line-height: 15.225px;
@@ -1338,7 +1336,7 @@
   color: #786d66;
   border-radius: 10px;
   padding: 7px 10px;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 10.5px;
   font-weight: 750;
   line-height: 14.7px;
@@ -1376,7 +1374,7 @@
 .pw-stage-button {
   border-radius: 11px !important;
   padding: 7px 9px !important;
-  font-family: Inter, system-ui, -apple-system, sans-serif !important;
+  font-family: var(--workspace-font-body) !important;
   font-size: 10.5px !important;
   font-weight: 750 !important;
   line-height: 14.7px !important;
@@ -1458,7 +1456,7 @@
 
 .stage-num {
   color: #98a2b3;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 9.5px;
   font-weight: 400;
   line-height: 13.3px;
@@ -1480,7 +1478,7 @@
   min-width: 0;
   margin: 0;
   color: #1d1917;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 12.5px;
   font-weight: 750;
   line-height: 17.5px;
@@ -1502,7 +1500,7 @@
   border-radius: 999px;
   background: #f6f1ed;
   color: #6f655f;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 9.5px;
   font-weight: 400;
   line-height: 13.3px;
@@ -1527,7 +1525,7 @@
   border-radius: 7px;
   background: transparent;
   cursor: pointer;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-weight: 400;
   line-height: 1;
   transition:
@@ -1610,7 +1608,7 @@
 .outcome-title {
   margin: 0;
   color: #1d1917;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 11.5px;
   line-height: 16.1px;
   font-weight: 750;
@@ -1626,7 +1624,7 @@
 }
 
 .state {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 9.5px;
   text-transform: uppercase;
   letter-spacing: 0.57px;
@@ -1713,7 +1711,7 @@
 .outcome-desc {
   margin: 6px 0 0;
   color: #6a625d;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 10px;
   line-height: 15px;
   letter-spacing: 0.117px;
@@ -1727,7 +1725,7 @@
 }
 
 .dept, .member {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 9.5px;
   font-weight: 400;
   line-height: 13.3px;
@@ -1779,7 +1777,7 @@
 .card-foot .tiny {
   flex: 1 1 auto;
   min-width: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 9.5px;
   line-height: 13.3px;
   color: #81756d;
@@ -1791,7 +1789,7 @@
   align-items: center;
   min-width: max-content;
   color: #d24f27;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 10px;
   font-weight: 800;
   line-height: 14px;
@@ -1831,7 +1829,7 @@
 }
 
 .dep-title {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 8px;
   font-weight: 750;
   letter-spacing: 0.08em;
@@ -1840,7 +1838,7 @@
 }
 
 .dep-state {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 7.5px;
   font-weight: 750;
   letter-spacing: 0.06em;
@@ -1903,7 +1901,7 @@
 .dep-mini-title {
   min-width: 0;
   margin: 0;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 11px;
   font-weight: 700;
   line-height: 1.35;
@@ -2058,7 +2056,7 @@
   display: block;
   margin-bottom: 3px;
   color: #cb4d22;
-  font: 750 7px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 750 7px/1.2 var(--workspace-font-label);
   letter-spacing: 0.08em;
 }
 
@@ -2148,7 +2146,7 @@
 .dependency-override-flow span {
   display: block;
   color: #91847c;
-  font: 700 8px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 700 8px/1.2 var(--workspace-font-label);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -2165,7 +2163,7 @@
 .dependency-override-flow .dependency-override-arrow {
   color: #a28f83;
   font-size: 16px;
-  font-family: Inter, system-ui, sans-serif;
+  font-family: var(--workspace-font-body);
   text-transform: none;
 }
 
@@ -2177,7 +2175,7 @@
   display: block;
   margin-bottom: 6px;
   color: #655850;
-  font: 750 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 750 9px/1.2 var(--workspace-font-label);
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
@@ -2191,7 +2189,7 @@
   border-radius: 8px;
   background: #ffffff;
   color: #3f3733;
-  font: 400 10.5px/1.5 Inter, system-ui, sans-serif;
+  font: 400 10.5px/1.5 var(--workspace-font-body);
   resize: vertical;
   outline: 0;
 }
@@ -2258,7 +2256,7 @@
   color: #766b64;
   border-radius: 7px;
   padding: 8px;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 8px;
   font-weight: 400;
   line-height: 11.2px;
@@ -2510,9 +2508,7 @@
 .project-overview-card dt {
   color: #98a2b3;
   font:
-    750 10px/1 ui-monospace,
-    SFMono-Regular,
-    monospace;
+    750 10px/1 var(--workspace-font-label);
   text-transform: uppercase;
 }
 .project-overview-card dd {
@@ -2554,9 +2550,7 @@
   margin-left: 3px;
   color: #98a2b3;
   font:
-    750 10px/1 ui-monospace,
-    SFMono-Regular,
-    monospace;
+    750 10px/1 var(--workspace-font-label);
 }
 .project-overview-state {
   min-height: 180px;
@@ -2616,7 +2610,7 @@
   display: block;
   margin-bottom: 3px;
   color: #9b5a3f;
-  font: 700 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 700 9px/1.2 var(--workspace-font-label);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -2635,7 +2629,7 @@
   border-radius: 999px;
   background: #f8f4f1;
   color: #6f655f;
-  font: 400 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 400 9px/1 var(--workspace-font-label);
   white-space: nowrap;
 }
 .projects-icon-button {
@@ -2899,9 +2893,7 @@
 .workflow-stage > header span {
   color: #f4511e;
   font:
-    800 9px/1 ui-monospace,
-    SFMono-Regular,
-    monospace;
+    800 9px/1 var(--workspace-font-label);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -2968,9 +2960,7 @@
   color: #6f655f;
   background: #f6f1ed;
   font:
-    750 8px/1 ui-monospace,
-    SFMono-Regular,
-    monospace;
+    750 8px/1 var(--workspace-font-label);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   overflow-wrap: anywhere;
@@ -3011,9 +3001,7 @@
   background: #f2f4f7;
   color: #475467;
   font:
-    750 8px/1 ui-monospace,
-    SFMono-Regular,
-    monospace;
+    750 8px/1 var(--workspace-font-label);
 }
 .workflow-outcome-card .workflow-prerequisite-note,
 .workflow-outcome-card .card-prereq {
@@ -3193,9 +3181,7 @@
   background: #fff1eb;
   color: #c63f16;
   font:
-    800 10px/1 ui-monospace,
-    SFMono-Regular,
-    monospace;
+    800 10px/1 var(--workspace-font-label);
 }
 .workflow-criterion-row label {
   min-width: 0;
@@ -3330,7 +3316,7 @@
   border-radius: 11px;
   background: #282320;
   color: #fff;
-  font: 750 9px/1 ui-monospace, SFMono-Regular, monospace;
+  font: 750 9px/1 var(--workspace-font-label);
 }
 .project-member-identity > div,
 .project-member-outcomes {
@@ -3353,7 +3339,7 @@
 .project-member-outcomes > span,
 .project-member-access > span {
   color: #98a2b3;
-  font: 750 9px/1 ui-monospace, SFMono-Regular, monospace;
+  font: 750 9px/1 var(--workspace-font-label);
   text-transform: uppercase;
 }
 .project-member-access {
@@ -3374,7 +3360,7 @@
 }
 .project-member-access strong {
   color: #344054;
-  font: 800 10px/1 ui-monospace, SFMono-Regular, monospace;
+  font: 800 10px/1 var(--workspace-font-label);
 }
 .workflow-outcome-details .project-back-link {
   margin-bottom: 12px;
@@ -3396,9 +3382,7 @@
   margin: 0 0 10px;
   color: #344054;
   font:
-    800 10px/1 ui-monospace,
-    SFMono-Regular,
-    monospace;
+    800 10px/1 var(--workspace-font-label);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -3459,7 +3443,7 @@
 }
 
 .vw-add-project-kicker {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 9px;
   font-weight: 800;
   color: #cb4d22;
@@ -3469,7 +3453,7 @@
 }
 
 .vw-add-project-title {
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 13px;
   font-weight: 750;
   color: #1d1917;
@@ -3521,7 +3505,7 @@
 }
 
 .vw-add-project-field label {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--workspace-font-label);
   font-size: 8px;
   font-weight: 750;
   text-transform: uppercase;
@@ -3538,7 +3522,7 @@
   border-radius: 7px;
   background: #ffffff;
   color: #332f2c;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 10.5px;
   padding: 7px 9px;
   outline: none;
@@ -3647,7 +3631,7 @@
   border: 1px solid #d7cec7;
   border-radius: 11px;
   color: #4d4541;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 11px;
   font-weight: 600;
   padding: 7px 14px;
@@ -3671,7 +3655,7 @@
   border: 1px solid #cb4d22;
   border-radius: 11px;
   color: #ffffff;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 11px;
   font-weight: 750;
   padding: 7px 14px;
@@ -3695,7 +3679,7 @@
   color: #7b7068;
   font-size: 10px;
   margin: 3px 0 0;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
 }
 
 .workflow-stage-dialog {
@@ -3742,7 +3726,7 @@
   font-weight: 500;
   text-transform: none;
   letter-spacing: 0;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
 }
 
 .pw-multi-check-grid {
@@ -3826,7 +3810,7 @@
   color: #91857e;
   font-size: 9px;
   line-height: 1.45;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   text-transform: none;
   letter-spacing: 0;
 }
@@ -3839,7 +3823,7 @@
   color: #625750;
   border-radius: 999px;
   padding: 4px 10px;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 9.5px;
   font-weight: 600;
   cursor: pointer;
@@ -3872,7 +3856,7 @@
   border-radius: 7px;
   background: #f1ece8;
   color: #8b7f78;
-  font: 750 9px ui-monospace, SFMono-Regular, monospace;
+  font: 750 9px var(--workspace-font-label);
 }
 
 .pw-criterion-row input {
@@ -3884,7 +3868,7 @@
   border-radius: 8px;
   background: #fff;
   color: #4a423d;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 10.5px;
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -4132,7 +4116,7 @@
 .pw-chat-page-heading h2 {
   margin: 0;
   color: #29221f;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: var(--workspace-font-body);
   font-size: 16px;
   font-weight: 760;
   line-height: 1.25;

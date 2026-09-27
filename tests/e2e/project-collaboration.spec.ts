@@ -101,6 +101,8 @@ test('Chat persists a reply and author edit across reload', async ({ page }) => 
   await expect(page.getByText('Initial project update')).toBeVisible();
   await page.getByRole('button', { name: 'Reply', exact: true }).click();
   await expect(page.getByText(/Replying to/)).toBeVisible();
+  await expect(page.locator('.pw-chat-composer')).toBeInViewport({ ratio: 0.99 });
+  await expect(page.getByRole('button', { name: 'Send message' })).toBeInViewport();
   await page.getByRole('textbox', { name: 'Message' }).fill('Persistent reply');
   await page.getByRole('textbox', { name: 'Message' }).press('Enter');
   await expect(page.getByText('Persistent reply')).toBeVisible();

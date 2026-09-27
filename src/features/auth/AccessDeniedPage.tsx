@@ -13,7 +13,7 @@ export function AccessDeniedPage() {
       auth.memberError.statusCode === 401)
   )
     return <Navigate replace to="/login" />;
-  if (auth.member) return <Navigate replace to="/" />;
+  if (auth.member) return <Navigate replace to="/workspace" />;
 
   if (
     !(auth.memberError instanceof ApiRequestError) ||

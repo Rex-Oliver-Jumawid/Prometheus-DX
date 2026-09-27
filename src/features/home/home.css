@@ -31,10 +31,7 @@
   margin: 0 0 4px;
   color: #ba4b2a;
   font:
-    800 8px/1 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    800 8px/1 var(--workspace-font-label);
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
@@ -67,10 +64,7 @@
   background: rgba(255, 255, 255, 0.46);
   color: #746861;
   font:
-    700 8px/1.2 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    700 8px/1.2 var(--workspace-font-label);
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.8);
 }
 
@@ -118,10 +112,7 @@
   display: block;
   color: #746862;
   font:
-    760 8px/1.25 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    760 8px/1.25 var(--workspace-font-label);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -245,10 +236,7 @@
   margin: 0;
   color: #756963;
   font:
-    780 8px/11px ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    780 8px/11px var(--workspace-font-label);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -440,10 +428,7 @@
   background: #39322f;
   color: #fff;
   font:
-    800 7px/1 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    800 7px/1 var(--workspace-font-label);
 }
 
 .home-working-avatar.has-image {

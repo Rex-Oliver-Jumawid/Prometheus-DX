@@ -100,7 +100,7 @@ export function LoginPage() {
 
   if (auth.member) {
     sessionStorage.removeItem('prometheus:return-to');
-    return <Navigate replace to={returnTo === '/login' ? '/' : returnTo} />;
+    return <Navigate replace to={returnTo === '/login' || returnTo === '/' ? '/workspace' : returnTo} />;
   }
   if (
     auth.session &&

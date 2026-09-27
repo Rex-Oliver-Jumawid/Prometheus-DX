@@ -241,10 +241,7 @@
   flex: 0 0 auto;
   color: #818181;
   font:
-    760 7.2px/1.15 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    760 7.2px/1.15 var(--workspace-font-label);
 }
 
 .attendance-copy small {
@@ -264,10 +261,7 @@
   overflow: hidden;
   color: #939393;
   font:
-    720 6.8px/1.2 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    720 6.8px/1.2 var(--workspace-font-label);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -584,7 +578,7 @@
 .attendance-people-eyebrow {
   display: block;
   color: #cb4d22;
-  font: 800 8px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 800 8px/1.2 var(--workspace-font-label);
   letter-spacing: 1px;
 }
 .attendance-people-heading h2 {
@@ -670,7 +664,7 @@
   border-radius: 10px;
   background: #f3ebe6;
   color: #bd492b;
-  font: 800 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 800 10px/1 var(--workspace-font-label);
 }
 .attendance-people-list .attendance-person-avatar img {
   border-radius: 10px;

@@ -5,10 +5,7 @@
 .registry-member-name-field > label {
   color: #665b55;
   font:
-    760 8px/1 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    760 8px/1 var(--workspace-font-label);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -106,10 +103,7 @@
   background: rgba(108, 91, 78, 0.08);
   color: #74655b;
   font:
-    720 5.5px/1 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    720 5.5px/1 var(--workspace-font-label);
   font-style: normal;
   white-space: nowrap;
 }

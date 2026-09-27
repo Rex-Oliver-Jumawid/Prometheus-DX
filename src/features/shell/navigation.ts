@@ -15,7 +15,7 @@ export interface NavigationItem {
 }
 
 const navigation: NavigationItem[] = [
-  { label: 'Home', path: '/', icon: 'home' },
+  { label: 'Home', path: '/workspace', icon: 'home' },
   { label: 'Projects', path: '/projects', icon: 'projects' },
   { label: 'VisiWork', path: '/visiwork', icon: 'visiwork' },
   { label: 'Schedule', path: '/schedule', icon: 'schedule' },

@@ -61,10 +61,7 @@
   margin: 0;
   color: #c94d27;
   font:
-    800 var(--workspace-page-kicker-size, 8px)/1 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    800 var(--workspace-page-kicker-size, 8px)/1 var(--workspace-font-label);
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
@@ -82,10 +79,7 @@
   box-shadow: inset 0 1px #fff;
   color: #655952;
   font:
-    700 9px/1 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    700 9px/1 var(--workspace-font-label);
   white-space: nowrap;
 }
 
@@ -125,10 +119,7 @@
 .registry-summary-card span {
   color: #91857e;
   font:
-    800 6px/1 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    800 6px/1 var(--workspace-font-label);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -465,10 +456,7 @@
   background: #fffdfa;
   color: #988b84;
   font:
-    750 5.5px/1 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    750 5.5px/1 var(--workspace-font-label);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -495,10 +483,7 @@
   background: #fff0ea;
   color: #cb4d22;
   font:
-    800 6px/1 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    800 6px/1 var(--workspace-font-label);
 }
 
 .registry-member-identity div {
@@ -533,10 +518,7 @@
   padding: 4px 6px;
   border-radius: 999px;
   font:
-    750 5.5px/1 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    750 5.5px/1 var(--workspace-font-label);
   white-space: nowrap;
 }
 
@@ -630,7 +612,7 @@
   border-radius: 8px;
   background: rgba(169, 63, 28, 0.055);
   color: #a93f1c;
-  font: 750 6px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 750 6px/1 var(--workspace-font-label);
   cursor: pointer;
 }
 
@@ -668,10 +650,7 @@
   overflow: hidden;
   color: #6f625b;
   font:
-    760 6px/1.2 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    760 6px/1.2 var(--workspace-font-label);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -700,7 +679,7 @@
   border-radius: 10px;
   background: #f4ece7;
   color: #6c5d55;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--workspace-font-label);
 }
 
 .registry-department-copy {
@@ -714,10 +693,7 @@
   margin-top: 4px;
   color: #91857e;
   font:
-    700 6px/1.2 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    700 6px/1.2 var(--workspace-font-label);
 }
 
 .registry-department-references .is-blocking {
@@ -751,10 +727,7 @@
   background: #f5f0ec;
   color: #776a63;
   font:
-    700 8px/1 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    700 8px/1 var(--workspace-font-label);
   white-space: nowrap;
 }
 
@@ -985,7 +958,7 @@
   border-radius: 10px;
   background: #fff0ea;
   color: #cb4d22;
-  font: 800 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 800 7px/1 var(--workspace-font-label);
 }
 
 .registry-department-member > div {
@@ -1131,10 +1104,7 @@
 .registry-field > span {
   color: #665b55;
   font:
-    800 9px/1 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    800 9px/1 var(--workspace-font-label);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -1160,10 +1130,7 @@
   margin-left: 7px;
   color: #a09289;
   font:
-    700 8px/1 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+    700 8px/1 var(--workspace-font-label);
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }

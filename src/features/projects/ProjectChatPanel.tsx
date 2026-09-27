@@ -101,6 +101,7 @@ export function ProjectChatPanel({
   const [targetMessageId, setTargetMessageId] = useState<string | null>(initialMessageId ?? null);
   const [jumpRevision, setJumpRevision] = useState(0);
   const threadRef = useRef<HTMLOListElement>(null);
+  const composerFormRef = useRef<HTMLFormElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const pinnedToBottom = useRef(true);
   const initiallyScrolled = useRef(false);
@@ -340,6 +341,12 @@ export function ProjectChatPanel({
     composer.style.height = 'auto';
     composer.style.height = Math.max(36, Math.min(128, composer.scrollHeight)) + 'px';
   }, [body]);
+
+  // When a reply banner appears, reveal the entire composer without requiring
+  // the user to manually scroll the surrounding workspace.
+  useLayoutEffect(() => {
+    if (replyTo) composerFormRef.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [replyTo]);
 
   useLayoutEffect(() => {
     const thread = threadRef.current;
@@ -809,7 +816,7 @@ export function ProjectChatPanel({
             </p>
           )}
 
-          <form className="pw-chat-composer" onSubmit={submit} aria-label="Project chat composer">
+          <form ref={composerFormRef} className="pw-chat-composer" onSubmit={submit} aria-label="Project chat composer">
               {replyTo && (
                 <div className="pw-chat-reply-banner">
                   <span>Replying to {replyTo.author.fullName}</span>
