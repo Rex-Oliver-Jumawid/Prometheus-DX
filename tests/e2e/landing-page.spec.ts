@@ -41,6 +41,38 @@ test('the floating navbar stays visible while scrolling to a lower section', asy
     .toBeLessThanOrEqual(1);
 });
 
+test('landing brand returns to top with matching rounded logos and pill CTAs', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/landing');
+
+  const navbarBrand = page.locator('.site-header .brand-icon');
+  const footerBrand = page.locator('.footer .brand-icon');
+  const navbarRadius = await navbarBrand.evaluate((element) =>
+    getComputedStyle(element).borderTopLeftRadius,
+  );
+  const footerRadius = await footerBrand.evaluate((element) =>
+    getComputedStyle(element).borderTopLeftRadius,
+  );
+  expect(navbarRadius).toBe('14px');
+  expect(footerRadius).toBe(navbarRadius);
+
+  const primaryButtons = page.locator('.hero-actions .action-primary, .closing-actions .action-primary');
+  await expect(primaryButtons).toHaveCount(2);
+  for (const button of await primaryButtons.all()) {
+    const radius = await button.evaluate((element) =>
+      getComputedStyle(element).borderTopLeftRadius,
+    );
+    expect(radius).toBe('999px');
+  }
+
+  const nav = page.getByRole('navigation', { name: 'Main navigation' });
+  await nav.getByRole('link', { name: 'How it works' }).click();
+  await expect(page).toHaveURL(/#approach$/);
+  await nav.getByRole('link', { name: 'Prometheus, back to top' }).click();
+  await expect(page).toHaveURL(/#top$/);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(5);
+});
+
 test('mobile navigation opens and closes on section selection', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
