@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/auth-context';
 import { notificationUnreadCountQuery } from '../notifications/notification-queries';
 import {
@@ -144,13 +144,18 @@ export function AppShell() {
         />
       )}
       <aside className="app-sidebar">
-        <div className="shell-brand">
+        <Link
+          className="shell-brand"
+          to="/landing"
+          aria-label="Prometheus Virtual Office, view landing page"
+          onClick={() => setMobileOpen(false)}
+        >
           <img src="/auth/prometheus-mark.png" alt="" />
           <div>
             <strong>Prometheus</strong>
             <span>VIRTUAL OFFICE</span>
           </div>
-        </div>
+        </Link>
         <nav className="shell-nav" aria-label="Primary navigation">
           {navigationForRole(member.workspaceRole).map((item) => (
             <NavLink

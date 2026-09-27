@@ -86,6 +86,7 @@ function renderShell() {
         <Routes>
           <Route element={<AppShell />}>
             <Route path="/" element={<h1>Home placeholder</h1>} />
+          <Route path="/landing" element={<h1>Public landing page</h1>} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route
               path="/projects/:projectId/outcomes/:outcomeId"
@@ -140,6 +141,19 @@ describe('AppShell notification utility badge', () => {
         return Promise.resolve({});
       },
     );
+  });
+
+  it('opens the public landing page from the workspace brand', async () => {
+    const user = userEvent.setup();
+    renderShell();
+    await user.click(
+      screen.getByRole('link', {
+        name: 'Prometheus Virtual Office, view landing page',
+      }),
+    );
+    expect(
+      screen.getByRole('heading', { name: 'Public landing page' }),
+    ).toBeVisible();
   });
 
   it('hides the badge at zero and preserves Member utility visibility', async () => {

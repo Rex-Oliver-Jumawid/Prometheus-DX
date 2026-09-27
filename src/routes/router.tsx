@@ -8,6 +8,7 @@ import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { FoundationPage } from '../features/foundation/FoundationPage';
 import { HomePage } from '../features/home/HomePage';
 import { LandingPage } from '../features/landing/LandingPage';
+import { LandingEntry } from '../features/landing/LandingEntry';
 import { ProjectsPage } from '../features/projects/ProjectsPage';
 import { NotFoundPage } from '../features/foundation/NotFoundPage';
 import { AppShell } from '../features/shell/AppShell';
@@ -22,8 +23,9 @@ import {
 } from './route-modules';
 
 export const router = createBrowserRouter([
-  { path: '/', element: <LandingPage /> },
-  { path: '/landing-page.html', element: <Navigate replace to="/" /> },
+  { path: '/', element: <LandingEntry /> },
+  { path: '/landing', element: <LandingPage /> },
+  { path: '/landing-page.html', element: <Navigate replace to="/landing" /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/forgot-password', element: <ForgotPasswordPage /> },
   { path: '/reset-password', element: <ResetPasswordPage /> },
