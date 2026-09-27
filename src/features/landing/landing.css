@@ -35,7 +35,7 @@
     #landing-root .site-header .brand-icon .mark { border-radius: 14px; background-size: cover; background-position: center; }
     #landing-root .nav { display: flex; align-items: center; position: relative; height: 82px; gap: 38px; transition: width .3s ease, height .3s ease, padding .3s ease, transform .3s ease, border-radius .3s ease, box-shadow .3s ease, background .3s ease; }
     #landing-root .brand { display: inline-flex; align-items: center; gap: 14px; flex-shrink: 0; }
-    #landing-root .brand-icon { width: 52px; height: 52px; flex: none; }
+    #landing-root .brand-icon { width: 52px; height: 52px; flex: none; border-radius: 14px; overflow: hidden; }
     #landing-root .brand-name { display: block; font-size: 20px; font-weight: 800; letter-spacing: -.06em; line-height: 1; }
     #landing-root .brand-sub { display: block; font: 700 8px/1.4 'Courier New', monospace; letter-spacing: .19em; margin-top: 4px; color: #8b7f78; }
     #landing-root .nav-links { display: flex; align-items: center; gap: 26px; margin-left: auto; }
@@ -56,7 +56,7 @@
     #landing-root h1 em { font-weight: 400; color: var(--red); }
     #landing-root .hero-description { max-width: 440px; font-size: 17px; line-height: 1.7; color: #544942; margin: 0; }
     #landing-root .hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 27px; margin-top: 37px; }
-    #landing-root .action-primary { display: inline-flex; align-items: center; justify-content: space-between; gap: 28px; min-height: 55px; padding: 0 22px; color: white; background: var(--red); font-size: 13px; font-weight: 700; transition: background .15s ease, transform .15s ease; }
+    #landing-root .action-primary { display: inline-flex; align-items: center; justify-content: space-between; gap: 28px; min-height: 55px; padding: 0 22px; color: white; background: var(--red); border-radius: 999px; font-size: 13px; font-weight: 700; transition: background .15s ease, transform .15s ease; }
     #landing-root .action-primary:hover { background: var(--red-deep); transform: translateY(-2px); }
     #landing-root .action-text { display: inline-flex; gap: 16px; align-items: center; border-bottom: 1px solid var(--ink); padding-bottom: 6px; font-size: 13px; font-weight: 700; transition: color .15s ease; }
     #landing-root .action-text:hover { color: var(--red); }
