@@ -9,7 +9,7 @@ export function LandingPage() {
 
   useEffect(() => {
     const previousTitle = document.title;
-    document.title = 'Prometheus | Make good work happen.';
+    document.title = 'Prometheus';
     const updateScrolled = () => setScrolled(window.scrollY > 40);
     updateScrolled();
     window.addEventListener('scroll', updateScrolled, { passive: true });
