@@ -162,13 +162,17 @@ export function LoginPage() {
     <main className="login-page">
       <section className="auth-panel" aria-labelledby="login-heading">
         <div className="auth-inner">
-          <div className="auth-brand">
+          <Link
+            className="auth-brand"
+            to="/landing"
+            aria-label="Prometheus Virtual Office, view landing page"
+          >
             <img src="/auth/prometheus-mark.png" alt="" />
             <div>
               <strong>Prometheus</strong>
               <span>VIRTUAL OFFICE</span>
             </div>
-          </div>
+          </Link>
           <header className="login-header">
             <p className="auth-eyebrow">WELCOME BACK</p>
             <h1 id="login-heading">Sign in</h1>

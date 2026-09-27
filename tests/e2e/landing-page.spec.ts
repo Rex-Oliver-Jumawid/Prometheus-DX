@@ -12,9 +12,16 @@ test('the site root renders the public React landing page', async ({ page }) => 
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
 });
 
-test('the former standalone landing URL redirects to the public root', async ({ page }) => {
+test('the former standalone URL leads to the explicit public landing route', async ({ page }) => {
   await page.goto('/landing-page.html');
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/landing$/);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+});
+
+test('the login brand returns visitors to the landing page', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByRole('link', { name: 'Prometheus Virtual Office, view landing page' }).click();
+  await expect(page).toHaveURL(/\/landing$/);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
@@ -50,4 +57,39 @@ test('the signed-in workspace route still requires authentication', async ({ pag
   await page.goto('/workspace');
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+});
+
+const hasAuthFixture = Boolean(
+  process.env.E2E_MEMBER_EMAIL &&
+  process.env.E2E_MEMBER_PASSWORD &&
+  process.env.VITE_SUPABASE_URL &&
+  process.env.VITE_SUPABASE_ANON_KEY,
+);
+
+test('returning members open the workspace and can explicitly view the landing page', async ({ page }) => {
+  test.skip(!hasAuthFixture, 'Requires a configured Supabase E2E member.');
+
+  await page.goto('/login');
+  await page.getByLabel('Company email').fill(process.env.E2E_MEMBER_EMAIL!);
+  await page.getByLabel('Password', { exact: true }).fill(process.env.E2E_MEMBER_PASSWORD!);
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page).toHaveURL(/\/workspace$/, { timeout: 15_000 });
+
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/workspace$/);
+  await expect(page.locator('#landing-root')).toHaveCount(0);
+
+  await page.getByRole('link', { name: 'Prometheus Virtual Office, view landing page' }).click();
+  await expect(page).toHaveURL(/\/landing$/);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+  await page.getByRole('link', { name: /Open Prometheus/i }).first().click();
+  await expect(page).toHaveURL(/\/workspace$/);
+
+  await page.getByRole('button', { name: 'Open account menu' }).click();
+  await page.getByRole('menuitem', { name: 'Sign out' }).click();
+  await expect(page).toHaveURL(/\/login$/);
+
+  await page.getByRole('link', { name: 'Prometheus Virtual Office, view landing page' }).click();
+  await expect(page).toHaveURL(/\/landing$/);
 });
