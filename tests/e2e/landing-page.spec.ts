@@ -39,9 +39,24 @@ test('the floating navbar stays visible while scrolling to a lower section', asy
     .toBeGreaterThanOrEqual(-1);
   await expect.poll(() => header.evaluate((element) => element.getBoundingClientRect().top))
     .toBeLessThanOrEqual(1);
+
+  const glass = await header.locator('.nav').evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      background: style.backgroundColor,
+      borderRadius: style.borderTopLeftRadius,
+      backdrop: style.backdropFilter,
+      shadow: style.boxShadow,
+    };
+  });
+  expect(glass.background).toMatch(/^rgba\(255,\s*255,\s*255,\s*0\./);
+  expect(glass.borderRadius).toBe('999px');
+  expect(glass.backdrop).toContain('blur(26px)');
+  expect(glass.backdrop).toContain('saturate(');
+  expect(glass.shadow).toContain('inset');
 });
 
-test('landing brand returns to top with matching rounded logos and pill CTAs', async ({ page }) => {
+test('landing brand returns to top with matching rounded logos and square red CTAs', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/landing');
 
@@ -62,7 +77,7 @@ test('landing brand returns to top with matching rounded logos and pill CTAs', a
     const radius = await button.evaluate((element) =>
       getComputedStyle(element).borderTopLeftRadius,
     );
-    expect(radius).toBe('999px');
+    expect(radius).toBe('0px');
   }
 
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
@@ -86,6 +101,7 @@ test('mobile navigation opens and closes on section selection', async ({ page })
   await nav.getByRole('link', { name: 'What it does' }).click();
   await expect(page).toHaveURL(/#features$/);
   await expect(page.locator('.site-header')).toBeInViewport();
+  await expect(page.locator('.site-header .nav')).toHaveCSS('border-top-left-radius', '999px');
   await expect(page.getByRole('button', { name: 'Open navigation' })).toHaveAttribute('aria-expanded', 'false');
 });
 
@@ -115,8 +131,13 @@ test('returning members open the workspace and can explicitly view the landing p
   await expect(page).toHaveURL(/\/workspace$/);
   await expect(page.locator('#landing-root')).toHaveCount(0);
 
-  await page.getByRole('link', { name: 'Prometheus Virtual Office, view landing page' }).click();
-  await expect(page).toHaveURL(/\/landing$/);
+  await page.goto('/schedule');
+  await expect(page).toHaveURL(/\/schedule$/);
+  await page.getByRole('link', { name: 'Prometheus Virtual Office, go to Home' }).click();
+  await expect(page).toHaveURL(/\/workspace$/);
+
+  // Signed-in members can still open the public landing page explicitly.
+  await page.goto('/landing');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
   await page.getByRole('link', { name: /Open Prometheus/i }).first().click();

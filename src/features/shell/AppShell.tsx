@@ -146,8 +146,8 @@ export function AppShell() {
       <aside className="app-sidebar">
         <Link
           className="shell-brand"
-          to="/landing"
-          aria-label="Prometheus Virtual Office, view landing page"
+          to="/workspace"
+          aria-label="Prometheus Virtual Office, go to Home"
           onClick={() => setMobileOpen(false)}
         >
           <img src="/auth/prometheus-mark.png" alt="" />
