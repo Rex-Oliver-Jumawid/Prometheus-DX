@@ -1374,7 +1374,7 @@
 .pw-stage-button {
   border-radius: 11px !important;
   padding: 7px 9px !important;
-  font-family: var(--workspace-font-body);
+  font-family: var(--workspace-font-body) !important;
   font-size: 10.5px !important;
   font-weight: 750 !important;
   line-height: 14.7px !important;
