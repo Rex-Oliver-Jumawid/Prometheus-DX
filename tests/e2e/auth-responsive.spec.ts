@@ -46,35 +46,40 @@ test('short desktop viewport can scroll from the brand to the last login control
   await expect(googleButton).toBeInViewport();
 });
 
-test('mobile layout places artwork above a fully scrollable login form', async ({
+test('stacked layout keeps the entire form reachable at tablet and phone sizes', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 390, height: 667 });
-  await page.goto('/login');
+  for (const viewport of [
+    { width: 716, height: 782 },
+    { width: 390, height: 667 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/login');
 
-  const login = page.locator('.login-page');
-  await login.evaluate((element) => {
-    element.scrollTop = 0;
-  });
+    const login = page.locator('.login-page');
+    await login.evaluate((element) => {
+      element.scrollTop = 0;
+    });
 
-  const artwork = await page.locator('.auth-art').boundingBox();
-  const brand = await page.locator('.auth-brand').boundingBox();
+    const artwork = await page.locator('.auth-art').boundingBox();
+    const brand = await page.locator('.auth-brand').boundingBox();
 
-  expect(artwork).not.toBeNull();
-  expect(brand).not.toBeNull();
-  expect(brand!.y).toBeGreaterThanOrEqual(
-    artwork!.y + artwork!.height - 1,
-  );
-  await expect(page.locator('.auth-brand')).toBeInViewport();
+    expect(artwork).not.toBeNull();
+    expect(brand).not.toBeNull();
+    expect(brand!.y).toBeGreaterThanOrEqual(
+      artwork!.y + artwork!.height - 1,
+    );
+    await expect(page.locator('.auth-brand')).toBeInViewport();
 
-  const googleButton = page.getByRole('button', {
-    name: 'Continue with Google',
-  });
-  await googleButton.scrollIntoViewIfNeeded();
-  await expect(googleButton).toBeInViewport();
+    const googleButton = page.getByRole('button', {
+      name: 'Continue with Google',
+    });
+    await googleButton.scrollIntoViewIfNeeded();
+    await expect(googleButton).toBeInViewport();
 
-  const hasHorizontalOverflow = await login.evaluate(
-    (element) => element.scrollWidth > element.clientWidth + 1,
-  );
-  expect(hasHorizontalOverflow).toBe(false);
+    const hasHorizontalOverflow = await login.evaluate(
+      (element) => element.scrollWidth > element.clientWidth + 1,
+    );
+    expect(hasHorizontalOverflow).toBe(false);
+  }
 });
