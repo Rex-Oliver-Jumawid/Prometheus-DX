@@ -559,9 +559,10 @@ button:disabled {
   backdrop-filter: blur(26px);
 }
 .denied-card > img {
+  display: block;
   width: 56px;
   border-radius: 16px;
-  margin-bottom: 26px;
+  margin: 0 auto 26px;
 }
 .denied-card h1 {
   margin: 10px 0 12px;
