@@ -152,7 +152,7 @@ button:disabled {
 .login-page {
   height: 100dvh;
   display: grid;
-  grid-template-columns: minmax(360px, 30%) minmax(0, 70%);
+  grid-template-columns: minmax(360px, 30%) minmax(0, 1fr);
   overflow: hidden;
   background: #fff;
   color: #26211f;
@@ -160,7 +160,7 @@ button:disabled {
 .auth-panel {
   height: 100dvh;
   display: flex;
-  align-items: center;
+  align-items: safe center;
   justify-content: center;
   overflow-y: auto;
   padding: clamp(24px, 4vh, 48px) clamp(28px, 3vw, 48px);
@@ -1467,11 +1467,12 @@ button:disabled {
   font-weight: 750;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 720px) {
   .login-page {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(120px, 24dvh) minmax(0, 1fr);
-    overflow: auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(120px, 24dvh) auto;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
   .auth-art {
     order: -1;
@@ -1479,6 +1480,7 @@ button:disabled {
   }
   .auth-panel {
     height: auto;
+    overflow: visible;
     padding: 24px 28px 30px;
   }
   .auth-brand {
@@ -1652,7 +1654,7 @@ button:disabled {
 }
 @media (max-width: 520px) {
   .login-page {
-    grid-template-rows: minmax(112px, 22dvh) minmax(0, 1fr);
+    grid-template-rows: minmax(112px, 22dvh) auto;
   }
   .auth-panel {
     padding: 20px 22px 24px;
