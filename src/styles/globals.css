@@ -655,6 +655,22 @@ button:disabled {
     monospace;
   letter-spacing: 0.14em;
 }
+
+/* The wordmark responds the same way in the landing header/footer,
+   authentication pages, and workspace sidebar. */
+#landing-root .brand-name,
+.auth-brand strong,
+.shell-brand strong {
+  transition: color 160ms ease;
+}
+#landing-root .brand:hover .brand-name,
+#landing-root .brand:focus-visible .brand-name,
+.auth-brand:hover strong,
+.auth-brand:focus-visible strong,
+.shell-brand:hover strong,
+.shell-brand:focus-visible strong {
+  color: #c02e2e;
+}
 .shell-nav {
   display: flex;
   flex-direction: column;
