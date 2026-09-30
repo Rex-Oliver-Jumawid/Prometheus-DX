@@ -38,11 +38,23 @@ Binary chat attachments are a post-release feature and are not part of this rele
 - Message search and exact-message navigation
 - Mentions and mention notifications
 - Message editing and deletion
+- One date divider per visible local-calendar date group
 - Automatic live message updates
 - exact-message search target clearing and return-to-latest behavior after send
 - WorkSession-independent collaboration focus where useful
 - collaboration notifications
 - reconnect and missed-event recovery from persistent state
+
+## Post-Release Date Divider Regression
+
+| ID | Test | Expected Result | Status |
+| --- | --- | --- | --- |
+| C9-31 | Open Project Chat containing multiple messages on one date | Exactly one centered date divider appears before that date's first visible message. | REVALIDATE |
+| C9-32 | Open Project Chat containing messages across multiple dates | A new divider appears only when the ordered message date changes. | REVALIDATE |
+| C9-33 | Load earlier Project Chat messages from the same date as the previous first message | Dividers regroup without creating duplicate labels for that date. | REVALIDATE |
+| C9-34 | Open VisiWork General Chat across multiple dates | Each local-calendar date appears once as a centered divider. | REVALIDATE |
+| C9-35 | Open VisiWork Department Chat across multiple dates | Each local-calendar date appears once as a centered divider. | REVALIDATE |
+| C9-36 | Open exact-message context or search results that add older messages | Date dividers are recomputed from the final ordered visible message list. | REVALIDATE |
 
 ## Required Test Setup
 

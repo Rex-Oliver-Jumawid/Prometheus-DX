@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import {
   useInfiniteQuery,
   useMutation,
@@ -17,6 +17,7 @@ import {
 } from '../../../shared/contracts/project-chat';
 import { ProjectMembersResponseSchema } from '../../../shared/contracts/project-workflow';
 import { apiFetch } from '../../lib/api';
+import { chatDateKey, chatDateLabel, startsNewChatDate } from '../../lib/chat-date';
 import { projectKeys } from './project-queries';
 import { useRealtimeInvalidation } from '../../lib/use-realtime-invalidation';
 import { MemberAvatar } from '../shell/MemberAvatar';
@@ -640,14 +641,34 @@ export function ProjectChatPanel({
                   thread.scrollHeight - thread.scrollTop - thread.clientHeight < 80;
               }}
             >
-              {ordered.map((message) => {
+              {ordered.map((message, index) => {
                 const targeted = message.id === targetMessageId;
+                const previousMessage = ordered[index - 1];
+                const showDateDivider = startsNewChatDate(
+                  message.createdAt,
+                  previousMessage?.createdAt,
+                );
+                const dateLabel = showDateDivider
+                  ? chatDateLabel(message.createdAt)
+                  : null;
                 const ownMessage = currentMemberId
                   ? message.author.id === currentMemberId
                   : message.canEdit;
                 return (
-                  <li
-                    key={message.id}
+                  <Fragment key={message.id}>
+                    {showDateDivider && dateLabel && (
+                      <li
+                        className="pw-chat-date-divider"
+                        aria-label={dateLabel}
+                      >
+                        <span aria-hidden="true" />
+                        <time dateTime={chatDateKey(message.createdAt)}>
+                          {dateLabel}
+                        </time>
+                        <span aria-hidden="true" />
+                      </li>
+                    )}
+                    <li
                     data-message-id={message.id}
                     className={[
                       ownMessage ? 'pw-chat-message pw-chat-message--own' : 'pw-chat-message',
@@ -805,7 +826,8 @@ export function ProjectChatPanel({
                         {messageTime(message.createdAt)}
                       </time>
                     )}
-                  </li>
+                    </li>
+                  </Fragment>
                 );
               })}
             </ol>

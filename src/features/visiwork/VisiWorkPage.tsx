@@ -6,6 +6,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import {
+  Fragment,
   useLayoutEffect,
   useRef,
   useState,
@@ -26,6 +27,7 @@ import {
   type VisiWorkMessage,
 } from '../../../shared/contracts/visiwork';
 import { apiFetch } from '../../lib/api';
+import { chatDateKey, chatDateLabel, startsNewChatDate } from '../../lib/chat-date';
 import { useRealtimeInvalidation } from '../../lib/use-realtime-invalidation';
 import { useAuth } from '../auth/auth-context';
 import { MemberAvatar } from '../shell/MemberAvatar';
@@ -575,11 +577,32 @@ function RoomPanel({
             </button>
           </div>
         ) : ordered.length ? (
-          ordered.map((message: VisiWorkMessage) => {
+          ordered.map((message: VisiWorkMessage, index) => {
             const ownMessage = message.author.id === currentMemberId;
+            const previousMessage = ordered[index - 1];
+            const showDateDivider = startsNewChatDate(
+              message.createdAt,
+              previousMessage?.createdAt,
+            );
+            const dateLabel = showDateDivider
+              ? chatDateLabel(message.createdAt)
+              : null;
             const highlighted = message.id === targetMessageId;
             return (
-              <div
+              <Fragment key={message.id}>
+                {showDateDivider && dateLabel && (
+                  <div
+                    className="visiwork-chat-date-divider"
+                    aria-label={dateLabel}
+                  >
+                    <span aria-hidden="true" />
+                    <time dateTime={chatDateKey(message.createdAt)}>
+                      {dateLabel}
+                    </time>
+                    <span aria-hidden="true" />
+                  </div>
+                )}
+                <div
                 className={[
                   ownMessage
                     ? 'visiwork-room-message own'
@@ -589,7 +612,6 @@ function RoomPanel({
                   .filter(Boolean)
                   .join(' ')}
                 data-message-id={message.id}
-                key={message.id}
               >
                 {!ownMessage && (
                   <MemberAvatar
@@ -723,7 +745,8 @@ function RoomPanel({
                     </p>
                   )}
                 </div>
-              </div>
+                </div>
+              </Fragment>
             );
           })
         ) : (

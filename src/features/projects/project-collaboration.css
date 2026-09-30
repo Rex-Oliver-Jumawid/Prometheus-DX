@@ -565,6 +565,30 @@
   align-items: stretch;
   gap: 9px;
 }
+.pw-chat-date-divider {
+  box-sizing: border-box;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(20px, 1fr) auto minmax(20px, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin: 5px 0 1px;
+  color: #988b83;
+  list-style: none;
+}
+
+.pw-chat-date-divider > span {
+  height: 1px;
+  background: #e1d8d2;
+}
+
+.pw-chat-date-divider time {
+  color: #8c7e76;
+  font: 700 8.5px/1.2 var(--workspace-font-label);
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+
 .pw-chat-panel .pw-chat-message {
   position: relative;
   display: block;

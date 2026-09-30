@@ -245,6 +245,59 @@ describe('ProjectChatPanel interactions', () => {
       .toHaveValue('Updated in another tab');
   });
 
+  it('renders one date divider only when the calendar date changes', async () => {
+    const items = [
+      {
+        ...existing,
+        id: '10000000-0000-4000-8000-000000000001',
+        body: 'Sep 22 first',
+        createdAt: '2026-09-22T10:00:00.000Z',
+      },
+      {
+        ...existing,
+        id: '10000000-0000-4000-8000-000000000002',
+        body: 'Sep 22 second',
+        createdAt: '2026-09-22T12:30:00.000Z',
+      },
+      {
+        ...existing,
+        id: '10000000-0000-4000-8000-000000000003',
+        body: 'Sep 23 only',
+        createdAt: '2026-09-23T10:00:00.000Z',
+      },
+      {
+        ...existing,
+        id: '10000000-0000-4000-8000-000000000004',
+        body: 'Sep 24 first',
+        createdAt: '2026-09-24T10:00:00.000Z',
+      },
+      {
+        ...existing,
+        id: '10000000-0000-4000-8000-000000000005',
+        body: 'Sep 24 second',
+        createdAt: '2026-09-24T11:00:00.000Z',
+      },
+    ];
+    vi.mocked(apiFetch).mockImplementation((path) => {
+      if (typeof path === 'string' && path.endsWith('/messages')) {
+        return Promise.resolve({ items, nextCursor: null, canWrite: true });
+      }
+      if (typeof path === 'string' && path.endsWith('/members')) {
+        return Promise.resolve({ projectId, members: [], canManageAccess: false });
+      }
+      return Promise.reject(new Error('Unexpected API request: ' + path));
+    });
+
+    const { container } = renderChat();
+    expect(await screen.findByText('Sep 22 first')).toBeVisible();
+
+    const dividers = container.querySelectorAll('.pw-chat-date-divider');
+    expect(dividers).toHaveLength(3);
+    expect(screen.getAllByText('Sep 22, 2026')).toHaveLength(1);
+    expect(screen.getAllByText('Sep 23, 2026')).toHaveLength(1);
+    expect(screen.getAllByText('Sep 24, 2026')).toHaveLength(1);
+  });
+
   it('loads earlier messages using the returned pagination cursor', async () => {
     vi.mocked(apiFetch).mockImplementation((path) => {
       if (typeof path === 'string' && path.endsWith('?cursor=' + messageId))
