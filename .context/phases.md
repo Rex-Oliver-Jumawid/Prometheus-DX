@@ -260,10 +260,12 @@ Implement stages, outcomes, outcome membership, derived project membership, and 
 ### Core rules
 
 The Project Lead or a Project Member with `CAN_EDIT` may create and manage stages and outcomes.
+They may also reorder Outcomes within a Stage or move Outcomes between Stages in the same Project.
 
 Any active authorized user may join a non-accepted outcome.
 
-Outcome Membership is permanent.
+Outcome Membership cannot be manually removed while the Outcome exists.
+Deleting an otherwise deletable Outcome removes its membership assignments and cleans up derived Project Membership when appropriate.
 
 Project Membership is derived from Outcome Membership.
 

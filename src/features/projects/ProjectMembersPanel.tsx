@@ -7,10 +7,8 @@ import {
 } from '../../../shared/contracts/project-workflow';
 import type { ProjectAccessLevel } from '../../../shared/contracts/project';
 import { apiFetch } from '../../lib/api';
+import { projectKeys } from './project-queries';
 import { MemberAvatar } from '../shell/MemberAvatar';
-
-const membersKey = (projectId: string) =>
-  ['projects', 'members', projectId] as const;
 
 function errorMessage(error: unknown) {
   return error instanceof Error
@@ -31,7 +29,7 @@ export function ProjectMembersPanel({
 }) {
   const queryClient = useQueryClient();
   const members = useQuery({
-    queryKey: membersKey(projectId),
+    queryKey: projectKeys.members(projectId),
     queryFn: () =>
       apiFetch(`/projects/${projectId}/members`, ProjectMembersResponseSchema, {
         accessToken,
@@ -58,7 +56,7 @@ export function ProjectMembersPanel({
         },
       ),
     onMutate: async ({ memberId, accessLevel }) => {
-      const queryKey = membersKey(projectId);
+      const queryKey = projectKeys.members(projectId);
       await queryClient.cancelQueries({ queryKey });
       const previous = queryClient.getQueryData(queryKey);
       queryClient.setQueryData(queryKey, (current: typeof members.data) =>
@@ -75,12 +73,12 @@ export function ProjectMembersPanel({
     },
     onError: (_error, _variables, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(membersKey(projectId), context.previous);
+        queryClient.setQueryData(projectKeys.members(projectId), context.previous);
       }
     },
     onSuccess: (updated: ProjectMember) => {
       queryClient.setQueryData(
-        membersKey(projectId),
+        projectKeys.members(projectId),
         (current: typeof members.data) =>
           current
             ? {
@@ -106,7 +104,7 @@ export function ProjectMembersPanel({
           <p>
             {compact
               ? 'Members default to View only for project structure.'
-              : 'Membership is derived from permanent Outcome Membership. Access controls only the canonical project-level editable actions.'}
+              : 'Membership is derived from Outcome Membership. Access controls only the canonical project-level editable actions.'}
           </p>
         </div>
       </div>

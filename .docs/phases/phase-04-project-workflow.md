@@ -25,7 +25,7 @@ Implement Stages, Outcomes, Outcome Membership, derived Project Membership, Proj
 - Outcome responsible Departments.
 - Ordered Acceptance Criteria.
 - Same-Project Outcome prerequisites.
-- Permanent Outcome Membership.
+- Outcome Membership that cannot be manually removed while the Outcome exists.
 - Derived Project Membership with `CAN_VIEW` and `CAN_EDIT` access.
 - Project Workspace Stage, Outcome, membership, and member-access interfaces.
 - Participating projects derived from Project Membership and distinct from Leading.
@@ -44,7 +44,7 @@ Historical test evidence below remains a record of the original Phase 4 closure,
 - The persisted Project Lead or a Project Member with `CAN_EDIT` may create or manage Stages and Outcomes.
 - Administrator role and Project creator history do not grant Project editor authority by themselves.
 - Any active authorized Member may join a non-accepted Outcome.
-- Outcome Membership cannot be left or removed.
+- Outcome Membership cannot be manually left or removed while the Outcome exists.
 - Joining an Outcome creates the missing Project Membership atomically with default `CAN_VIEW` access.
 - Only the persisted Project Lead may change Project Member access.
 - Project Lead or a Project Member with `CAN_EDIT` may change Project status.
@@ -170,7 +170,7 @@ Phase 4 delivered the complete Project Workflow Structure scope:
 - Same-Project prerequisites with database enforcement against invalid cross-Project dependency edges.
 - Project Workspace UI.
 - Direct Outcome routes.
-- Permanent Outcome Membership.
+- Outcome Membership that cannot be manually removed while the Outcome exists.
 - Derived Project Membership.
 - Default `CAN_VIEW` access.
 - Lead-managed `CAN_EDIT` access.
@@ -246,7 +246,7 @@ Final authorization rules were browser- and API-verified:
 - Stage mutation is Project Lead-only.
 - Outcome mutation is Project Lead-only.
 - Project Member access management is Project Lead-only.
-- Outcome Membership is permanent.
+- Outcome Membership cannot be manually removed while the Outcome exists.
 - `CAN_EDIT` may change Project status only.
 - `CAN_VIEW` cannot change Project status.
 - `CAN_EDIT` cannot create Stages or Outcomes or manage access.
@@ -461,7 +461,7 @@ Neither limitation blocks Phase 4 completion.
 
 - Keep project-specific authority independent from workspace role, creator history, and Outcome participation.
 - Persist the minimum canonical lifecycle state and derive workflow conditions from source records instead of expanding enums prematurely.
-- Create derived Project Membership atomically with the first permanent Outcome Membership.
+- Create derived Project Membership atomically with the first Outcome Membership and remove it when the final Outcome Membership is deleted with its Outcome.
 - Treat access levels as narrow capabilities rather than substitute roles.
 - Browser-level direct API bypass tests are necessary whenever UI visibility is used to represent authorization.
 - Preserve migration and application database diagnostics as separate boundaries before changing connection configuration.
@@ -474,7 +474,7 @@ Before implementing Phase 5:
 
 1. Read the Phase 5 canonical data-model and user-flow sections.
 2. Create the Phase 5 journal before substantial coding.
-3. Preserve permanent Outcome Membership and the single shared Outcome work history.
+3. Preserve non-removable Outcome Membership while the Outcome exists and preserve the single shared Outcome work history.
 4. Add Feature, Task, Submission, Review, Revision, Acceptance, and Reopening behavior only within the Phase 5 boundary.
 5. Extend regression from Project workflow structure into the complete create -> join -> work -> submit -> review -> accept loop.
 
@@ -499,6 +499,8 @@ No Phase 4 blocker remains.
 Phase 5 is unblocked but was not started as part of Phase 4 closure.
 
 ## Post-Phase Addendum - Stage and Outcome Deletion Controls
+
+Historical note: the original deletion rules in this addendum were later superseded by the Outcome ordering and deletion correction recorded below.
 
 Added after formal Phase 4 exit.
 Commit: projects-ui branch, following 981491b.
@@ -555,3 +557,58 @@ The `DeleteConfirmationDialog` was kept as a local component inside `ProjectWork
 `pnpm test:ui` (Vitest + React Testing Library) - passed including all new component tests.
 `pnpm build` - passed, production bundle compiled without errors.
 Browser verification delegated to the user per stated preference.
+
+## Post-Phase Addendum - Outcome Ordering and Membership-Only Deletion
+
+Added on 2026-09-30 after the Project Workspace ordering request and deletion-error reproduction.
+
+### Motivation
+
+The Project Workspace displays Outcomes as ordered cards inside ordered Stage columns.
+Project editors needed to be able to reorder a card inside its Stage and move it into another Stage without opening an edit dialog.
+The existing delete guard also treated Outcome Membership itself as protected history, which made otherwise empty assigned Outcomes impossible to delete.
+
+### Current Behavioral Rules
+
+- The Project Lead or a Project Member with `CAN_EDIT` may reorder Outcomes within a Stage or move them between Stages in the same Project.
+- Ordering changes are persisted transactionally against canonical `stageId` and `position` values.
+- The Whole Work board is the editable ordering surface.
+- Dragging near the horizontal board edge scrolls the Stage board so a card can be moved to an off-screen Stage.
+- Keyboard users may use Alt plus Arrow keys on a focused Outcome card for the same ordering operations.
+- Outcome Membership cannot be manually removed while the Outcome exists.
+- Membership assignments alone do not block deletion of an otherwise deletable Outcome.
+- Work, submission, acceptance, revision, and dependency history still block deletion.
+- Deleting an Outcome removes its assignment memberships through the existing cascade.
+- If those assignments were a Member's final Outcome Membership in the Project, the derived `ProjectMember` row is removed in the same transaction.
+- Append-only Project Member access history remains preserved.
+
+### Implementation
+
+`PATCH /projects/:projectId/outcomes/:outcomeId/move` validates the target Stage, serializes Project workflow edits through the existing Project lock, temporarily moves affected positions out of the live range, then writes the final contiguous order.
+The Project Workspace applies an optimistic React Query reorder and reconciles with the authoritative workflow response.
+Move activity is recorded as `OUTCOME_MOVED`.
+Deletion guards no longer count `OutcomeMember` rows as protected history, and deletion now cleans up derived Project Membership when needed.
+
+### Verification Scope
+
+Focused service coverage includes same-Stage reorder, cross-Stage movement, authorization denial, cross-Project target rejection, membership-only deletion, protected-history deletion, and derived Project Member cleanup.
+Focused React Testing Library coverage includes dragging an Outcome to the top of a Stage and dragging it into the next Stage.
+Manual regression cases F4-37 through F4-42 are recorded in `.testcases/phase-04-project-workflow-tests.md`.
+
+Branch verification on 2026-09-30 passed the temporary feature gate.
+`pnpm project:doctor`, `pnpm prisma:validate`, lint, typecheck, 47 focused Project Workflow service tests, 13 focused Project Workflow component tests, and the production build all passed.
+Lint retained one pre-existing React Hooks warning in `ProjectChatPanel.tsx` and reported no errors.
+
+## Post-Phase Addendum - Project Controls and Drag Responsiveness
+
+Added on 2026-09-30 after local Project Workspace testing.
+
+Project editors may edit the Project name and description from the Project header.
+Project deletion remains Project Lead-only and is guarded by an accessible in-app confirmation modal rather than a browser alert or confirm popup.
+Confirmed deletion clears restrictive Outcome dependency edges and Project-message reply links before the Project cascade is executed.
+
+Outcome dragging no longer becomes temporarily disabled while a previous move request is pending.
+The client applies each drag optimistically and queues persistence requests in order so rapid consecutive moves remain usable without racing authoritative writes.
+Dependency-group Outcomes are draggable from their dependency cards, including both the prerequisite and dependent Outcome representations.
+
+Focused branch verification covers Project service permissions and deletion cleanup, Project edit/delete dialogs, immediate repeated dragging, dependency-card dragging, workflow services, typecheck, lint, Prisma validation, and production build.

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -15,8 +16,10 @@ import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import type { Member } from '@prisma/client';
 import {
   CreateProjectRequestSchema,
+  UpdateProjectRequestSchema,
   UpdateProjectStatusRequestSchema,
   type CreateProjectRequest,
+  type UpdateProjectRequest,
   type UpdateProjectStatusRequest,
 } from '../../shared/contracts/project';
 import { ProjectsService } from './projects.service';
@@ -59,6 +62,33 @@ export class ProjectsController {
     @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
   ) {
     return this.projectsService.getProject(currentMember, projectId);
+  }
+
+  @Patch(':projectId')
+  updateProject(
+    @CurrentMember() currentMember: Member,
+    @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = UpdateProjectRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        parsed.error.issues[0]?.message ?? 'Invalid project data.',
+      );
+    }
+    return this.projectsService.updateProject(
+      currentMember,
+      projectId,
+      parsed.data satisfies UpdateProjectRequest,
+    );
+  }
+
+  @Delete(':projectId')
+  deleteProject(
+    @CurrentMember() currentMember: Member,
+    @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
+  ) {
+    return this.projectsService.deleteProject(currentMember, projectId);
   }
 
   @Patch(':projectId/status')

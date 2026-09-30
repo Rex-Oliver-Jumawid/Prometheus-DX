@@ -127,11 +127,14 @@ Administrator status does not grant the ability to manage project-member access 
 
 Any active authorized Prometheus user may become an Outcome Member by joining an outcome according to its state rules.
 
-Outcome Membership is permanent once created.
+Outcome Membership cannot be manually removed while its Outcome exists.
 
 Outcome Members cannot leave an outcome.
 
 Project Leads cannot remove Outcome Members.
+
+An authorized Project editor may delete an Outcome when it has no protected work, delivery, acceptance, revision, or dependency history.
+Deleting that Outcome removes its membership assignments with it.
 
 Outcome Membership does not grant Administrator or Project Lead authority.
 
@@ -263,6 +266,7 @@ A Project Member with `CAN_EDIT` shall be permitted to use project-level edit ca
 `CAN_EDIT` shall grant Project editor capabilities including:
 
 - Changing Project status.
+- Editing the Project name and description.
 - Creating, editing, and deleting Stages subject to normal deletion safeguards.
 - Creating, editing, and deleting Outcomes subject to normal deletion safeguards.
 - Reviewing submissions and saving review preparation.
@@ -271,6 +275,9 @@ A Project Member with `CAN_EDIT` shall be permitted to use project-level edit ca
 - Overriding individual dependencies where the product permits it.
 
 Managing Project Member access shall remain Project Lead-only.
+
+Deleting a Project shall remain Project Lead-only.
+The Project Workspace shall require an in-application confirmation modal before Project deletion and shall not use a browser alert or confirm popup for this action.
 
 `CAN_EDIT` shall not make a Project Member the Project Lead.
 
@@ -326,6 +333,9 @@ The Project Lead or a Project Member with `CAN_EDIT` shall be able to create and
 
 The Project Lead or a Project Member with `CAN_EDIT` shall be able to create and manage project outcomes.
 
+Project editors shall be able to reorder Outcomes within a Stage and move Outcomes between Stages in the same Project.
+The resulting Stage and position shall be persisted as canonical workflow state.
+
 An outcome may contain:
 
 - Title.
@@ -359,15 +369,16 @@ A user may join an outcome while it is:
 - `FOR_REVIEW`.
 - `NEEDS_REVISION`.
 
-Joining an outcome shall create permanent Outcome Membership.
+Joining an outcome shall create Outcome Membership that cannot be manually removed while the Outcome exists.
 
-## FR-16 Permanent Outcome Membership
+## FR-16 Outcome Membership Retention
 
 Once a user joins an outcome:
 
 - The user shall not be able to leave the outcome.
 - The Project Lead shall not be able to remove the user from the outcome.
-- The Outcome Membership shall remain historically preserved.
+- The Outcome Membership shall remain attached to that Outcome while the Outcome exists.
+- Deleting an otherwise deletable Outcome may remove its membership assignments with the Outcome.
 
 ## FR-17 Locked Outcomes
 
@@ -645,9 +656,12 @@ A project remaining `DONE` for 14 days automatically becomes `ARCHIVED`.
 
 ## BR-07 Outcome Membership
 
-Outcome Membership is permanent once created.
+Outcome Membership cannot be manually removed while its Outcome exists.
 
 Outcome Members cannot leave and Project Leads cannot remove them.
+
+Deleting an otherwise deletable Outcome removes its membership assignments with the Outcome.
+Membership assignments alone do not count as protected history.
 
 ## BR-08 Outcome Joining
 

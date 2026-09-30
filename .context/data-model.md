@@ -19,7 +19,7 @@ The data model is designed for Supabase PostgreSQL, Prisma ORM, NestJS business 
 3. Project creation grants no continuing authority to the creator.
 4. Project participation originates from Outcome Membership.
 5. Project Members default to `CAN_VIEW`, while the Project Lead may grant `CAN_EDIT`.
-6. Outcome Membership is permanent once created.
+6. Outcome Membership cannot be manually removed while its Outcome exists; deletion of an otherwise deletable Outcome removes those assignments with the Outcome.
 7. Each Outcome has one shared submission history.
 8. Multiple submissions may be under review simultaneously.
 9. Outcome acceptance applies to the Outcome rather than to one submission.
@@ -458,6 +458,8 @@ Administrator status does not provide a project-level override.
 
 When a Member joins their first Outcome in a Project, `OutcomeMember` and the missing `ProjectMember` row must be created in the same transaction.
 
+When deletion removes a Member's final Outcome Membership in that Project, the derived `ProjectMember` row must be removed in the same transaction. Append-only `ProjectMemberAccessHistory` remains preserved.
+
 ---
 
 # 12. Project Member Access History
@@ -604,7 +606,8 @@ Constraint:
 UNIQUE(outcome_id, member_id)
 ```
 
-Outcome Membership is permanent.
+Outcome Membership cannot be manually removed while its Outcome exists.
+When an authorized Project editor deletes an Outcome that has no protected work, delivery, acceptance, revision, or dependency history, the Outcome's assignment memberships are deleted with that Outcome.
 
 There is no `left_at`, `removed_at`, or `removed_by` field because Outcome Members cannot leave and Project Leads cannot remove them.
 
@@ -1672,6 +1675,19 @@ Validate Member ACTIVE
 Validate Outcome is not ACCEPTED
 Create OutcomeMember
 Create ProjectMember if missing with CAN_VIEW
+Create ActivityLog
+```
+
+These operations occur atomically.
+
+## Delete Outcome
+
+```text
+Validate Project Lead OR ProjectMember CAN_EDIT
+Validate no protected work, submission, acceptance, revision, or dependency history
+Delete Outcome and cascading OutcomeMember assignments
+Remove derived ProjectMember rows for affected Members with no remaining Outcome Membership in the Project
+Compact sibling Outcome positions
 Create ActivityLog
 ```
 

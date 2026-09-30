@@ -21,15 +21,17 @@ function safeMetadata(action: string, raw: unknown): Record<string, string> {
       'FEATURE_CREATED', 'FEATURE_UPDATED', 'FEATURE_DELETED',
       'TASK_CREATED', 'TASK_UPDATED', 'TASK_COMPLETED',
       'TASK_REOPENED', 'TASK_DELETED',
-      'OUTCOME_CREATED', 'OUTCOME_UPDATED', 'OUTCOME_DELETED',
+      'OUTCOME_CREATED', 'OUTCOME_UPDATED', 'OUTCOME_MOVED', 'OUTCOME_DELETED',
     ].includes(action) && typeof fields.title === 'string'
   ) result.title = fields.title;
   if (
     ['STAGE_CREATED', 'STAGE_UPDATED', 'STAGE_DELETED'].includes(action) &&
     typeof fields.name === 'string'
   ) result.title = fields.name;
-  if (action === 'PROJECT_CREATED' && typeof fields.name === 'string')
-    result.title = fields.name;
+  if (
+    ['PROJECT_CREATED', 'PROJECT_UPDATED'].includes(action) &&
+    typeof fields.name === 'string'
+  ) result.title = fields.name;
   if (
     ['PROJECT_ANNOUNCEMENT_POSTED', 'PROJECT_ANNOUNCEMENT_PINNED', 'PROJECT_ANNOUNCEMENT_UNPINNED'].includes(action) &&
     typeof fields.title === 'string'

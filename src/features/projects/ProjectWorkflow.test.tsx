@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { createEvent, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectWorkflowResponse } from '../../../shared/contracts/project-workflow';
@@ -356,6 +356,397 @@ describe('ProjectWorkflow Stage & Outcome Deletion', () => {
     expect(
       screen.getByRole('button', { name: 'Confirm skip dependency' }),
     ).toBeInTheDocument();
+  });
+
+  it('drags an Outcome to the top of its Stage and persists the new position', async () => {
+    const secondOutcomeId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const reorderWorkflow: ProjectWorkflowResponse = {
+      ...workflowFixture,
+      stages: [
+        {
+          ...workflowFixture.stages[0],
+          outcomes: [
+            workflowFixture.stages[0].outcomes[0],
+            {
+              ...workflowFixture.stages[0].outcomes[0],
+              id: secondOutcomeId,
+              title: 'Prototype Review',
+              position: 1,
+            },
+          ],
+        },
+      ],
+    };
+    const reorderedWorkflow: ProjectWorkflowResponse = {
+      ...reorderWorkflow,
+      stages: [
+        {
+          ...reorderWorkflow.stages[0],
+          outcomes: [
+            { ...reorderWorkflow.stages[0].outcomes[1], position: 0 },
+            { ...reorderWorkflow.stages[0].outcomes[0], position: 1 },
+          ],
+        },
+      ],
+    };
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path === `/projects/${projectId}/workflow`) {
+        return Promise.resolve(reorderWorkflow);
+      }
+      if (path === `/projects/${projectId}/outcomes/${secondOutcomeId}/move`) {
+        return Promise.resolve(reorderedWorkflow);
+      }
+      return Promise.resolve({ success: true });
+    });
+    renderWorkflow();
+
+    const firstCard = (await screen.findByText('User Interviews')).closest(
+      '.outcome-card',
+    ) as HTMLElement;
+    const secondCard = screen.getByText('Prototype Review').closest(
+      '.outcome-card',
+    ) as HTMLElement;
+    vi.spyOn(firstCard, 'getBoundingClientRect').mockReturnValue({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 200,
+      bottom: 100,
+      width: 200,
+      height: 100,
+      toJSON: () => ({}),
+    });
+    const dataTransfer = {
+      effectAllowed: 'move',
+      dropEffect: 'move',
+      setData: vi.fn(),
+      getData: vi.fn(),
+      clearData: vi.fn(),
+      files: [],
+      items: [],
+      types: [],
+      setDragImage: vi.fn(),
+    } as unknown as DataTransfer;
+
+    fireEvent.dragStart(secondCard, { dataTransfer });
+    const dragOver = createEvent.dragOver(firstCard, { dataTransfer });
+    Object.defineProperty(dragOver, 'clientY', { value: 10 });
+    fireEvent(firstCard, dragOver);
+    fireEvent.drop(firstCard, { dataTransfer });
+
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledWith(
+        `/projects/${projectId}/outcomes/${secondOutcomeId}/move`,
+        expect.anything(),
+        expect.objectContaining({
+          method: 'PATCH',
+          body: { stageId, position: 0 },
+        }),
+      );
+    });
+  });
+
+  it('drags an Outcome into the next Stage and persists the destination', async () => {
+    const nextStageId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    const crossStageWorkflow: ProjectWorkflowResponse = {
+      ...workflowFixture,
+      stages: [
+        workflowFixture.stages[0],
+        {
+          ...workflowFixture.stages[0],
+          id: nextStageId,
+          name: 'Delivery',
+          position: 1,
+          outcomes: [],
+        },
+      ],
+    };
+    const movedWorkflow: ProjectWorkflowResponse = {
+      ...crossStageWorkflow,
+      stages: [
+        { ...crossStageWorkflow.stages[0], outcomes: [] },
+        {
+          ...crossStageWorkflow.stages[1],
+          outcomes: [
+            {
+              ...crossStageWorkflow.stages[0].outcomes[0],
+              stageId: nextStageId,
+              position: 0,
+            },
+          ],
+        },
+      ],
+    };
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path === `/projects/${projectId}/workflow`) {
+        return Promise.resolve(crossStageWorkflow);
+      }
+      if (path === `/projects/${projectId}/outcomes/${outcomeId}/move`) {
+        return Promise.resolve(movedWorkflow);
+      }
+      return Promise.resolve({ success: true });
+    });
+    renderWorkflow();
+
+    const card = (await screen.findByText('User Interviews')).closest(
+      '.outcome-card',
+    ) as HTMLElement;
+    const deliveryStage = screen
+      .getByRole('heading', { name: 'Delivery' })
+      .closest('.stage') as HTMLElement;
+    const deliveryCards = deliveryStage.querySelector(
+      '.stage-cards',
+    ) as HTMLElement;
+    const dataTransfer = {
+      effectAllowed: 'move',
+      dropEffect: 'move',
+      setData: vi.fn(),
+      getData: vi.fn(),
+      clearData: vi.fn(),
+      files: [],
+      items: [],
+      types: [],
+      setDragImage: vi.fn(),
+    } as unknown as DataTransfer;
+
+    fireEvent.dragStart(card, { dataTransfer });
+    fireEvent.dragOver(deliveryCards, { dataTransfer });
+    fireEvent.drop(deliveryCards, { dataTransfer });
+
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledWith(
+        `/projects/${projectId}/outcomes/${outcomeId}/move`,
+        expect.anything(),
+        expect.objectContaining({
+          method: 'PATCH',
+          body: { stageId: nextStageId, position: 0 },
+        }),
+      );
+    });
+  });
+
+  it('accepts another drag immediately while the previous move request is still pending', async () => {
+    const secondOutcomeId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const initialWorkflow: ProjectWorkflowResponse = {
+      ...workflowFixture,
+      stages: [
+        {
+          ...workflowFixture.stages[0],
+          outcomes: [
+            workflowFixture.stages[0].outcomes[0],
+            {
+              ...workflowFixture.stages[0].outcomes[0],
+              id: secondOutcomeId,
+              title: 'Prototype Review',
+              position: 1,
+            },
+          ],
+        },
+      ],
+    };
+    const afterFirstMove: ProjectWorkflowResponse = {
+      ...initialWorkflow,
+      stages: [
+        {
+          ...initialWorkflow.stages[0],
+          outcomes: [
+            { ...initialWorkflow.stages[0].outcomes[1], position: 0 },
+            { ...initialWorkflow.stages[0].outcomes[0], position: 1 },
+          ],
+        },
+      ],
+    };
+    let resolveFirst!: (value: ProjectWorkflowResponse) => void;
+    const firstMove = new Promise<ProjectWorkflowResponse>((resolve) => {
+      resolveFirst = resolve;
+    });
+    let moveRequests = 0;
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path === `/projects/${projectId}/workflow`) {
+        return Promise.resolve(initialWorkflow);
+      }
+      if (path === `/projects/${projectId}/outcomes/${secondOutcomeId}/move`) {
+        moveRequests += 1;
+        return moveRequests === 1
+          ? firstMove
+          : Promise.resolve(initialWorkflow);
+      }
+      return Promise.resolve({ success: true });
+    });
+    renderWorkflow();
+
+    const firstCard = (await screen.findByText('User Interviews')).closest(
+      '.outcome-card',
+    ) as HTMLElement;
+    let secondCard = screen.getByText('Prototype Review').closest(
+      '.outcome-card',
+    ) as HTMLElement;
+    vi.spyOn(firstCard, 'getBoundingClientRect').mockReturnValue({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 200,
+      bottom: 100,
+      width: 200,
+      height: 100,
+      toJSON: () => ({}),
+    });
+    const dataTransfer = {
+      effectAllowed: 'move',
+      dropEffect: 'move',
+      setData: vi.fn(),
+      getData: vi.fn(),
+      clearData: vi.fn(),
+      files: [],
+      items: [],
+      types: [],
+      setDragImage: vi.fn(),
+    } as unknown as DataTransfer;
+
+    fireEvent.dragStart(secondCard, { dataTransfer });
+    const firstDragOver = createEvent.dragOver(firstCard, { dataTransfer });
+    Object.defineProperty(firstDragOver, 'clientY', { value: 10 });
+    fireEvent(firstCard, firstDragOver);
+    fireEvent.drop(firstCard, { dataTransfer });
+
+    await waitFor(() => expect(moveRequests).toBe(1));
+    secondCard = screen.getByText('Prototype Review').closest(
+      '.outcome-card',
+    ) as HTMLElement;
+    expect(secondCard).toHaveAttribute('draggable', 'true');
+
+    const userCard = screen.getByText('User Interviews').closest(
+      '.outcome-card',
+    ) as HTMLElement;
+    vi.spyOn(userCard, 'getBoundingClientRect').mockReturnValue({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 200,
+      bottom: 100,
+      width: 200,
+      height: 100,
+      toJSON: () => ({}),
+    });
+    fireEvent.dragStart(secondCard, { dataTransfer });
+    const secondDragOver = createEvent.dragOver(userCard, { dataTransfer });
+    Object.defineProperty(secondDragOver, 'clientY', { value: 90 });
+    fireEvent(userCard, secondDragOver);
+    fireEvent.drop(userCard, { dataTransfer });
+
+    resolveFirst(afterFirstMove);
+    await waitFor(() => expect(moveRequests).toBe(2));
+  });
+
+  it('allows dragging an Outcome represented inside a dependency group', async () => {
+    const prerequisiteId = outcomeId;
+    const dependentId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const nextStageId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    const dependencyWorkflow: ProjectWorkflowResponse = {
+      ...workflowFixture,
+      stages: [
+        {
+          ...workflowFixture.stages[0],
+          outcomes: [
+            {
+              ...workflowFixture.stages[0].outcomes[0],
+              id: prerequisiteId,
+              title: 'Outcome Test 3',
+            },
+            {
+              ...workflowFixture.stages[0].outcomes[0],
+              id: dependentId,
+              title: 'Outcome Test 4',
+              position: 1,
+              isLocked: true,
+              prerequisites: [
+                {
+                  id: prerequisiteId,
+                  dependencyId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+                  title: 'Outcome Test 3',
+                  lifecycleStatus: 'OPEN',
+                  resolved: false,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          ...workflowFixture.stages[0],
+          id: nextStageId,
+          name: 'Next Stage',
+          position: 1,
+          outcomes: [],
+        },
+      ],
+    };
+    const movedWorkflow: ProjectWorkflowResponse = {
+      ...dependencyWorkflow,
+      stages: [
+        {
+          ...dependencyWorkflow.stages[0],
+          outcomes: [dependencyWorkflow.stages[0].outcomes[0]],
+        },
+        {
+          ...dependencyWorkflow.stages[1],
+          outcomes: [
+            {
+              ...dependencyWorkflow.stages[0].outcomes[1],
+              stageId: nextStageId,
+              position: 0,
+            },
+          ],
+        },
+      ],
+    };
+    vi.mocked(apiFetch).mockImplementation((path: string) => {
+      if (path === `/projects/${projectId}/workflow`) {
+        return Promise.resolve(dependencyWorkflow);
+      }
+      if (path === `/projects/${projectId}/outcomes/${dependentId}/move`) {
+        return Promise.resolve(movedWorkflow);
+      }
+      return Promise.resolve({ success: true });
+    });
+    renderWorkflow();
+
+    const dependentCard = await screen.findByRole('link', {
+      name: 'Outcome Test 4',
+    });
+    expect(dependentCard).toHaveAttribute('draggable', 'true');
+    const nextStage = screen
+      .getByRole('heading', { name: 'Next Stage' })
+      .closest('.stage') as HTMLElement;
+    const nextStageCards = nextStage.querySelector('.stage-cards') as HTMLElement;
+    const dataTransfer = {
+      effectAllowed: 'move',
+      dropEffect: 'move',
+      setData: vi.fn(),
+      getData: vi.fn(),
+      clearData: vi.fn(),
+      files: [],
+      items: [],
+      types: [],
+      setDragImage: vi.fn(),
+    } as unknown as DataTransfer;
+
+    fireEvent.dragStart(dependentCard, { dataTransfer });
+    fireEvent.dragOver(nextStageCards, { dataTransfer });
+    fireEvent.drop(nextStageCards, { dataTransfer });
+
+    await waitFor(() =>
+      expect(apiFetch).toHaveBeenCalledWith(
+        `/projects/${projectId}/outcomes/${dependentId}/move`,
+        expect.anything(),
+        expect.objectContaining({
+          method: 'PATCH',
+          body: { stageId: nextStageId, position: 0 },
+        }),
+      ),
+    );
   });
 
   it('renders X delete controls on manageable stages and outcomes', async () => {

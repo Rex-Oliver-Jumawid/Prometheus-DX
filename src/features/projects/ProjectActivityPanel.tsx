@@ -8,6 +8,7 @@ import './project-collaboration.css';
 
 const descriptions: Record<string, string> = {
   PROJECT_CREATED: 'created the project',
+  PROJECT_UPDATED: 'updated the project details',
   PROJECT_STATUS_CHANGED: 'changed the project status',
   PROJECT_LEAD_CHANGED: 'changed the project lead',
   PROJECT_MEMBER_ACCESS_CHANGED: 'updated project member access',
@@ -17,6 +18,7 @@ const descriptions: Record<string, string> = {
   STAGE_DELETED: 'deleted a stage',
   OUTCOME_CREATED: 'created an outcome',
   OUTCOME_UPDATED: 'updated an outcome',
+  OUTCOME_MOVED: 'moved an outcome',
   OUTCOME_DELETED: 'deleted an outcome',
   OUTCOME_JOINED: 'joined an outcome',
   OUTCOME_ACCEPTED: 'accepted an outcome',

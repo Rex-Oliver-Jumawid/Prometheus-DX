@@ -115,6 +115,13 @@ function createDatabase(
       update: vi
         .fn()
         .mockResolvedValue(options.updatedProject ?? projectRecord()),
+      delete: vi.fn().mockResolvedValue(options.foundProject ?? projectRecord()),
+    },
+    outcomeDependency: {
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
+    projectMessage: {
+      updateMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
     activityLog: {
       create: vi.fn().mockResolvedValue({ id: '66666666-6666-4666-8666-666666666666' }),
@@ -385,6 +392,122 @@ describe('ProjectsService', () => {
       ),
     ).resolves.toMatchObject({ lead, creator });
     expect(unrelatedMember.id).not.toBe(lead.id);
+  });
+
+  it('lets the Project Lead edit the Project name and description', async () => {
+    const existing = projectRecord();
+    const updated = projectRecord({
+      name: 'Updated Project',
+      description: 'Updated description.',
+    });
+    const database = createDatabase({
+      foundProject: existing,
+      updatedProject: updated,
+    });
+    const service = new ProjectsService(database);
+
+    await expect(
+      service.updateProject(lead as Member, existing.id, {
+        name: 'Updated Project',
+        description: 'Updated description.',
+      }),
+    ).resolves.toMatchObject({
+      name: 'Updated Project',
+      description: 'Updated description.',
+    });
+    expect(database.project.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: existing.id },
+        data: {
+          name: 'Updated Project',
+          description: 'Updated description.',
+        },
+      }),
+    );
+    expect(database.activityLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        projectId: existing.id,
+        actorMemberId: lead.id,
+        action: 'PROJECT_UPDATED',
+        metadata: { name: 'Updated Project' },
+      }),
+    });
+  });
+
+  it('lets a CAN_EDIT Project Member edit Project details', async () => {
+    const editor = {
+      ...creator,
+      id: '77777777-7777-4777-8777-777777777777',
+    } as Member;
+    const existing = projectRecord({
+      members: [{ memberId: editor.id, accessLevel: 'CAN_EDIT' }],
+    });
+    const database = createDatabase({ foundProject: existing });
+    const service = new ProjectsService(database);
+
+    await expect(
+      service.updateProject(editor, existing.id, {
+        name: 'Editor Updated Project',
+        description: 'Edited by project editor.',
+      }),
+    ).resolves.toBeDefined();
+  });
+
+  it('denies Project detail editing to a CAN_VIEW Project Member', async () => {
+    const viewer = {
+      ...creator,
+      id: '77777777-7777-4777-8777-777777777777',
+    } as Member;
+    const existing = projectRecord({
+      members: [{ memberId: viewer.id, accessLevel: 'CAN_VIEW' }],
+    });
+    const database = createDatabase({ foundProject: existing });
+    const service = new ProjectsService(database);
+
+    await expect(
+      service.updateProject(viewer, existing.id, {
+        name: 'Blocked update',
+        description: 'Should not save.',
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(database.project.update).not.toHaveBeenCalled();
+  });
+
+  it('lets only the Project Lead delete a Project and clears restrictive edges first', async () => {
+    const existing = projectRecord();
+    const database = createDatabase({ foundProject: existing });
+    const service = new ProjectsService(database);
+
+    await expect(
+      service.deleteProject(lead as Member, existing.id),
+    ).resolves.toEqual({ success: true });
+    expect(database.outcomeDependency.deleteMany).toHaveBeenCalledWith({
+      where: { outcome: { stage: { projectId: existing.id } } },
+    });
+    expect(database.projectMessage.updateMany).toHaveBeenCalledWith({
+      where: { projectId: existing.id, parentMessageId: { not: null } },
+      data: { parentMessageId: null },
+    });
+    expect(database.project.delete).toHaveBeenCalledWith({
+      where: { id: existing.id },
+    });
+  });
+
+  it('denies Project deletion to a CAN_EDIT Project Member', async () => {
+    const editor = {
+      ...creator,
+      id: '77777777-7777-4777-8777-777777777777',
+    } as Member;
+    const existing = projectRecord({
+      members: [{ memberId: editor.id, accessLevel: 'CAN_EDIT' }],
+    });
+    const database = createDatabase({ foundProject: existing });
+    const service = new ProjectsService(database);
+
+    await expect(
+      service.deleteProject(editor, existing.id),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(database.project.delete).not.toHaveBeenCalled();
   });
 
   it('lets the assigned Project Lead change PLANNING to IN_PROGRESS with history', async () => {

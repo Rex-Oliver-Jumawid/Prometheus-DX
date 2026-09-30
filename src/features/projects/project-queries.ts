@@ -12,6 +12,7 @@ export const projectKeys = {
   list: ['projects', 'list'] as const,
   detail: (projectId: string) => ['projects', 'detail', projectId] as const,
   workflow: (projectId: string) => ['projects', 'workflow', projectId] as const,
+  members: (projectId: string) => ['projects', 'members', projectId] as const,
   createOptions: ['projects', 'create-options'] as const,
 };
 

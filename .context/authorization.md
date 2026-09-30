@@ -63,21 +63,27 @@ Administrator status does not create Project Lead, Project editor, or Outcome Me
 | View Project | Yes | Yes | Yes | Yes |
 | Create Project | Yes | Yes | Yes | Yes |
 | Change Project status | No | No | Yes | Yes |
+| Edit Project name/description | No | No | Yes | Yes |
+| Delete Project | No | No | No | Yes |
 | Create/edit/delete Stage | No | No | Yes | Yes |
 | Create/edit/delete Outcome | No | No | Yes | Yes |
+| Reorder/move Outcome between Stages | No | No | Yes | Yes |
 | Manage Acceptance Criteria through Outcome editing | No | No | Yes | Yes |
 | Grant/revoke Project Member CAN_EDIT | No | No | No | Yes |
 | Pin/unpin Project announcement | No | No | No | Yes |
 | View normal Project Activity | Yes | Yes | Yes | Yes |
 
 Normal Stage and Outcome deletion safeguards still apply.
+Membership assignments alone do not block deletion, but work, submission, acceptance, revision, and dependency history remain protected.
 `CAN_EDIT` does not bypass protected historical records or other integrity checks.
 
 ## Outcome Participation and Delivery
 
 Any active authorized Member may join a non-accepted Outcome, including while it is locked, for review, or needs revision.
 
-Outcome Membership is permanent under the current model.
+Outcome Membership cannot be manually removed while its Outcome exists.
+Deleting an otherwise deletable Outcome removes its assignment memberships with the Outcome.
+If that deletion removes a Member's final Outcome Membership in the Project, the derived Project Member access row is removed while access-history records remain preserved.
 
 | Action | Not Outcome Member | Outcome Member | CAN_EDIT Project Member | Project Lead |
 | --- | --- | --- | --- | --- |

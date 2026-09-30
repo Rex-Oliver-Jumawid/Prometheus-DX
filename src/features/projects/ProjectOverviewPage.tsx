@@ -1,10 +1,15 @@
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
+  DeleteProjectResponseSchema,
+  ProjectSchema,
   ProjectStatusUpdateResponseSchema,
+  UpdateProjectRequestSchema,
   UpdateProjectStatusRequestSchema,
   type Project,
   type ProjectStatus,
+  type UpdateProjectRequest,
 } from '../../../shared/contracts/project';
 import { useAuth } from '../auth/auth-context';
 import { ApiRequestError, apiFetch } from '../../lib/api';
@@ -13,6 +18,7 @@ import { ProjectActivityPanel } from './ProjectActivityPanel';
 import { ProjectChatPanel } from './ProjectChatPanel';
 import { ProjectAnnouncementsPanel } from './ProjectAnnouncementsPanel';
 import { ProjectWorkflow } from './ProjectWorkflow';
+import { ProjectDialog } from './ProjectDialog';
 import {
   projectDetailQuery,
   projectKeys,
@@ -66,8 +72,165 @@ function withProjectStatus(
   };
 }
 
+function ProjectEditDialog({
+  project,
+  pending,
+  error,
+  onClose,
+  onSave,
+}: {
+  project: Project;
+  pending: boolean;
+  error: unknown;
+  onClose: () => void;
+  onSave: (input: UpdateProjectRequest) => Promise<unknown>;
+}) {
+  const [name, setName] = useState(project.name);
+  const [description, setDescription] = useState(project.description);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const parsed = UpdateProjectRequestSchema.safeParse({ name, description });
+    if (!parsed.success) {
+      setValidationError(
+        parsed.error.issues[0]?.message ?? 'Check the Project details.',
+      );
+      return;
+    }
+    setValidationError(null);
+    try {
+      await onSave(parsed.data);
+    } catch {
+      // Keep the modal open so the mutation error remains visible.
+    }
+  };
+
+  return (
+    <ProjectDialog
+      title="Edit Project"
+      eyebrow="PROJECT DETAILS"
+      subtitle="Update the Project name and description shown across the workspace."
+      ariaLabel="Edit Project"
+      pending={pending}
+      onClose={onClose}
+      className="pw-project-edit-dialog"
+    >
+      <form className="pw-project-edit-form" onSubmit={(event) => void submit(event)}>
+        <div className="vw-add-project-field">
+          <label htmlFor="project-edit-name">Project name</label>
+          <input
+            id="project-edit-name"
+            value={name}
+            maxLength={160}
+            disabled={pending}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </div>
+        <div className="vw-add-project-field">
+          <label htmlFor="project-edit-description">Description</label>
+          <textarea
+            id="project-edit-description"
+            value={description}
+            maxLength={4000}
+            disabled={pending}
+            onChange={(event) => setDescription(event.target.value)}
+          />
+        </div>
+        {Boolean(validationError || error) && (
+          <div className="projects-form-banner error" role="alert">
+            {validationError ?? errorMessage(error)}
+          </div>
+        )}
+        <div className="pw-project-dialog-actions">
+          <button
+            type="button"
+            className="projects-secondary-button pw-project-dialog-secondary-action"
+            disabled={pending}
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="projects-primary-button pw-project-dialog-primary-action"
+            disabled={pending}
+          >
+            {pending ? 'Saving...' : 'Save Project'}
+          </button>
+        </div>
+      </form>
+    </ProjectDialog>
+  );
+}
+
+function ProjectDeleteDialog({
+  projectName,
+  pending,
+  error,
+  onClose,
+  onConfirm,
+}: {
+  projectName: string;
+  pending: boolean;
+  error: unknown;
+  onClose: () => void;
+  onConfirm: () => Promise<unknown>;
+}) {
+  return (
+    <ProjectDialog
+      title="Delete Project"
+      eyebrow="DESTRUCTIVE ACTION"
+      subtitle="This permanently removes the Project and its Project-owned workspace data."
+      ariaLabel="Delete Project"
+      pending={pending}
+      onClose={onClose}
+      className="pw-project-delete-dialog"
+    >
+      <p className="pw-project-delete-message">
+        Are you sure you want to delete <strong>{projectName}</strong>?
+      </p>
+      <div className="pw-delete-warning-box">
+        <span className="pw-delete-warning-icon" aria-hidden="true">!</span>
+        <span>
+          Stages, Outcomes, Project chat, announcements, activity, and Project
+          membership data owned by this Project will be removed. This cannot be
+          undone.
+        </span>
+      </div>
+      {Boolean(error) && (
+        <div className="projects-form-banner error" role="alert">
+          {errorMessage(error)}
+        </div>
+      )}
+      <div className="pw-project-dialog-actions">
+        <button
+          type="button"
+          className="projects-secondary-button pw-project-dialog-secondary-action"
+          disabled={pending}
+          onClick={onClose}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          className="pw-delete-confirm-btn pw-project-dialog-primary-action"
+          disabled={pending}
+          onClick={() => {
+            void onConfirm().catch(() => undefined);
+          }}
+        >
+          {pending ? 'Deleting...' : 'Delete Project'}
+        </button>
+      </div>
+    </ProjectDialog>
+  );
+}
+
 export function ProjectOverviewPage() {
   const { projectId, outcomeId } = useParams();
+  const navigate = useNavigate();
+  const [projectDialog, setProjectDialog] = useState<'edit' | 'delete' | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') === 'activity'
     ? 'activity'
@@ -98,6 +261,48 @@ export function ProjectOverviewPage() {
   const workflow = useQuery({
     ...projectWorkflowQuery(projectId ?? 'missing-project', accessToken),
     enabled: Boolean(projectId && accessToken),
+  });
+
+  const updateProject = useMutation({
+    mutationFn: (input: UpdateProjectRequest) =>
+      apiFetch(
+        `/projects/${projectId}`,
+        ProjectSchema,
+        {
+          accessToken,
+          method: 'PATCH',
+          body: UpdateProjectRequestSchema.parse(input),
+        },
+      ),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(detailKey, updated);
+      queryClient.setQueryData<Project[]>(projectKeys.list, (current) =>
+        current?.map((item) => (item.id === updated.id ? updated : item)),
+      );
+      setProjectDialog(null);
+    },
+  });
+
+  const deleteProject = useMutation({
+    mutationFn: () =>
+      apiFetch(
+        `/projects/${projectId}`,
+        DeleteProjectResponseSchema,
+        {
+          accessToken,
+          method: 'DELETE',
+        },
+      ),
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: detailKey });
+      queryClient.removeQueries({
+        queryKey: projectKeys.workflow(projectId ?? 'missing-project'),
+      });
+      queryClient.setQueryData<Project[]>(projectKeys.list, (current) =>
+        current?.filter((item) => item.id !== projectId),
+      );
+      navigate('/projects', { replace: true });
+    },
   });
 
   const updateStatus = useMutation({
@@ -227,6 +432,9 @@ export function ProjectOverviewPage() {
   }
 
   const value = project.data;
+  const canEditProject =
+    value.lead.id === member?.id || value.currentMemberAccess === 'CAN_EDIT';
+  const canDeleteProject = value.lead.id === member?.id;
   const statusError = updateStatus.isError
     ? errorMessage(updateStatus.error)
     : null;
@@ -334,12 +542,44 @@ export function ProjectOverviewPage() {
             available Project data.
           </div>
         )}
-        <div className="pw-project-kicker">PROJECT WORKSPACE</div>
-        <h1 id="pwProjectTitle">{value.name}</h1>
-        <p id="pwProjectDescription">
-          {value.description ||
-            'Client-facing management platform with onboarding, account tracking, dashboards, communication, and administrative tools.'}
-        </p>
+        <div className="pw-project-header-row">
+          <div className="pw-project-heading-copy">
+            <div className="pw-project-kicker">PROJECT WORKSPACE</div>
+            <h1 id="pwProjectTitle">{value.name}</h1>
+            <p id="pwProjectDescription">
+              {value.description ||
+                'Client-facing management platform with onboarding, account tracking, dashboards, communication, and administrative tools.'}
+            </p>
+          </div>
+          {(canEditProject || canDeleteProject) && !outcomeId && (
+            <div className="pw-project-header-actions">
+              {canEditProject && (
+                <button
+                  type="button"
+                  className="pw-project-action-button"
+                  onClick={() => {
+                    updateProject.reset();
+                    setProjectDialog('edit');
+                  }}
+                >
+                  Edit Project
+                </button>
+              )}
+              {canDeleteProject && (
+                <button
+                  type="button"
+                  className="pw-project-action-button danger"
+                  onClick={() => {
+                    deleteProject.reset();
+                    setProjectDialog('delete');
+                  }}
+                >
+                  Delete Project
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="pw-project-meta">
           <div className="pw-project-meta-card project-overview-card">
@@ -519,6 +759,29 @@ export function ProjectOverviewPage() {
             isLead={workflow.data?.canManageStructure ?? false}
           />
         </div>
+      )}
+
+      {projectDialog === 'edit' && (
+        <ProjectEditDialog
+          project={value}
+          pending={updateProject.isPending}
+          error={updateProject.error}
+          onClose={() => {
+            if (!updateProject.isPending) setProjectDialog(null);
+          }}
+          onSave={(input) => updateProject.mutateAsync(input)}
+        />
+      )}
+      {projectDialog === 'delete' && (
+        <ProjectDeleteDialog
+          projectName={value.name}
+          pending={deleteProject.isPending}
+          error={deleteProject.error}
+          onClose={() => {
+            if (!deleteProject.isPending) setProjectDialog(null);
+          }}
+          onConfirm={() => deleteProject.mutateAsync()}
+        />
       )}
     </div>
   );
