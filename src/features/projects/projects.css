@@ -4185,6 +4185,40 @@
   margin-top: 16px;
 }
 
+.pw-project-dialog-primary-action {
+  box-sizing: border-box;
+  width: 97px;
+  min-width: 97px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #bc5531;
+  border-radius: 10px;
+  background: #bc5531;
+  color: #ffffff;
+  box-shadow: 0 7px 16px rgba(169, 63, 28, 0.13);
+  font-size: 8px;
+  font-weight: 740;
+  line-height: 1.25;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.pw-project-dialog-primary-action:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: #a34a2b;
+  background: #a34a2b;
+}
+
+.pw-project-dialog-primary-action:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
 .pw-outcome-detail-delete-btn,
 .pw-delete-outcome-button {
   padding: 4px 10px;
