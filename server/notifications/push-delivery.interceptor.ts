@@ -1,6 +1,7 @@
 import {
   CallHandler,
   ExecutionContext,
+  Inject,
   Injectable,
   type NestInterceptor,
 } from '@nestjs/common';
@@ -9,7 +10,10 @@ import { PushDeliveryService } from './push-delivery.service';
 
 @Injectable()
 export class PushDeliveryInterceptor implements NestInterceptor {
-  constructor(private readonly deliveries: PushDeliveryService) {}
+  constructor(
+    @Inject(PushDeliveryService)
+    private readonly deliveries: PushDeliveryService,
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest<{ method?: string }>();

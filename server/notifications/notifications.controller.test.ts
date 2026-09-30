@@ -3,6 +3,7 @@ import type { Member } from '@prisma/client';
 import { describe, expect, it, vi } from 'vitest';
 import { NotificationsController } from './notifications.controller';
 import type { NotificationsService } from './notifications.service';
+import type { PushDeliveryService } from './push-delivery.service';
 
 const currentMember = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -17,11 +18,16 @@ function fixture() {
     markRead: vi.fn(),
     markAllRead: vi.fn(),
   };
+  const pushDeliveries = {
+    flushAfterCommit: vi.fn().mockResolvedValue(undefined),
+  };
   return {
     controller: new NotificationsController(
       service as unknown as NotificationsService,
+      pushDeliveries as unknown as PushDeliveryService,
     ),
     service,
+    pushDeliveries,
   };
 }
 
@@ -54,16 +60,20 @@ describe('NotificationsController', () => {
     expect(service.list).not.toHaveBeenCalled();
   });
 
-  it('uses the authenticated member for individual and bulk read mutations', () => {
-    const { controller, service } = fixture();
+  it('uses the authenticated member for individual and bulk read mutations', async () => {
+    const { controller, service, pushDeliveries } = fixture();
+    const readAt = new Date().toISOString();
+    service.markRead.mockResolvedValue({ id: notificationId, readAt });
+    service.markAllRead.mockResolvedValue({ updatedCount: 1, readAt });
 
-    controller.markRead(currentMember, notificationId);
-    controller.markAllRead(currentMember);
+    await controller.markRead(currentMember, notificationId);
+    await controller.markAllRead(currentMember);
 
     expect(service.markRead).toHaveBeenCalledWith(
       currentMember.id,
       notificationId,
     );
     expect(service.markAllRead).toHaveBeenCalledWith(currentMember.id);
+    expect(pushDeliveries.flushAfterCommit).toHaveBeenCalledTimes(2);
   });
 });
