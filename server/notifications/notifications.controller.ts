@@ -19,6 +19,7 @@ import {
 import { CurrentMember } from '../auth/current-member.decorator';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { NotificationsService } from './notifications.service';
+import { PushDeliveryService } from './push-delivery.service';
 
 @Controller('notifications')
 @UseGuards(SupabaseAuthGuard)
@@ -26,6 +27,8 @@ export class NotificationsController {
   constructor(
     @Inject(NotificationsService)
     private readonly notifications: NotificationsService,
+    @Inject(PushDeliveryService)
+    private readonly pushDeliveries: PushDeliveryService,
   ) {}
 
   @Get()
@@ -71,15 +74,19 @@ export class NotificationsController {
   }
 
   @Put('read-all')
-  markAllRead(@CurrentMember() member: Member) {
-    return this.notifications.markAllRead(member.id);
+  async markAllRead(@CurrentMember() member: Member) {
+    const response = await this.notifications.markAllRead(member.id);
+    await this.pushDeliveries.flushAfterCommit();
+    return response;
   }
 
   @Put(':id/read')
-  markRead(
+  async markRead(
     @CurrentMember() member: Member,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ) {
-    return this.notifications.markRead(member.id, id);
+    const response = await this.notifications.markRead(member.id, id);
+    await this.pushDeliveries.flushAfterCommit();
+    return response;
   }
 }

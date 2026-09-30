@@ -5,6 +5,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { Prisma, type Member } from '@prisma/client';
 import type {
@@ -22,6 +23,7 @@ import type {
 } from '../../shared/contracts/project-workflow';
 import { PrismaService } from '../database/prisma.service';
 import { writeNotifications } from '../notifications/notification-writer';
+import { PushDeliveryService } from '../notifications/push-delivery.service';
 
 const outcomeInclude = {
   _count: {
@@ -70,7 +72,12 @@ type StageRecord = Prisma.StageGetPayload<{ include: typeof stageInclude }>;
 
 @Injectable()
 export class ProjectWorkflowService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Optional()
+    @Inject(PushDeliveryService)
+    private readonly pushDeliveries?: PushDeliveryService,
+  ) {}
 
   async getWorkflow(
     currentMember: Member,
@@ -204,6 +211,7 @@ export class ProjectWorkflowService {
         data: { accessLevel: input.accessLevel },
       });
     });
+    await this.pushDeliveries?.flushAfterCommit();
     const response = await this.getProjectMembers(currentMember, projectId);
     const updated = response.members.find(
       ({ member }) => member.id === memberId,
@@ -664,6 +672,7 @@ export class ProjectWorkflowService {
         });
       }
     });
+    await this.pushDeliveries?.flushAfterCommit();
     const outcome = await this.prisma.outcome.findUniqueOrThrow({
       where: { id: outcomeId },
       include: outcomeInclude,

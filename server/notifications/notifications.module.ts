@@ -11,5 +11,6 @@ import { PushDeliveryService } from './push-delivery.service';
     PushDeliveryService,
     PushDeliveryInterceptor,
   ],
+  exports: [PushDeliveryService],
 })
 export class NotificationsModule {}

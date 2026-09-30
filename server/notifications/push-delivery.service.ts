@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import {
@@ -19,7 +19,20 @@ type Delivery = Prisma.PushDeliveryGetPayload<{ include: typeof include }>;
 
 @Injectable()
 export class PushDeliveryService {
+  private readonly logger = new Logger(PushDeliveryService.name);
+
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+
+  async flushAfterCommit(): Promise<void> {
+    try {
+      await this.flushPendingDeliveries();
+    } catch (error) {
+      this.logger.error(
+        'Device push delivery failed after the database commit.',
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
+  }
 
   async flushPendingDeliveries() {
     const vapid = serverEnvironment.webPush;

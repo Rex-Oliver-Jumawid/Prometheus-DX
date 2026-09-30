@@ -4,6 +4,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { Prisma, type Member } from '@prisma/client';
 import type {
@@ -18,6 +19,7 @@ import type {
   VisiWorkPresenceResponse,
 } from '../../shared/contracts/visiwork';
 import { PrismaService } from '../database/prisma.service';
+import { PushDeliveryService } from '../notifications/push-delivery.service';
 
 const PAGE_SIZE = 40;
 const DELETED_MESSAGE_BODY = '[deleted]';
@@ -40,7 +42,12 @@ type MentionMember = {
 
 @Injectable()
 export class VisiWorkService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Optional()
+    @Inject(PushDeliveryService)
+    private readonly pushDeliveries?: PushDeliveryService,
+  ) {}
 
   async joinDepartment(
     member: Member,
@@ -244,6 +251,7 @@ export class VisiWorkService {
       return created;
     });
 
+    await this.pushDeliveries?.flushAfterCommit();
     return this.toMessage(message);
   }
 
@@ -349,6 +357,7 @@ export class VisiWorkService {
       return record;
     });
 
+    await this.pushDeliveries?.flushAfterCommit();
     return this.toMessage(updated);
   }
 
