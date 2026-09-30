@@ -6,7 +6,7 @@
       --ink: #241f1d;
       --muted: #74665f;
       --red: #c02e2e;
-      --hero-prometheus: url('/landing/prometheus-hero.webp');
+      --hero-prometheus: url('/landing/prometheus-hero.avif');
       --red-deep: #a52227;
       --ember: #cb4d22;
       --rule: #e7e3e0;
@@ -482,3 +482,167 @@
    become a non-scrolling overflow ancestor of the sticky site header. */
 html:has(#landing-root) { overflow: auto !important; background: white; }
 body:has(#landing-root) { overflow: visible !important; background: white; }
+
+
+/* Framed Prometheus hero artwork - 2026-09-30 */
+#landing-root .hero-art .art-logo {
+  width: min(74%, 500px);
+  top: 39%;
+  overflow: visible;
+  border: 4px solid #9a651d;
+  outline: 1px solid #5f3a0f;
+  background: var(--hero-prometheus) center / cover no-repeat;
+  box-shadow:
+    0 34px 64px rgba(71, 10, 8, .34),
+    0 10px 22px rgba(71, 10, 8, .22),
+    0 0 0 2px #d9a646,
+    0 0 0 4px #6e4310,
+    0 0 0 6px #e6ba63,
+    inset 0 0 0 1px rgba(255, 237, 181, .82),
+    inset 0 0 0 3px rgba(103, 57, 8, .78);
+}
+
+#landing-root .hero-art .art-logo::before {
+  content: '';
+  position: absolute;
+  inset: -14px;
+  z-index: 0;
+  pointer-events: none;
+  border: 3px solid #8a5817;
+  outline: 1px solid #e7bf69;
+  background:
+    radial-gradient(circle at 9px 9px, rgba(255, 238, 177, .82) 0 2px, transparent 2.6px) 0 0 / 18px 18px,
+    repeating-linear-gradient(45deg, rgba(84, 46, 8, .34) 0 3px, rgba(250, 211, 123, .18) 3px 7px),
+    linear-gradient(135deg, #6f4310 0%, #d8a23d 18%, #f0cf7d 35%, #9f681d 54%, #edc66d 72%, #70420f 100%);
+  box-shadow:
+    0 0 0 2px #5f390d,
+    0 0 0 4px #c08a2d,
+    0 0 0 6px rgba(76, 39, 6, .92),
+    inset 0 0 0 2px rgba(255, 230, 157, .58),
+    inset 0 0 12px rgba(67, 34, 4, .48);
+  transform: translateZ(-24px);
+}
+
+#landing-root .hero-art .art-logo::after {
+  content: none;
+  display: none;
+}
+
+#landing-root .hero-art .art-top {
+  left: 38px;
+  top: 28px;
+  z-index: 12;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+#landing-root .hero-art .art-top span {
+  opacity: 1;
+  color: #fff7eb;
+  text-shadow:
+    0 1px 4px rgba(71, 10, 8, .45),
+    0 0 10px rgba(71, 10, 8, .18);
+}
+
+#landing-root .hero-art .art-caption {
+  bottom: 90px;
+}
+
+@media (max-width: 800px) {
+  #landing-root .hero-art {
+    min-height: 0;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 38px 26px 44px;
+    overflow: hidden;
+  }
+
+  #landing-root .hero-art::before {
+    inset: 18px;
+  }
+
+  #landing-root .hero-art .art-top {
+    position: relative;
+    left: auto;
+    top: auto;
+    margin: 0 0 26px 10px;
+    align-self: flex-start;
+    flex: 0 0 auto;
+  }
+
+  #landing-root .hero-art .art-logo {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: min(82%, 430px);
+    max-width: calc(100% - 38px);
+    margin: 0 auto;
+    flex: 0 0 auto;
+    transform: none;
+    animation: none;
+  }
+
+  #landing-root .hero-art .art-caption {
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    width: auto;
+    margin: 30px 10px 0;
+    padding-top: 18px;
+    flex: 0 0 auto;
+  }
+
+  #landing-root .hero-art .art-caption strong {
+    font-size: clamp(34px, 7vw, 44px);
+    line-height: .95;
+  }
+
+  #landing-root .hero-art .art-caption small {
+    font-size: 8px;
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 460px) {
+  #landing-root .hero-art {
+    padding: 30px 20px 36px;
+  }
+
+  #landing-root .hero-art::before {
+    inset: 14px;
+  }
+
+  #landing-root .hero-art .art-top {
+    margin: 0 0 22px 8px;
+  }
+
+  #landing-root .hero-art .art-top span {
+    font-size: 9px;
+    letter-spacing: .13em;
+  }
+
+  #landing-root .hero-art .art-logo {
+    width: min(84%, 320px);
+    max-width: calc(100% - 32px);
+  }
+
+  #landing-root .hero-art .art-caption {
+    margin: 26px 8px 0;
+    padding-top: 15px;
+    gap: 14px;
+  }
+
+  #landing-root .hero-art .art-caption strong {
+    font-size: clamp(30px, 10vw, 38px);
+  }
+
+  #landing-root .hero-art .art-caption small {
+    font-size: 7px;
+  }
+}
