@@ -153,7 +153,7 @@ function ProjectEditDialog({
           </button>
           <button
             type="submit"
-            className="projects-primary-button"
+            className="projects-primary-button pw-project-dialog-primary-action"
             disabled={pending}
           >
             {pending ? 'Saving...' : 'Save Project'}
@@ -214,7 +214,7 @@ function ProjectDeleteDialog({
         </button>
         <button
           type="button"
-          className="pw-delete-confirm-btn"
+          className="pw-delete-confirm-btn pw-project-dialog-primary-action"
           disabled={pending}
           onClick={() => {
             void onConfirm().catch(() => undefined);
