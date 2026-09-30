@@ -151,6 +151,7 @@ model Member {
   projectAnnouncements        ProjectAnnouncement[]
   receivedNotifications       Notification[]               @relation("NotificationRecipient")
   actedNotifications          Notification[]               @relation("NotificationActor")
+  pushSubscriptions           PushSubscription[]
 
   @@index([departmentId])
   @@index([visiworkDepartmentId])
@@ -608,6 +609,7 @@ model Notification {
   actorMember       Member?          @relation("NotificationActor", fields: [actorMemberId], references: [id], onDelete: Restrict)
   project           Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
   outcome           Outcome?         @relation(fields: [outcomeId], references: [id], onDelete: SetNull)
+  pushDeliveries    PushDelivery[]
 
   @@unique([recipientMemberId, eventKey])
   @@index([recipientMemberId, createdAt, id])
@@ -616,6 +618,43 @@ model Notification {
   @@index([projectId])
   @@index([outcomeId])
   @@map("notifications")
+}
+
+model PushSubscription {
+  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId   String         @map("member_id") @db.Uuid
+  endpoint   String         @unique @db.Text
+  p256dh     String         @db.Text
+  auth       String         @db.Text
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  member     Member         @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  deliveries PushDelivery[]
+
+  @@index([memberId])
+  @@map("push_subscriptions")
+}
+
+model PushDelivery {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  notificationId String           @map("notification_id") @db.Uuid
+  subscriptionId String           @map("subscription_id") @db.Uuid
+  attempts       Int              @default(0)
+  nextAttemptAt  DateTime         @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  claimedAt      DateTime?        @map("claimed_at") @db.Timestamptz(6)
+  claimToken     String?          @map("claim_token") @db.Uuid
+  deliveredAt    DateTime?        @map("delivered_at") @db.Timestamptz(6)
+  lastError      String?          @map("last_error") @db.VarChar(1000)
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  notification   Notification     @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  subscription   PushSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, subscriptionId])
+  @@index([deliveredAt, nextAttemptAt, attempts])
+  @@index([claimToken])
+  @@index([subscriptionId])
+  @@map("push_deliveries")
 }
 
 model SubmissionReview {

@@ -30,6 +30,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed.ts",
     "prisma:studio": "prisma studio",
+    "push:vapid:generate": "node scripts/generate-vapid-keys.mjs",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm test:ui && pnpm build",
     "verify": "pnpm project:doctor && pnpm check",
     "verify:e2e": "pnpm verify && pnpm test:e2e",

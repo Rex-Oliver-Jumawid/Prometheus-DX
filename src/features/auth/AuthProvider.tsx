@@ -5,6 +5,7 @@ import { CurrentMemberSchema } from '../../../shared/contracts/member';
 import { apiFetch } from '../../lib/api';
 import { getSupabaseClient } from '../../lib/supabase';
 import { AuthContext, type AuthContextValue } from './auth-context';
+import { disableCurrentDevicePush } from '../notifications/device-push';
 import { storedSessionIsInvalid } from './auth-routing';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -109,6 +110,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     memberError: memberQuery.error,
     retryAuthorization: () => void memberQuery.refetch(),
     signOut: async () => {
+      const accessToken = session?.access_token;
+      if (accessToken) {
+        try {
+          await disableCurrentDevicePush(accessToken);
+        } catch {
+          // The browser subscription is still removed locally when possible.
+        }
+      }
       queryClient.clear();
       setSession(null);
       if (client) await client.auth.signOut({ scope: 'local' });

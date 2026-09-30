@@ -1,6 +1,8 @@
 import {
   BadRequestException,
+  Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -10,7 +12,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Member } from '@prisma/client';
-import { NotificationListQuerySchema } from '../../shared/contracts/notification';
+import {
+  DevicePushSubscriptionSchema,
+  NotificationListQuerySchema,
+} from '../../shared/contracts/notification';
 import { CurrentMember } from '../auth/current-member.decorator';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { NotificationsService } from './notifications.service';
@@ -36,6 +41,33 @@ export class NotificationsController {
   @Get('unread-count')
   unreadCount(@CurrentMember() member: Member) {
     return this.notifications.unreadCount(member.id);
+  }
+
+  @Get('push/config')
+  pushConfig() {
+    return this.notifications.pushConfig();
+  }
+
+  @Put('push/subscription')
+  subscribeDevice(@CurrentMember() member: Member, @Body() body: unknown) {
+    const parsed = DevicePushSubscriptionSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        parsed.error.issues[0]?.message ?? 'Invalid push subscription.',
+      );
+    }
+    return this.notifications.subscribeDevice(member.id, parsed.data);
+  }
+
+  @Delete('push/subscription')
+  unsubscribeDevice(@CurrentMember() member: Member, @Body() body: unknown) {
+    const parsed = DevicePushSubscriptionSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        parsed.error.issues[0]?.message ?? 'Invalid push subscription.',
+      );
+    }
+    return this.notifications.unsubscribeDevice(member.id, parsed.data);
   }
 
   @Put('read-all')
