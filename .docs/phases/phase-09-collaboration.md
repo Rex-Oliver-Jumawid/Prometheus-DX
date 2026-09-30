@@ -495,3 +495,18 @@ Treat binary chat attachments as a separately scoped post-release feature with e
 
 Durable VisiWork and Project collaboration, automatic live updates, reconnect recovery, notifications, announcements, and Project Activity are integrated.
 Deferred attachment and Outcome-discussion features are explicitly tracked as post-release enhancements.
+
+## Post-Release Addendum - Conversation Date Dividers
+
+Added on 2026-09-30 after the messaging date-partition request.
+
+Project Chat, VisiWork General Chat, and VisiWork Department Chat now render a centered date divider before the first visible message of each local-calendar date group.
+The divider label uses the form `Sep 22, 2026`.
+Messages on the same date do not repeat the divider.
+When pagination or exact-message context changes the visible ordered message set, the groups are recomputed from that final order so duplicate same-date dividers are not retained.
+
+The grouping helper uses the browser's local calendar date rather than comparing raw UTC date strings.
+This keeps the partition aligned with the date the user actually sees locally.
+
+Focused verification passed for lint, typecheck, chat-date grouping unit tests, the full Project Chat component suite, and the production build.
+Manual regression cases C9-31 through C9-36 are recorded in `.testcases/phase-09-collaboration-tests.md`.
