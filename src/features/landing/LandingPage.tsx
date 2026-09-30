@@ -91,7 +91,7 @@ export function LandingPage() {
               </div>
               <div className="hero-art" aria-label="Prometheus holding the Prometheus flame in a dimensional animated hero artwork" onPointerMove={handleHeroPointerMove} onPointerLeave={handleHeroPointerLeave}>
                 <div className="art-top"><span>THE PROMETHEUS MARK</span></div>
-                <div className="art-logo" role="img" aria-label="Prometheus holding the white Prometheus flame"></div>
+                <div className="art-logo" role="img" aria-label="Prometheus holding the Prometheus flame"></div>
                 <div className="art-caption"><strong>The fire<br />is shared.</strong><small>01 / THE<br />VIRTUAL OFFICE</small></div>
               </div>
             </div>
