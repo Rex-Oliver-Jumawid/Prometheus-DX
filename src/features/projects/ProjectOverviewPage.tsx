@@ -145,7 +145,7 @@ function ProjectEditDialog({
         <div className="pw-project-dialog-actions">
           <button
             type="button"
-            className="projects-secondary-button"
+            className="projects-secondary-button pw-project-dialog-secondary-action"
             disabled={pending}
             onClick={onClose}
           >
@@ -206,7 +206,7 @@ function ProjectDeleteDialog({
       <div className="pw-project-dialog-actions">
         <button
           type="button"
-          className="projects-secondary-button"
+          className="projects-secondary-button pw-project-dialog-secondary-action"
           disabled={pending}
           onClick={onClose}
         >
