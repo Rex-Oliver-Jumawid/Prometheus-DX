@@ -677,6 +677,30 @@
   scrollbar-color: rgba(99, 82, 73, 0.2) transparent;
 }
 
+.visiwork-chat-date-divider {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(18px, 1fr) auto minmax(18px, 1fr);
+  align-items: center;
+  gap: 9px;
+  color: #998c84;
+}
+
+.visiwork-chat-date-divider > span {
+  height: 1px;
+  background: #e5dcd6;
+}
+
+.visiwork-chat-date-divider time {
+  color: #8d8078;
+  font-family: var(--workspace-font-label);
+  font-size: 8px;
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
 .visiwork-room-message {
   display: flex;
   align-items: flex-start;
