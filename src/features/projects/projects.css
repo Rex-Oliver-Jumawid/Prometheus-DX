@@ -4185,6 +4185,15 @@
   margin-top: 16px;
 }
 
+.pw-project-dialog-secondary-action {
+  box-sizing: border-box;
+  width: 97px;
+  min-width: 97px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0 12px;
+}
+
 .pw-project-dialog-primary-action {
   box-sizing: border-box;
   width: 97px;
