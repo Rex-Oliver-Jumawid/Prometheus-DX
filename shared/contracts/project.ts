@@ -78,6 +78,11 @@ export const CreateProjectRequestSchema = z.object({
     ),
 });
 
+export const UpdateProjectRequestSchema = z.object({
+  name: z.string().trim().min(1, 'Enter a project name.').max(160),
+  description: z.string().trim().min(1, 'Enter a project description.').max(4000),
+});
+
 export const UpdateProjectStatusRequestSchema = z.object({
   status: z.enum(['PLANNING', 'IN_PROGRESS', 'DONE']),
 });
@@ -87,6 +92,10 @@ export const ProjectStatusUpdateResponseSchema = z.object({
   status: ProjectStatusSchema,
   doneAt: z.string().datetime().nullable(),
   updatedAt: z.string().datetime(),
+});
+
+export const DeleteProjectResponseSchema = z.object({
+  success: z.literal(true),
 });
 
 export type ProjectStatus = z.infer<typeof ProjectStatusSchema>;
@@ -102,11 +111,13 @@ export type ProjectCreateOptionsResponse = z.infer<
   typeof ProjectCreateOptionsResponseSchema
 >;
 export type CreateProjectRequest = z.infer<typeof CreateProjectRequestSchema>;
+export type UpdateProjectRequest = z.infer<typeof UpdateProjectRequestSchema>;
 export type UpdateProjectStatusRequest = z.infer<
   typeof UpdateProjectStatusRequestSchema
 >;
 export type ProjectStatusUpdateResponse = z.infer<
   typeof ProjectStatusUpdateResponseSchema
 >;
+export type DeleteProjectResponse = z.infer<typeof DeleteProjectResponseSchema>;
 export type ProjectStageSummary = z.infer<typeof ProjectStageSummarySchema>;
 export type ProjectMetrics = z.infer<typeof ProjectMetricsSchema>;

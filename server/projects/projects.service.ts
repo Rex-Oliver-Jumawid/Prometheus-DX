@@ -16,6 +16,7 @@ import type {
   ProjectCreateOptionsResponse,
   Project,
   ProjectStatusUpdateResponse,
+  UpdateProjectRequest,
   UpdateProjectStatusRequest,
 } from '../../shared/contracts/project';
 import { PrismaService } from '../database/prisma.service';
@@ -218,6 +219,61 @@ export class ProjectsService {
     return this.toProject(project, currentMember.id);
   }
 
+  async updateProject(
+    currentMember: Member,
+    projectId: string,
+    input: UpdateProjectRequest,
+  ): Promise<Project> {
+    const project = await this.prisma.$transaction(async (transaction) => {
+      await this.requireProjectEditor(transaction, projectId, currentMember.id);
+      const updated = await transaction.project.update({
+        where: { id: projectId },
+        data: {
+          name: input.name,
+          description: input.description,
+        },
+        include: projectInclude,
+      });
+      await transaction.activityLog.create({
+        data: {
+          projectId,
+          actorMemberId: currentMember.id,
+          entityType: 'Project',
+          entityId: projectId,
+          action: 'PROJECT_UPDATED',
+          metadata: { name: updated.name },
+        },
+      });
+      return updated;
+    });
+    return this.toProject(project, currentMember.id);
+  }
+
+  async deleteProject(
+    currentMember: Member,
+    projectId: string,
+  ): Promise<{ success: true }> {
+    await this.prisma.$transaction(async (transaction) => {
+      await this.requireProjectLead(transaction, projectId, currentMember.id);
+
+      // Dependency prerequisite edges use RESTRICT, so remove Project-owned
+      // edges before cascading Stage and Outcome deletion.
+      await transaction.outcomeDependency.deleteMany({
+        where: { outcome: { stage: { projectId } } },
+      });
+
+      // Reply links are self-referential with RESTRICT. Clearing them lets the
+      // Project cascade delete all messages without ordering assumptions.
+      await transaction.projectMessage.updateMany({
+        where: { projectId, parentMessageId: { not: null } },
+        data: { parentMessageId: null },
+      });
+
+      await transaction.project.delete({ where: { id: projectId } });
+    });
+    return { success: true };
+  }
+
   async updateProjectStatus(
     currentMember: Member,
     projectId: string,
@@ -344,6 +400,52 @@ export class ProjectsService {
       doneAt: project.doneAt?.toISOString() ?? null,
       updatedAt: project.updatedAt.toISOString(),
     };
+  }
+
+  private async requireProjectEditor(
+    transaction: Prisma.TransactionClient,
+    projectId: string,
+    memberId: string,
+  ): Promise<void> {
+    await transaction.$queryRaw`SELECT id FROM projects WHERE id = ${projectId}::uuid FOR UPDATE`;
+    const project = await transaction.project.findUnique({
+      where: { id: projectId },
+      select: {
+        leadMemberId: true,
+        members: {
+          where: { memberId },
+          select: { accessLevel: true },
+          take: 1,
+        },
+      },
+    });
+    if (!project) throw new NotFoundException('Project not found.');
+    if (
+      project.leadMemberId !== memberId &&
+      project.members[0]?.accessLevel !== 'CAN_EDIT'
+    ) {
+      throw new ForbiddenException(
+        'Only the assigned Project Lead or a Project Member with CAN_EDIT may edit project details.',
+      );
+    }
+  }
+
+  private async requireProjectLead(
+    transaction: Prisma.TransactionClient,
+    projectId: string,
+    memberId: string,
+  ): Promise<void> {
+    await transaction.$queryRaw`SELECT id FROM projects WHERE id = ${projectId}::uuid FOR UPDATE`;
+    const project = await transaction.project.findUnique({
+      where: { id: projectId },
+      select: { leadMemberId: true },
+    });
+    if (!project) throw new NotFoundException('Project not found.');
+    if (project.leadMemberId !== memberId) {
+      throw new ForbiddenException(
+        'Only the assigned Project Lead may delete this Project.',
+      );
+    }
   }
 
   private toProject(project: ProjectRecord, currentMemberId: string): Project {

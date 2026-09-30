@@ -17,6 +17,7 @@ import {
 } from '../../../shared/contracts/project-chat';
 import { ProjectMembersResponseSchema } from '../../../shared/contracts/project-workflow';
 import { apiFetch } from '../../lib/api';
+import { projectKeys } from './project-queries';
 import { useRealtimeInvalidation } from '../../lib/use-realtime-invalidation';
 import { MemberAvatar } from '../shell/MemberAvatar';
 import './project-collaboration.css';
@@ -147,7 +148,7 @@ export function ProjectChatPanel({
   });
 
   const members = useQuery({
-    queryKey: ['projects', 'members', projectId],
+    queryKey: projectKeys.members(projectId),
     queryFn: () =>
       apiFetch('/projects/' + projectId + '/members', ProjectMembersResponseSchema, {
         accessToken,

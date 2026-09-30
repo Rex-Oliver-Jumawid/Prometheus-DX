@@ -66,6 +66,7 @@ If the creator later becomes an Outcome Member or receives `CAN_EDIT`, those per
 A user becomes a Project Member when the user is an Outcome Member of at least one outcome in that project.
 
 Project Membership is therefore derived from Outcome Membership rather than manually assigned.
+When deletion removes a user's final Outcome Membership in a Project, the derived Project Member row is removed while append-only access history remains preserved.
 
 Every Project Member has a project access level:
 
@@ -98,7 +99,8 @@ Outcome Membership is specific to each outcome.
 
 A user may be an Outcome Member of multiple outcomes across multiple projects.
 
-Outcome Membership is permanent once created.
+Outcome Membership cannot be manually removed while its Outcome exists.
+Deleting an otherwise deletable Outcome removes its membership assignments with the Outcome.
 
 An Outcome Member cannot leave an outcome.
 
@@ -442,8 +444,10 @@ An Administrator who is not the Project Lead has no organization-level override 
 A Project Member with `CAN_EDIT` may:
 
 - Change Project status.
+- Edit the Project name and description.
 - Create, edit, and delete Stages when normal deletion safeguards allow it.
 - Create, edit, and delete Outcomes when normal deletion safeguards allow it.
+- Reorder Outcomes within a Stage and move Outcomes between Stages in the same Project.
 - Review submissions and save review preparation.
 - Request or resolve revision state.
 - Accept or reopen Outcomes.
@@ -451,6 +455,7 @@ A Project Member with `CAN_EDIT` may:
 
 `CAN_EDIT` does not make the Member the Project Lead.
 
+Deleting the Project remains Project Lead-only and requires an in-app confirmation modal before the destructive request is sent.
 Managing another Project Member's `CAN_VIEW` / `CAN_EDIT` access remains Project Lead-only.
 
 ---
@@ -574,7 +579,7 @@ A user may join an outcome while it is:
 
 A user may join multiple outcomes within the same project or across different projects.
 
-Joining an outcome creates permanent Outcome Membership.
+Joining an outcome creates Outcome Membership that cannot be manually removed while that Outcome exists.
 
 An Outcome Member cannot leave an outcome.
 
@@ -964,8 +969,9 @@ The effective permission is the combination of the user's organization role, Pro
 18. A project that remains `DONE` for 14 days automatically becomes `ARCHIVED`.
 19. Any active authorized user may join a locked outcome.
 20. Any active authorized user may join an outcome while it is `FOR_REVIEW`.
-21. Outcome Membership is permanent once created.
+21. Outcome Membership cannot be manually removed while its Outcome exists.
 22. Outcome Members cannot leave an outcome.
+    If an authorized Project editor deletes an otherwise deletable Outcome, its membership assignments are removed with the Outcome.
 23. Project Leads cannot remove Outcome Members.
 24. Each outcome has one shared submission history.
 25. Multiple submissions may be `FOR_REVIEW` at the same time.

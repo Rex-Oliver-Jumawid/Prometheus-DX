@@ -13,11 +13,13 @@ import {
   CreateOutcomeRequestSchema,
   CreateStageRequestSchema,
   OutcomeSchema,
+  ProjectWorkflowResponseSchema,
   StageSchema,
   UpdateOutcomeRequestSchema,
   UpdateStageRequestSchema,
   type CreateOutcomeRequest,
   type CreateStageRequest,
+  type MoveOutcomeRequest,
   type Outcome,
   type ProjectWorkflowResponse,
   type Stage,
@@ -282,7 +284,9 @@ function DeleteConfirmationDialog({
           <div>
             <h2 id="delete-dialog-title">{title}</h2>
             <p className="vw-modal-subtitle">
-              This action permanently removes the record if it has no protected history.
+              {isStage
+                ? 'This removes the Stage and deletable child Outcomes. Protected work or delivery history still prevents deletion.'
+                : 'This removes the Outcome and its assignments. Protected work, delivery, or dependency history still prevents deletion.'}
             </p>
           </div>
         </div>
@@ -306,8 +310,8 @@ function DeleteConfirmationDialog({
                 <span>
                   This stage contains <strong>{stageOutcomeCount}</strong> outcome
                   {stageOutcomeCount === 1 ? '' : 's'}. All child outcomes will
-                  also be deleted. If any outcome has permanent memberships,
-                  submissions, or dependents, deletion will be prevented.
+                  also be deleted. If any outcome has work, submission,
+                  acceptance, revision, or dependency history, deletion will be prevented.
                 </span>
               </div>
             )}
@@ -865,6 +869,81 @@ function OutcomeDialog({
   );
 }
 
+function applyOutcomeMove(
+  current: ProjectWorkflowResponse,
+  outcomeId: string,
+  targetStageId: string,
+  targetPosition: number,
+): ProjectWorkflowResponse {
+  const sourceStage = current.stages.find((stage) =>
+    stage.outcomes.some((outcome) => outcome.id === outcomeId),
+  );
+  const movedOutcome = sourceStage?.outcomes.find(
+    (outcome) => outcome.id === outcomeId,
+  );
+  const targetStage = current.stages.find((stage) => stage.id === targetStageId);
+  if (!sourceStage || !movedOutcome || !targetStage) return current;
+
+  return {
+    ...current,
+    stages: current.stages.map((stage) => {
+      if (sourceStage.id === targetStageId && stage.id === sourceStage.id) {
+        const outcomes = stage.outcomes.filter(
+          (outcome) => outcome.id !== outcomeId,
+        );
+        const position = Math.min(targetPosition, outcomes.length);
+        outcomes.splice(position, 0, {
+          ...movedOutcome,
+          stageId: targetStageId,
+        });
+        return {
+          ...stage,
+          outcomes: outcomes.map((outcome, index) => ({
+            ...outcome,
+            position: index,
+          })),
+        };
+      }
+      if (stage.id === sourceStage.id) {
+        return {
+          ...stage,
+          outcomes: stage.outcomes
+            .filter((outcome) => outcome.id !== outcomeId)
+            .map((outcome, index) => ({ ...outcome, position: index })),
+        };
+      }
+      if (stage.id === targetStageId) {
+        const outcomes = [...stage.outcomes];
+        const position = Math.min(targetPosition, outcomes.length);
+        outcomes.splice(position, 0, {
+          ...movedOutcome,
+          stageId: targetStageId,
+        });
+        return {
+          ...stage,
+          outcomes: outcomes.map((outcome, index) => ({
+            ...outcome,
+            position: index,
+          })),
+        };
+      }
+      return stage;
+    }),
+  };
+}
+
+type OutcomeDragState = {
+  outcomeId: string;
+  sourceStageId: string;
+};
+
+type OutcomeDropTarget = {
+  stageId: string;
+  position: number;
+  targetOutcomeId?: string;
+  edge?: 'before' | 'after';
+};
+
 type EditorState =
   | { type: 'create-stage' }
   | { type: 'edit-stage'; stage: Stage }
@@ -888,6 +967,12 @@ export function ProjectWorkflow({
   const navigate = useNavigate();
   const [editor, setEditor] = useState<EditorState>(null);
   const [scope, setScope] = useState<'whole' | 'mine'>('whole');
+  const [draggedOutcome, setDraggedOutcome] = useState<OutcomeDragState | null>(
+    null,
+  );
+  const [dropTarget, setDropTarget] = useState<OutcomeDropTarget | null>(null);
+  const moveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const moveRevisionRef = useRef(0);
   const [dependencyOverride, setDependencyOverride] = useState<{
     dependencyId: string;
     outcomeId: string;
@@ -1022,6 +1107,77 @@ export function ProjectWorkflow({
       completeMutation();
     },
   });
+  const moveOutcome = useMutation({
+    mutationFn: ({
+      outcomeId: id,
+      input,
+    }: {
+      outcomeId: string;
+      input: MoveOutcomeRequest;
+      revision: number;
+    }) => {
+      const request = moveQueueRef.current
+        .catch(() => undefined)
+        .then(() =>
+          apiFetch(
+            `/projects/${projectId}/outcomes/${id}/move`,
+            ProjectWorkflowResponseSchema,
+            {
+              accessToken,
+              method: 'PATCH',
+              body: input,
+            },
+          ),
+        );
+      moveQueueRef.current = request.then(
+        () => undefined,
+        () => undefined,
+      );
+      return request;
+    },
+    onMutate: async ({ outcomeId: id, input, revision }) => {
+      await queryClient.cancelQueries({
+        queryKey: projectKeys.workflow(projectId),
+      });
+      const previous = queryClient.getQueryData<ProjectWorkflowResponse>(
+        projectKeys.workflow(projectId),
+      );
+      if (previous) {
+        updateWorkflowCache((current) =>
+          applyOutcomeMove(current, id, input.stageId, input.position),
+        );
+      }
+      return { previous, revision };
+    },
+    onError: (_error, variables, context) => {
+      if (
+        context?.previous &&
+        variables.revision === moveRevisionRef.current
+      ) {
+        queryClient.setQueryData(
+          projectKeys.workflow(projectId),
+          context.previous,
+        );
+      }
+    },
+    onSuccess: (updated, variables) => {
+      if (variables.revision === moveRevisionRef.current) {
+        queryClient.setQueryData(projectKeys.workflow(projectId), updated);
+      }
+    },
+    onSettled: (_data, _error, variables) => {
+      if (variables.revision !== moveRevisionRef.current) return;
+      void Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: projectKeys.workflow(projectId),
+        }),
+        queryClient.invalidateQueries({ queryKey: projectKeys.list }),
+        queryClient.invalidateQueries({
+          queryKey: projectKeys.detail(projectId),
+        }),
+      ]);
+    },
+  });
   const joinOutcome = useMutation({
     mutationFn: (id: string) =>
       apiFetch(`/projects/${projectId}/outcomes/${id}/join`, OutcomeSchema, {
@@ -1097,6 +1253,9 @@ export function ProjectWorkflow({
         queryClient.invalidateQueries({
           queryKey: projectKeys.detail(projectId),
         }),
+        queryClient.invalidateQueries({
+          queryKey: projectKeys.members(projectId),
+        }),
       ]);
     },
   });
@@ -1134,6 +1293,9 @@ export function ProjectWorkflow({
         queryClient.invalidateQueries({ queryKey: projectKeys.list }),
         queryClient.invalidateQueries({
           queryKey: projectKeys.detail(projectId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: projectKeys.members(projectId),
         }),
       ]);
       if (outcomeId === variables.outcomeId) {
@@ -1441,6 +1603,152 @@ export function ProjectWorkflow({
           stage.outcomes.some((outcome) => outcome.isJoined),
         )
       : workflow.data.stages;
+  const canReorderOutcomes =
+    workflow.data.canManageStructure && scope === 'whole';
+
+  const clearOutcomeDrag = () => {
+    setDraggedOutcome(null);
+    setDropTarget(null);
+  };
+
+  const queueOutcomeMove = (
+    outcomeIdToMove: string,
+    stageId: string,
+    position: number,
+  ) => {
+    const revision = ++moveRevisionRef.current;
+    moveOutcome.mutate({
+      outcomeId: outcomeIdToMove,
+      input: { stageId, position },
+      revision,
+    });
+  };
+
+  const commitOutcomeMove = (stageId: string, position: number) => {
+    if (!draggedOutcome) return;
+    const sourceStage = workflow.data.stages.find(
+      (stage) => stage.id === draggedOutcome.sourceStageId,
+    );
+    const sourcePosition =
+      sourceStage?.outcomes.findIndex(
+        (outcome) => outcome.id === draggedOutcome.outcomeId,
+      ) ?? -1;
+    if (
+      sourcePosition < 0 ||
+      (draggedOutcome.sourceStageId === stageId && sourcePosition === position)
+    ) {
+      clearOutcomeDrag();
+      return;
+    }
+    queueOutcomeMove(draggedOutcome.outcomeId, stageId, position);
+    clearOutcomeDrag();
+  };
+
+  const startOutcomeDrag = (
+    event: React.DragEvent<HTMLElement>,
+    outcome: Outcome,
+    stageId: string,
+  ) => {
+    if (!canReorderOutcomes) {
+      event.preventDefault();
+      return;
+    }
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', outcome.id);
+    setDraggedOutcome({ outcomeId: outcome.id, sourceStageId: stageId });
+    setDropTarget(null);
+  };
+
+  const updateCardDropTarget = (
+    event: React.DragEvent<HTMLElement>,
+    stage: Stage,
+    targetOutcome: Outcome,
+  ) => {
+    if (!draggedOutcome || !canReorderOutcomes) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer.dropEffect = 'move';
+    const targetIndex = stage.outcomes.findIndex(
+      (item) => item.id === targetOutcome.id,
+    );
+    const sourceIndex = stage.outcomes.findIndex(
+      (item) => item.id === draggedOutcome.outcomeId,
+    );
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const edge =
+      event.clientY < bounds.top + bounds.height / 2 ? 'before' : 'after';
+    let position = targetIndex + (edge === 'after' ? 1 : 0);
+    if (
+      draggedOutcome.sourceStageId === stage.id &&
+      sourceIndex >= 0 &&
+      sourceIndex < position
+    ) {
+      position -= 1;
+    }
+    position = Math.max(
+      0,
+      Math.min(
+        position,
+        stage.outcomes.length -
+          (draggedOutcome.sourceStageId === stage.id ? 1 : 0),
+      ),
+    );
+    setDropTarget({
+      stageId: stage.id,
+      position,
+      targetOutcomeId: targetOutcome.id,
+      edge,
+    });
+  };
+
+  const dropOnOutcome = (
+    event: React.DragEvent<HTMLElement>,
+    stageId: string,
+  ) => {
+    if (!draggedOutcome || !canReorderOutcomes) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (dropTarget?.stageId === stageId) {
+      commitOutcomeMove(stageId, dropTarget.position);
+    }
+  };
+
+  const moveOutcomeByKeyboard = (
+    stage: Stage,
+    outcome: Outcome,
+    key: string,
+  ) => {
+    if (!canReorderOutcomes) return;
+    const sourceIndex = stage.outcomes.findIndex(
+      (item) => item.id === outcome.id,
+    );
+    if (sourceIndex < 0) return;
+
+    if (key === 'ArrowUp' && sourceIndex > 0) {
+      queueOutcomeMove(outcome.id, stage.id, sourceIndex - 1);
+      return;
+    }
+    if (key === 'ArrowDown' && sourceIndex < stage.outcomes.length - 1) {
+      queueOutcomeMove(outcome.id, stage.id, sourceIndex + 1);
+      return;
+    }
+
+    const stageIndex = workflow.data.stages.findIndex(
+      (item) => item.id === stage.id,
+    );
+    const targetStage =
+      key === 'ArrowLeft'
+        ? workflow.data.stages[stageIndex - 1]
+        : key === 'ArrowRight'
+          ? workflow.data.stages[stageIndex + 1]
+          : undefined;
+    if (!targetStage) return;
+    queueOutcomeMove(
+      outcome.id,
+      targetStage.id,
+      Math.min(sourceIndex, targetStage.outcomes.length),
+    );
+  };
 
   return (
     <section
@@ -1551,7 +1859,19 @@ export function ProjectWorkflow({
           </div>
         </div>
       ) : (
-        <div className="board-wrap">
+        <div
+          className="board-wrap"
+          onDragOver={(event) => {
+            if (!draggedOutcome || !canReorderOutcomes) return;
+            const bounds = event.currentTarget.getBoundingClientRect();
+            const edgeThreshold = 48;
+            if (event.clientX < bounds.left + edgeThreshold) {
+              event.currentTarget.scrollLeft -= 28;
+            } else if (event.clientX > bounds.right - edgeThreshold) {
+              event.currentTarget.scrollLeft += 28;
+            }
+          }}
+        >
           <div className="board" id="pwBoard">
             {visibleStages.map((stage) => {
               const stageOutcomes =
@@ -1612,7 +1932,35 @@ export function ProjectWorkflow({
                     />
                   </div>
 
-                  <div className="stage-cards">
+                  <div
+                    className={`stage-cards${
+                      dropTarget?.stageId === stage.id
+                        ? ' pw-drag-over-stage'
+                        : ''
+                    }`}
+                    onDragOver={(event) => {
+                      if (!draggedOutcome || !canReorderOutcomes) return;
+                      if (event.target !== event.currentTarget) return;
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = 'move';
+                      const position =
+                        stage.outcomes.length -
+                        (draggedOutcome.sourceStageId === stage.id ? 1 : 0);
+                      setDropTarget({ stageId: stage.id, position });
+                    }}
+                    onDrop={(event) => {
+                      if (!draggedOutcome || !canReorderOutcomes) return;
+                      if (event.target !== event.currentTarget) return;
+                      event.preventDefault();
+                      commitOutcomeMove(
+                        stage.id,
+                        dropTarget?.stageId === stage.id
+                          ? dropTarget.position
+                          : stage.outcomes.length -
+                              (draggedOutcome.sourceStageId === stage.id ? 1 : 0),
+                      );
+                    }}
+                  >
                     {(() => {
                       const prereqsInSameStage = new Set<string>();
                       stageOutcomes.forEach((o) => {
@@ -1673,7 +2021,34 @@ export function ProjectWorkflow({
                                     : dependencyResolved
                                       ? ' resolved'
                                       : ''
+                                }${
+                                  draggedOutcome?.outcomeId === outcome.id
+                                    ? ' pw-dragging'
+                                    : ''
+                                }${
+                                  dropTarget?.targetOutcomeId === outcome.id &&
+                                  dropTarget.edge
+                                    ? ` pw-drop-${dropTarget.edge}`
+                                    : ''
                                 }`}
+                                draggable={canReorderOutcomes}
+                                title={
+                                  canReorderOutcomes
+                                    ? 'Drag this dependency Outcome or drag either Outcome card inside the dependency.'
+                                    : undefined
+                                }
+                                onDragStart={(event) => {
+                                  const target = event.target as HTMLElement;
+                                  if (target.closest('a, button')) return;
+                                  startOutcomeDrag(event, outcome, stage.id);
+                                }}
+                                onDragEnd={clearOutcomeDrag}
+                                onDragOver={(event) =>
+                                  updateCardDropTarget(event, stage, outcome)
+                                }
+                                onDrop={(event) =>
+                                  dropOnOutcome(event, stage.id)
+                                }
                               >
                                 <div className="dep-head">
                                   <span className="dep-title">DEPENDENCY</span>
@@ -1703,8 +2078,35 @@ export function ProjectWorkflow({
                                         : dependencyResolved
                                           ? ' completed'
                                           : ''
+                                    }${
+                                      canReorderOutcomes && prereqOutcome
+                                        ? ' pw-dependency-draggable'
+                                        : ''
+                                    }${
+                                      draggedOutcome?.outcomeId === prereq.id
+                                        ? ' pw-dragging'
+                                        : ''
                                     }`}
                                     aria-label={prereqOutcome?.title ?? prereq.title}
+                                    draggable={Boolean(
+                                      canReorderOutcomes && prereqOutcome,
+                                    )}
+                                    onDragStart={(event) => {
+                                      event.stopPropagation();
+                                      if (!prereqOutcome) {
+                                        event.preventDefault();
+                                        return;
+                                      }
+                                      startOutcomeDrag(
+                                        event,
+                                        prereqOutcome,
+                                        prereqOutcome.stageId,
+                                      );
+                                    }}
+                                    onDragEnd={(event) => {
+                                      event.stopPropagation();
+                                      clearOutcomeDrag();
+                                    }}
                                   >
                                     <div className="dep-mini-top">
                                       <h4 className="dep-mini-title">
@@ -1725,8 +2127,25 @@ export function ProjectWorkflow({
 
                                   <Link
                                     to={`/projects/${projectId}/outcomes/${outcome.id}`}
-                                    className={`dep-mini${dependencyResolved ? ' next' : ''}`}
+                                    className={`dep-mini${dependencyResolved ? ' next' : ''}${
+                                      canReorderOutcomes
+                                        ? ' pw-dependency-draggable'
+                                        : ''
+                                    }${
+                                      draggedOutcome?.outcomeId === outcome.id
+                                        ? ' pw-dragging'
+                                        : ''
+                                    }`}
                                     aria-label={outcome.title}
+                                    draggable={canReorderOutcomes}
+                                    onDragStart={(event) => {
+                                      event.stopPropagation();
+                                      startOutcomeDrag(event, outcome, stage.id);
+                                    }}
+                                    onDragEnd={(event) => {
+                                      event.stopPropagation();
+                                      clearOutcomeDrag();
+                                    }}
                                   >
                                     <div className="dep-mini-top">
                                       {dependencyResolved && (
@@ -1809,8 +2228,58 @@ export function ProjectWorkflow({
                               outcome.hasForReview
                                 ? 'pw-review'
                                 : ''
+                            }${
+                              draggedOutcome?.outcomeId === outcome.id
+                                ? ' pw-dragging'
+                                : ''
+                            }${
+                              dropTarget?.targetOutcomeId === outcome.id &&
+                              dropTarget.edge
+                                ? ` pw-drop-${dropTarget.edge}`
+                                : ''
                             }`}
                             key={outcome.id}
+                            draggable={canReorderOutcomes}
+                            tabIndex={canReorderOutcomes ? 0 : undefined}
+                            aria-keyshortcuts={
+                              canReorderOutcomes
+                                ? 'Alt+ArrowUp Alt+ArrowDown Alt+ArrowLeft Alt+ArrowRight'
+                                : undefined
+                            }
+                            title={
+                              canReorderOutcomes
+                                ? 'Drag to reorder or move to another stage. Keyboard: Alt + arrow keys.'
+                                : undefined
+                            }
+                            onKeyDown={(event) => {
+                              if (
+                                event.target !== event.currentTarget ||
+                                !event.altKey ||
+                                ![
+                                  'ArrowUp',
+                                  'ArrowDown',
+                                  'ArrowLeft',
+                                  'ArrowRight',
+                                ].includes(event.key)
+                              ) {
+                                return;
+                              }
+                              event.preventDefault();
+                              moveOutcomeByKeyboard(stage, outcome, event.key);
+                            }}
+                            onDragStart={(event) => {
+                              const target = event.target as HTMLElement;
+                              if (target.closest('button, a')) {
+                                event.preventDefault();
+                                return;
+                              }
+                              startOutcomeDrag(event, outcome, stage.id);
+                            }}
+                            onDragEnd={clearOutcomeDrag}
+                            onDragOver={(event) =>
+                              updateCardDropTarget(event, stage, outcome)
+                            }
+                            onDrop={(event) => dropOnOutcome(event, stage.id)}
                           >
                             <div className="card-top">
                               <h4 className="outcome-title">{outcome.title}</h4>
@@ -1928,6 +2397,12 @@ export function ProjectWorkflow({
             })}
           </div>
         </div>
+      )}
+
+      {moveOutcome.error && (
+        <p className="projects-form-banner error" role="alert">
+          {errorMessage(moveOutcome.error)}
+        </p>
       )}
 
       {(editor?.type === 'create-stage' || editor?.type === 'edit-stage') && (

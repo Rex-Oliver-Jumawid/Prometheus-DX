@@ -122,6 +122,11 @@ const OutcomeFieldsSchema = z.object({
 export const CreateOutcomeRequestSchema = OutcomeFieldsSchema;
 export const UpdateOutcomeRequestSchema = OutcomeFieldsSchema;
 
+export const MoveOutcomeRequestSchema = z.object({
+  stageId: z.string().uuid('Choose an existing target stage.'),
+  position: z.number().int().nonnegative(),
+});
+
 export type OutcomeLifecycleStatus = z.infer<
   typeof OutcomeLifecycleStatusSchema
 >;
@@ -134,6 +139,7 @@ export type CreateStageRequest = z.infer<typeof CreateStageRequestSchema>;
 export type UpdateStageRequest = z.infer<typeof UpdateStageRequestSchema>;
 export type CreateOutcomeRequest = z.infer<typeof CreateOutcomeRequestSchema>;
 export type UpdateOutcomeRequest = z.infer<typeof UpdateOutcomeRequestSchema>;
+export type MoveOutcomeRequest = z.infer<typeof MoveOutcomeRequestSchema>;
 export type ProjectMember = z.infer<typeof ProjectMemberSchema>;
 export type ProjectMembersResponse = z.infer<typeof ProjectMembersResponseSchema>;
 export type UpdateProjectMemberAccessRequest = z.infer<

@@ -8,7 +8,8 @@ The Project Lead or a Project Member with `CAN_EDIT` may create and manage proje
 
 Any active authorized user may join an outcome unless the outcome is accepted.
 
-Outcome Membership is permanent.
+Outcome Membership cannot be manually removed while the Outcome exists.
+Deleting an otherwise deletable Outcome removes its membership assignments with the Outcome.
 
 A user becomes a Project Member after joining at least one outcome in the project.
 
@@ -26,6 +27,7 @@ Project Member access management remains Project Lead-only.
 - Stage UI
 - Add/Edit Stage
 - Outcome cards
+- Outcome drag-and-drop ordering
 - Add/Edit Outcome
 - Outcome Details
 - Join Outcome
@@ -84,7 +86,7 @@ Phase 4 final acceptance completed on 2026-09-16.
 Primary automated evidence:
 
 - `tests/e2e/project-workflow.spec.ts` covers Stage/Outcome workflow, direct routing, permissions, persistence, and narrow viewport behavior.
-- `tests/e2e/outcome-membership.spec.ts` covers joining, idempotence, permanent membership, derived Project Membership, and Participating classification.
+- `tests/e2e/outcome-membership.spec.ts` covers joining, idempotence, non-removable membership, derived Project Membership, and Participating classification.
 - `tests/e2e/project-member-access.spec.ts` covers `CAN_VIEW` / `CAN_EDIT`, status authority, access history, and authority non-leakage.
 - `tests/e2e/auth-shell.spec.ts` preserves F2-21 and authentication/authorization regressions.
 - `tests/e2e/projects.spec.ts` preserves Phase 3 Project regressions.
@@ -164,6 +166,29 @@ Final status: `PASS` within the exercised Phase 4 browser paths.
 | F4-34 | CAN_EDIT manages project-member access | Denied. | PASS |
 | F4-35 | Admin non-Lead grants CAN_EDIT | Denied. | PASS |
 | F4-36 | Backend bypass attempt | Backend returns forbidden. | PASS |
+
+## Post-Phase Outcome Ordering and Deletion Regression
+
+These cases cover the later workflow-management amendment and should be revalidated on this feature branch.
+
+| ID | Test | Expected Result | Status |
+| --- | --- | --- | --- |
+| F4-37 | Drag Outcome above another Outcome in the same Stage | The Outcome moves to the requested position and the order persists after refresh. | REVALIDATE |
+| F4-38 | Drag Outcome into the next Stage | The Outcome moves to the target Stage at the chosen position and persists after refresh. | REVALIDATE |
+| F4-39 | CAN_VIEW or ordinary Member attempts Outcome movement | UI does not expose movement and a forged API request is denied. | REVALIDATE |
+| F4-40 | Delete Outcome with only membership assignments | Outcome is deleted and its Outcome Membership rows are removed with it. | REVALIDATE |
+| F4-41 | Delete Outcome that is a Member's final Outcome in the Project | Derived Project Member row is removed while Project Member access history remains preserved. | REVALIDATE |
+| F4-42 | Delete Outcome with protected work or delivery history | Deletion remains blocked with a controlled error. | REVALIDATE |
+
+## Post-Phase Project Controls and Drag Responsiveness
+
+| ID | Test | Expected Result | Status |
+| --- | --- | --- | --- |
+| F4-43 | Project Lead edits Project name and description | Changes persist and immediately update the Project Workspace. | REVALIDATE |
+| F4-44 | CAN_EDIT Project Member edits Project name and description | Edit is allowed while Project deletion remains unavailable. | REVALIDATE |
+| F4-45 | Project Lead deletes Project | An in-app confirmation modal appears, no browser alert/confirm is used, and confirmed deletion returns to Projects. | REVALIDATE |
+| F4-46 | Drag again before the previous Outcome move request finishes | The second drag is accepted immediately and moves are persisted in order. | REVALIDATE |
+| F4-47 | Drag an Outcome shown inside a dependency group | Both the prerequisite and dependent Outcome representations remain draggable by a Project editor. | REVALIDATE |
 
 ## Phase 4 Main E2E Flow
 

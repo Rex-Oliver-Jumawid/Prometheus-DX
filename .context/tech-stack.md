@@ -270,7 +270,7 @@ Current business rules that belong in NestJS include:
 - A project may be marked `DONE` without every outcome being accepted.
 - A project that remains `DONE` for 14 days becomes `ARCHIVED`.
 - Any active authorized user may join a locked outcome or an outcome that is `FOR_REVIEW` or `NEEDS_REVISION`.
-- Outcome Membership is permanent once created.
+- Outcome Membership cannot be manually removed while its Outcome exists; deleting an otherwise deletable Outcome removes its membership assignments with the Outcome.
 - Outcome Members cannot leave and Project Leads cannot remove them.
 - Each outcome has one shared submission history.
 - Multiple submissions may be `FOR_REVIEW` at the same time.
@@ -492,7 +492,7 @@ OUTCOME_MEMBER
 
 Outcome Membership is created when an active authorized user joins an outcome.
 
-Outcome Membership is permanent and specific to that outcome.
+Outcome Membership is specific to that outcome and cannot be manually removed while the Outcome exists.
 
 It grants work and submission rights within that outcome according to its current workflow state.
 

@@ -15,11 +15,13 @@ import type { Member } from '@prisma/client';
 import {
   CreateOutcomeRequestSchema,
   CreateStageRequestSchema,
+  MoveOutcomeRequestSchema,
   UpdateOutcomeRequestSchema,
   UpdateStageRequestSchema,
   UpdateProjectMemberAccessRequestSchema,
   type CreateOutcomeRequest,
   type CreateStageRequest,
+  type MoveOutcomeRequest,
   type UpdateOutcomeRequest,
   type UpdateStageRequest,
   type UpdateProjectMemberAccessRequest,
@@ -161,6 +163,27 @@ export class ProjectWorkflowController {
       projectId,
       outcomeId,
       parsed.data satisfies UpdateOutcomeRequest,
+    );
+  }
+
+  @Patch('outcomes/:outcomeId/move')
+  moveOutcome(
+    @CurrentMember() currentMember: Member,
+    @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
+    @Param('outcomeId', new ParseUUIDPipe({ version: '4' })) outcomeId: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = MoveOutcomeRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        parsed.error.issues[0]?.message ?? 'Invalid Outcome destination.',
+      );
+    }
+    return this.workflowService.moveOutcome(
+      currentMember,
+      projectId,
+      outcomeId,
+      parsed.data satisfies MoveOutcomeRequest,
     );
   }
 

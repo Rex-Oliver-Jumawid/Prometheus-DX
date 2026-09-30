@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Project } from '../../../shared/contracts/project';
@@ -99,6 +99,7 @@ function renderPage() {
             path="/projects/:projectId"
             element={<ProjectOverviewPage />}
           />
+          <Route path="/projects" element={<div>Projects list</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -128,6 +129,97 @@ describe('ProjectOverviewPage status mutation', () => {
       if (path === `/projects/${projectId}`) return Promise.resolve(project);
       return Promise.resolve({});
     });
+  });
+
+  it('edits the Project name and description in a modal', async () => {
+    const updatedProject = {
+      ...project,
+      name: 'Renamed Project',
+      description: 'Updated project description.',
+    };
+    vi.mocked(apiFetch).mockImplementation((path: string, _schema, options) => {
+      if (path.endsWith('/workflow')) {
+        return Promise.resolve({
+          projectId,
+          canManageStructure: false,
+          stages: [],
+        });
+      }
+      if (path === `/projects/${projectId}` && options?.method === 'PATCH') {
+        return Promise.resolve(updatedProject);
+      }
+      if (path === `/projects/${projectId}`) return Promise.resolve(project);
+      if (path === `/projects/${projectId}/members`) {
+        return Promise.resolve(projectMembersResponse);
+      }
+      return Promise.resolve({});
+    });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit Project' }));
+    const dialog = screen.getByRole('dialog', { name: 'Edit Project' });
+    fireEvent.change(within(dialog).getByLabelText('Project name'), {
+      target: { value: 'Renamed Project' },
+    });
+    fireEvent.change(within(dialog).getByLabelText('Description'), {
+      target: { value: 'Updated project description.' },
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save Project' }));
+
+    await waitFor(() =>
+      expect(apiFetch).toHaveBeenCalledWith(
+        `/projects/${projectId}`,
+        expect.anything(),
+        expect.objectContaining({
+          method: 'PATCH',
+          body: {
+            name: 'Renamed Project',
+            description: 'Updated project description.',
+          },
+        }),
+      ),
+    );
+    expect(await screen.findByRole('heading', { name: 'Renamed Project' })).toBeVisible();
+    expect(screen.getByText('Updated project description.')).toBeVisible();
+  });
+
+  it('deletes the Project through a confirmation modal without browser alert popups', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    vi.mocked(apiFetch).mockImplementation((path: string, _schema, options) => {
+      if (path.endsWith('/workflow')) {
+        return Promise.resolve({
+          projectId,
+          canManageStructure: false,
+          stages: [],
+        });
+      }
+      if (path === `/projects/${projectId}` && options?.method === 'DELETE') {
+        return Promise.resolve({ success: true });
+      }
+      if (path === `/projects/${projectId}`) return Promise.resolve(project);
+      if (path === `/projects/${projectId}/members`) {
+        return Promise.resolve(projectMembersResponse);
+      }
+      return Promise.resolve({});
+    });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete Project' }));
+    const dialog = screen.getByRole('dialog', { name: 'Delete Project' });
+    expect(within(dialog).getByText(/cannot be undone/i)).toBeVisible();
+    expect(confirmSpy).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete Project' }));
+
+    await waitFor(() =>
+      expect(apiFetch).toHaveBeenCalledWith(
+        `/projects/${projectId}`,
+        expect.anything(),
+        expect.objectContaining({ method: 'DELETE' }),
+      ),
+    );
+    expect(await screen.findByText('Projects list')).toBeVisible();
+    expect(confirmSpy).not.toHaveBeenCalled();
+    confirmSpy.mockRestore();
   });
 
   it('shows the Project Members sidebar only on Project Chat', async () => {

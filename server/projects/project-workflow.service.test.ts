@@ -98,9 +98,9 @@ function createDatabase(
     outcomeRevisionCount?: number;
     outcomeDependentCount?: number;
     outcomeFeatureCount?: number;
-    stageOutcomes?: Array<{ id: string; title?: string; counts: { members: number; submissions: number; acceptances: number; revisionRequests: number; dependents: number; features: number } }>;
+    stageOutcomes?: Array<{ id: string; title?: string; memberIds?: string[]; counts: { members: number; submissions: number; acceptances: number; revisionRequests: number; dependents: number; features: number } }>;
     stageSiblings?: Array<{ id: string; position: number }>;
-    outcomeSiblings?: Array<{ id: string; position: number }>;
+    outcomeSiblings?: Array<{ id: string; stageId?: string; position: number }>;
   } = {},
 ) {
   const projectExists = options.projectExists ?? true;
@@ -144,6 +144,7 @@ function createDatabase(
           const stageOutcomes = (options.stageOutcomes ?? []).map((o) => ({
             id: o.id,
             title: o.title ?? 'Planned outcome',
+            members: (o.memberIds ?? []).map((memberId) => ({ memberId })),
             _count: o.counts,
           }));
           return Promise.resolve({
@@ -195,6 +196,10 @@ function createDatabase(
             projectId: options.outcomeProjectId ?? projectId,
             project: { leadMemberId: options.leadMemberId ?? lead.id },
           },
+          members:
+            (options.outcomeMemberCount ?? 0) > 0
+              ? [{ memberId: member.id }]
+              : [],
           _count: {
             members: options.outcomeMemberCount ?? 0,
             submissions: options.outcomeSubmissionCount ?? 0,
@@ -240,6 +245,7 @@ function createDatabase(
     outcomeDepartment: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
     outcomeMember: {
       upsert: vi.fn().mockResolvedValue({ outcomeId, memberId: member.id }),
+      findMany: vi.fn().mockResolvedValue([]),
       createMany: vi.fn().mockImplementation(() => {
         const count = hasJoined ? 0 : 1;
         hasJoined = true;
@@ -310,6 +316,7 @@ function createDatabase(
             });
           },
         ),
+      deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
       updateMany: vi
         .fn()
         .mockImplementation(
@@ -698,12 +705,14 @@ describe('ProjectWorkflowService', () => {
     expect(database.projectMember.upsert).not.toHaveBeenCalled();
   });
 
-  it('rejects removal of permanent Outcome Membership', async () => {
+  it('rejects manual removal of Outcome Membership while the Outcome exists', async () => {
     const service = new ProjectWorkflowService(createDatabase());
 
     await expect(
       service.rejectOutcomeMemberRemoval(projectId, outcomeId, member.id),
-    ).rejects.toThrow('Outcome Membership is permanent.');
+    ).rejects.toThrow(
+      'Outcome Membership cannot be removed while the Outcome exists.',
+    );
   });
 
   it('lists derived Project Members and exposes access management only to the Lead', async () => {
@@ -838,6 +847,102 @@ describe('ProjectWorkflowService', () => {
   });
 
   // -----------------------------------------------------------------------
+  // Outcome movement
+  // -----------------------------------------------------------------------
+
+  it('reorders an Outcome inside the same Stage without violating positions', async () => {
+    const database = createDatabase({
+      outcomeSiblings: [
+        { id: outcomeId, stageId, position: 0 },
+        { id: outcomeId2, stageId, position: 1 },
+      ],
+    });
+    const service = new ProjectWorkflowService(database);
+
+    await service.moveOutcome(lead, projectId, outcomeId, {
+      stageId,
+      position: 1,
+    });
+
+    expect(database.outcome.update).toHaveBeenCalledWith({
+      where: { id: outcomeId2 },
+      data: { stageId, position: 0 },
+    });
+    expect(database.outcome.update).toHaveBeenCalledWith({
+      where: { id: outcomeId },
+      data: { stageId, position: 1 },
+    });
+    expect(database.activityLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        projectId,
+        outcomeId,
+        actorMemberId: lead.id,
+        action: 'OUTCOME_MOVED',
+        metadata: expect.objectContaining({
+          fromStageId: stageId,
+          toStageId: stageId,
+          toPosition: 1,
+        }),
+      }),
+    });
+  });
+
+  it('moves an Outcome into another Stage and compacts both Stage orders', async () => {
+    const database = createDatabase({
+      outcomeSiblings: [
+        { id: outcomeId, stageId, position: 0 },
+        { id: outcomeId2, stageId: stageId2, position: 0 },
+      ],
+    });
+    const service = new ProjectWorkflowService(database);
+
+    await service.moveOutcome(lead, projectId, outcomeId, {
+      stageId: stageId2,
+      position: 0,
+    });
+
+    expect(database.outcome.update).toHaveBeenCalledWith({
+      where: { id: outcomeId },
+      data: { stageId: stageId2, position: 0 },
+    });
+    expect(database.outcome.update).toHaveBeenCalledWith({
+      where: { id: outcomeId2 },
+      data: { stageId: stageId2, position: 1 },
+    });
+  });
+
+  it('rejects Outcome movement for a Project Member without CAN_EDIT', async () => {
+    const database = createDatabase({
+      outcomeSiblings: [{ id: outcomeId, stageId, position: 0 }],
+    });
+    const service = new ProjectWorkflowService(database);
+
+    await expect(
+      service.moveOutcome(member, projectId, outcomeId, {
+        stageId,
+        position: 0,
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(database.outcome.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects moving an Outcome to a Stage in another Project', async () => {
+    const database = createDatabase({
+      stageProjectId: otherProjectId,
+      outcomeSiblings: [{ id: outcomeId, stageId, position: 0 }],
+    });
+    const service = new ProjectWorkflowService(database);
+
+    await expect(
+      service.moveOutcome(lead, projectId, outcomeId, {
+        stageId: stageId2,
+        position: 0,
+      }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(database.outcome.update).not.toHaveBeenCalled();
+  });
+
+  // -----------------------------------------------------------------------
   // Outcome deletion
   // -----------------------------------------------------------------------
 
@@ -883,14 +988,34 @@ describe('ProjectWorkflowService', () => {
     expect(database.outcome.delete).not.toHaveBeenCalled();
   });
 
-  it('rejects Outcome deletion when Outcome has permanent Membership', async () => {
+  it('allows Outcome deletion when Membership assignments are the only related records', async () => {
     const database = createDatabase({ outcomeMemberCount: 1 });
     const service = new ProjectWorkflowService(database);
 
     await expect(
       service.deleteOutcome(lead, projectId, outcomeId),
-    ).rejects.toThrow('permanent Membership records');
-    expect(database.outcome.delete).not.toHaveBeenCalled();
+    ).resolves.toBeUndefined();
+    expect(database.outcome.delete).toHaveBeenCalledWith({
+      where: { id: outcomeId },
+    });
+    expect(database.projectMember.deleteMany).toHaveBeenCalledWith({
+      where: {
+        projectId,
+        memberId: { in: [member.id] },
+      },
+    });
+  });
+
+  it('keeps Project Membership when the member still belongs to another Outcome', async () => {
+    const database = createDatabase({ outcomeMemberCount: 1 });
+    database.outcomeMember.findMany = vi
+      .fn()
+      .mockResolvedValue([{ memberId: member.id }]);
+    const service = new ProjectWorkflowService(database);
+
+    await service.deleteOutcome(lead, projectId, outcomeId);
+
+    expect(database.projectMember.deleteMany).not.toHaveBeenCalled();
   });
 
   it('rejects Outcome deletion when Outcome has submission history', async () => {
@@ -1029,11 +1154,12 @@ describe('ProjectWorkflowService', () => {
     expect(database.stage.delete).not.toHaveBeenCalled();
   });
 
-  it('rejects Stage deletion when a child Outcome has protected history - no partial delete', async () => {
+  it('allows Stage deletion when child Outcomes only have Membership assignments', async () => {
     const database = createDatabase({
       stageOutcomes: [
         {
           id: outcomeId,
+          memberIds: [member.id],
           counts: { members: 2, submissions: 0, acceptances: 0, revisionRequests: 0, dependents: 0, features: 0 },
         },
       ],
@@ -1042,9 +1168,16 @@ describe('ProjectWorkflowService', () => {
 
     await expect(
       service.deleteStage(lead, projectId, stageId),
-    ).rejects.toThrow('permanent Membership records');
-    expect(database.stage.delete).not.toHaveBeenCalled();
-    expect(database.outcome.delete).not.toHaveBeenCalled();
+    ).resolves.toBeUndefined();
+    expect(database.stage.delete).toHaveBeenCalledWith({
+      where: { id: stageId },
+    });
+    expect(database.projectMember.deleteMany).toHaveBeenCalledWith({
+      where: {
+        projectId,
+        memberId: { in: [member.id] },
+      },
+    });
   });
 
   it('compacts Stage sibling positions after deletion', async () => {

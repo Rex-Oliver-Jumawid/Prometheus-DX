@@ -966,6 +966,53 @@
   gap: 18px;
 }
 
+.pw-project-heading-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.pw-project-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+.pw-project-action-button {
+  border: 1px solid rgba(211, 199, 190, 0.95);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #5f554f;
+  font-family: var(--workspace-font-body);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.pw-project-action-button:hover {
+  background: #ffffff;
+  border-color: #c8b8ae;
+  color: #2f2925;
+  transform: translateY(-1px);
+}
+
+.pw-project-action-button.danger {
+  border-color: #f1c8c3;
+  color: #a83227;
+}
+
+.pw-project-action-button.danger:hover {
+  background: #fff6f5;
+  border-color: #e7aaa3;
+  color: #8f2118;
+}
+
 .pw-project-kicker {
   color: #f4511e;
   font-family: var(--workspace-font-label);
@@ -1570,9 +1617,18 @@
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #d6c7bc transparent;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.stage-cards.pw-drag-over-stage {
+  background: rgba(255, 253, 250, 0.38);
+  box-shadow: inset 0 0 0 1px rgba(203, 77, 34, 0.12);
 }
 
 .outcome-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   padding: 10px;
@@ -1591,6 +1647,88 @@
   transform: translateY(-1px);
   border-color: #cfbfb2;
   box-shadow: 0 6px 18px rgba(47, 35, 29, 0.07);
+}
+
+.outcome-card[draggable='true'] {
+  cursor: grab;
+}
+
+.outcome-card[draggable='true']:active {
+  cursor: grabbing;
+}
+
+.outcome-card[draggable='true']:focus-visible {
+  outline: 2px solid rgba(203, 77, 34, 0.42);
+  outline-offset: 2px;
+}
+
+.outcome-card.pw-dragging {
+  opacity: 0.5;
+  transform: scale(0.985);
+}
+
+.outcome-card.pw-dragging:hover {
+  transform: scale(0.985);
+}
+
+.outcome-card.pw-drop-before::before,
+.outcome-card.pw-drop-after::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  border-radius: 999px;
+  background: #cb4d22;
+  box-shadow: 0 0 0 2px rgba(203, 77, 34, 0.08);
+}
+
+.outcome-card.pw-drop-before::before {
+  top: -5px;
+}
+
+.outcome-card.pw-drop-after::after {
+  bottom: -5px;
+}
+
+.dependency-group[draggable='true'] {
+  position: relative;
+  cursor: grab;
+}
+
+.dependency-group[draggable='true']:active,
+.dep-mini.pw-dependency-draggable:active {
+  cursor: grabbing;
+}
+
+.dep-mini.pw-dependency-draggable {
+  cursor: grab;
+}
+
+.dependency-group.pw-dragging,
+.dep-mini.pw-dragging {
+  opacity: 0.52;
+}
+
+.dependency-group.pw-drop-before::before,
+.dependency-group.pw-drop-after::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  border-radius: 999px;
+  background: #cb4d22;
+  box-shadow: 0 0 0 2px rgba(203, 77, 34, 0.08);
+  z-index: 2;
+}
+
+.dependency-group.pw-drop-before::before {
+  top: -5px;
+}
+
+.dependency-group.pw-drop-after::after {
+  bottom: -5px;
 }
 
 .outcome-card.pw-review {
@@ -4018,6 +4156,35 @@
   cursor: not-allowed;
 }
 
+.pw-project-edit-dialog,
+.pw-project-delete-dialog {
+  width: min(520px, calc(100vw - 32px));
+}
+
+.pw-project-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pw-project-edit-form textarea {
+  min-height: 110px;
+}
+
+.pw-project-delete-message {
+  margin: 0 0 12px;
+  color: #443b36;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.pw-project-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 16px;
+}
+
 .pw-outcome-detail-delete-btn,
 .pw-delete-outcome-button {
   padding: 4px 10px;
@@ -4040,6 +4207,15 @@
 }
 
 @media (max-width: 720px) {
+  .pw-project-header-row {
+    flex-direction: column;
+  }
+
+  .pw-project-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
   .content-board-toolbar {
     align-items: stretch;
     flex-direction: column;

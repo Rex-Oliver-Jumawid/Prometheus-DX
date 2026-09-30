@@ -10,6 +10,7 @@ import { Prisma, type Member } from '@prisma/client';
 import type {
   CreateOutcomeRequest,
   CreateStageRequest,
+  MoveOutcomeRequest,
   Outcome,
   ProjectMember as ProjectMemberView,
   ProjectMembersResponse,
@@ -458,6 +459,146 @@ export class ProjectWorkflowService {
     return this.toOutcome(outcome, currentMember.id);
   }
 
+  async moveOutcome(
+    currentMember: Member,
+    projectId: string,
+    outcomeId: string,
+    input: MoveOutcomeRequest,
+  ): Promise<ProjectWorkflowResponse> {
+    await this.prisma.$transaction(async (transaction) => {
+      await this.requireProjectEditor(transaction, projectId, currentMember.id);
+
+      const outcome = await transaction.outcome.findUnique({
+        where: { id: outcomeId },
+        select: {
+          id: true,
+          stageId: true,
+          position: true,
+          title: true,
+          stage: { select: { projectId: true } },
+        },
+      });
+      if (!outcome || outcome.stage.projectId !== projectId) {
+        throw new NotFoundException('Outcome not found.');
+      }
+
+      await this.requireStage(transaction, projectId, input.stageId);
+
+      const affectedStageIds =
+        outcome.stageId === input.stageId
+          ? [outcome.stageId]
+          : [outcome.stageId, input.stageId];
+      const affectedOutcomes = await transaction.outcome.findMany({
+        where: { stageId: { in: affectedStageIds } },
+        select: { id: true, stageId: true, position: true },
+        orderBy: [{ stageId: 'asc' }, { position: 'asc' }, { id: 'asc' }],
+      });
+
+      const sourceOutcomes = affectedOutcomes
+        .filter((item) => item.stageId === outcome.stageId)
+        .sort((first, second) => first.position - second.position);
+      const sourceIndex = sourceOutcomes.findIndex(
+        (item) => item.id === outcomeId,
+      );
+      if (sourceIndex < 0) {
+        throw new NotFoundException('Outcome not found.');
+      }
+
+      const sourceWithoutOutcome = sourceOutcomes.filter(
+        (item) => item.id !== outcomeId,
+      );
+      const targetWithoutOutcome =
+        outcome.stageId === input.stageId
+          ? sourceWithoutOutcome
+          : affectedOutcomes
+              .filter((item) => item.stageId === input.stageId)
+              .sort((first, second) => first.position - second.position);
+      const targetPosition = Math.min(
+        input.position,
+        targetWithoutOutcome.length,
+      );
+
+      if (
+        outcome.stageId === input.stageId &&
+        sourceIndex === targetPosition
+      ) {
+        return;
+      }
+
+      const movedOutcome = {
+        id: outcomeId,
+        stageId: input.stageId,
+        position: targetPosition,
+      };
+      const targetOrder = [...targetWithoutOutcome];
+      targetOrder.splice(targetPosition, 0, movedOutcome);
+
+      const finalAssignments =
+        outcome.stageId === input.stageId
+          ? targetOrder.map((item, position) => ({
+              id: item.id,
+              stageId: input.stageId,
+              position,
+            }))
+          : [
+              ...sourceWithoutOutcome.map((item, position) => ({
+                id: item.id,
+                stageId: outcome.stageId,
+                position,
+              })),
+              ...targetOrder.map((item, position) => ({
+                id: item.id,
+                stageId: input.stageId,
+                position,
+              })),
+            ];
+
+      const maxPosition = Math.max(
+        -1,
+        ...affectedOutcomes.map((item) => item.position),
+      );
+      const temporaryBase = maxPosition + affectedOutcomes.length + 1;
+
+      // Move every affected row out of the live position range first so the
+      // unique (stageId, position) constraint cannot be hit mid-reorder.
+      for (const [index, item] of affectedOutcomes.entries()) {
+        await transaction.outcome.update({
+          where: { id: item.id },
+          data: { position: temporaryBase + index },
+        });
+      }
+      for (const assignment of finalAssignments) {
+        await transaction.outcome.update({
+          where: { id: assignment.id },
+          data: {
+            stageId: assignment.stageId,
+            position: assignment.position,
+          },
+        });
+      }
+
+      await transaction.activityLog.create({
+        data: {
+          projectId,
+          outcomeId,
+          actorMemberId: currentMember.id,
+          entityType: 'Outcome',
+          entityId: outcomeId,
+          action: 'OUTCOME_MOVED',
+          metadata: {
+            title: outcome.title,
+            fromStageId: outcome.stageId,
+            toStageId: input.stageId,
+            fromPosition: outcome.position,
+            toPosition: targetPosition,
+          },
+        },
+      });
+    });
+
+    return this.getWorkflow(currentMember, projectId);
+  }
+
   async joinOutcome(
     currentMember: Member,
     projectId: string,
@@ -544,7 +685,9 @@ export class ProjectWorkflowService {
     if (!membership || membership.outcome.stage.projectId !== projectId) {
       throw new NotFoundException('Outcome Membership not found.');
     }
-    throw new ForbiddenException('Outcome Membership is permanent.');
+    throw new ForbiddenException(
+      'Outcome Membership cannot be removed while the Outcome exists.',
+    );
   }
 
   async deleteOutcome(
@@ -562,9 +705,9 @@ export class ProjectWorkflowService {
           position: true,
           title: true,
           stage: { select: { projectId: true } },
+          members: { select: { memberId: true } },
           _count: {
             select: {
-              members: true,
               submissions: true,
               acceptances: true,
               revisionRequests: true,
@@ -584,6 +727,11 @@ export class ProjectWorkflowService {
       const { stageId, position } = outcome;
 
       await transaction.outcome.delete({ where: { id: outcomeId } });
+      await this.removeOrphanedProjectMembers(
+        transaction,
+        projectId,
+        outcome.members.map(({ memberId }) => memberId),
+      );
       await transaction.activityLog.create({
         data: {
           projectId,
@@ -639,9 +787,9 @@ export class ProjectWorkflowService {
             select: {
               id: true,
               title: true,
+              members: { select: { memberId: true } },
               _count: {
                 select: {
-                  members: true,
                   submissions: true,
                   acceptances: true,
                   revisionRequests: true,
@@ -666,7 +814,20 @@ export class ProjectWorkflowService {
 
       const { position } = stage;
 
+      const affectedMemberIds = Array.from(
+        new Set(
+          stage.outcomes.flatMap((outcome) =>
+            outcome.members.map(({ memberId }) => memberId),
+          ),
+        ),
+      );
+
       await transaction.stage.delete({ where: { id: stageId } });
+      await this.removeOrphanedProjectMembers(
+        transaction,
+        projectId,
+        affectedMemberIds,
+      );
       await transaction.activityLog.create({
         data: {
           projectId,
@@ -677,7 +838,7 @@ export class ProjectWorkflowService {
           metadata: { name: stage.name },
         },
       });
-      // Stage deletion cascades to safe, unassigned Outcomes. Record those
+      // Stage deletion cascades to safe child Outcomes. Record those
       // deletions too, preserving their IDs and titles in the Project audit.
       if (stage.outcomes.length > 0) {
         await transaction.activityLog.createMany({
@@ -713,6 +874,37 @@ export class ProjectWorkflowService {
           });
         }
       }
+    });
+  }
+
+  private async removeOrphanedProjectMembers(
+    transaction: Prisma.TransactionClient,
+    projectId: string,
+    memberIds: string[],
+  ): Promise<void> {
+    if (memberIds.length === 0) return;
+
+    const remainingMemberships = await transaction.outcomeMember.findMany({
+      where: {
+        memberId: { in: memberIds },
+        outcome: { stage: { projectId } },
+      },
+      select: { memberId: true },
+      distinct: ['memberId'],
+    });
+    const remainingMemberIds = new Set(
+      remainingMemberships.map(({ memberId }) => memberId),
+    );
+    const orphanedMemberIds = memberIds.filter(
+      (memberId) => !remainingMemberIds.has(memberId),
+    );
+    if (orphanedMemberIds.length === 0) return;
+
+    await transaction.projectMember.deleteMany({
+      where: {
+        projectId,
+        memberId: { in: orphanedMemberIds },
+      },
     });
   }
 
@@ -777,18 +969,12 @@ export class ProjectWorkflowService {
   }
 
   private assertOutcomeDeletable(counts: {
-    members: number;
     submissions: number;
     acceptances: number;
     revisionRequests: number;
     dependents: number;
     features: number;
   }): void {
-    if (counts.members > 0) {
-      throw new ConflictException(
-        'This Outcome has permanent Membership records and cannot be deleted.',
-      );
-    }
     if (counts.submissions > 0) {
       throw new ConflictException(
         'This Outcome has submission history and cannot be deleted.',
