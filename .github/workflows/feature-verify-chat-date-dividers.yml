@@ -1,0 +1,35 @@
+name: Feature Verify - Chat Date Dividers
+
+on:
+  push:
+    branches:
+      - feat/outcome-drag-reorder-delete
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      VITE_API_BASE_URL: /api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm project:doctor
+      - run: pnpm prisma:generate
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - name: Chat date grouping unit tests
+        run: pnpm exec vitest run src/lib/chat-date.test.ts
+      - name: Project Chat component tests
+        run: pnpm exec vitest run --config vitest.ui.config.ts src/features/projects/ProjectChatPanel.test.tsx
+      - run: pnpm build
