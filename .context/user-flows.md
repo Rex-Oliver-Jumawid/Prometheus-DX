@@ -810,6 +810,7 @@ Project Member
 An authorized user who is only browsing a Project may read Project Chat but may not send, reply, edit, or post announcements until another canonical Project relationship grants that capability.
 
 Project Chat supports replies, search, exact-message navigation, mentions, author editing, and author deletion.
+Project Chat groups ordered messages by the viewer's local calendar date and renders one date divider before the first visible message of each date group.
 
 Only the message author may edit or delete that message.
 
@@ -1012,6 +1013,8 @@ General Chat mentions may target any other active Prometheus Member.
 Department Chat mentions may target active Members whose home Department or current VisiWork focus matches that room.
 
 Message search is room-scoped.
+
+General Chat and Department Chat group ordered messages by the viewer's local calendar date and render one date divider before the first visible message of each date group.
 
 Exact-message navigation loads surrounding messages from that same room.
 
