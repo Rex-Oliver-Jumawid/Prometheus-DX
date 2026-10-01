@@ -45,7 +45,8 @@ export class ProjectChatService {
     @Inject(PushDeliveryService)
     private readonly pushDeliveries: PushDeliveryService = {
       flushAfterCommit: async () => undefined,
-    } as PushDeliveryService,
+      sendChatMessage: async () => undefined,
+    } as unknown as PushDeliveryService,
   ) {}
 
   private async projectFor(
@@ -57,10 +58,10 @@ export class ProjectChatService {
       where: { id: projectId },
       select: {
         id: true,
+        name: true,
         leadMemberId: true,
         archivedAt: true,
         members: {
-          where: { memberId: member.id },
           select: { memberId: true },
         },
       },
@@ -75,7 +76,8 @@ export class ProjectChatService {
   ) {
     return (
       project.archivedAt === null &&
-      (project.leadMemberId === member.id || project.members.length > 0)
+      (project.leadMemberId === member.id ||
+        project.members.some((entry) => entry.memberId === member.id))
     );
   }
 
@@ -102,17 +104,14 @@ export class ProjectChatService {
   ) {
     const requested = [...new Set(ids)].filter((id) => id !== member.id);
     if (!requested.length) return [];
-    const [people, memberships] = await Promise.all([
-      db.member.findMany({
-        where: { id: { in: requested }, status: 'ACTIVE' },
-        select: { id: true, fullName: true },
-      }),
-      db.projectMember.findMany({
-        where: { projectId, memberId: { in: requested } },
-        select: { memberId: true },
-      }),
+    const people = await db.member.findMany({
+      where: { id: { in: requested }, status: 'ACTIVE' },
+      select: { id: true, fullName: true },
+    });
+    const permitted = new Set([
+      project.leadMemberId,
+      ...project.members.map((row) => row.memberId),
     ]);
-    const permitted = new Set([project.leadMemberId, ...memberships.map((row) => row.memberId)]);
     const matches = people.filter((person) =>
       permitted.has(person.id) &&
       body.toLocaleLowerCase().includes('@' + person.fullName.toLocaleLowerCase()),
@@ -296,10 +295,46 @@ export class ProjectChatService {
           },
         });
       }
-      return this.toMessage(message, member.id);
+
+      const excludedMemberIds = new Set([
+        member.id,
+        ...mentions.map((person) => person.id),
+      ]);
+      const candidateMemberIds = [
+        project.leadMemberId,
+        ...project.members.map((entry) => entry.memberId),
+      ].filter((id) => !excludedMemberIds.has(id));
+      const recipients = candidateMemberIds.length
+        ? await db.member.findMany({
+            where: {
+              id: { in: [...new Set(candidateMemberIds)] },
+              status: 'ACTIVE',
+            },
+            select: { id: true },
+          })
+        : [];
+
+      return {
+        message: this.toMessage(message, member.id),
+        projectName: project.name,
+        recipientMemberIds: recipients.map((recipient) => recipient.id),
+      };
     });
-    await this.pushDeliveries.flushAfterCommit();
-    return result;
+
+    await Promise.all([
+      this.pushDeliveries.flushAfterCommit(),
+      ...(result.recipientMemberIds.length
+        ? [
+            this.pushDeliveries.sendChatMessage({
+              recipientMemberIds: result.recipientMemberIds,
+              body: `${member.fullName} sent a message in ${result.projectName} Project Chat: “${input.body.slice(0, 180)}”`,
+              url: `/projects/${projectId}?tab=chat&message=${result.message.id}`,
+              tag: `project-message:${result.message.id}`,
+            }),
+          ]
+        : []),
+    ]);
+    return result.message;
   }
 
   async edit(
