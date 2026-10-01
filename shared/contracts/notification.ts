@@ -132,6 +132,17 @@ export const ChatPushPreferenceResponseSchema = z.object({
   muted: z.boolean(),
 });
 
+export const ChatPushMutedChatSchema = z.object({
+  channelKey: ChatPushChannelKeySchema,
+  kind: z.enum(['visiwork', 'department', 'project']),
+  label: z.string().min(1),
+  path: z.string().min(1),
+});
+
+export const ChatPushMutedChatsResponseSchema = z.object({
+  items: z.array(ChatPushMutedChatSchema),
+});
+
 export type NotificationType = z.infer<typeof NotificationTypeSchema>;
 export type NotificationListQuery = z.infer<
   typeof NotificationListQuerySchema
@@ -169,4 +180,10 @@ export type ChatPushPreferenceRequest = z.infer<
 >;
 export type ChatPushPreferenceResponse = z.infer<
   typeof ChatPushPreferenceResponseSchema
+>;
+export type ChatPushMutedChat = z.infer<
+  typeof ChatPushMutedChatSchema
+>;
+export type ChatPushMutedChatsResponse = z.infer<
+  typeof ChatPushMutedChatsResponseSchema
 >;

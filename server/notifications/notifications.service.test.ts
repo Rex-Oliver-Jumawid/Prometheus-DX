@@ -97,6 +97,61 @@ describe('NotificationsService', () => {
     );
   });
 
+  it('lists muted chats with readable Project and Department labels', async () => {
+    const projectId = '44444444-4444-4444-8444-444444444444';
+    const departmentId = '55555555-5555-4555-8555-555555555555';
+    const chatPushMute = {
+      findMany: vi.fn().mockResolvedValue([
+        {
+          channelKey: `project:${projectId}`,
+          createdAt: new Date('2026-10-01T03:00:00.000Z'),
+        },
+        {
+          channelKey: `visiwork:department:${departmentId}`,
+          createdAt: new Date('2026-10-01T02:00:00.000Z'),
+        },
+        {
+          channelKey: 'visiwork:general',
+          createdAt: new Date('2026-10-01T01:00:00.000Z'),
+        },
+      ]),
+    };
+    const project = {
+      findMany: vi.fn().mockResolvedValue([{ id: projectId, name: 'Interlude' }]),
+    };
+    const department = {
+      findMany: vi.fn().mockResolvedValue([{ id: departmentId, shortLabel: 'R&D' }]),
+    };
+    const service = new NotificationsService({
+      chatPushMute,
+      project,
+      department,
+    } as unknown as PrismaService);
+
+    await expect(service.listMutedChats(recipientId)).resolves.toEqual({
+      items: [
+        {
+          channelKey: `project:${projectId}`,
+          kind: 'project',
+          label: 'Interlude',
+          path: `/projects/${projectId}?tab=chat`,
+        },
+        {
+          channelKey: `visiwork:department:${departmentId}`,
+          kind: 'department',
+          label: 'R&D',
+          path: `/visiwork?department=${departmentId}`,
+        },
+        {
+          channelKey: 'visiwork:general',
+          kind: 'visiwork',
+          label: 'General Chat',
+          path: '/visiwork',
+        },
+      ],
+    });
+  });
+
   it('stores and clears per-chat device mute preferences for the current member', async () => {
     const chatPushMute = {
       findUnique: vi.fn().mockResolvedValue(null),

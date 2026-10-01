@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/auth-context';
+import { MutedChatsManager } from './MutedChatsManager';
 import {
   disableCurrentDevicePush,
   enableDevicePush,
@@ -80,7 +81,7 @@ export function DevicePushControl() {
 
   return (
     <section className="device-push-card" aria-labelledby="device-push-title">
-      <div>
+      <div className="device-push-copy">
         <span className="device-push-eyebrow">DEVICE NOTIFICATIONS</span>
         <strong id="device-push-title">
           {state?.subscribed ? 'Notifications enabled' : 'Stay notified outside Prometheus'}
@@ -91,17 +92,20 @@ export function DevicePushControl() {
         </small>
         {error && <span className="device-push-error" role="alert">{error}</span>}
       </div>
-      <button
-        type="button"
-        onClick={() => void toggle()}
-        disabled={busy || !state || Boolean(unavailable) || blocked}
-      >
-        {busy
-          ? 'Updating...'
-          : state?.subscribed
-            ? 'Disable on this device'
-            : 'Enable notifications'}
-      </button>
+      <div className="device-push-actions">
+        <MutedChatsManager accessToken={accessToken} />
+        <button
+          type="button"
+          onClick={() => void toggle()}
+          disabled={busy || !state || Boolean(unavailable) || blocked}
+        >
+          {busy
+            ? 'Updating...'
+            : state?.subscribed
+              ? 'Disable on this device'
+              : 'Enable notifications'}
+        </button>
+      </div>
     </section>
   );
 }

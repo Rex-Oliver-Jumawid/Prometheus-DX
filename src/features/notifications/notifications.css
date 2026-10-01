@@ -553,10 +553,23 @@ button.notification-row:disabled {
   backdrop-filter: blur(18px);
 }
 
-.device-push-card > div {
+.device-push-card > .device-push-copy {
   display: grid;
   gap: 4px;
   min-width: 0;
+}
+
+.device-push-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.device-push-card .device-push-manage-muted {
+  background: rgba(255, 255, 255, 0.56);
+  color: #76675f;
 }
 
 .device-push-eyebrow {
@@ -615,6 +628,11 @@ button.notification-row:disabled {
   .device-push-card {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .device-push-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
   .device-push-card button {

@@ -53,6 +53,11 @@ export class NotificationsController {
     return this.notifications.pushConfig();
   }
 
+  @Get('push/muted-chats')
+  mutedChats(@CurrentMember() member: Member) {
+    return this.notifications.listMutedChats(member.id);
+  }
+
   @Get('push/chat-preference')
   chatPushPreference(
     @CurrentMember() member: Member,
