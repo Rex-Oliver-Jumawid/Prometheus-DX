@@ -169,6 +169,17 @@ function createDatabase(
           options.departmentsFound === false ? [] : [{ id: departmentId }],
         ),
     },
+    member: {
+      findMany: vi.fn().mockImplementation(
+        ({ where }: { where: { id: { in: string[] } } }) =>
+          Promise.resolve(
+            where.id.in.map((id) => ({
+              id,
+              status: MemberStatus.ACTIVE,
+            })),
+          ),
+      ),
+    },
     outcome: {
       findMany: vi
         .fn()
@@ -515,6 +526,30 @@ describe('ProjectWorkflowService', () => {
     });
   });
 
+  it('notifies a Member assigned while creating an Outcome', async () => {
+    const database = createDatabase();
+    const service = new ProjectWorkflowService(database);
+
+    await service.createOutcome(lead, projectId, stageId, {
+      ...outcomeInput,
+      memberIds: [member.id],
+    });
+
+    expect(database.notification.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          recipientMemberId: member.id,
+          actorMemberId: lead.id,
+          type: 'OUTCOME_ASSIGNED',
+          eventKey: `OUTCOME_ASSIGNED:${outcomeId}`,
+          projectId,
+          outcomeId,
+        }),
+      ],
+      skipDuplicates: true,
+    });
+  });
+
   it('updates Outcome metadata through replacement of canonical child sets', async () => {
     const database = createDatabase();
     const service = new ProjectWorkflowService(database);
@@ -570,6 +605,30 @@ describe('ProjectWorkflowService', () => {
         action: 'OUTCOME_UPDATED',
         metadata: { title: 'Updated outcome' },
       },
+    });
+  });
+
+  it('notifies a newly assigned Member while editing an Outcome', async () => {
+    const database = createDatabase();
+    const service = new ProjectWorkflowService(database);
+
+    await service.updateOutcome(lead, projectId, outcomeId, {
+      ...outcomeInput,
+      memberIds: [member.id],
+    });
+
+    expect(database.notification.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          recipientMemberId: member.id,
+          actorMemberId: lead.id,
+          type: 'OUTCOME_ASSIGNED',
+          eventKey: `OUTCOME_ASSIGNED:${outcomeId}`,
+          projectId,
+          outcomeId,
+        }),
+      ],
+      skipDuplicates: true,
     });
   });
 

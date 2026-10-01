@@ -17,6 +17,7 @@ import type {
 } from '../../shared/contracts/project-chat';
 import { PrismaService } from '../database/prisma.service';
 import { writeNotifications } from '../notifications/notification-writer';
+import { PushDeliveryService } from '../notifications/push-delivery.service';
 
 const PAGE_SIZE = 30;
 const personSelect = { id: true, fullName: true, email: true, profileImagePath: true } as const;
@@ -39,7 +40,13 @@ type MessageRecord = Prisma.ProjectMessageGetPayload<{
 
 @Injectable()
 export class ProjectChatService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(PushDeliveryService)
+    private readonly pushDeliveries: PushDeliveryService = {
+      flushAfterCommit: async () => undefined,
+    } as PushDeliveryService,
+  ) {}
 
   private async projectFor(
     member: Member,
@@ -243,7 +250,7 @@ export class ProjectChatService {
     projectId: string,
     input: CreateProjectMessage,
   ): Promise<ProjectMessage> {
-    return this.prisma.$transaction(async (db) => {
+    const result = await this.prisma.$transaction(async (db) => {
       // Project workflow access changes take this same lock.
       // Check authorization and persist the message while holding it.
       await db.$queryRaw`SELECT id FROM projects WHERE id = ${projectId}::uuid FOR UPDATE`;
@@ -291,6 +298,8 @@ export class ProjectChatService {
       }
       return this.toMessage(message, member.id);
     });
+    await this.pushDeliveries.flushAfterCommit();
+    return result;
   }
 
   async edit(
@@ -299,7 +308,7 @@ export class ProjectChatService {
     messageId: string,
     input: EditProjectMessage,
   ): Promise<ProjectMessage> {
-    return this.prisma.$transaction(async (db) => {
+    const result = await this.prisma.$transaction(async (db) => {
       await db.$queryRaw`SELECT id FROM projects WHERE id = ${projectId}::uuid FOR UPDATE`;
       const project = await this.projectFor(member, projectId, db);
       this.requireWrite(member, project);
@@ -396,6 +405,8 @@ export class ProjectChatService {
 
       return this.toMessage(updated, member.id);
     });
+    await this.pushDeliveries.flushAfterCommit();
+    return result;
   }
 
   /** A tombstone preserves replies without disclosing the removed message. */

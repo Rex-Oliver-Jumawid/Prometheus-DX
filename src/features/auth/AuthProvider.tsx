@@ -5,6 +5,10 @@ import { CurrentMemberSchema } from '../../../shared/contracts/member';
 import { apiFetch } from '../../lib/api';
 import { getSupabaseClient } from '../../lib/supabase';
 import { AuthContext, type AuthContextValue } from './auth-context';
+import {
+  disableCurrentDevicePush,
+  syncExistingDevicePush,
+} from '../notifications/device-push';
 import { storedSessionIsInvalid } from './auth-routing';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -88,6 +92,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [client, queryClient]);
 
+  useEffect(() => {
+    const accessToken = session?.access_token;
+    if (!accessToken) return;
+
+    // Permission can only be requested from an explicit user gesture, but once
+    // the user has enabled notifications we can keep this browser's existing
+    // PushSubscription attached to the authenticated Member automatically.
+    void syncExistingDevicePush(accessToken).catch(() => {
+      // Push synchronization must never block authentication or workspace use.
+    });
+  }, [session?.access_token]);
+
   const memberQuery = useQuery({
     queryKey: ['current-member', session?.user.id],
     enabled: Boolean(session),
@@ -109,6 +125,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     memberError: memberQuery.error,
     retryAuthorization: () => void memberQuery.refetch(),
     signOut: async () => {
+      const accessToken = session?.access_token;
+      if (accessToken) {
+        try {
+          await disableCurrentDevicePush(accessToken);
+        } catch {
+          // The browser subscription is still removed locally when possible.
+        }
+      }
       queryClient.clear();
       setSession(null);
       if (client) await client.auth.signOut({ scope: 'local' });

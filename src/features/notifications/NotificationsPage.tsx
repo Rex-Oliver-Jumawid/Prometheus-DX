@@ -16,6 +16,7 @@ import {
   notificationPath,
   presentNotification,
 } from './notification-presentation';
+import { DevicePushControl } from './DevicePushControl';
 import './notifications.css';
 
 function NotificationRow({
@@ -221,6 +222,8 @@ export function NotificationsPage() {
           {markAllRead.isPending ? 'Marking as read...' : 'Mark all as read'}
         </button>
       </header>
+
+      <DevicePushControl />
 
       <div className="notifications-filters">
         <div role="tablist" aria-label="Filter notifications">

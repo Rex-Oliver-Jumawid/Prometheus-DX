@@ -21,6 +21,7 @@ import type {
 } from '../../shared/contracts/project';
 import { PrismaService } from '../database/prisma.service';
 import { writeNotifications } from '../notifications/notification-writer';
+import { PushDeliveryService } from '../notifications/push-delivery.service';
 
 const projectInclude = {
   createdByMember: { select: { id: true, fullName: true, email: true, profileImagePath: true } },
@@ -104,7 +105,13 @@ type ProjectStatusRow = {
 
 @Injectable()
 export class ProjectsService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(PushDeliveryService)
+    private readonly pushDeliveries: PushDeliveryService = {
+      flushAfterCommit: async () => undefined,
+    } as PushDeliveryService,
+  ) {}
 
   async listProjects(currentMember: Member): Promise<Project[]> {
     const projects = await this.prisma.project.findMany({
@@ -216,6 +223,7 @@ export class ProjectsService {
       });
     });
 
+    await this.pushDeliveries.flushAfterCommit();
     return this.toProject(project, currentMember.id);
   }
 

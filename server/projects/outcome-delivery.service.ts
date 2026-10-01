@@ -16,6 +16,7 @@ import type {
 import { CriteriaSnapshotSchema } from '../../shared/contracts/outcome-delivery';
 import { PrismaService } from '../database/prisma.service';
 import { writeNotifications } from '../notifications/notification-writer';
+import { PushDeliveryService } from '../notifications/push-delivery.service';
 
 const contextInclude = {
   stage: {
@@ -34,7 +35,13 @@ const personSelect = { id: true, fullName: true, email: true } as const;
 
 @Injectable()
 export class OutcomeDeliveryService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(PushDeliveryService)
+    private readonly pushDeliveries: PushDeliveryService = {
+      flushAfterCommit: async () => undefined,
+    } as PushDeliveryService,
+  ) {}
 
   private async context(
     db: Prisma.TransactionClient,
@@ -232,6 +239,7 @@ export class OutcomeDeliveryService {
       const outcome = await this.context(db, projectId, outcomeId);
       await action(db, outcome);
     });
+    await this.pushDeliveries.flushAfterCommit();
     return this.getDelivery(member, projectId, outcomeId);
   }
 

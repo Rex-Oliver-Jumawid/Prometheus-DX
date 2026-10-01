@@ -1,6 +1,8 @@
 import {
   BadRequestException,
+  Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -10,10 +12,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Member } from '@prisma/client';
-import { NotificationListQuerySchema } from '../../shared/contracts/notification';
+import {
+  DevicePushSubscriptionSchema,
+  NotificationListQuerySchema,
+} from '../../shared/contracts/notification';
 import { CurrentMember } from '../auth/current-member.decorator';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { NotificationsService } from './notifications.service';
+import { PushDeliveryService } from './push-delivery.service';
 
 @Controller('notifications')
 @UseGuards(SupabaseAuthGuard)
@@ -21,6 +27,8 @@ export class NotificationsController {
   constructor(
     @Inject(NotificationsService)
     private readonly notifications: NotificationsService,
+    @Inject(PushDeliveryService)
+    private readonly pushDeliveries: PushDeliveryService,
   ) {}
 
   @Get()
@@ -38,16 +46,47 @@ export class NotificationsController {
     return this.notifications.unreadCount(member.id);
   }
 
+  @Get('push/config')
+  pushConfig() {
+    return this.notifications.pushConfig();
+  }
+
+  @Put('push/subscription')
+  subscribeDevice(@CurrentMember() member: Member, @Body() body: unknown) {
+    const parsed = DevicePushSubscriptionSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        parsed.error.issues[0]?.message ?? 'Invalid push subscription.',
+      );
+    }
+    return this.notifications.subscribeDevice(member.id, parsed.data);
+  }
+
+  @Delete('push/subscription')
+  unsubscribeDevice(@CurrentMember() member: Member, @Body() body: unknown) {
+    const parsed = DevicePushSubscriptionSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        parsed.error.issues[0]?.message ?? 'Invalid push subscription.',
+      );
+    }
+    return this.notifications.unsubscribeDevice(member.id, parsed.data);
+  }
+
   @Put('read-all')
-  markAllRead(@CurrentMember() member: Member) {
-    return this.notifications.markAllRead(member.id);
+  async markAllRead(@CurrentMember() member: Member) {
+    const response = await this.notifications.markAllRead(member.id);
+    await this.pushDeliveries.flushAfterCommit();
+    return response;
   }
 
   @Put(':id/read')
-  markRead(
+  async markRead(
     @CurrentMember() member: Member,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ) {
-    return this.notifications.markRead(member.id, id);
+    const response = await this.notifications.markRead(member.id, id);
+    await this.pushDeliveries.flushAfterCommit();
+    return response;
   }
 }

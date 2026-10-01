@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
 import { ProjectWorkflowController } from './project-workflow.controller';
@@ -15,6 +16,7 @@ import { ProjectAnnouncementController } from './project-announcement.controller
 import { ProjectAnnouncementService } from './project-announcement.service';
 
 @Module({
+  imports: [NotificationsModule],
   controllers: [
     ProjectsController,
     ProjectWorkflowController,

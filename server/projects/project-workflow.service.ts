@@ -22,6 +22,7 @@ import type {
 } from '../../shared/contracts/project-workflow';
 import { PrismaService } from '../database/prisma.service';
 import { writeNotifications } from '../notifications/notification-writer';
+import { PushDeliveryService } from '../notifications/push-delivery.service';
 
 const outcomeInclude = {
   _count: {
@@ -70,7 +71,13 @@ type StageRecord = Prisma.StageGetPayload<{ include: typeof stageInclude }>;
 
 @Injectable()
 export class ProjectWorkflowService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(PushDeliveryService)
+    private readonly pushDeliveries: PushDeliveryService = {
+      flushAfterCommit: async () => undefined,
+    } as PushDeliveryService,
+  ) {}
 
   async getWorkflow(
     currentMember: Member,
@@ -204,6 +211,7 @@ export class ProjectWorkflowService {
         data: { accessLevel: input.accessLevel },
       });
     });
+    await this.pushDeliveries.flushAfterCommit();
     const response = await this.getProjectMembers(currentMember, projectId);
     const updated = response.members.find(
       ({ member }) => member.id === memberId,
@@ -344,8 +352,17 @@ export class ProjectWorkflowService {
           metadata: { title: created.title },
         },
       });
+      await writeNotifications(transaction, {
+        type: 'OUTCOME_ASSIGNED',
+        sourceEventId: created.id,
+        actorMemberId: currentMember.id,
+        recipientMemberIds: input.memberIds || [],
+        projectId,
+        outcomeId: created.id,
+      });
       return created;
     });
+    await this.pushDeliveries.flushAfterCommit();
     return this.toOutcome(outcome, currentMember.id);
   }
 
@@ -397,7 +414,18 @@ export class ProjectWorkflowService {
       await transaction.outcomeDepartment.deleteMany({
         where: { outcomeId },
       });
-      if (input.memberIds) {
+      let newlyAssignedMemberIds: string[] = [];
+      if (input.memberIds?.length) {
+        const existingMemberships = await transaction.outcomeMember.findMany({
+          where: { outcomeId, memberId: { in: input.memberIds } },
+          select: { memberId: true },
+        });
+        const existingMemberIds = new Set(
+          existingMemberships.map(({ memberId }) => memberId),
+        );
+        newlyAssignedMemberIds = input.memberIds.filter(
+          (memberId) => !existingMemberIds.has(memberId),
+        );
         for (const memberId of input.memberIds) {
           await transaction.outcomeMember.upsert({
             where: { outcomeId_memberId: { outcomeId, memberId } },
@@ -454,8 +482,17 @@ export class ProjectWorkflowService {
           metadata: { title: updated.title },
         },
       });
+      await writeNotifications(transaction, {
+        type: 'OUTCOME_ASSIGNED',
+        sourceEventId: outcomeId,
+        actorMemberId: currentMember.id,
+        recipientMemberIds: newlyAssignedMemberIds,
+        projectId,
+        outcomeId,
+      });
       return updated;
     });
+    await this.pushDeliveries.flushAfterCommit();
     return this.toOutcome(outcome, currentMember.id);
   }
 
@@ -664,6 +701,7 @@ export class ProjectWorkflowService {
         });
       }
     });
+    await this.pushDeliveries.flushAfterCommit();
     const outcome = await this.prisma.outcome.findUniqueOrThrow({
       where: { id: outcomeId },
       include: outcomeInclude,

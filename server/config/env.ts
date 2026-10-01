@@ -18,6 +18,22 @@ const ServerEnvironmentSchema = z.object({
   BREVO_SENDER_NAME: z.string().min(1).optional(),
   INVITATION_DELIVERY_MODE: z.enum(['brevo', 'disabled']).default('brevo'),
   WORK_SESSION_MAX_HOURS: z.coerce.number().positive().max(168).default(16),
+  WEB_PUSH_VAPID_SUBJECT: z.string().min(1).optional(),
+  WEB_PUSH_VAPID_PUBLIC_KEY: z.string().min(1).optional(),
+  WEB_PUSH_VAPID_PRIVATE_KEY: z.string().min(1).optional(),
+}).superRefine((value, context) => {
+  const configured = [
+    value.WEB_PUSH_VAPID_SUBJECT,
+    value.WEB_PUSH_VAPID_PUBLIC_KEY,
+    value.WEB_PUSH_VAPID_PRIVATE_KEY,
+  ].filter(Boolean).length;
+  if (configured !== 0 && configured !== 3) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        'WEB_PUSH_VAPID_SUBJECT, WEB_PUSH_VAPID_PUBLIC_KEY, and WEB_PUSH_VAPID_PRIVATE_KEY must be configured together.',
+    });
+  }
 });
 
 const parsed = ServerEnvironmentSchema.parse(process.env);
@@ -37,4 +53,14 @@ export const serverEnvironment = {
   brevoSenderName: parsed.BREVO_SENDER_NAME,
   invitationDeliveryMode: parsed.INVITATION_DELIVERY_MODE,
   workSessionMaxHours: parsed.WORK_SESSION_MAX_HOURS,
+  webPush:
+    parsed.WEB_PUSH_VAPID_SUBJECT &&
+    parsed.WEB_PUSH_VAPID_PUBLIC_KEY &&
+    parsed.WEB_PUSH_VAPID_PRIVATE_KEY
+      ? {
+          subject: parsed.WEB_PUSH_VAPID_SUBJECT,
+          publicKey: parsed.WEB_PUSH_VAPID_PUBLIC_KEY,
+          privateKey: parsed.WEB_PUSH_VAPID_PRIVATE_KEY,
+        }
+      : null,
 };

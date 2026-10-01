@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import {
@@ -16,10 +17,14 @@ import type {
   NotificationReadAllResponse,
   NotificationReadResponse,
   NotificationUnreadCountResponse,
+  DevicePushConfigResponse,
+  DevicePushSubscription,
+  DevicePushSubscriptionResponse,
 } from '../../shared/contracts/notification';
+import { serverEnvironment } from '../config/env';
 import { PrismaService } from '../database/prisma.service';
 
-const notificationSelect = {
+export const notificationSelect = {
   id: true,
   type: true,
   data: true,
@@ -67,7 +72,7 @@ function projectChatMentionData(
   };
 }
 
-function toNotification(record: NotificationRecord): Notification {
+export function toNotification(record: NotificationRecord): Notification {
   return {
     id: record.id,
     type: record.type,
@@ -92,6 +97,56 @@ function toNotification(record: NotificationRecord): Notification {
 @Injectable()
 export class NotificationsService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+
+  pushConfig(): DevicePushConfigResponse {
+    return {
+      enabled: Boolean(serverEnvironment.webPush),
+      applicationServerKey: serverEnvironment.webPush?.publicKey ?? null,
+    };
+  }
+
+  async subscribeDevice(
+    memberId: string,
+    input: DevicePushSubscription,
+  ): Promise<DevicePushSubscriptionResponse> {
+    if (!serverEnvironment.webPush) {
+      throw new ServiceUnavailableException(
+        'Device notifications are not configured for this environment.',
+      );
+    }
+    await this.prisma.$transaction(async (db) => {
+      await db.pushSubscription.deleteMany({
+        where: {
+          endpoint: input.endpoint,
+          memberId: { not: memberId },
+        },
+      });
+      await db.pushSubscription.upsert({
+        where: { endpoint: input.endpoint },
+        create: {
+          memberId,
+          endpoint: input.endpoint,
+          p256dh: input.keys.p256dh,
+          auth: input.keys.auth,
+        },
+        update: {
+          p256dh: input.keys.p256dh,
+          auth: input.keys.auth,
+        },
+      });
+    });
+    return { subscribed: true };
+  }
+
+  async unsubscribeDevice(
+    memberId: string,
+    input: DevicePushSubscription,
+  ): Promise<DevicePushSubscriptionResponse> {
+    await this.prisma.pushSubscription.deleteMany({
+      where: { memberId, endpoint: input.endpoint },
+    });
+    return { subscribed: false };
+  }
 
   async list(
     recipientMemberId: string,

@@ -4,6 +4,7 @@ import { ProjectAccessLevelSchema } from './project';
 export const NotificationTypeSchema = z.enum([
   'PROJECT_LEAD_ASSIGNED',
   'PROJECT_MEMBER_ACCESS_CHANGED',
+  'OUTCOME_ASSIGNED',
   'OUTCOME_JOINED',
   'SUBMISSION_CREATED',
   'REVISION_REQUESTED',
@@ -80,6 +81,27 @@ export const NotificationReadAllResponseSchema = z.object({
   readAt: z.string().datetime(),
 });
 
+export const DevicePushConfigResponseSchema = z.object({
+  enabled: z.boolean(),
+  applicationServerKey: z.string().min(1).nullable(),
+});
+
+export const DevicePushSubscriptionSchema = z
+  .object({
+    endpoint: z.string().url().max(4096),
+    keys: z
+      .object({
+        p256dh: z.string().min(1).max(1024),
+        auth: z.string().min(1).max(1024),
+      })
+      .strict(),
+  })
+  .strict();
+
+export const DevicePushSubscriptionResponseSchema = z.object({
+  subscribed: z.boolean(),
+});
+
 export type NotificationType = z.infer<typeof NotificationTypeSchema>;
 export type NotificationListQuery = z.infer<
   typeof NotificationListQuerySchema
@@ -96,4 +118,13 @@ export type NotificationReadResponse = z.infer<
 >;
 export type NotificationReadAllResponse = z.infer<
   typeof NotificationReadAllResponseSchema
+>;
+export type DevicePushConfigResponse = z.infer<
+  typeof DevicePushConfigResponseSchema
+>;
+export type DevicePushSubscription = z.infer<
+  typeof DevicePushSubscriptionSchema
+>;
+export type DevicePushSubscriptionResponse = z.infer<
+  typeof DevicePushSubscriptionResponseSchema
 >;
