@@ -181,7 +181,8 @@ describe('VisiWorkService', () => {
     expect(createMany).not.toHaveBeenCalled();
     expect(pushDeliveries.sendChatMessage).toHaveBeenCalledWith({
       recipientMemberIds: [otherMemberId],
-      body: 'Member One sent a message in General Chat: “Hello team”',
+      channelKey: 'visiwork:general',
+      body: 'Visiwork\nMember One: “Hello team”',
       url: '/visiwork?message=44444444-4444-4444-8444-444444444444',
       tag: 'visiwork-message:44444444-4444-4444-8444-444444444444',
     });
