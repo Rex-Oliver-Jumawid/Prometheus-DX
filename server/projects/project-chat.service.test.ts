@@ -169,7 +169,7 @@ describe('ProjectChatService', () => {
   });
 
   it('sends a notification for an authorized Project Lead mention', async () => {
-    const { service, db } = setup();
+    const { service, db, pushDeliveries } = setup();
     await service.send(member, projectId, {
       body: 'Please review @Project Lead',
       parentMessageId: null,
