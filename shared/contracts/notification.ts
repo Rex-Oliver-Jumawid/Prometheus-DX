@@ -102,6 +102,36 @@ export const DevicePushSubscriptionResponseSchema = z.object({
   subscribed: z.boolean(),
 });
 
+export const ChatPushChannelKeySchema = z.union([
+  z.literal('visiwork:general'),
+  z.string().regex(
+    /^visiwork:department:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    'Invalid VisiWork department notification channel.',
+  ),
+  z.string().regex(
+    /^project:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    'Invalid Project notification channel.',
+  ),
+]);
+
+export const ChatPushPreferenceQuerySchema = z
+  .object({
+    channelKey: ChatPushChannelKeySchema,
+  })
+  .strict();
+
+export const ChatPushPreferenceRequestSchema = z
+  .object({
+    channelKey: ChatPushChannelKeySchema,
+    muted: z.boolean(),
+  })
+  .strict();
+
+export const ChatPushPreferenceResponseSchema = z.object({
+  channelKey: ChatPushChannelKeySchema,
+  muted: z.boolean(),
+});
+
 export type NotificationType = z.infer<typeof NotificationTypeSchema>;
 export type NotificationListQuery = z.infer<
   typeof NotificationListQuerySchema
@@ -127,4 +157,16 @@ export type DevicePushSubscription = z.infer<
 >;
 export type DevicePushSubscriptionResponse = z.infer<
   typeof DevicePushSubscriptionResponseSchema
+>;
+export type ChatPushChannelKey = z.infer<
+  typeof ChatPushChannelKeySchema
+>;
+export type ChatPushPreferenceQuery = z.infer<
+  typeof ChatPushPreferenceQuerySchema
+>;
+export type ChatPushPreferenceRequest = z.infer<
+  typeof ChatPushPreferenceRequestSchema
+>;
+export type ChatPushPreferenceResponse = z.infer<
+  typeof ChatPushPreferenceResponseSchema
 >;
