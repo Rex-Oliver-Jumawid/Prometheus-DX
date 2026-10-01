@@ -46,7 +46,7 @@ export class ProjectChatService {
     private readonly pushDeliveries: PushDeliveryService = {
       flushAfterCommit: async () => undefined,
       sendChatMessage: async () => undefined,
-    } as PushDeliveryService,
+    } as unknown as PushDeliveryService,
   ) {}
 
   private async projectFor(
