@@ -337,6 +337,56 @@ describe('SchedulePage', () => {
     expect(container.querySelector('.shift-stat-grid')).not.toHaveTextContent('—');
   });
 
+  it('splits an overnight session across both day progress bars', async () => {
+    const originalRequest = mocks.apiFetch.getMockImplementation();
+    mocks.apiFetch.mockImplementation((...args) => {
+      const [path] = args;
+      if (path === '/work-sessions/history') {
+        return Promise.resolve({
+          timezone: 'Asia/Manila',
+          weekStart: '2026-09-27T16:00:00.000Z',
+          weekEnd: '2026-10-04T16:00:00.000Z',
+          totalDurationSeconds: 2_760,
+          sessions: [{
+            id: '99999999-9999-4999-8999-999999999999',
+            memberId: '11111111-1111-4111-8111-111111111111',
+            timeIn: '2026-09-30T15:53:00.000Z',
+            timeOut: '2026-09-30T16:39:00.000Z',
+            status: 'COMPLETED',
+            durationSeconds: 2_760,
+            createdAt: '2026-09-30T15:53:00.000Z',
+            updatedAt: '2026-09-30T16:39:00.000Z',
+          }],
+        });
+      }
+      return originalRequest!(...args);
+    });
+
+    const { container } = renderPage('/schedule?view=shifts');
+    await screen.findByText('46m / 0h');
+
+    const rows = Array.from(container.querySelectorAll('.shift-day-row'));
+    const wednesday = rows.find((row) => row.textContent?.includes('Wednesday'));
+    const thursday = rows.find((row) => row.textContent?.includes('Thursday'));
+    const wednesdayActual = wednesday?.querySelector(
+      '.timeline-track[aria-label="Actual timeline"] i.actual',
+    );
+    const thursdayActual = thursday?.querySelector(
+      '.timeline-track[aria-label="Actual timeline"] i.actual',
+    );
+
+    expect(wednesdayActual).toHaveAttribute('data-start-minutes', '1433');
+    expect(wednesdayActual).toHaveAttribute('data-end-minutes', '1440');
+    expect(thursdayActual).toHaveAttribute('data-start-minutes', '0');
+    expect(thursdayActual).toHaveAttribute('data-end-minutes', '39');
+    expect(wednesday).toHaveTextContent('7m / 0h');
+    expect(thursday).toHaveTextContent('39m / 0h');
+
+    fireEvent.click(thursday as HTMLElement);
+    expect(await screen.findByText(/Sep 30, 11:53 PM/)).toBeInTheDocument();
+    expect(screen.queryByText('No recorded session.')).not.toBeInTheDocument();
+  });
+
   it('opens Shifts with the requested Team member selected', async () => {
     renderPage(
       '/schedule?view=shifts&member=22222222-2222-4222-8222-222222222222',

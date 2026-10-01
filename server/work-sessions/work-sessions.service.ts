@@ -152,19 +152,28 @@ export class WorkSessionsService {
     const sessions = await this.prisma.workSession.findMany({
       where: {
         memberId,
-        timeIn: { gte: start, lt: end },
+        timeIn: { lt: end },
+        OR: [{ timeOut: { gt: start } }, { timeOut: null }],
       },
       orderBy: [{ timeIn: 'desc' }, { id: 'desc' }],
     });
     const mapped = sessions.map((session) => this.toSession(session, now));
+    const totalDurationSeconds = sessions.reduce((total, session) => {
+      const effectiveEnd =
+        session.timeOut ?? (session.status === 'OPEN' ? now : session.timeIn);
+      const overlapStart = new Date(
+        Math.max(start.getTime(), session.timeIn.getTime()),
+      );
+      const overlapEnd = new Date(
+        Math.min(end.getTime(), effectiveEnd.getTime()),
+      );
+      return total + durationSeconds(overlapStart, overlapEnd);
+    }, 0);
     return {
       timezone: WORKSPACE_TIMEZONE,
       weekStart: start.toISOString(),
       weekEnd: end.toISOString(),
-      totalDurationSeconds: mapped.reduce(
-        (total, session) => total + session.durationSeconds,
-        0,
-      ),
+      totalDurationSeconds,
       sessions: mapped,
     };
   }

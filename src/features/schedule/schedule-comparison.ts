@@ -80,9 +80,9 @@ function maxOverlapSeconds(
  * and persisted WorkSessions. Corrected-but-unresolved sessions never
  * contribute invented Time Out values.
  *
- * The current API returns sessions whose Time In falls within the selected
- * week. A session that started in the previous week cannot be reconstructed
- * here until the history API supports interval-overlap retrieval.
+ * The history API returns every session that overlaps the selected week,
+ * including sessions that started before Monday. Each day is clipped to its
+ * Manila-local boundaries before totals and timeline segments are derived.
  */
 export function compareWeek(
   monday: string,

@@ -192,52 +192,83 @@ function weekMinutes(
   );
 }
 
-function weekdayFromInstant(instant: string): Weekday {
-  const raw = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Manila',
-    weekday: 'long',
-  }).format(new Date(instant));
-  return raw.toUpperCase() as Weekday;
+const SHIFT_DAY_MS = 24 * 60 * 60 * 1_000;
+
+function historyDayWindow(
+  history: WorkSessionHistoryResponse,
+  weekday: Weekday,
+): { startMs: number; endMs: number } {
+  const weekdayIndex = WEEKDAYS.indexOf(weekday);
+  const startMs = Date.parse(history.weekStart) + weekdayIndex * SHIFT_DAY_MS;
+  return { startMs, endMs: startMs + SHIFT_DAY_MS };
 }
 
-function clockMinutesFromInstant(instant: string): number {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Manila',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).formatToParts(new Date(instant));
-  const hour = Number(parts.find((part) => part.type === 'hour')?.value ?? 0) % 24;
-  const minute = Number(parts.find((part) => part.type === 'minute')?.value ?? 0);
-  return hour * 60 + minute;
+function sessionEffectiveEndMs(session: WorkSession): number {
+  const startMs = Date.parse(session.timeIn);
+  if (session.timeOut) return Date.parse(session.timeOut);
+  return startMs + session.durationSeconds * 1_000;
 }
 
-function sessionOverlapSeconds(
+function sessionDayOverlap(
   session: WorkSession,
-  schedule: TeamScheduleResponse['members'][number]['schedule'],
-): number {
-  if (!session.timeOut || !schedule) return 0;
-  const weekday = weekdayFromInstant(session.timeIn);
-  const start = clockMinutesFromInstant(session.timeIn);
-  const end = clockMinutesFromInstant(session.timeOut);
-  if (end < start) return 0;
-
-  return schedule.blocks
-    .filter((block) => block.weekday === weekday)
-    .reduce((total, block) => {
-      const blockStart = clockTimeToMinutes(block.startTime);
-      const blockEnd = clockTimeToMinutes(block.endTime);
-      return total + Math.max(0, Math.min(end, blockEnd) - Math.max(start, blockStart)) * 60;
-    }, 0);
+  history: WorkSessionHistoryResponse,
+  weekday: Weekday,
+): { dayStartMs: number; startMs: number; endMs: number } | null {
+  const { startMs: dayStartMs, endMs: dayEndMs } = historyDayWindow(
+    history,
+    weekday,
+  );
+  const startMs = Math.max(Date.parse(session.timeIn), dayStartMs);
+  const endMs = Math.min(sessionEffectiveEndMs(session), dayEndMs);
+  return endMs > startMs ? { dayStartMs, startMs, endMs } : null;
 }
 
 function dayActualSeconds(
   history: WorkSessionHistoryResponse | undefined,
   weekday: Weekday,
 ): number {
-  return (history?.sessions ?? [])
-    .filter((session) => weekdayFromInstant(session.timeIn) === weekday)
-    .reduce((total, session) => total + session.durationSeconds, 0);
+  if (!history) return 0;
+  return history.sessions.reduce((total, session) => {
+    const overlap = sessionDayOverlap(session, history, weekday);
+    return (
+      total +
+      (overlap ? Math.floor((overlap.endMs - overlap.startMs) / 1_000) : 0)
+    );
+  }, 0);
+}
+
+function scheduleOverlapSeconds(
+  history: WorkSessionHistoryResponse | undefined,
+  schedule: TeamScheduleResponse['members'][number]['schedule'],
+): number {
+  if (!history || !schedule) return 0;
+  const overlapMinutes = WEEKDAYS.reduce((weekTotal, weekday) => {
+    const planned = schedule.blocks
+      .filter((block) => block.weekday === weekday)
+      .map((block) => ({
+        startMinutes: clockTimeToMinutes(block.startTime),
+        endMinutes: clockTimeToMinutes(block.endTime),
+      }));
+    return (
+      weekTotal +
+      actualTimelineSegments(history, weekday).reduce(
+        (dayTotal, actual) =>
+          dayTotal +
+          planned.reduce(
+            (segmentTotal, block) =>
+              segmentTotal +
+              Math.max(
+                0,
+                Math.min(actual.endMinutes, block.endMinutes) -
+                  Math.max(actual.startMinutes, block.startMinutes),
+              ),
+            0,
+          ),
+        0,
+      )
+    );
+  }, 0);
+  return Math.round(overlapMinutes * 60);
 }
 
 type ShiftTimelineSegment = {
@@ -271,20 +302,17 @@ function actualTimelineSegments(
   history: WorkSessionHistoryResponse | undefined,
   weekday: Weekday,
 ): ShiftTimelineSegment[] {
-  return (history?.sessions ?? [])
-    .filter((session) => weekdayFromInstant(session.timeIn) === weekday)
-    .map((session) => {
-      const startMinutes = clockMinutesFromInstant(session.timeIn);
-      const clockEnd = session.timeOut
-        ? clockMinutesFromInstant(session.timeOut)
-        : startMinutes + Math.round(session.durationSeconds / 60);
-      const endMinutes = clockEnd < startMinutes ? SHIFT_TIMELINE_MINUTES : clockEnd;
-      return {
-        startMinutes,
-        endMinutes: Math.min(SHIFT_TIMELINE_MINUTES, endMinutes),
-      };
-    })
-    .filter((segment) => segment.endMinutes > segment.startMinutes);
+  if (!history) return [];
+  return history.sessions.flatMap((session) => {
+    const overlap = sessionDayOverlap(session, history, weekday);
+    if (!overlap) return [];
+    return [
+      {
+        startMinutes: (overlap.startMs - overlap.dayStartMs) / 60_000,
+        endMinutes: (overlap.endMs - overlap.dayStartMs) / 60_000,
+      },
+    ];
+  });
 }
 
 function SchedulePageSkeleton() {
@@ -700,9 +728,9 @@ export function SchedulePage() {
   const workedSeconds =
     historyQuery.data?.totalDurationSeconds ?? selectedWorkMember?.actualWorkedSeconds ?? 0;
   const varianceSeconds = workedSeconds - scheduledMinutes * 60;
-  const overlapSeconds = (historyQuery.data?.sessions ?? []).reduce(
-    (total, item) => total + sessionOverlapSeconds(item, selectedMember?.schedule ?? null),
-    0,
+  const overlapSeconds = scheduleOverlapSeconds(
+    historyQuery.data,
+    selectedMember?.schedule ?? null,
   );
 
   const shiftWeek = (days: number) => {
@@ -1307,9 +1335,11 @@ function DayInspector({
   dateLabel: string;
 }) {
   const planned = schedule?.blocks.filter((block) => block.weekday === weekday) ?? [];
-  const actual = (history?.sessions ?? []).filter(
-    (session) => weekdayFromInstant(session.timeIn) === weekday,
-  );
+  const actual = history
+    ? history.sessions.filter((session) =>
+        Boolean(sessionDayOverlap(session, history, weekday)),
+      )
+    : [];
 
   return (
     <section className="day-inspector">

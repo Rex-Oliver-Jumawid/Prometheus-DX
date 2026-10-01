@@ -178,6 +178,41 @@ describe('WorkSessionsService', () => {
     expect(findMany).not.toHaveBeenCalled();
   });
 
+  it('includes sessions crossing into the selected week and clips the weekly total', async () => {
+    const crossing = session({
+      timeIn: new Date('2026-09-27T15:53:00.000Z'),
+      timeOut: new Date('2026-09-27T18:34:00.000Z'),
+      status: 'COMPLETED',
+    });
+    const findMany = vi.fn().mockResolvedValue([crossing]);
+    const prisma = {
+      workSession: {
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        findMany,
+      },
+    } as unknown as PrismaService;
+
+    const result = await new WorkSessionsService(prisma).getHistory(
+      currentMember,
+      '2026-09-28',
+    );
+
+    expect(findMany).toHaveBeenCalledWith({
+      where: {
+        memberId: currentMember.id,
+        timeIn: { lt: new Date('2026-10-04T16:00:00.000Z') },
+        OR: [
+          { timeOut: { gt: new Date('2026-09-27T16:00:00.000Z') } },
+          { timeOut: null },
+        ],
+      },
+      orderBy: [{ timeIn: 'desc' }, { id: 'desc' }],
+    });
+    expect(result.sessions).toHaveLength(1);
+    expect(result.sessions[0].durationSeconds).toBe(9_660);
+    expect(result.totalDurationSeconds).toBe(9_240);
+  });
+
   it('keeps multiple weekly sessions separate and totals exact duration', async () => {
     const prisma = {
       workSession: {
