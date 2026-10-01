@@ -46,6 +46,7 @@ export class VisiWorkService {
     @Inject(PushDeliveryService)
     private readonly pushDeliveries: PushDeliveryService = {
       flushAfterCommit: async () => undefined,
+      sendChatMessage: async () => undefined,
     } as PushDeliveryService,
   ) {}
 
@@ -251,7 +252,42 @@ export class VisiWorkService {
       return created;
     });
 
-    await this.pushDeliveries.flushAfterCommit();
+    const excludedMemberIds = [
+      member.id,
+      ...mentionedMembers.map((mentioned) => mentioned.id),
+    ];
+    const recipients = await this.prisma.member.findMany({
+      where: {
+        status: 'ACTIVE',
+        id: { notIn: excludedMemberIds },
+        ...(departmentId
+          ? {
+              OR: [
+                { departmentId },
+                { visiworkDepartmentId: departmentId },
+              ],
+            }
+          : {}),
+      },
+      select: { id: true },
+    });
+    const roomLabel = department ? `${department.shortLabel} Chat` : 'General Chat';
+    const params = new URLSearchParams({ message: message.id });
+    if (departmentId) params.set('department', departmentId);
+
+    await Promise.all([
+      this.pushDeliveries.flushAfterCommit(),
+      ...(recipients.length
+        ? [
+            this.pushDeliveries.sendChatMessage({
+              recipientMemberIds: recipients.map((recipient) => recipient.id),
+              body: `${member.fullName} sent a message in ${roomLabel}: “${input.body.slice(0, 180)}”`,
+              url: `/visiwork?${params.toString()}`,
+              tag: `visiwork-message:${message.id}`,
+            }),
+          ]
+        : []),
+    ]);
     return this.toMessage(message);
   }
 

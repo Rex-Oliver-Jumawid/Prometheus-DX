@@ -9,9 +9,9 @@ const leadId = '22222222-2222-4222-8222-222222222222';
 const memberId = '33333333-3333-4333-8333-333333333333';
 const viewerId = '44444444-4444-4444-8444-444444444444';
 const messageId = '55555555-5555-4555-8555-555555555555';
-const lead = { id: leadId } as Member;
-const member = { id: memberId } as Member;
-const viewer = { id: viewerId } as Member;
+const lead = { id: leadId, fullName: 'Project Lead' } as Member;
+const member = { id: memberId, fullName: 'Project Member' } as Member;
+const viewer = { id: viewerId, fullName: 'Project Viewer' } as Member;
 
 const message = {
   id: messageId,
@@ -29,7 +29,7 @@ const message = {
 };
 
 function setup(options: {
-  project?: { id: string; leadMemberId: string; archivedAt: Date | null; members: { memberId: string }[] } | null;
+  project?: { id: string; name: string; leadMemberId: string; archivedAt: Date | null; members: { memberId: string }[] } | null;
   parent?: { id: string } | null;
   original?: {
     id: string;
@@ -41,27 +41,25 @@ function setup(options: {
   rows?: typeof message[];
 } = {}) {
   const project = options.project === undefined
-    ? { id: projectId, leadMemberId: leadId, archivedAt: null, members: [{ memberId }] }
+    ? { id: projectId, name: 'Project Alpha', leadMemberId: leadId, archivedAt: null, members: [{ memberId }] }
     : options.project;
   const transactionDb = {
     $queryRaw: vi.fn().mockResolvedValue([{ id: projectId }]),
     project: {
-      findUnique: vi.fn().mockImplementation((query: {
-        select: { members: { where: { memberId: string } } };
-      }) => Promise.resolve(project
-        ? {
-            ...project,
-            members: project.members.filter(
-              (entry) => entry.memberId === query.select.members.where.memberId,
-            ),
-          }
-        : null)),
+      findUnique: vi.fn().mockResolvedValue(project),
     },
     member: {
-      findMany: vi.fn().mockResolvedValue([{ id: leadId, fullName: 'Project Lead' }]),
-    },
-    projectMember: {
-      findMany: vi.fn().mockResolvedValue([]),
+      findMany: vi.fn().mockImplementation(
+        ({ where }: { where: { id: { in: string[] } } }) => {
+          const people = [
+            { id: leadId, fullName: 'Project Lead' },
+            { id: memberId, fullName: 'Project Member' },
+          ];
+          return Promise.resolve(
+            people.filter((person) => where.id.in.includes(person.id)),
+          );
+        },
+      ),
     },
     notification: {
       createMany: vi.fn().mockResolvedValue({ count: 1 }),
@@ -102,7 +100,18 @@ function setup(options: {
     $transaction: vi.fn(async (operation: (client: typeof transactionDb) => Promise<unknown>) =>
       operation(transactionDb)),
   };
-  return { service: new ProjectChatService(db as unknown as PrismaService), db };
+  const pushDeliveries = {
+    flushAfterCommit: vi.fn().mockResolvedValue(undefined),
+    sendChatMessage: vi.fn().mockResolvedValue(undefined),
+  };
+  return {
+    service: new ProjectChatService(
+      db as unknown as PrismaService,
+      pushDeliveries as never,
+    ),
+    db,
+    pushDeliveries,
+  };
 }
 
 describe('ProjectChatService', () => {
@@ -141,6 +150,24 @@ describe('ProjectChatService', () => {
     );
   });
 
+  it('sends a device banner to Project members for a new message without adding an inbox notification', async () => {
+    const { service, db, pushDeliveries } = setup();
+
+    await service.send(member, projectId, {
+      body: 'Status is ready',
+      parentMessageId: null,
+      mentionMemberIds: [],
+    });
+
+    expect(db.notification.createMany).not.toHaveBeenCalled();
+    expect(pushDeliveries.sendChatMessage).toHaveBeenCalledWith({
+      recipientMemberIds: [leadId],
+      body: 'Project Member sent a message in Project Alpha Project Chat: “Status is ready”',
+      url: `/projects/${projectId}?tab=chat&message=${messageId}`,
+      tag: `project-message:${messageId}`,
+    });
+  });
+
   it('sends a notification for an authorized Project Lead mention', async () => {
     const { service, db } = setup();
     await service.send(member, projectId, {
@@ -171,6 +198,7 @@ describe('ProjectChatService', () => {
       ],
       skipDuplicates: true,
     });
+    expect(pushDeliveries.sendChatMessage).not.toHaveBeenCalled();
   });
 
   it('rejects mentions of people who are not part of the Project', async () => {
@@ -193,7 +221,7 @@ describe('ProjectChatService', () => {
     const attempt = service.send(member, projectId, { body: 'Stale permission', parentMessageId: null });
     await vi.waitFor(() => expect(db.$queryRaw).toHaveBeenCalledTimes(1));
     db.project.findUnique.mockResolvedValue({
-      id: projectId, leadMemberId: leadId, archivedAt: null, members: [],
+      id: projectId, name: 'Project Alpha', leadMemberId: leadId, archivedAt: null, members: [],
     });
     releaseLock();
     await expect(attempt).rejects.toBeInstanceOf(ForbiddenException);
@@ -351,7 +379,7 @@ describe('ProjectChatService', () => {
 
   it('rejects archived Project writes and nonexistent Project reads', async () => {
     const archived = setup({
-      project: { id: projectId, leadMemberId: leadId, members: [], archivedAt: new Date() },
+      project: { id: projectId, name: 'Project Alpha', leadMemberId: leadId, members: [], archivedAt: new Date() },
     });
     await expect(archived.service.send(lead, projectId, { body: 'Late', parentMessageId: null }))
       .rejects.toBeInstanceOf(ConflictException);

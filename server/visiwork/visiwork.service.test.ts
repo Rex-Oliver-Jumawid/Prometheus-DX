@@ -150,6 +150,43 @@ describe('VisiWorkService', () => {
     ]);
   });
 
+  it('sends a device banner for a new General Chat message without creating an inbox notification', async () => {
+    const otherMemberId = '77777777-7777-4777-8777-777777777777';
+    const createMessage = vi.fn().mockResolvedValue(storedMessage({ body: 'Hello team' }));
+    const createMany = vi.fn();
+    const prisma = {
+      member: {
+        findMany: vi.fn().mockResolvedValue([{ id: otherMemberId, fullName: 'Other Member' }]),
+      },
+      $transaction: vi.fn().mockImplementation(async (callback) =>
+        callback({
+          visiWorkMessage: { create: createMessage },
+          notification: { createMany },
+        }),
+      ),
+    } as unknown as PrismaService;
+    const pushDeliveries = {
+      flushAfterCommit: vi.fn().mockResolvedValue(undefined),
+      sendChatMessage: vi.fn().mockResolvedValue(undefined),
+    };
+
+    await new VisiWorkService(
+      prisma,
+      pushDeliveries as never,
+    ).sendMessage(member(), {
+      body: 'Hello team',
+      mentionMemberIds: [],
+    });
+
+    expect(createMany).not.toHaveBeenCalled();
+    expect(pushDeliveries.sendChatMessage).toHaveBeenCalledWith({
+      recipientMemberIds: [otherMemberId],
+      body: 'Member One sent a message in General Chat: “Hello team”',
+      url: '/visiwork?message=44444444-4444-4444-8444-444444444444',
+      tag: 'visiwork-message:44444444-4444-4444-8444-444444444444',
+    });
+  });
+
   it('searches only the current room and returns matching persisted messages', async () => {
     const findMany = vi.fn().mockResolvedValue([
       storedMessage({ body: 'The quotation workflow is ready.' }),

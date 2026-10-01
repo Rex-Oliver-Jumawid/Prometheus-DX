@@ -34,6 +34,62 @@ export class PushDeliveryService {
     }
   }
 
+  async sendChatMessage(input: {
+    recipientMemberIds: string[];
+    body: string;
+    url: string;
+    tag: string;
+  }): Promise<void> {
+    const vapid = serverEnvironment.webPush;
+    const recipientMemberIds = [...new Set(input.recipientMemberIds)];
+    if (!vapid || !recipientMemberIds.length) return;
+
+    try {
+      const subscriptions = await this.prisma.pushSubscription.findMany({
+        where: { memberId: { in: recipientMemberIds } },
+        select: { id: true, endpoint: true, p256dh: true, auth: true },
+      });
+
+      await Promise.all(
+        subscriptions.map(async (subscription) => {
+          const result = await sendWebPush(
+            {
+              endpoint: subscription.endpoint,
+              p256dh: subscription.p256dh,
+              auth: subscription.auth,
+            },
+            {
+              notificationId: input.tag,
+              title: 'Prometheus DX',
+              body: input.body,
+              url: input.url,
+              tag: input.tag,
+            },
+            vapid,
+          );
+
+          if (result.stale) {
+            await this.prisma.pushSubscription.deleteMany({
+              where: { id: subscription.id },
+            });
+            return;
+          }
+
+          if (!result.ok) {
+            this.logger.warn(
+              `Transient chat push failed for subscription ${subscription.id}: ${result.error ?? 'unknown error'}`,
+            );
+          }
+        }),
+      );
+    } catch (error) {
+      this.logger.error(
+        'Device chat push delivery failed after the message commit.',
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
+  }
+
   async flushPendingDeliveries() {
     const vapid = serverEnvironment.webPush;
     if (!vapid) return;
