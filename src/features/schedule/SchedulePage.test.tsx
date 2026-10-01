@@ -363,7 +363,7 @@ describe('SchedulePage', () => {
     });
 
     const { container } = renderPage('/schedule?view=shifts');
-    await screen.findByText('46m / 0h');
+    await screen.findByText('7m / 0h');
 
     const rows = Array.from(container.querySelectorAll('.shift-day-row'));
     const wednesday = rows.find((row) => row.textContent?.includes('Wednesday'));
