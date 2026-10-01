@@ -5,7 +5,6 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-  Optional,
 } from '@nestjs/common';
 import { Prisma, type Member } from '@prisma/client';
 import type {
@@ -43,9 +42,8 @@ type MessageRecord = Prisma.ProjectMessageGetPayload<{
 export class ProjectChatService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Optional()
     @Inject(PushDeliveryService)
-    private readonly pushDeliveries?: PushDeliveryService,
+    private readonly pushDeliveries: PushDeliveryService,
   ) {}
 
   private async projectFor(
@@ -298,7 +296,7 @@ export class ProjectChatService {
       }
       return this.toMessage(message, member.id);
     });
-    await this.pushDeliveries?.flushAfterCommit();
+    await this.pushDeliveries.flushAfterCommit();
     return result;
   }
 
@@ -405,7 +403,7 @@ export class ProjectChatService {
 
       return this.toMessage(updated, member.id);
     });
-    await this.pushDeliveries?.flushAfterCommit();
+    await this.pushDeliveries.flushAfterCommit();
     return result;
   }
 

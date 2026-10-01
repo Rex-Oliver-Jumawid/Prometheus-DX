@@ -4,7 +4,6 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-  Optional,
 } from '@nestjs/common';
 import {
   MemberStatus,
@@ -108,9 +107,8 @@ type ProjectStatusRow = {
 export class ProjectsService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Optional()
     @Inject(PushDeliveryService)
-    private readonly pushDeliveries?: PushDeliveryService,
+    private readonly pushDeliveries: PushDeliveryService,
   ) {}
 
   async listProjects(currentMember: Member): Promise<Project[]> {
@@ -223,7 +221,7 @@ export class ProjectsService {
       });
     });
 
-    await this.pushDeliveries?.flushAfterCommit();
+    await this.pushDeliveries.flushAfterCommit();
     return this.toProject(project, currentMember.id);
   }
 

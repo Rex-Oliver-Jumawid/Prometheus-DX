@@ -4,7 +4,6 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-  Optional,
 } from '@nestjs/common';
 import { Prisma, type Member } from '@prisma/client';
 import type {
@@ -44,9 +43,8 @@ type MentionMember = {
 export class VisiWorkService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Optional()
     @Inject(PushDeliveryService)
-    private readonly pushDeliveries?: PushDeliveryService,
+    private readonly pushDeliveries: PushDeliveryService,
   ) {}
 
   async joinDepartment(
@@ -251,7 +249,7 @@ export class VisiWorkService {
       return created;
     });
 
-    await this.pushDeliveries?.flushAfterCommit();
+    await this.pushDeliveries.flushAfterCommit();
     return this.toMessage(message);
   }
 
@@ -357,7 +355,7 @@ export class VisiWorkService {
       return record;
     });
 
-    await this.pushDeliveries?.flushAfterCommit();
+    await this.pushDeliveries.flushAfterCommit();
     return this.toMessage(updated);
   }
 

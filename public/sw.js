@@ -29,6 +29,8 @@ self.addEventListener('push', (event) => {
       badge: '/apple-touch-icon.png',
       tag: payload.tag,
       lang: 'en',
+      silent: false,
+      vibrate: [200, 100, 200],
       data: { url: payload.url },
     }),
   );

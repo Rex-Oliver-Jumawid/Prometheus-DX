@@ -140,7 +140,7 @@ export async function sendWebPush(
         'Content-Encoding': 'aes128gcm',
         'Content-Type': 'application/octet-stream',
         TTL: '120',
-        Urgency: 'normal',
+        Urgency: 'high',
       },
       body: new Uint8Array(body),
       signal: AbortSignal.timeout(5_000),
