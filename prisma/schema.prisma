@@ -153,6 +153,7 @@ model Member {
   receivedNotifications       Notification[]               @relation("NotificationRecipient")
   actedNotifications          Notification[]               @relation("NotificationActor")
   pushSubscriptions           PushSubscription[]
+  chatPushMutes               ChatPushMute[]
 
   @@index([departmentId])
   @@index([visiworkDepartmentId])
@@ -634,6 +635,17 @@ model PushSubscription {
 
   @@index([memberId])
   @@map("push_subscriptions")
+}
+
+model ChatPushMute {
+  memberId   String   @map("member_id") @db.Uuid
+  channelKey String   @map("channel_key") @db.VarChar(120)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([memberId, channelKey])
+  @@index([channelKey])
+  @@map("chat_push_mutes")
 }
 
 model PushDelivery {
