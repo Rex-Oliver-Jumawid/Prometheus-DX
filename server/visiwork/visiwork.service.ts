@@ -142,7 +142,7 @@ export class VisiWorkService {
     return {
       messageId,
       departmentId,
-      roomLabel: department ? department.name : 'General Chat',
+      roomLabel: department ? department.shortLabel : 'Visiwork',
       preview: body.slice(0, 180),
     };
   }
@@ -266,7 +266,7 @@ export class VisiWorkService {
       },
       select: { id: true },
     });
-    const roomLabel = department ? department.name : 'Visiwork';
+    const channelLabel = department ? department.shortLabel : 'Visiwork';
     const params = new URLSearchParams({ message: message.id });
     if (departmentId) params.set('department', departmentId);
 
@@ -279,7 +279,8 @@ export class VisiWorkService {
               channelKey: departmentId
                 ? `visiwork:department:${departmentId}`
                 : 'visiwork:general',
-              body: `${roomLabel}\n${member.fullName}: “${input.body.slice(0, 180)}”`,
+              channelLabel,
+              body: `${member.fullName}: “${input.body.slice(0, 180)}”`,
               url: `/visiwork?${params.toString()}`,
               tag: `visiwork-message:${message.id}`,
             }),

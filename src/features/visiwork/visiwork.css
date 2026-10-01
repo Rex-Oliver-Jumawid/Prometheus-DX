@@ -1346,11 +1346,14 @@
 
 
 /* VisiWork chat search, settings, mentions, and deep-link targeting */
-.visiwork-room-header-actions {
+.visiwork-room-header > .visiwork-room-header-actions {
   position: relative;
   display: flex;
+  flex-direction: row;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
+  white-space: nowrap;
 }
 
 .visiwork-room-header-actions > b {
