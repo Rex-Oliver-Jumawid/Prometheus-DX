@@ -162,7 +162,8 @@ describe('ProjectChatService', () => {
     expect(db.notification.createMany).not.toHaveBeenCalled();
     expect(pushDeliveries.sendChatMessage).toHaveBeenCalledWith({
       recipientMemberIds: [leadId],
-      body: 'Project Member sent a message in Project Alpha Project Chat: “Status is ready”',
+      channelKey: `project:${projectId}`,
+      body: 'Project Alpha\nProject Member: “Status is ready”',
       url: `/projects/${projectId}?tab=chat&message=${messageId}`,
       tag: `project-message:${messageId}`,
     });

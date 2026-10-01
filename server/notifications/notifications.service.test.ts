@@ -97,6 +97,44 @@ describe('NotificationsService', () => {
     );
   });
 
+  it('stores and clears per-chat device mute preferences for the current member', async () => {
+    const chatPushMute = {
+      findUnique: vi.fn().mockResolvedValue(null),
+      upsert: vi.fn().mockResolvedValue({}),
+      deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+    };
+    const service = new NotificationsService({
+      chatPushMute,
+    } as unknown as PrismaService);
+    const channelKey = 'visiwork:general' as const;
+
+    await expect(
+      service.chatPushPreference(recipientId, channelKey),
+    ).resolves.toEqual({ channelKey, muted: false });
+
+    await expect(
+      service.setChatPushPreference(recipientId, {
+        channelKey,
+        muted: true,
+      }),
+    ).resolves.toEqual({ channelKey, muted: true });
+    expect(chatPushMute.upsert).toHaveBeenCalledWith({
+      where: {
+        memberId_channelKey: { memberId: recipientId, channelKey },
+      },
+      create: { memberId: recipientId, channelKey },
+      update: {},
+    });
+
+    await service.setChatPushPreference(recipientId, {
+      channelKey,
+      muted: false,
+    });
+    expect(chatPushMute.deleteMany).toHaveBeenCalledWith({
+      where: { memberId: recipientId, channelKey },
+    });
+  });
+
   it('counts unread notifications only for the current recipient', async () => {
     const { service, notification } = fixture();
 

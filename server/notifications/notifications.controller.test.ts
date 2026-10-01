@@ -17,6 +17,8 @@ function fixture() {
     unreadCount: vi.fn(),
     markRead: vi.fn(),
     markAllRead: vi.fn(),
+    chatPushPreference: vi.fn(),
+    setChatPushPreference: vi.fn(),
   };
   const pushDeliveries = {
     flushAfterCommit: vi.fn().mockResolvedValue(undefined),
@@ -58,6 +60,26 @@ describe('NotificationsController', () => {
       }),
     ).toThrow(BadRequestException);
     expect(service.list).not.toHaveBeenCalled();
+  });
+
+  it('uses the authenticated member for chat push preference reads and writes', () => {
+    const { controller, service } = fixture();
+    const channelKey = 'visiwork:general';
+
+    controller.chatPushPreference(currentMember, { channelKey });
+    controller.setChatPushPreference(currentMember, {
+      channelKey,
+      muted: true,
+    });
+
+    expect(service.chatPushPreference).toHaveBeenCalledWith(
+      currentMember.id,
+      channelKey,
+    );
+    expect(service.setChatPushPreference).toHaveBeenCalledWith(
+      currentMember.id,
+      { channelKey, muted: true },
+    );
   });
 
   it('uses the authenticated member for individual and bulk read mutations', async () => {

@@ -17,6 +17,9 @@ import type {
   NotificationReadAllResponse,
   NotificationReadResponse,
   NotificationUnreadCountResponse,
+  ChatPushChannelKey,
+  ChatPushPreferenceRequest,
+  ChatPushPreferenceResponse,
   DevicePushConfigResponse,
   DevicePushSubscription,
   DevicePushSubscriptionResponse,
@@ -103,6 +106,46 @@ export class NotificationsService {
       enabled: Boolean(serverEnvironment.webPush),
       applicationServerKey: serverEnvironment.webPush?.publicKey ?? null,
     };
+  }
+
+  async chatPushPreference(
+    memberId: string,
+    channelKey: ChatPushChannelKey,
+  ): Promise<ChatPushPreferenceResponse> {
+    const mute = await this.prisma.chatPushMute.findUnique({
+      where: { memberId_channelKey: { memberId, channelKey } },
+      select: { memberId: true },
+    });
+    return { channelKey, muted: Boolean(mute) };
+  }
+
+  async setChatPushPreference(
+    memberId: string,
+    input: ChatPushPreferenceRequest,
+  ): Promise<ChatPushPreferenceResponse> {
+    if (input.muted) {
+      await this.prisma.chatPushMute.upsert({
+        where: {
+          memberId_channelKey: {
+            memberId,
+            channelKey: input.channelKey,
+          },
+        },
+        create: {
+          memberId,
+          channelKey: input.channelKey,
+        },
+        update: {},
+      });
+    } else {
+      await this.prisma.chatPushMute.deleteMany({
+        where: {
+          memberId,
+          channelKey: input.channelKey,
+        },
+      });
+    }
+    return { channelKey: input.channelKey, muted: input.muted };
   }
 
   async subscribeDevice(

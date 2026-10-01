@@ -11,7 +11,16 @@ import { notificationSelect, toNotification } from './notifications.service';
 import { sendWebPush } from './web-push';
 
 const include = {
-  subscription: { select: { id: true, endpoint: true, p256dh: true, auth: true } },
+  subscription: {
+    select: {
+      id: true,
+      memberId: true,
+      endpoint: true,
+      p256dh: true,
+      auth: true,
+      member: { select: { visiworkDepartmentId: true } },
+    },
+  },
   notification: { select: notificationSelect },
 } satisfies Prisma.PushDeliveryInclude;
 
@@ -36,6 +45,7 @@ export class PushDeliveryService {
 
   async sendChatMessage(input: {
     recipientMemberIds: string[];
+    channelKey: string;
     body: string;
     url: string;
     tag: string;
@@ -45,8 +55,24 @@ export class PushDeliveryService {
     if (!vapid || !recipientMemberIds.length) return;
 
     try {
+      const mutedMembers = await this.prisma.chatPushMute.findMany({
+        where: {
+          memberId: { in: recipientMemberIds },
+          channelKey: input.channelKey,
+        },
+        select: { memberId: true },
+      });
+      const mutedMemberIds = new Set(
+        mutedMembers.map((mute) => mute.memberId),
+      );
       const subscriptions = await this.prisma.pushSubscription.findMany({
-        where: { memberId: { in: recipientMemberIds } },
+        where: {
+          memberId: {
+            in: recipientMemberIds.filter(
+              (memberId) => !mutedMemberIds.has(memberId),
+            ),
+          },
+        },
         select: { id: true, endpoint: true, p256dh: true, auth: true },
       });
 
@@ -129,12 +155,70 @@ export class PushDeliveryService {
     await Promise.all(deliveries.map((item) => this.deliver(item, vapid)));
   }
 
+  private async completeSuppressedDelivery(
+    delivery: Delivery,
+  ): Promise<void> {
+    await this.prisma.pushDelivery.updateMany({
+      where: { id: delivery.id, claimToken: delivery.claimToken },
+      data: {
+        deliveredAt: new Date(),
+        claimToken: null,
+        claimedAt: null,
+        lastError: null,
+      },
+    });
+  }
+
   private async deliver(
     delivery: Delivery,
     vapid: NonNullable<typeof serverEnvironment.webPush>,
   ) {
     const notification = toNotification(delivery.notification);
     const presentation = presentNotification(notification);
+    const channelKey =
+      notification.type === 'VISIWORK_MENTION'
+        ? notification.visiworkMention?.departmentId
+          ? `visiwork:department:${notification.visiworkMention.departmentId}`
+          : 'visiwork:general'
+        : notification.type === 'PROJECT_CHAT_MENTION' && notification.project
+          ? `project:${notification.project.id}`
+          : null;
+
+    if (
+      notification.type === 'VISIWORK_MENTION' &&
+      notification.visiworkMention?.departmentId &&
+      delivery.subscription.member.visiworkDepartmentId !==
+        notification.visiworkMention.departmentId
+    ) {
+      await this.completeSuppressedDelivery(delivery);
+      return;
+    }
+
+    if (channelKey) {
+      const muted = await this.prisma.chatPushMute.findUnique({
+        where: {
+          memberId_channelKey: {
+            memberId: delivery.subscription.memberId,
+            channelKey,
+          },
+        },
+        select: { memberId: true },
+      });
+      if (muted) {
+        await this.completeSuppressedDelivery(delivery);
+        return;
+      }
+    }
+
+    const body =
+      notification.type === 'VISIWORK_MENTION' && notification.visiworkMention
+        ? `${notification.visiworkMention.departmentId ? notification.visiworkMention.roomLabel : 'Visiwork'}\n${notification.actor?.fullName ?? 'A teammate'}: “${notification.visiworkMention.preview}”`
+        : notification.type === 'PROJECT_CHAT_MENTION' &&
+            notification.project &&
+            notification.projectChatMention
+          ? `${notification.project.name}\n${notification.actor?.fullName ?? 'A teammate'}: “${notification.projectChatMention.preview}”`
+          : presentation.description;
+
     const result = await sendWebPush(
       {
         endpoint: delivery.subscription.endpoint,
@@ -144,7 +228,7 @@ export class PushDeliveryService {
       {
         notificationId: notification.id,
         title: 'Prometheus DX',
-        body: presentation.description,
+        body,
         url: notificationPath(notification) ?? '/notifications',
         tag: notification.id,
       },

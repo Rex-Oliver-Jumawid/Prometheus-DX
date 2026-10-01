@@ -13,6 +13,8 @@ import {
 } from '@nestjs/common';
 import type { Member } from '@prisma/client';
 import {
+  ChatPushPreferenceQuerySchema,
+  ChatPushPreferenceRequestSchema,
   DevicePushSubscriptionSchema,
   NotificationListQuerySchema,
 } from '../../shared/contracts/notification';
@@ -49,6 +51,37 @@ export class NotificationsController {
   @Get('push/config')
   pushConfig() {
     return this.notifications.pushConfig();
+  }
+
+  @Get('push/chat-preference')
+  chatPushPreference(
+    @CurrentMember() member: Member,
+    @Query() query: unknown,
+  ) {
+    const parsed = ChatPushPreferenceQuerySchema.safeParse(query);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        parsed.error.issues[0]?.message ?? 'Invalid chat notification channel.',
+      );
+    }
+    return this.notifications.chatPushPreference(
+      member.id,
+      parsed.data.channelKey,
+    );
+  }
+
+  @Put('push/chat-preference')
+  setChatPushPreference(
+    @CurrentMember() member: Member,
+    @Body() body: unknown,
+  ) {
+    const parsed = ChatPushPreferenceRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(
+        parsed.error.issues[0]?.message ?? 'Invalid chat notification preference.',
+      );
+    }
+    return this.notifications.setChatPushPreference(member.id, parsed.data);
   }
 
   @Put('push/subscription')

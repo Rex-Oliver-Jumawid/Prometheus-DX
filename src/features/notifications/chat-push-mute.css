@@ -1,0 +1,38 @@
+.chat-push-mute-button {
+  width: 32px;
+  height: 32px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 32px;
+  padding: 0;
+  border: 1px solid #dfd4cd;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.74);
+  color: #6f625b;
+  cursor: pointer;
+}
+
+.chat-push-mute-button:hover:not(:disabled) {
+  border-color: #d3b7a8;
+  color: #b84a25;
+}
+
+.chat-push-mute-button.is-muted {
+  background: #fff3ee;
+  color: #c14b24;
+}
+
+.chat-push-mute-button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.chat-push-mute-button svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}

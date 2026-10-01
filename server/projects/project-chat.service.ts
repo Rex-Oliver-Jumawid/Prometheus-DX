@@ -327,7 +327,8 @@ export class ProjectChatService {
         ? [
             this.pushDeliveries.sendChatMessage({
               recipientMemberIds: result.recipientMemberIds,
-              body: `${member.fullName} sent a message in ${result.projectName} Project Chat: “${input.body.slice(0, 180)}”`,
+              channelKey: `project:${projectId}`,
+              body: `${result.projectName}\n${member.fullName}: “${input.body.slice(0, 180)}”`,
               url: `/projects/${projectId}?tab=chat&message=${result.message.id}`,
               tag: `project-message:${result.message.id}`,
             }),

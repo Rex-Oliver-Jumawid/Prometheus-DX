@@ -30,6 +30,7 @@ import { apiFetch } from '../../lib/api';
 import { chatDateKey, chatDateLabel, startsNewChatDate } from '../../lib/chat-date';
 import { useRealtimeInvalidation } from '../../lib/use-realtime-invalidation';
 import { useAuth } from '../auth/auth-context';
+import { ChatPushMuteButton } from '../notifications/ChatPushMuteButton';
 import { MemberAvatar } from '../shell/MemberAvatar';
 import {
   projectCreateOptionsQuery,
@@ -130,6 +131,7 @@ function RoomPanel({
   currentMemberId,
   departmentId,
   mentionMembers,
+  canMutePush = true,
 }: {
   roomType: string;
   title: string;
@@ -138,6 +140,7 @@ function RoomPanel({
   currentMemberId?: string;
   departmentId?: string;
   mentionMembers: Array<{ id: string; fullName: string; profileImagePath?: string | null }>;
+  canMutePush?: boolean;
 }) {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -472,6 +475,17 @@ function RoomPanel({
         </div>
         <div className="visiwork-room-header-actions">
           <b>● LIVE</b>
+          {canMutePush && (
+            <ChatPushMuteButton
+              accessToken={accessToken}
+              channelKey={
+                departmentId
+                  ? `visiwork:department:${departmentId}`
+                  : 'visiwork:general'
+              }
+              label={title}
+            />
+          )}
           <button
             type="button"
             className={searchOpen ? 'active' : ''}
@@ -1269,12 +1283,14 @@ function DepartmentView({
   workByOutcome,
   accessToken,
   currentMemberId,
+  joinedDepartmentId,
   onBack,
 }: {
   department: VisiWorkDepartment;
   workByOutcome: Map<string, OutcomeWork>;
   accessToken?: string;
   currentMemberId?: string;
+  joinedDepartmentId?: string | null;
   onBack: () => void;
 }) {
   const groups = groupDepartmentProjects(department);
@@ -1365,6 +1381,7 @@ function DepartmentView({
           accessToken={accessToken}
           currentMemberId={currentMemberId}
           departmentId={department.id}
+          canMutePush={joinedDepartmentId === department.id}
           mentionMembers={department.members.map((departmentMember) => ({
             id: departmentMember.id,
             fullName: departmentMember.fullName,
@@ -1551,6 +1568,7 @@ export function VisiWorkPage() {
         workByOutcome={workByOutcome}
         accessToken={accessToken}
         currentMemberId={member?.id}
+        joinedDepartmentId={joinedDepartmentId}
         onBack={() => setSearchParams({})}
       />
     );

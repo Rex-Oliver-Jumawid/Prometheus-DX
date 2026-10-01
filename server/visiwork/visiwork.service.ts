@@ -71,7 +71,7 @@ export class VisiWorkService {
   private async requireDepartment(departmentId: string) {
     const department = await this.prisma.department.findUnique({
       where: { id: departmentId },
-      select: { id: true, shortLabel: true },
+      select: { id: true, name: true, shortLabel: true },
     });
     if (!department) throw new NotFoundException('Department not found.');
     return department;
@@ -136,13 +136,13 @@ export class VisiWorkService {
   private mentionNotificationData(
     messageId: string,
     body: string,
-    department: { shortLabel: string } | null,
+    department: { name: string; shortLabel: string } | null,
     departmentId: string | null,
   ): Prisma.InputJsonValue {
     return {
       messageId,
       departmentId,
-      roomLabel: department ? `${department.shortLabel} Chat` : 'General Chat',
+      roomLabel: department ? department.name : 'General Chat',
       preview: body.slice(0, 180),
     };
   }
@@ -261,17 +261,12 @@ export class VisiWorkService {
         status: 'ACTIVE',
         id: { notIn: excludedMemberIds },
         ...(departmentId
-          ? {
-              OR: [
-                { departmentId },
-                { visiworkDepartmentId: departmentId },
-              ],
-            }
+          ? { visiworkDepartmentId: departmentId }
           : {}),
       },
       select: { id: true },
     });
-    const roomLabel = department ? `${department.shortLabel} Chat` : 'General Chat';
+    const roomLabel = department ? department.name : 'Visiwork';
     const params = new URLSearchParams({ message: message.id });
     if (departmentId) params.set('department', departmentId);
 
@@ -281,7 +276,10 @@ export class VisiWorkService {
         ? [
             this.pushDeliveries.sendChatMessage({
               recipientMemberIds: recipients.map((recipient) => recipient.id),
-              body: `${member.fullName} sent a message in ${roomLabel}: “${input.body.slice(0, 180)}”`,
+              channelKey: departmentId
+                ? `visiwork:department:${departmentId}`
+                : 'visiwork:general',
+              body: `${roomLabel}\n${member.fullName}: “${input.body.slice(0, 180)}”`,
               url: `/visiwork?${params.toString()}`,
               tag: `visiwork-message:${message.id}`,
             }),
