@@ -46,6 +46,7 @@ export class PushDeliveryService {
   async sendChatMessage(input: {
     recipientMemberIds: string[];
     channelKey: string;
+    channelLabel: string;
     body: string;
     url: string;
     tag: string;
@@ -86,7 +87,7 @@ export class PushDeliveryService {
             },
             {
               notificationId: input.tag,
-              title: 'Prometheus DX',
+              title: `Prometheus DX - ${input.channelLabel}`,
               body: input.body,
               url: input.url,
               tag: input.tag,
@@ -210,14 +211,23 @@ export class PushDeliveryService {
       }
     }
 
-    const body =
-      notification.type === 'VISIWORK_MENTION' && notification.visiworkMention
-        ? `${notification.visiworkMention.departmentId ? notification.visiworkMention.roomLabel : 'Visiwork'}\n${notification.actor?.fullName ?? 'A teammate'}: “${notification.visiworkMention.preview}”`
-        : notification.type === 'PROJECT_CHAT_MENTION' &&
-            notification.project &&
-            notification.projectChatMention
-          ? `${notification.project.name}\n${notification.actor?.fullName ?? 'A teammate'}: “${notification.projectChatMention.preview}”`
-          : presentation.description;
+    const isVisiWorkMention =
+      notification.type === 'VISIWORK_MENTION' &&
+      Boolean(notification.visiworkMention);
+    const isProjectChatMention =
+      notification.type === 'PROJECT_CHAT_MENTION' &&
+      Boolean(notification.project) &&
+      Boolean(notification.projectChatMention);
+    const title = isVisiWorkMention
+      ? `Prometheus DX - ${notification.visiworkMention?.departmentId ? notification.visiworkMention.roomLabel : 'Visiwork'}`
+      : isProjectChatMention
+        ? `Prometheus DX - ${notification.project?.name ?? 'Project'}`
+        : 'Prometheus DX';
+    const body = isVisiWorkMention
+      ? `${notification.actor?.fullName ?? 'A teammate'}: “${notification.visiworkMention?.preview ?? ''}”`
+      : isProjectChatMention
+        ? `${notification.actor?.fullName ?? 'A teammate'}: “${notification.projectChatMention?.preview ?? ''}”`
+        : presentation.description;
 
     const result = await sendWebPush(
       {
@@ -227,7 +237,7 @@ export class PushDeliveryService {
       },
       {
         notificationId: notification.id,
-        title: 'Prometheus DX',
+        title,
         body,
         url: notificationPath(notification) ?? '/notifications',
         tag: notification.id,
