@@ -5,7 +5,10 @@ import { CurrentMemberSchema } from '../../../shared/contracts/member';
 import { apiFetch } from '../../lib/api';
 import { getSupabaseClient } from '../../lib/supabase';
 import { AuthContext, type AuthContextValue } from './auth-context';
-import { disableCurrentDevicePush } from '../notifications/device-push';
+import {
+  disableCurrentDevicePush,
+  syncExistingDevicePush,
+} from '../notifications/device-push';
 import { storedSessionIsInvalid } from './auth-routing';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -88,6 +91,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       authListener.subscription.unsubscribe();
     };
   }, [client, queryClient]);
+
+  useEffect(() => {
+    const accessToken = session?.access_token;
+    if (!accessToken) return;
+
+    // Permission can only be requested from an explicit user gesture, but once
+    // the user has enabled notifications we can keep this browser's existing
+    // PushSubscription attached to the authenticated Member automatically.
+    void syncExistingDevicePush(accessToken).catch(() => {
+      // Push synchronization must never block authentication or workspace use.
+    });
+  }, [session?.access_token]);
 
   const memberQuery = useQuery({
     queryKey: ['current-member', session?.user.id],

@@ -74,6 +74,22 @@ async function syncSubscription(
   );
 }
 
+export async function syncExistingDevicePush(accessToken: string) {
+  if (!supported() || Notification.permission !== 'granted') return false;
+
+  const pushConfig = await config(accessToken);
+  if (!pushConfig.enabled) return false;
+
+  const registration = await registerPushServiceWorker();
+  const subscription = registration
+    ? await registration.pushManager.getSubscription()
+    : null;
+  if (!subscription) return false;
+
+  await syncSubscription(accessToken, subscription);
+  return true;
+}
+
 export async function getDevicePushState(
   accessToken: string,
 ): Promise<DevicePushState> {
