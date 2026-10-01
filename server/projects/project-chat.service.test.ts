@@ -163,7 +163,8 @@ describe('ProjectChatService', () => {
     expect(pushDeliveries.sendChatMessage).toHaveBeenCalledWith({
       recipientMemberIds: [leadId],
       channelKey: `project:${projectId}`,
-      body: 'Project Alpha\nProject Member: “Status is ready”',
+      channelLabel: 'Project Alpha',
+      body: 'Project Member: “Status is ready”',
       url: `/projects/${projectId}?tab=chat&message=${messageId}`,
       tag: `project-message:${messageId}`,
     });
