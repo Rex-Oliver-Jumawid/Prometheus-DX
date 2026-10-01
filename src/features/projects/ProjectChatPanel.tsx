@@ -20,6 +20,7 @@ import { apiFetch } from '../../lib/api';
 import { chatDateKey, chatDateLabel, startsNewChatDate } from '../../lib/chat-date';
 import { projectKeys } from './project-queries';
 import { useRealtimeInvalidation } from '../../lib/use-realtime-invalidation';
+import { ChatPushMuteButton } from '../notifications/ChatPushMuteButton';
 import { MemberAvatar } from '../shell/MemberAvatar';
 import './project-collaboration.css';
 
@@ -283,6 +284,14 @@ export function ProjectChatPanel({
     },
   });
 
+  const isProjectParticipant = Boolean(
+    currentMemberId &&
+      (projectLead?.id === currentMemberId ||
+        members.data?.members?.some(
+          (item) => item.member.id === currentMemberId,
+        )),
+  );
+
   const memberChoices = [
     ...(projectLead ? [projectLead] : []),
     ...(members.data?.members?.map((item) => item.member) ?? []),
@@ -489,9 +498,17 @@ export function ProjectChatPanel({
           <strong>{projectName}</strong>
           <span>Project channel</span>
         </div>
-        <button
-          type="button"
-          className={searchOpen ? 'pw-chat-search-toggle is-active' : 'pw-chat-search-toggle'}
+        <div className="pw-chat-channel-actions">
+          {isProjectParticipant && (
+            <ChatPushMuteButton
+              accessToken={accessToken}
+              channelKey={`project:${projectId}`}
+              label={projectName + ' Project Chat'}
+            />
+          )}
+          <button
+            type="button"
+            className={searchOpen ? 'pw-chat-search-toggle is-active' : 'pw-chat-search-toggle'}
           aria-label="Search project conversation"
           title="Search messages"
           aria-expanded={searchOpen}
@@ -501,7 +518,8 @@ export function ProjectChatPanel({
             <circle cx="11" cy="11" r="6.5" />
             <path d="m16 16 4 4" />
           </svg>
-        </button>
+          </button>
+        </div>
       </div>
 
       {searchOpen && (
