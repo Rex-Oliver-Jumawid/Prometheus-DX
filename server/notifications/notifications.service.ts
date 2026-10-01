@@ -18,6 +18,7 @@ import type {
   NotificationReadResponse,
   NotificationUnreadCountResponse,
   ChatPushChannelKey,
+  ChatPushMutedChatsResponse,
   ChatPushPreferenceRequest,
   ChatPushPreferenceResponse,
   DevicePushConfigResponse,
@@ -105,6 +106,90 @@ export class NotificationsService {
     return {
       enabled: Boolean(serverEnvironment.webPush),
       applicationServerKey: serverEnvironment.webPush?.publicKey ?? null,
+    };
+  }
+
+  async listMutedChats(
+    memberId: string,
+  ): Promise<ChatPushMutedChatsResponse> {
+    const mutes = await this.prisma.chatPushMute.findMany({
+      where: { memberId },
+      select: { channelKey: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const projectIds = mutes
+      .map((mute) =>
+        mute.channelKey.startsWith('project:')
+          ? mute.channelKey.slice('project:'.length)
+          : null,
+      )
+      .filter((id): id is string => Boolean(id));
+    const departmentIds = mutes
+      .map((mute) =>
+        mute.channelKey.startsWith('visiwork:department:')
+          ? mute.channelKey.slice('visiwork:department:'.length)
+          : null,
+      )
+      .filter((id): id is string => Boolean(id));
+
+    const [projects, departments] = await Promise.all([
+      projectIds.length
+        ? this.prisma.project.findMany({
+            where: { id: { in: projectIds } },
+            select: { id: true, name: true },
+          })
+        : Promise.resolve([]),
+      departmentIds.length
+        ? this.prisma.department.findMany({
+            where: { id: { in: departmentIds } },
+            select: { id: true, shortLabel: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const projectsById = new Map(
+      projects.map((project) => [project.id, project.name]),
+    );
+    const departmentsById = new Map(
+      departments.map((department) => [
+        department.id,
+        department.shortLabel,
+      ]),
+    );
+
+    return {
+      items: mutes.map((mute) => {
+        const channelKey = mute.channelKey as ChatPushChannelKey;
+        if (channelKey === 'visiwork:general') {
+          return {
+            channelKey,
+            kind: 'visiwork' as const,
+            label: 'General Chat',
+            path: '/visiwork',
+          };
+        }
+
+        if (channelKey.startsWith('visiwork:department:')) {
+          const departmentId = channelKey.slice(
+            'visiwork:department:'.length,
+          );
+          return {
+            channelKey,
+            kind: 'department' as const,
+            label: departmentsById.get(departmentId) ?? 'Department Chat',
+            path: `/visiwork?department=${departmentId}`,
+          };
+        }
+
+        const projectId = channelKey.slice('project:'.length);
+        return {
+          channelKey,
+          kind: 'project' as const,
+          label: projectsById.get(projectId) ?? 'Project Chat',
+          path: `/projects/${projectId}?tab=chat`,
+        };
+      }),
     };
   }
 
