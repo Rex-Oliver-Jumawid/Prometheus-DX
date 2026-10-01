@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import {
   useInfiniteQuery,
   useMutation,
@@ -20,6 +21,7 @@ import { apiFetch } from '../../lib/api';
 import { chatDateKey, chatDateLabel, startsNewChatDate } from '../../lib/chat-date';
 import { projectKeys } from './project-queries';
 import { useRealtimeInvalidation } from '../../lib/use-realtime-invalidation';
+import { FloatingMessageMenu } from '../chat/FloatingMessageMenu';
 import { ChatPushMuteButton } from '../notifications/ChatPushMuteButton';
 import { MemberAvatar } from '../shell/MemberAvatar';
 import './project-collaboration.css';
@@ -98,6 +100,8 @@ export function ProjectChatPanel({
     mentions: Array<{ id: string; fullName: string }>;
   } | null>(null);
   const [messageMenuId, setMessageMenuId] = useState<string | null>(null);
+  const [messageMenuAnchor, setMessageMenuAnchor] =
+    useState<HTMLButtonElement | null>(null);
   const [pendingDelete, setPendingDelete] = useState<ProjectMessage | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -457,6 +461,7 @@ export function ProjectChatPanel({
   function beginEdit(message: ProjectMessage) {
     edit.reset();
     setMessageMenuId(null);
+    setMessageMenuAnchor(null);
     setEditing({
       id: message.id,
       body: message.body,
@@ -720,16 +725,21 @@ export function ProjectChatPanel({
                               type="button"
                               aria-label="Message options"
                               aria-expanded={messageMenuId === message.id}
-                              onClick={() =>
-                                setMessageMenuId((current) =>
-                                  current === message.id ? null : message.id,
-                                )
-                              }
+                              onClick={(event) => {
+                                const nextOpen = messageMenuId !== message.id;
+                                setMessageMenuId(nextOpen ? message.id : null);
+                                setMessageMenuAnchor(
+                                  nextOpen ? event.currentTarget : null,
+                                );
+                              }}
                             >
                               ⋯
                             </button>
                             {messageMenuId === message.id && (
-                              <div className="pw-chat-message-menu">
+                              <FloatingMessageMenu
+                                anchor={messageMenuAnchor}
+                                className="pw-chat-message-menu"
+                              >
                                 {message.canEdit && (
                                   <button type="button" onClick={() => beginEdit(message)}>
                                     Edit message
@@ -741,13 +751,14 @@ export function ProjectChatPanel({
                                     className="danger"
                                     onClick={() => {
                                       setMessageMenuId(null);
+                                      setMessageMenuAnchor(null);
                                       setPendingDelete(message);
                                     }}
                                   >
                                     Delete message
                                   </button>
                                 )}
-                              </div>
+                              </FloatingMessageMenu>
                             )}
                           </div>
                         )}
@@ -925,55 +936,57 @@ export function ProjectChatPanel({
         </>
       )}
 
-      {pendingDelete && (
-        <div
-          className="pw-chat-delete-backdrop"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !remove.isPending) {
-              setPendingDelete(null);
-            }
-          }}
-        >
+      {pendingDelete &&
+        createPortal(
           <div
-            className="pw-chat-delete-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="pw-chat-delete-title"
-            aria-describedby="pw-chat-delete-description"
+            className="pw-chat-delete-backdrop"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget && !remove.isPending) {
+                setPendingDelete(null);
+              }
+            }}
           >
-            <span className="pw-chat-delete-icon" aria-hidden="true">×</span>
-            <div>
-              <h3 id="pw-chat-delete-title">Delete message?</h3>
-              <p id="pw-chat-delete-description">
-                This removes the message for everyone while keeping replies connected to a deleted-message placeholder.
-              </p>
+            <div
+              className="pw-chat-delete-dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="pw-chat-delete-title"
+              aria-describedby="pw-chat-delete-description"
+            >
+              <span className="pw-chat-delete-icon" aria-hidden="true">×</span>
+              <div>
+                <h3 id="pw-chat-delete-title">Delete message?</h3>
+                <p id="pw-chat-delete-description">
+                  This removes the message for everyone while keeping replies connected to a deleted-message placeholder.
+                </p>
+              </div>
+              <div className="pw-chat-delete-actions">
+                <button
+                  type="button"
+                  disabled={remove.isPending}
+                  onClick={() => setPendingDelete(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="danger"
+                  disabled={remove.isPending}
+                  onClick={() => remove.mutate(pendingDelete)}
+                >
+                  {remove.isPending ? 'Deleting…' : 'Delete'}
+                </button>
+              </div>
+              {remove.isError && (
+                <p className="pw-collaboration-warning" role="alert">
+                  {errorMessage(remove.error)}
+                </p>
+              )}
             </div>
-            <div className="pw-chat-delete-actions">
-              <button
-                type="button"
-                disabled={remove.isPending}
-                onClick={() => setPendingDelete(null)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="danger"
-                disabled={remove.isPending}
-                onClick={() => remove.mutate(pendingDelete)}
-              >
-                {remove.isPending ? 'Deleting…' : 'Delete'}
-              </button>
-            </div>
-            {remove.isError && (
-              <p className="pw-collaboration-warning" role="alert">
-                {errorMessage(remove.error)}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </section>
   );
 }

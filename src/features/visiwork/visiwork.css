@@ -1659,10 +1659,10 @@
 }
 
 .visiwork-message-menu {
-  position: absolute;
-  z-index: 45;
-  top: 24px;
-  right: 0;
+  position: fixed;
+  z-index: 900;
+  top: auto;
+  right: auto;
   min-width: 92px;
   display: grid;
   gap: 2px;
@@ -1776,7 +1776,8 @@
   place-items: center;
   padding: 24px;
   background: rgba(45, 38, 34, 0.34);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .visiwork-delete-modal {
@@ -1887,7 +1888,8 @@
   place-items: center;
   padding: 24px;
   background: rgba(45, 38, 34, 0.34);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .visiwork-members-modal {

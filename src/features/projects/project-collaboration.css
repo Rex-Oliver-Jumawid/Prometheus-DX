@@ -1017,10 +1017,10 @@
 }
 
 .pw-chat-message-menu {
-  position: absolute;
-  z-index: 20;
-  top: calc(100% + 4px);
-  right: 0;
+  position: fixed;
+  z-index: 900;
+  top: auto;
+  right: auto;
   min-width: 128px;
   padding: 5px;
   border: 1px solid #ded5ce;
@@ -1130,7 +1130,8 @@
   place-items: center;
   padding: 20px;
   background: rgba(39, 31, 27, .32);
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .pw-chat-delete-dialog {
