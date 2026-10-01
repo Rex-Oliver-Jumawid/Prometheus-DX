@@ -491,8 +491,16 @@ describe('ProjectChatPanel interactions', () => {
 
     renderChat();
     fireEvent.click(await screen.findByRole('button', { name: 'Message options' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Delete message' }));
-    expect(screen.getByRole('dialog', { name: 'Delete message?' })).toBeVisible();
+    const deleteAction = screen.getByRole('button', { name: 'Delete message' });
+    expect(deleteAction.closest('.pw-chat-message-menu')?.parentElement).toBe(
+      document.body,
+    );
+    fireEvent.click(deleteAction);
+    const dialog = screen.getByRole('dialog', { name: 'Delete message?' });
+    expect(dialog).toBeVisible();
+    expect(dialog.closest('.pw-chat-delete-backdrop')?.parentElement).toBe(
+      document.body,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     await waitFor(() => expect(apiFetch).toHaveBeenCalledWith(
       '/projects/' + projectId + '/messages/' + messageId,
