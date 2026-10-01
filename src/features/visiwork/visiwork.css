@@ -1357,6 +1357,13 @@
   margin-right: 2px;
 }
 
+.visiwork-room-header-actions .chat-push-mute-button.is-muted {
+  border-color: #e7c2b2;
+  background: #fff2ec;
+  color: #c14b24;
+}
+
+
 .visiwork-room-header-actions > button {
   width: 28px;
   height: 28px;
