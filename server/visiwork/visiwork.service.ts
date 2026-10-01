@@ -47,7 +47,7 @@ export class VisiWorkService {
     private readonly pushDeliveries: PushDeliveryService = {
       flushAfterCommit: async () => undefined,
       sendChatMessage: async () => undefined,
-    } as PushDeliveryService,
+    } as unknown as PushDeliveryService,
   ) {}
 
   async joinDepartment(
