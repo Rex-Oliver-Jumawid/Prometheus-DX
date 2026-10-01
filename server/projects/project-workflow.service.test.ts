@@ -169,6 +169,17 @@ function createDatabase(
           options.departmentsFound === false ? [] : [{ id: departmentId }],
         ),
     },
+    member: {
+      findMany: vi.fn().mockImplementation(
+        ({ where }: { where: { id: { in: string[] } } }) =>
+          Promise.resolve(
+            where.id.in.map((id) => ({
+              id,
+              status: MemberStatus.ACTIVE,
+            })),
+          ),
+      ),
+    },
     outcome: {
       findMany: vi
         .fn()
