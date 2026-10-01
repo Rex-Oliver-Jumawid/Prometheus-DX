@@ -17,6 +17,7 @@ function fixture() {
     unreadCount: vi.fn(),
     markRead: vi.fn(),
     markAllRead: vi.fn(),
+    listMutedChats: vi.fn(),
     chatPushPreference: vi.fn(),
     setChatPushPreference: vi.fn(),
   };
@@ -60,6 +61,14 @@ describe('NotificationsController', () => {
       }),
     ).toThrow(BadRequestException);
     expect(service.list).not.toHaveBeenCalled();
+  });
+
+  it('lists muted chats only for the authenticated member', () => {
+    const { controller, service } = fixture();
+
+    controller.mutedChats(currentMember);
+
+    expect(service.listMutedChats).toHaveBeenCalledWith(currentMember.id);
   });
 
   it('uses the authenticated member for chat push preference reads and writes', () => {
