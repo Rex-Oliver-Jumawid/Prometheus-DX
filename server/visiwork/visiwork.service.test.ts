@@ -182,7 +182,8 @@ describe('VisiWorkService', () => {
     expect(pushDeliveries.sendChatMessage).toHaveBeenCalledWith({
       recipientMemberIds: [otherMemberId],
       channelKey: 'visiwork:general',
-      body: 'Visiwork\nMember One: “Hello team”',
+      channelLabel: 'Visiwork',
+      body: 'Member One: “Hello team”',
       url: '/visiwork?message=44444444-4444-4444-8444-444444444444',
       tag: 'visiwork-message:44444444-4444-4444-8444-444444444444',
     });
