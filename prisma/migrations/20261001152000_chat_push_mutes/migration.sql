@@ -14,3 +14,8 @@ FOREIGN KEY ("member_id")
 REFERENCES "members"("id")
 ON DELETE CASCADE
 ON UPDATE CASCADE;
+
+ALTER TABLE "chat_push_mutes" ENABLE ROW LEVEL SECURITY;
+
+REVOKE ALL ON TABLE "chat_push_mutes" FROM anon;
+REVOKE ALL ON TABLE "chat_push_mutes" FROM authenticated;
