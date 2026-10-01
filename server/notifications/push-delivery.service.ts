@@ -87,8 +87,8 @@ export class PushDeliveryService {
       },
       {
         notificationId: notification.id,
-        title: 'Prometheus',
-        body: `${presentation.title}\n${presentation.description}`,
+        title: 'Prometheus DX',
+        body: presentation.description,
         url: notificationPath(notification) ?? '/notifications',
         tag: notification.id,
       },
