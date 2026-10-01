@@ -409,6 +409,20 @@
   color: #282320;
   font-size: 13px;
 }
+.pw-chat-channel-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+
+.pw-chat-channel-actions .chat-push-mute-button {
+  width: 31px;
+  height: 31px;
+  flex-basis: 31px;
+  border-radius: 9px;
+}
+
 .pw-chat-channel-heading strong {
   min-width: 0;
   overflow-wrap: anywhere;
