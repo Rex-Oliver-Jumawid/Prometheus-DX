@@ -48,8 +48,10 @@ export class PushDeliveryService {
         OR: [{ claimedAt: null }, { claimedAt: { lt: leaseCutoff } }],
       },
       select: { id: true },
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-      take: 25,
+      // Keep new, first-attempt notifications ahead of stale retry backlog so
+      // a fresh user-facing event is dispatched immediately.
+      orderBy: [{ attempts: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
+      take: 100,
     });
     if (!candidates.length) return;
 

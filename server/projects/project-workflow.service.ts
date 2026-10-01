@@ -74,7 +74,9 @@ export class ProjectWorkflowService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(PushDeliveryService)
-    private readonly pushDeliveries: PushDeliveryService,
+    private readonly pushDeliveries: PushDeliveryService = {
+      flushAfterCommit: async () => undefined,
+    } as PushDeliveryService,
   ) {}
 
   async getWorkflow(
