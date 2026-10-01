@@ -24,37 +24,32 @@ export function FloatingMessageMenu({
       return;
     }
 
-    let frame = 0;
-
     const updatePosition = () => {
-      window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => {
-        const menu = menuRef.current;
-        if (!menu || !anchor.isConnected) return;
+      const menu = menuRef.current;
+      if (!menu || !anchor.isConnected) return;
 
-        const anchorRect = anchor.getBoundingClientRect();
-        const menuRect = menu.getBoundingClientRect();
-        const spaceBelow = window.innerHeight - anchorRect.bottom;
-        const spaceAbove = anchorRect.top;
-        const placeAbove =
-          spaceBelow < menuRect.height + MENU_GAP &&
-          spaceAbove >= menuRect.height + MENU_GAP;
+      const anchorRect = anchor.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - anchorRect.bottom;
+      const spaceAbove = anchorRect.top;
+      const placeAbove =
+        spaceBelow < menuRect.height + MENU_GAP &&
+        spaceAbove >= menuRect.height + MENU_GAP;
 
-        const preferredTop = placeAbove
-          ? anchorRect.top - menuRect.height - MENU_GAP
-          : anchorRect.bottom + MENU_GAP;
-        const preferredLeft = anchorRect.right - menuRect.width;
+      const preferredTop = placeAbove
+        ? anchorRect.top - menuRect.height - MENU_GAP
+        : anchorRect.bottom + MENU_GAP;
+      const preferredLeft = anchorRect.right - menuRect.width;
 
-        setPosition({
-          top: Math.min(
-            window.innerHeight - menuRect.height - VIEWPORT_PADDING,
-            Math.max(VIEWPORT_PADDING, preferredTop),
-          ),
-          left: Math.min(
-            window.innerWidth - menuRect.width - VIEWPORT_PADDING,
-            Math.max(VIEWPORT_PADDING, preferredLeft),
-          ),
-        });
+      setPosition({
+        top: Math.min(
+          window.innerHeight - menuRect.height - VIEWPORT_PADDING,
+          Math.max(VIEWPORT_PADDING, preferredTop),
+        ),
+        left: Math.min(
+          window.innerWidth - menuRect.width - VIEWPORT_PADDING,
+          Math.max(VIEWPORT_PADDING, preferredLeft),
+        ),
       });
     };
 
@@ -63,7 +58,6 @@ export function FloatingMessageMenu({
     window.addEventListener('scroll', updatePosition, true);
 
     return () => {
-      window.cancelAnimationFrame(frame);
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
     };
