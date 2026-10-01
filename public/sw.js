@@ -18,8 +18,9 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(payload.title, {
       body: payload.body,
       icon: '/apple-touch-icon.png',
-      badge: '/favicon-32x32.png',
+      badge: '/apple-touch-icon.png',
       tag: payload.tag,
+      lang: 'en',
       data: { url: payload.url },
     }),
   );
