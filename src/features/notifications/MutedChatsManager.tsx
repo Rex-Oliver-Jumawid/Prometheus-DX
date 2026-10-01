@@ -63,7 +63,10 @@ export function MutedChatsManager({
 
   if (!accessToken) return null;
 
-  const count = mutedChats.data?.items.length ?? 0;
+  const items = Array.isArray(mutedChats.data?.items)
+    ? mutedChats.data.items
+    : [];
+  const count = items.length;
 
   return (
     <>
@@ -123,14 +126,14 @@ export function MutedChatsManager({
                     Try again
                   </button>
                 </div>
-              ) : mutedChats.data.items.length === 0 ? (
+              ) : items.length === 0 ? (
                 <div className="chat-push-manager-state">
                   <strong>No muted chats</strong>
                   <span>All included chats can send device notification banners.</span>
                 </div>
               ) : (
                 <ul className="chat-push-manager-list">
-                  {mutedChats.data.items.map((item) => (
+                  {items.map((item) => (
                     <li key={item.channelKey}>
                       <div className="chat-push-manager-copy">
                         <strong>{item.label}</strong>
