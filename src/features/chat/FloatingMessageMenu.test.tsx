@@ -49,7 +49,7 @@ describe('FloatingMessageMenu', () => {
     });
 
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
-      function () {
+      function (this: HTMLElement) {
         if (this === anchor) {
           return rect({
             top: 740,
