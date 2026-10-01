@@ -8,7 +8,7 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('push', (event) => {
   let payload = {
-    title: 'Prometheus',
+    title: 'Prometheus DX',
     body: 'You have a new Prometheus notification.',
     url: '/notifications',
     tag: 'prometheus-notification',
