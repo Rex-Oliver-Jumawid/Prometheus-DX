@@ -352,8 +352,17 @@ export class ProjectWorkflowService {
           metadata: { title: created.title },
         },
       });
+      await writeNotifications(transaction, {
+        type: 'OUTCOME_ASSIGNED',
+        sourceEventId: created.id,
+        actorMemberId: currentMember.id,
+        recipientMemberIds: input.memberIds || [],
+        projectId,
+        outcomeId: created.id,
+      });
       return created;
     });
+    await this.pushDeliveries.flushAfterCommit();
     return this.toOutcome(outcome, currentMember.id);
   }
 
@@ -405,7 +414,18 @@ export class ProjectWorkflowService {
       await transaction.outcomeDepartment.deleteMany({
         where: { outcomeId },
       });
-      if (input.memberIds) {
+      let newlyAssignedMemberIds: string[] = [];
+      if (input.memberIds?.length) {
+        const existingMemberships = await transaction.outcomeMember.findMany({
+          where: { outcomeId, memberId: { in: input.memberIds } },
+          select: { memberId: true },
+        });
+        const existingMemberIds = new Set(
+          existingMemberships.map(({ memberId }) => memberId),
+        );
+        newlyAssignedMemberIds = input.memberIds.filter(
+          (memberId) => !existingMemberIds.has(memberId),
+        );
         for (const memberId of input.memberIds) {
           await transaction.outcomeMember.upsert({
             where: { outcomeId_memberId: { outcomeId, memberId } },
@@ -462,8 +482,17 @@ export class ProjectWorkflowService {
           metadata: { title: updated.title },
         },
       });
+      await writeNotifications(transaction, {
+        type: 'OUTCOME_ASSIGNED',
+        sourceEventId: outcomeId,
+        actorMemberId: currentMember.id,
+        recipientMemberIds: newlyAssignedMemberIds,
+        projectId,
+        outcomeId,
+      });
       return updated;
     });
+    await this.pushDeliveries.flushAfterCommit();
     return this.toOutcome(outcome, currentMember.id);
   }
 

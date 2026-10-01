@@ -11,6 +11,7 @@ export function presentNotification(notification: Notification) {
       const change = access ? `changed your access to ${access}` : 'changed your access';
       return { title: 'Your Project access changed', description: `${actor ? `${actor} ${change}` : 'Your access was changed'}${project ? ` on ${project}` : ''}.`, category: 'Project' as const, icon: 'project' as const };
     }
+    case 'OUTCOME_ASSIGNED': return { title: 'You were assigned to an Outcome', description: `${actor ? `${actor} assigned you to` : 'You were assigned to'} ${outcome ?? 'an Outcome'}${project ? ` in ${project}` : ''}.`, category: 'Outcome' as const, icon: 'participant' as const };
     case 'OUTCOME_JOINED': return { title: 'A member joined an Outcome', description: `${actor ?? 'A member'} joined ${outcome ?? 'an Outcome'}${project ? ` in ${project}` : ''}.`, category: 'Outcome' as const, icon: 'participant' as const };
     case 'SUBMISSION_CREATED': return { title: 'Output ready for your review', description: `${actor ? `${actor} submitted output` : 'Output was submitted'}${outcome ? ` for ${outcome}` : ''}${project ? ` in ${project}` : ''}.`, category: 'Review' as const, icon: 'review' as const };
     case 'REVISION_REQUESTED': return { title: 'Revision requested', description: `${actor ? `${actor} requested a revision` : 'A revision was requested'}${outcome ? ` for ${outcome}` : ''}.`, category: 'Review' as const, icon: 'review' as const };

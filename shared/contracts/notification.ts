@@ -4,6 +4,7 @@ import { ProjectAccessLevelSchema } from './project';
 export const NotificationTypeSchema = z.enum([
   'PROJECT_LEAD_ASSIGNED',
   'PROJECT_MEMBER_ACCESS_CHANGED',
+  'OUTCOME_ASSIGNED',
   'OUTCOME_JOINED',
   'SUBMISSION_CREATED',
   'REVISION_REQUESTED',
