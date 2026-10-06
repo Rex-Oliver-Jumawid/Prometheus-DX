@@ -26,7 +26,9 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(payload.title, {
       body: payload.body,
       icon: '/apple-touch-icon.png',
-      badge: '/apple-touch-icon.png',
+      // Android uses `badge` for the small status-bar icon. Use the transparent
+      // favicon instead of the square Apple touch icon so the OS can mask it cleanly.
+      badge: '/favicon-32x32.png',
       tag: payload.tag,
       lang: 'en',
       silent: false,
