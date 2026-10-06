@@ -28,7 +28,7 @@ self.addEventListener('push', (event) => {
       icon: '/apple-touch-icon.png',
       // Android uses `badge` for the small status-bar icon. Use the transparent
       // favicon instead of the square Apple touch icon so the OS can mask it cleanly.
-      badge: '/favicon-32x32.png',
+      badge: '/notification-badge.svg',
       tag: payload.tag,
       lang: 'en',
       silent: false,
