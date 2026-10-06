@@ -26,9 +26,9 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(payload.title, {
       body: payload.body,
       icon: '/apple-touch-icon.png',
-      // Android uses `badge` for the small status-bar icon. Use the transparent
-      // favicon instead of the square Apple touch icon so the OS can mask it cleanly.
-      badge: '/notification-badge.svg',
+      // Android renders this badge as a monochrome notification/status-bar icon.
+      // Keep the canonical source asset in public/icons so the service worker uses it directly.
+      badge: '/icons/notification-badge.png',
       tag: payload.tag,
       lang: 'en',
       silent: false,
