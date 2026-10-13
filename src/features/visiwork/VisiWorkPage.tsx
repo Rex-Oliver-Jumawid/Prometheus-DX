@@ -345,6 +345,14 @@ export function RoomPanel({
           )
           .slice(0, 6);
 
+  // Match the original single-line input height, but expand as Shift+Enter adds lines.
+  useLayoutEffect(() => {
+    const composer = composerRef.current;
+    if (!composer) return;
+    composer.style.height = '30px';
+    composer.style.height = Math.max(30, Math.min(composer.scrollHeight, 112)) + 'px';
+  }, [body, canWrite]);
+
   useLayoutEffect(() => {
     const feed = feedRef.current;
     if (!feed || ordered.length === 0) return;
