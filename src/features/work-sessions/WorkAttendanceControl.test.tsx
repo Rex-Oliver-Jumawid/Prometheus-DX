@@ -110,7 +110,7 @@ describe('WorkAttendanceControl', () => {
     expect(mocks.apiFetch.mock.calls.filter(([path]) => path === '/work-sessions/time-out')).toHaveLength(0);
     await user.type(screen.getByRole('textbox', { name: 'Work summary' }), 'Finished the sprint review.');
     await user.click(screen.getByRole('button', { name: 'Submit summary & Time Out' }));
-    expect(screen.getByRole('button', { name: 'Submit summary & Time Out' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled();
     expect(mocks.apiFetch.mock.calls.filter(([path]) => path === '/work-sessions/time-out')).toHaveLength(1);
     expect(mocks.apiFetch).toHaveBeenCalledWith(
       '/work-sessions/time-out', expect.anything(),
