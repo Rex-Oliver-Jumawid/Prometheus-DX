@@ -124,7 +124,7 @@ function MessageBody({ message }: { message: VisiWorkMessage }) {
     </>
   );
 }
-function RoomPanel({
+export function RoomPanel({
   roomType,
   title,
   subtitle,
