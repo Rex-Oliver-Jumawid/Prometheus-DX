@@ -58,6 +58,8 @@ describe('VisiWork general and department chat composer', () => {
   ) => {
     renderRoom(departmentId);
     const input = await screen.findByRole('textbox', { name: label });
+    expect(input).toHaveAttribute('rows', '1');
+    expect(input).toHaveStyle({ height: '30px' });
     fireEvent.change(input, { target: { value: 'First line' } });
     expect(fireEvent.keyDown(input, { key: 'Enter', shiftKey: true })).toBe(true);
     expect(vi.mocked(apiFetch).mock.calls.some(([, , options]) => options?.method === 'POST')).toBe(false);
@@ -79,5 +81,6 @@ describe('VisiWork general and department chat composer', () => {
     expect(input).toHaveFocus();
     fireEvent.change(input, { target: { value: 'Next message' } });
     expect(input).toHaveValue('Next message');
+    expect(input).toHaveStyle({ height: '30px' });
   });
 });
