@@ -351,7 +351,7 @@ export function RoomPanel({
     if (!composer) return;
     composer.style.height = '30px';
     composer.style.height = Math.max(30, Math.min(composer.scrollHeight, 112)) + 'px';
-  }, [body]);
+  }, [body, canWrite]);
 
   useLayoutEffect(() => {
     const feed = feedRef.current;
