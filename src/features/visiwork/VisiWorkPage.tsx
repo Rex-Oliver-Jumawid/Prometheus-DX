@@ -345,11 +345,14 @@ export function RoomPanel({
           )
           .slice(0, 6);
 
-  // Match the original single-line input height, but expand as Shift+Enter adds lines.
+  // Stay the same height as Send for a single line. Grow only when a
+  // multiline draft needs it; measuring an empty textarea can overestimate height.
   useLayoutEffect(() => {
     const composer = composerRef.current;
     if (!composer) return;
     composer.style.height = '30px';
+    const explicitLines = body.split('\n').length;
+    if (explicitLines === 1 && body.length < 80) return;
     composer.style.height = Math.max(30, Math.min(composer.scrollHeight, 112)) + 'px';
   }, [body, canWrite]);
 

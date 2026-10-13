@@ -60,11 +60,17 @@ describe('VisiWork general and department chat composer', () => {
     const input = await screen.findByRole('textbox', { name: label });
     expect(input).toHaveAttribute('rows', '1');
     expect(input).toHaveStyle({ height: '30px' });
+    Object.defineProperty(input, 'scrollHeight', {
+      configurable: true,
+      get: () => 66,
+    });
     fireEvent.change(input, { target: { value: 'First line' } });
+    expect(input).toHaveStyle({ height: '30px' });
     expect(fireEvent.keyDown(input, { key: 'Enter', shiftKey: true })).toBe(true);
     expect(vi.mocked(apiFetch).mock.calls.some(([, , options]) => options?.method === 'POST')).toBe(false);
 
     fireEvent.change(input, { target: { value: 'First line\nSecond line' } });
+    expect(input).toHaveStyle({ height: '66px' });
     expect(fireEvent.keyDown(input, { key: 'Enter', shiftKey: false })).toBe(false);
 
     await waitFor(() => expect(apiFetch).toHaveBeenCalledWith(
