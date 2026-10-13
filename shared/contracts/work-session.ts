@@ -17,6 +17,7 @@ export const WorkSessionSchema = z.object({
   timeIn: z.string().datetime(),
   timeOut: z.string().datetime().nullable(),
   status: WorkSessionStatusSchema,
+  summary: z.string().nullable().optional(),
   durationSeconds: z.number().int().nonnegative(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
@@ -45,6 +46,12 @@ export const WorkSessionHistoryResponseSchema = z.object({
 export type WorkSessionHistoryResponse = z.infer<
   typeof WorkSessionHistoryResponseSchema
 >;
+
+export const TimeOutWorkSessionRequestSchema = z.object({
+  summary: z.string().trim().min(3).max(2_000),
+});
+
+export type TimeOutWorkSessionRequest = z.infer<typeof TimeOutWorkSessionRequestSchema>;
 
 export const CorrectWorkSessionRequestSchema = z
   .object({

@@ -274,6 +274,7 @@ function scheduleOverlapSeconds(
 type ShiftTimelineSegment = {
   startMinutes: number;
   endMinutes: number;
+  status?: WorkSession['status'];
 };
 
 const SHIFT_TIMELINE_MINUTES = 24 * 60;
@@ -310,6 +311,7 @@ function actualTimelineSegments(
       {
         startMinutes: (overlap.startMs - overlap.dayStartMs) / 60_000,
         endMinutes: (overlap.endMs - overlap.dayStartMs) / 60_000,
+        status: session.status,
       },
     ];
   });
@@ -1308,7 +1310,7 @@ function TimelineBar({
           return (
             <i
               key={index}
-              className={variant}
+              className={variant === 'actual' && segment.status === 'OPEN' ? 'active' : variant}
               data-start-minutes={start}
               data-end-minutes={end}
               style={{
@@ -1368,6 +1370,10 @@ function DayInspector({
               <p key={item.id}>
                 {formatManilaDateTime(item.timeIn)}
                 {item.timeOut ? ' – ' + formatManilaDateTime(item.timeOut) : ' – Working now'}
+                <span className={item.status === 'OPEN' ? 'session-active-label' : 'session-completed-label'}>
+                  {item.status === 'OPEN' ? ' · Ongoing' : item.status === 'NEEDS_CORRECTION' ? ' · Needs correction' : ' · Completed'}
+                </span>
+                {item.summary && <span className="day-inspector-summary">Summary: {item.summary}</span>}
               </p>
             ))
           ) : (

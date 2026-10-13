@@ -12,6 +12,7 @@ const session = (overrides: Partial<WorkSession> = {}): WorkSession => ({
   timeIn: new Date('2026-09-18T00:00:00.000Z'),
   timeOut: null,
   status: 'OPEN',
+  summary: null,
   createdAt: new Date('2026-09-18T00:00:00.000Z'),
   updatedAt: new Date('2026-09-18T00:00:00.000Z'),
   ...overrides,
@@ -81,7 +82,7 @@ describe('WorkSessionsService', () => {
       $transaction: vi.fn((callback) => callback(database)),
     } as unknown as PrismaService;
 
-    const result = await new WorkSessionsService(prisma).timeOut(currentMember);
+    const result = await new WorkSessionsService(prisma).timeOut(currentMember, { summary: 'Finished the sprint review.' });
 
     expect(database.workSession.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -93,6 +94,9 @@ describe('WorkSessionsService', () => {
       }),
     );
     expect(result.session?.durationSeconds).toBe(14_400);
+    expect(database.workSession.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ summary: 'Finished the sprint review.' }) }),
+    );
   });
 
   it('marks stale open sessions for correction without closing them', async () => {

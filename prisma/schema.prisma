@@ -276,6 +276,7 @@ model WorkSession {
   memberId    String                  @map("member_id") @db.Uuid
   timeIn      DateTime                @map("time_in") @db.Timestamptz(6)
   timeOut     DateTime?               @map("time_out") @db.Timestamptz(6)
+  summary     String?                 @db.VarChar(2000)
   status      WorkSessionStatus       @default(OPEN)
   createdAt   DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
