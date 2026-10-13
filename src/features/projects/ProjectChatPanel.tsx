@@ -216,8 +216,10 @@ export function ProjectChatPanel({
       pinnedToBottom.current = true;
       await queryClient.invalidateQueries({ queryKey });
       broadcastChatChange();
+      composerRef.current?.focus();
     },
     onError: () => {
+      composerRef.current?.focus();
       void queryClient.invalidateQueries({ queryKey });
     },
   });
