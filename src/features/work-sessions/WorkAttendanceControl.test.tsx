@@ -106,14 +106,18 @@ describe('WorkAttendanceControl', () => {
     const button = await screen.findByRole('button', { name: /Time Out/ });
     expect(screen.getByLabelText('Elapsed work session')).toBeInTheDocument();
     await user.click(button);
-    expect(button).toBeDisabled();
-    expect(
-      mocks.apiFetch.mock.calls.filter(
-        ([path]) => path === '/work-sessions/time-out',
-      ),
-    ).toHaveLength(1);
+    const modal = await screen.findByRole('dialog', { name: 'Complete your work session' });
+    expect(mocks.apiFetch.mock.calls.filter(([path]) => path === '/work-sessions/time-out')).toHaveLength(0);
+    await user.type(screen.getByRole('textbox', { name: 'Work summary' }), 'Finished the sprint review.');
+    await user.click(screen.getByRole('button', { name: 'Submit summary & Time Out' }));
+    expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled();
+    expect(mocks.apiFetch.mock.calls.filter(([path]) => path === '/work-sessions/time-out')).toHaveLength(1);
+    expect(mocks.apiFetch).toHaveBeenCalledWith(
+      '/work-sessions/time-out', expect.anything(),
+      expect.objectContaining({ body: { summary: 'Finished the sprint review.' } }),
+    );
     resolveTimeOut(activeResponse);
-    await waitFor(() => expect(button).toBeEnabled());
+    await waitFor(() => expect(modal).not.toBeInTheDocument());
   });
 
   it('times in from the no-active-session state', async () => {

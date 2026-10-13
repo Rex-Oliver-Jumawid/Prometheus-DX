@@ -13,6 +13,7 @@ import {
 import type { Member } from '@prisma/client';
 import {
   CorrectWorkSessionRequestSchema,
+  TimeOutWorkSessionRequestSchema,
   WorkSessionWeekQuerySchema,
 } from '../../shared/contracts/work-session';
 import { CurrentMember } from '../auth/current-member.decorator';
@@ -38,8 +39,12 @@ export class WorkSessionsController {
   }
 
   @Post('time-out')
-  timeOut(@CurrentMember() member: Member) {
-    return this.workSessionsService.timeOut(member);
+  timeOut(@CurrentMember() member: Member, @Body() body: unknown) {
+    const parsed = TimeOutWorkSessionRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues[0]?.message ?? 'A work summary is required.');
+    }
+    return this.workSessionsService.timeOut(member, parsed.data);
   }
 
   @Get('history')

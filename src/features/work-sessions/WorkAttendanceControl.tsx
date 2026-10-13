@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   CorrectWorkSessionResponseSchema,
   CurrentWorkSessionResponseSchema,
+  TimeOutWorkSessionRequestSchema,
 } from '../../../shared/contracts/work-session';
 import { apiFetch } from '../../lib/api';
 import { useAuth } from '../auth/auth-context';
@@ -33,6 +35,9 @@ export function WorkAttendanceControl() {
   const [peopleOpen, setPeopleOpen] = useState(false);
   const attendanceRef = useRef<HTMLElement>(null);
   const [reason, setReason] = useState('');
+  const [timeOutOpen, setTimeOutOpen] = useState(false);
+  const [workSummary, setWorkSummary] = useState('');
+  const [idleReminder, setIdleReminder] = useState(false);
   const [correctedTimeIn, setCorrectedTimeIn] = useState('');
   const [correctedTimeOut, setCorrectedTimeOut] = useState('');
 
@@ -49,6 +54,55 @@ export function WorkAttendanceControl() {
     const timer = window.setInterval(() => setNow(Date.now()), 1_000);
     return () => window.clearInterval(timer);
   }, [activeId, activeStatus, activeTimeIn]);
+
+  // Remind only while a live session is open in this browser. Browsers may
+  // throttle background timers; OS push while the app is closed needs a server scheduler.
+  useEffect(() => {
+    if (!activeId || activeStatus !== 'OPEN') {
+      return undefined;
+    }
+    let lastActivityAt = Date.now();
+    let reminded = false;
+    const recordActivity = () => {
+      lastActivityAt = Date.now();
+      reminded = false;
+      setIdleReminder(false);
+    };
+    const remindIfIdle = () => {
+      if (reminded || Date.now() - lastActivityAt < 30 * 60_000) return;
+      reminded = true;
+      setIdleReminder(true);
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const title = 'Prometheus DX · Still working?';
+        const options: NotificationOptions = {
+          body: 'You have been inactive for 30 minutes. Are you still working?',
+          tag: 'prometheus-work-session-idle',
+        };
+        void (async () => {
+          const registration = 'serviceWorker' in navigator
+            ? await navigator.serviceWorker.getRegistration()
+            : undefined;
+          if (registration) {
+            await registration.showNotification(title, options);
+          } else {
+            new Notification(title, options);
+          }
+        })().catch(() => undefined);
+      }
+    };
+    for (const event of ['pointerdown', 'keydown', 'touchstart', 'scroll']) {
+      document.addEventListener(event, recordActivity, { passive: true });
+    }
+    document.addEventListener('visibilitychange', remindIfIdle);
+    const timer = window.setInterval(remindIfIdle, 30_000);
+    return () => {
+      window.clearInterval(timer);
+      for (const event of ['pointerdown', 'keydown', 'touchstart', 'scroll']) {
+        document.removeEventListener(event, recordActivity);
+      }
+      document.removeEventListener('visibilitychange', remindIfIdle);
+    };
+  }, [activeId, activeStatus]);
 
   useEffect(() => {
     if (activeStatus === 'NEEDS_CORRECTION' && activeTimeIn && activeUpdatedAt) {
@@ -96,12 +150,20 @@ export function WorkAttendanceControl() {
   };
 
   const mutation = useMutation({
-    mutationFn: (action: 'time-in' | 'time-out') =>
-      apiFetch(`/work-sessions/${action}`, CurrentWorkSessionResponseSchema, {
+    mutationFn: (input: { action: 'time-in' | 'time-out'; summary?: string }) =>
+      apiFetch(`/work-sessions/${input.action}`, CurrentWorkSessionResponseSchema, {
         accessToken: session?.access_token,
         method: 'POST',
+        ...(input.action === 'time-out'
+          ? { body: TimeOutWorkSessionRequestSchema.parse({ summary: input.summary }) }
+          : {}),
       }),
-    onSuccess: async (response) => {
+    onSuccess: async (response, input) => {
+      if (input.action === 'time-out') {
+        setTimeOutOpen(false);
+        setWorkSummary('');
+        setIdleReminder(false);
+      }
       queryClient.setQueryData(workSessionKeys.current, response);
       await refreshAffectedQueries();
     },
@@ -171,7 +233,11 @@ export function WorkAttendanceControl() {
       return;
     }
 
-    mutation.mutate(active?.status === 'OPEN' ? 'time-out' : 'time-in');
+    if (active?.status === 'OPEN') {
+      setTimeOutOpen(true);
+      return;
+    }
+    mutation.mutate({ action: 'time-in' });
   };
 
   return (
@@ -409,6 +475,55 @@ export function WorkAttendanceControl() {
             </form>
           )}
         </div>
+      )}
+      {idleReminder && active?.status === 'OPEN' && createPortal(
+        <section className="attendance-idle-reminder" role="status" aria-label="Work session idle reminder">
+          <strong>Still working?</strong>
+          <p>No activity detected for 30 minutes. Your timer is still running.</p>
+          <button type="button" onClick={() => setIdleReminder(false)}>Yes, I'm working</button>
+          <button type="button" onClick={() => { setIdleReminder(false); setTimeOutOpen(true); }}>Time out</button>
+        </section>,
+        document.body,
+      )}
+      {timeOutOpen && active?.status === 'OPEN' && createPortal(
+        <div className="attendance-summary-backdrop" role="presentation">
+          <form
+            className="attendance-summary-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="attendance-summary-heading"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!mutation.isPending && workSummary.trim().length >= 3) {
+                mutation.mutate({ action: 'time-out', summary: workSummary.trim() });
+              }
+            }}
+          >
+            <h2 id="attendance-summary-heading">Complete your work session</h2>
+            <p>Summarize what you accomplished before timing out. This will appear in your shift history.</p>
+            <label htmlFor="attendance-work-summary">Work summary</label>
+            <textarea
+              id="attendance-work-summary"
+              autoFocus
+              required
+              minLength={3}
+              maxLength={2000}
+              rows={5}
+              value={workSummary}
+              onChange={(event) => setWorkSummary(event.target.value)}
+              placeholder="What did you work on today?"
+              disabled={mutation.isPending}
+            />
+            {mutation.isError && <p className="attendance-modal-error" role="alert">{mutation.error.message}</p>}
+            <div className="attendance-summary-actions">
+              <button type="button" disabled={mutation.isPending} onClick={() => { setTimeOutOpen(false); mutation.reset(); }}>Keep working</button>
+              <button type="submit" disabled={mutation.isPending || workSummary.trim().length < 3}>
+                {mutation.isPending ? 'Saving...' : 'Submit summary & Time Out'}
+              </button>
+            </div>
+          </form>
+        </div>,
+        document.body,
       )}
     </aside>
   );

@@ -124,7 +124,7 @@ function MessageBody({ message }: { message: VisiWorkMessage }) {
     </>
   );
 }
-function RoomPanel({
+export function RoomPanel({
   roomType,
   title,
   subtitle,
@@ -162,6 +162,7 @@ function RoomPanel({
     Array<{ id: string; fullName: string }>
   >([]);
   const feedRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
   const pinnedToBottom = useRef(true);
   const initiallyScrolled = useRef(false);
   const roomKey = departmentId ?? 'general';
@@ -242,11 +243,14 @@ function RoomPanel({
         body: CreateVisiWorkMessageSchema.parse(input),
       }),
     onSuccess: async () => {
-      setBody('');
-      setSelectedMentions([]);
       pinnedToBottom.current = true;
+      composerRef.current?.focus();
       await queryClient.invalidateQueries({ queryKey });
       broadcastChatChange();
+    },
+    onError: (_error, input) => {
+      setBody((current) => current || input.body);
+      composerRef.current?.focus();
     },
   });
 
@@ -453,10 +457,14 @@ function RoomPanel({
     if (!trimmed || trimmed.length > 2000 || !canWrite || send.isPending) {
       return;
     }
-    send.mutate({
+    const input = {
       body: trimmed,
       mentionMemberIds: selectedMentions.map((mention) => mention.id),
-    });
+    };
+    setBody('');
+    setSelectedMentions([]);
+    send.mutate(input);
+    composerRef.current?.focus();
   }
 
   function jumpToMessage(message: VisiWorkMessage) {
@@ -790,22 +798,30 @@ function RoomPanel({
       {canWrite ? (
         <form className="visiwork-room-composer" onSubmit={submit}>
           <div className="visiwork-chat-input-wrap">
-            <input
+            <textarea
+              ref={composerRef}
+              rows={1}
               aria-label={'Message ' + title}
               placeholder={
                 departmentId ? 'Message this department...' : 'Message everyone...'
               }
               value={body}
               maxLength={2000}
-              disabled={send.isPending}
               onChange={(event) => updateBody(event.target.value)}
               onKeyDown={(event) => {
+                if (event.nativeEvent.isComposing) return;
                 if (
                   mentionSuggestions.length > 0 &&
+                  !event.shiftKey &&
                   (event.key === 'Enter' || event.key === 'Tab')
                 ) {
                   event.preventDefault();
                   selectMention(mentionSuggestions[0]);
+                  return;
+                }
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault();
+                  if (!event.repeat) event.currentTarget.form?.requestSubmit();
                 }
               }}
             />

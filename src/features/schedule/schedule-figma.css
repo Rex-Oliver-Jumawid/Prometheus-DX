@@ -470,3 +470,9 @@
 .schedule-calendar-block strong { font-size: 8.5px; line-height: 1.2; }
 .schedule-calendar-block small { margin-top: 4px; font-size: 7px; line-height: 1.2; }
 .schedule-calendar-editing .editor-day-header span { font-size: 7px; }
+
+/* Recorded time uses a distinct status color for currently open sessions. */
+.timeline-track i.active { background: rgba(42, 140, 105, .78); }
+.day-inspector-summary { display: block; margin-top: 5px; white-space: pre-wrap; color: #403936; font-size: 8px; }
+.session-active-label { color: #227c59; font-weight: 750; }
+.session-completed-label { color: #786d66; }

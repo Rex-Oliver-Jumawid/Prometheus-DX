@@ -207,17 +207,17 @@ export function ProjectChatPanel({
         },
       ),
     onSuccess: async () => {
-      setBody('');
-      setSelectedMentions([]);
-      setReplyTo(null);
       setSearchTerm('');
       setSearchOpen(false);
       setTargetMessageId(null);
       pinnedToBottom.current = true;
+      composerRef.current?.focus();
       await queryClient.invalidateQueries({ queryKey });
       broadcastChatChange();
     },
-    onError: () => {
+    onError: (_error, input) => {
+      setBody((current) => current || input.body);
+      composerRef.current?.focus();
       void queryClient.invalidateQueries({ queryKey });
     },
   });
@@ -472,11 +472,16 @@ export function ProjectChatPanel({
 
   function sendMessage() {
     if (!body.trim() || body.length > 4000 || !canWrite || send.isPending) return;
-    send.mutate({
+    const input = {
       body,
       parentMessageId: replyTo?.id ?? null,
       mentionMemberIds: selectedMentions.map((mention) => mention.id),
-    });
+    };
+    setBody('');
+    setSelectedMentions([]);
+    setReplyTo(null);
+    send.mutate(input);
+    composerRef.current?.focus();
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -903,7 +908,7 @@ export function ProjectChatPanel({
                         if (!event.repeat) sendMessage();
                       }
                     }}
-                    disabled={!canWrite || send.isPending}
+                    disabled={!canWrite}
                     title={!canWrite ? 'Only Project Members and the Project Lead can send messages.' : undefined}
                   />
                   {canWrite && mentionSuggestions.length > 0 && (

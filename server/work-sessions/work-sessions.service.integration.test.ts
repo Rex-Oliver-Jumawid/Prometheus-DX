@@ -94,10 +94,11 @@ describe.runIf(runDatabaseIntegration)(
     });
 
     it('persists Time Out and prevents a repeated Time Out', async () => {
-      const completed = await service.timeOut(owner);
+      const completed = await service.timeOut(owner, { summary: 'Completed integration work.' });
       expect(completed.session).toMatchObject({ status: 'COMPLETED' });
       expect(completed.session?.timeOut).not.toBeNull();
-      await expect(service.timeOut(owner)).rejects.toThrow(
+      expect(completed.session?.summary).toBe('Completed integration work.');
+      await expect(service.timeOut(owner, { summary: 'Trying again.' })).rejects.toThrow(
         'There is no active work session to end.',
       );
     });

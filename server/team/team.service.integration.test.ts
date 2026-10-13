@@ -91,7 +91,7 @@ describe.runIf(runDatabaseIntegration)('TeamService database integration', () =>
     });
     expect(result?.actualWorkedSeconds).toBeGreaterThanOrEqual(3_600);
 
-    await workSessions.timeOut(workingMember);
+    await workSessions.timeOut(workingMember, { summary: 'Finished the scheduled shift.' });
     const afterTimeOut = await service.getSummary();
     expect(
       afterTimeOut.members.find((member) => member.id === workingMember.id),

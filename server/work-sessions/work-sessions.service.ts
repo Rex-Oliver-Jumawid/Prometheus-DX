@@ -10,6 +10,7 @@ import { Prisma, type Member, type WorkSession } from '@prisma/client';
 import type {
   CorrectWorkSessionRequest,
   CurrentWorkSessionResponse,
+  TimeOutWorkSessionRequest,
   WorkSessionHistoryResponse,
 } from '../../shared/contracts/work-session';
 import { WORKSPACE_TIMEZONE } from '../../shared/contracts/work-session';
@@ -73,7 +74,7 @@ export class WorkSessionsService {
     }
   }
 
-  async timeOut(member: Member): Promise<CurrentWorkSessionResponse> {
+  async timeOut(member: Member, input: TimeOutWorkSessionRequest): Promise<CurrentWorkSessionResponse> {
     const now = new Date();
     await this.refreshStaleSessions(now, member.id);
     const session = await this.prisma.workSession.findFirst({
@@ -99,7 +100,7 @@ export class WorkSessionsService {
           status: 'OPEN',
           timeOut: null,
         },
-        data: { status: 'COMPLETED', timeOut: now },
+        data: { status: 'COMPLETED', timeOut: now, summary: input.summary.trim() },
       });
       if (update.count !== 1) {
         throw new ConflictException(
@@ -283,6 +284,7 @@ export class WorkSessionsService {
       timeIn: session.timeIn.toISOString(),
       timeOut: session.timeOut?.toISOString() ?? null,
       status: session.status,
+      summary: session.summary,
       durationSeconds: durationSeconds(session.timeIn, effectiveEnd),
       createdAt: session.createdAt.toISOString(),
       updatedAt: session.updatedAt.toISOString(),
