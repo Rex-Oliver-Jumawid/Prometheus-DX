@@ -2031,21 +2031,29 @@
   background: #58a273;
 }
 
-/* Multiline, keyboard-first composer shared by general and department rooms. */
+/* Keep general and department chat compact for one line; grow only for multiline drafts. */
+.visiwork-room-composer {
+  align-items: end;
+}
 .visiwork-room-composer textarea,
 .visiwork-chat-input-wrap > textarea {
+  display: block;
+  box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  min-height: 36px;
-  max-height: 144px;
-  resize: vertical;
-  font: inherit;
-  line-height: 1.45;
-  padding: 9px 11px;
-  border: 1px solid rgba(120, 99, 87, .16);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, .72);
-  color: inherit;
+  height: 30px;
+  min-height: 30px;
+  max-height: 112px;
+  padding: 7px 9px;
+  border: 1px solid #d9cec6;
+  border-radius: 8px;
+  background: #fff;
+  color: #756b65;
+  font-family: inherit;
+  font-size: 10px;
+  line-height: 14px;
+  overflow-y: auto;
+  resize: none;
   outline-offset: 2px;
 }
 .visiwork-room-composer textarea:focus-visible { outline: 2px solid #cb4d22; }
