@@ -62,7 +62,7 @@ describe('VisiWork general and department chat composer', () => {
     expect(fireEvent.keyDown(input, { key: 'Enter', shiftKey: true })).toBe(true);
     expect(vi.mocked(apiFetch).mock.calls.some(([, , options]) => options?.method === 'POST')).toBe(false);
 
-    fireEvent.change(input, { target: { value: 'First line\\nSecond line' } });
+    fireEvent.change(input, { target: { value: 'First line\nSecond line' } });
     expect(fireEvent.keyDown(input, { key: 'Enter', shiftKey: false })).toBe(false);
 
     await waitFor(() => expect(apiFetch).toHaveBeenCalledWith(
@@ -71,7 +71,7 @@ describe('VisiWork general and department chat composer', () => {
       expect.objectContaining({
         method: 'POST',
         body: {
-          body: 'First line\\nSecond line',
+          body: 'First line\nSecond line',
           mentionMemberIds: [],
         },
       }),
