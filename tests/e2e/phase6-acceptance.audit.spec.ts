@@ -504,7 +504,7 @@ test('Phase 6 loading, error, long-content, and correction visual states', async
   await timeOutButton.click();
   await page.getByRole('textbox', { name: 'Work summary' }).fill('Completed mobile attendance verification.');
   await page.getByRole('button', { name: 'Submit summary & Time Out' }).click();
-  await expect(page.getByRole('button', { name: 'Submit summary & Time Out' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Saving...' })).toBeDisabled();
   await page.screenshot({
     path: testInfo.outputPath('mobile-time-out-pending.png'),
     fullPage: false,
