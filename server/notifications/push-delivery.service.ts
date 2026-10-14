@@ -132,8 +132,8 @@ export class PushDeliveryService {
         { endpoint: subscription.endpoint, p256dh: subscription.p256dh, auth: subscription.auth },
         {
           notificationId: workSessionId,
-          title: 'Prometheus DX · Still working?',
-          body: 'Your work session is still running after 30 minutes without activity.',
+          title: 'Still working?',
+          body: 'Your work session is still running without activity.',
           url: '/schedule?view=shifts',
           tag: 'prometheus-work-session-idle-' + workSessionId,
         },
