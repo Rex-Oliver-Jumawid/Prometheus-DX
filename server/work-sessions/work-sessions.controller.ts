@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Member } from '@prisma/client';
+import { z } from 'zod';
 import {
   CorrectWorkSessionRequestSchema,
   TimeOutWorkSessionRequestSchema,
@@ -44,6 +45,13 @@ export class WorkSessionsController {
   @Post('activity')
   activity(@CurrentMember() member: Member) {
     return this.idleReminderService.recordActivity(member.id);
+  }
+
+  @Post('idle-reminders/claim')
+  claimIdleReminder(@CurrentMember() member: Member, @Body() body: unknown) {
+    const parsed = z.object({ sessionId: z.string().uuid() }).safeParse(body);
+    if (!parsed.success) throw new BadRequestException('A valid session is required.');
+    return this.idleReminderService.claimBrowserReminder(member.id, parsed.data.sessionId);
   }
 
   @Post('time-out')

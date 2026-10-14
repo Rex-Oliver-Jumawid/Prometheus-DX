@@ -50,6 +50,20 @@ describe('WorkSessionIdleReminderService', () => {
     expect(send).toHaveBeenCalledTimes(1);
   });
 
+  it('atomically allows a browser banner only after 30 minutes', async () => {
+    const updateMany = vi.fn().mockResolvedValue({ count: 1 });
+    const service = new WorkSessionIdleReminderService(
+      { workSession: { updateMany } } as unknown as PrismaService,
+      {} as PushDeliveryService,
+    );
+    expect(await service.claimBrowserReminder(memberId, id, now)).toEqual({ claimed: true });
+    expect(updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        id, memberId, status: 'OPEN', idleRemindedAt: null,
+      }),
+    }));
+  });
+
   it('does not send if activity wins the race with the scheduler', async () => {
     const send = vi.fn();
     const service = new WorkSessionIdleReminderService(

@@ -6,6 +6,7 @@ import {
   CurrentWorkSessionResponseSchema,
   TimeOutWorkSessionRequestSchema,
   WorkSessionActivityResponseSchema,
+  ClaimWorkSessionReminderResponseSchema,
 } from '../../../shared/contracts/work-session';
 import { apiFetch } from '../../lib/api';
 import { useAuth } from '../auth/auth-context';
@@ -92,6 +93,14 @@ export function WorkAttendanceControl() {
         data: { url: '/schedule?view=shifts' },
       };
       void (async () => {
+        // Whichever side (browser or background scheduler) claims the idle spell
+        // owns the notification. Prevents two banners for the same inactivity.
+        const claim = await apiFetch(
+          '/work-sessions/idle-reminders/claim',
+          ClaimWorkSessionReminderResponseSchema,
+          { accessToken, method: 'POST', body: { sessionId: activeId } },
+        );
+        if (!claim.claimed || stopped) return;
         if ('serviceWorker' in navigator) {
           const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
           if (!stopped) await registration.showNotification(title, options);

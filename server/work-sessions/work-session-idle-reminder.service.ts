@@ -22,6 +22,25 @@ export class WorkSessionIdleReminderService {
     return { recorded: result.count > 0 };
   }
 
+  async claimBrowserReminder(memberId: string, workSessionId: string, now = new Date()) {
+    const cutoff = new Date(now.getTime() - IDLE_REMINDER_MS);
+    const result = await this.prisma.workSession.updateMany({
+      where: {
+        id: workSessionId,
+        memberId,
+        status: 'OPEN',
+        timeOut: null,
+        idleRemindedAt: null,
+        OR: [
+          { lastActivityAt: { lte: cutoff } },
+          { lastActivityAt: null, timeIn: { lte: cutoff } },
+        ],
+      },
+      data: { idleRemindedAt: now },
+    });
+    return { claimed: result.count === 1 };
+  }
+
   async deliverDueReminders(now = new Date()) {
     if (!serverEnvironment.webPush) return { checked: 0, sent: 0 };
     const cutoff = new Date(now.getTime() - IDLE_REMINDER_MS);
