@@ -18,7 +18,10 @@ const ServerEnvironmentSchema = z.object({
   BREVO_SENDER_NAME: z.string().min(1).optional(),
   INVITATION_DELIVERY_MODE: z.enum(['brevo', 'disabled']).default('brevo'),
   WORK_SESSION_MAX_HOURS: z.coerce.number().positive().max(168).default(16),
-  CRON_SECRET: z.string().min(16).optional(),
+  CRON_SECRET: z.preprocess(
+    (value) => value === '' ? undefined : value,
+    z.string().min(16).optional(),
+  ),
   WEB_PUSH_VAPID_SUBJECT: z.string().min(1).optional(),
   WEB_PUSH_VAPID_PUBLIC_KEY: z.string().min(1).optional(),
   WEB_PUSH_VAPID_PRIVATE_KEY: z.string().min(1).optional(),
