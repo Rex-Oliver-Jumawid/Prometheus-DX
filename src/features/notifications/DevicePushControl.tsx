@@ -77,7 +77,7 @@ export function DevicePushControl() {
           ? 'Notifications are blocked in this browser. Re-enable them in the browser or system settings.'
           : state.subscribed
             ? 'This device can receive Prometheus notifications even when the web app is closed.'
-            : 'Receive Prometheus mentions, review requests, and project updates on this device.';
+            : 'Receive Prometheus mentions, review requests, project updates, and 30-minute idle work-session reminders on this device.';
 
   return (
     <section className="device-push-card" aria-labelledby="device-push-title">

@@ -131,3 +131,6 @@ export const TeamWorkSummaryResponseSchema = z.object({
 export type TeamWorkSummaryResponse = z.infer<
   typeof TeamWorkSummaryResponseSchema
 >;
+
+export const WorkSessionActivityResponseSchema = z.object({ recorded: z.boolean() });
+export const ClaimWorkSessionReminderResponseSchema = z.object({ claimed: z.boolean() });

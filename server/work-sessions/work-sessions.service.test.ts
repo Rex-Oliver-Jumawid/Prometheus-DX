@@ -13,6 +13,8 @@ const session = (overrides: Partial<WorkSession> = {}): WorkSession => ({
   timeOut: null,
   status: 'OPEN',
   summary: null,
+  lastActivityAt: null,
+  idleRemindedAt: null,
   createdAt: new Date('2026-09-18T00:00:00.000Z'),
   updatedAt: new Date('2026-09-18T00:00:00.000Z'),
   ...overrides,

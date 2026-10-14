@@ -756,7 +756,3 @@
 .attendance-summary-actions button[type="submit"] { border-color: #cb4d22; background: #cb4d22; color: #fff; }
 .attendance-summary-actions button:disabled { opacity: .5; cursor: wait; }
 .attendance-summary-modal .attendance-modal-error { color: #a63d2c; }
-.attendance-idle-reminder { position: fixed; bottom: 96px; right: 16px; z-index: 2500; max-width: min(330px, calc(100vw - 32px)); padding: 18px; border: 1px solid #e2d4cb; border-radius: 16px; background: #fffdfa; box-shadow: 0 12px 38px rgba(22, 18, 16, .2); color: #342d29; }
-.attendance-idle-reminder strong { font-size: 15px; }
-.attendance-idle-reminder p { font-size: 12px; line-height: 1.5; }
-.attendance-idle-reminder button { margin: 5px 5px 0 0; }

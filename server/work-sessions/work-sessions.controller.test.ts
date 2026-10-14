@@ -3,12 +3,15 @@ import type { Member } from '@prisma/client';
 import { describe, expect, it, vi } from 'vitest';
 import { WorkSessionsController } from './work-sessions.controller';
 import type { WorkSessionsService } from './work-sessions.service';
+import type { WorkSessionIdleReminderService } from './work-session-idle-reminder.service';
+
+const idleService = {} as WorkSessionIdleReminderService;
 
 describe('WorkSessionsController', () => {
   it('derives Time In ownership exclusively from CurrentMember', () => {
     const timeIn = vi.fn();
     const service = { timeIn } as unknown as WorkSessionsService;
-    const controller = new WorkSessionsController(service);
+    const controller = new WorkSessionsController(service, idleService);
     const member = { id: '11111111-1111-4111-8111-111111111111' } as Member;
 
     controller.timeIn(member);
@@ -20,7 +23,7 @@ describe('WorkSessionsController', () => {
     const getMemberHistory = vi.fn();
     const controller = new WorkSessionsController({
       getMemberHistory,
-    } as unknown as WorkSessionsService);
+    } as unknown as WorkSessionsService, idleService);
     const member = { id: '11111111-1111-4111-8111-111111111111' } as Member;
     controller.memberHistory(member, '22222222-2222-4222-8222-222222222222', {
       week: '2026-09-21',
@@ -34,7 +37,7 @@ describe('WorkSessionsController', () => {
     const correct = vi.fn();
     const controller = new WorkSessionsController({
       correct,
-    } as unknown as WorkSessionsService);
+    } as unknown as WorkSessionsService, idleService);
 
     expect(() =>
       controller.correct(

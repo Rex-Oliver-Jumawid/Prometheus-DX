@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Member } from '@prisma/client';
+import { z } from 'zod';
 import {
   CorrectWorkSessionRequestSchema,
   TimeOutWorkSessionRequestSchema,
@@ -19,6 +20,7 @@ import {
 import { CurrentMember } from '../auth/current-member.decorator';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { WorkSessionsService } from './work-sessions.service';
+import { WorkSessionIdleReminderService } from './work-session-idle-reminder.service';
 
 @Controller('work-sessions')
 @UseGuards(SupabaseAuthGuard)
@@ -26,6 +28,8 @@ export class WorkSessionsController {
   constructor(
     @Inject(WorkSessionsService)
     private readonly workSessionsService: WorkSessionsService,
+    @Inject(WorkSessionIdleReminderService)
+    private readonly idleReminderService: WorkSessionIdleReminderService,
   ) {}
 
   @Get('current')
@@ -36,6 +40,18 @@ export class WorkSessionsController {
   @Post('time-in')
   timeIn(@CurrentMember() member: Member) {
     return this.workSessionsService.timeIn(member);
+  }
+
+  @Post('activity')
+  activity(@CurrentMember() member: Member) {
+    return this.idleReminderService.recordActivity(member.id);
+  }
+
+  @Post('idle-reminders/claim')
+  claimIdleReminder(@CurrentMember() member: Member, @Body() body: unknown) {
+    const parsed = z.object({ sessionId: z.string().uuid() }).safeParse(body);
+    if (!parsed.success) throw new BadRequestException('A valid session is required.');
+    return this.idleReminderService.claimBrowserReminder(member.id, parsed.data.sessionId);
   }
 
   @Post('time-out')
