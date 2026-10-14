@@ -86,9 +86,9 @@ export function WorkAttendanceControl() {
       if (stopped || reminded || Date.now() - lastActivityAt < 30 * 60_000) return;
       reminded = true;
       if (!('Notification' in window) || Notification.permission !== 'granted') return;
-      const title = 'Prometheus DX · Still working?';
+      const title = 'Still working?';
       const options: NotificationOptions = {
-        body: 'Your work session is still running after 30 minutes without activity.',
+        body: 'Your work session is still running without activity.',
         tag: 'prometheus-work-session-idle-' + activeId,
         data: { url: '/schedule?view=shifts' },
       };
