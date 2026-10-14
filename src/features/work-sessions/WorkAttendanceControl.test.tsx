@@ -94,6 +94,7 @@ describe('WorkAttendanceControl', () => {
       if (!path) return Promise.resolve(activeResponse);
       if (path === '/work-sessions/current')
         return Promise.resolve(activeResponse);
+      if (path === '/work-sessions/activity') return Promise.resolve({ recorded: true });
       if (path === '/work-sessions/time-out') {
         return new Promise((resolve) => {
           resolveTimeOut = resolve;
@@ -105,6 +106,7 @@ describe('WorkAttendanceControl', () => {
 
     const button = await screen.findByRole('button', { name: /Time Out/ });
     expect(screen.getByLabelText('Elapsed work session')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Work session idle reminder')).not.toBeInTheDocument();
     await user.click(button);
     const modal = await screen.findByRole('dialog', { name: 'Complete your work session' });
     expect(mocks.apiFetch.mock.calls.filter(([path]) => path === '/work-sessions/time-out')).toHaveLength(0);
