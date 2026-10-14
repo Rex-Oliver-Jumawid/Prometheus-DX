@@ -117,6 +117,38 @@ export class PushDeliveryService {
     }
   }
 
+
+  // Sends an OS Web Push banner to every subscribed device for this member.
+  // A failed subscription is pruned; a transient provider error is logged.
+  async sendWorkSessionIdleReminder(memberId: string, workSessionId: string): Promise<number> {
+    const vapid = serverEnvironment.webPush;
+    if (!vapid) return 0;
+    const subscriptions = await this.prisma.pushSubscription.findMany({
+      where: { memberId },
+      select: { id: true, endpoint: true, p256dh: true, auth: true },
+    });
+    const results = await Promise.all(subscriptions.map(async (subscription) => {
+      const result = await sendWebPush(
+        { endpoint: subscription.endpoint, p256dh: subscription.p256dh, auth: subscription.auth },
+        {
+          notificationId: workSessionId,
+          title: 'Prometheus DX · Still working?',
+          body: 'Your work session is still running after 30 minutes without activity.',
+          url: '/schedule?view=shifts',
+          tag: 'prometheus-work-session-idle-' + workSessionId,
+        },
+        vapid,
+      );
+      if (result.stale) {
+        await this.prisma.pushSubscription.deleteMany({ where: { id: subscription.id } });
+      } else if (!result.ok) {
+        this.logger.warn('Work-session push failed: ' + (result.error ?? 'unknown error'));
+      }
+      return result.ok ? 1 : 0;
+    }));
+    return results.reduce((total, success) => total + success, 0);
+  }
+
   async flushPendingDeliveries() {
     const vapid = serverEnvironment.webPush;
     if (!vapid) return;

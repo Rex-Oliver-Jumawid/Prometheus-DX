@@ -5,6 +5,7 @@ import {
   CorrectWorkSessionResponseSchema,
   CurrentWorkSessionResponseSchema,
   TimeOutWorkSessionRequestSchema,
+  WorkSessionActivityResponseSchema,
 } from '../../../shared/contracts/work-session';
 import { apiFetch } from '../../lib/api';
 import { useAuth } from '../auth/auth-context';
@@ -37,7 +38,6 @@ export function WorkAttendanceControl() {
   const [reason, setReason] = useState('');
   const [timeOutOpen, setTimeOutOpen] = useState(false);
   const [workSummary, setWorkSummary] = useState('');
-  const [idleReminder, setIdleReminder] = useState(false);
   const [correctedTimeIn, setCorrectedTimeIn] = useState('');
   const [correctedTimeOut, setCorrectedTimeOut] = useState('');
 
@@ -55,54 +55,70 @@ export function WorkAttendanceControl() {
     return () => window.clearInterval(timer);
   }, [activeId, activeStatus, activeTimeIn]);
 
-  // Remind only while a live session is open in this browser. Browsers may
-  // throttle background timers; OS push while the app is closed needs a server scheduler.
+  // Native device banner, not an in-app reminder. Server-side activity
+  // tracking and scheduled Web Push handle sessions after the tab is suspended.
   useEffect(() => {
-    if (!activeId || activeStatus !== 'OPEN') {
-      return undefined;
-    }
+    const accessToken = session?.access_token;
+    if (!activeId || activeStatus !== 'OPEN' || !accessToken) return undefined;
+
     let lastActivityAt = Date.now();
+    let lastReportedAt = 0;
     let reminded = false;
+    let stopped = false;
+    const reportActivity = () => {
+      const now = Date.now();
+      if (now - lastReportedAt < 120_000) return;
+      lastReportedAt = now;
+      void apiFetch('/work-sessions/activity', WorkSessionActivityResponseSchema, {
+        accessToken,
+        method: 'POST',
+      }).catch(() => {
+        // Activity updates are best-effort: never interrupt the running timer.
+      });
+    };
     const recordActivity = () => {
       lastActivityAt = Date.now();
       reminded = false;
-      setIdleReminder(false);
+      if (document.visibilityState === 'visible') reportActivity();
     };
     const remindIfIdle = () => {
-      if (reminded || Date.now() - lastActivityAt < 30 * 60_000) return;
+      if (stopped || reminded || Date.now() - lastActivityAt < 30 * 60_000) return;
       reminded = true;
-      setIdleReminder(true);
-      if ('Notification' in window && Notification.permission === 'granted') {
-        const title = 'Prometheus DX · Still working?';
-        const options: NotificationOptions = {
-          body: 'You have been inactive for 30 minutes. Are you still working?',
-          tag: 'prometheus-work-session-idle',
-        };
-        void (async () => {
-          const registration = 'serviceWorker' in navigator
-            ? await navigator.serviceWorker.getRegistration()
-            : undefined;
-          if (registration) {
-            await registration.showNotification(title, options);
-          } else {
-            new Notification(title, options);
-          }
-        })().catch(() => undefined);
-      }
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      const title = 'Prometheus DX · Still working?';
+      const options: NotificationOptions = {
+        body: 'Your work session is still running after 30 minutes without activity.',
+        tag: 'prometheus-work-session-idle-' + activeId,
+        data: { url: '/schedule?view=shifts' },
+      };
+      void (async () => {
+        if ('serviceWorker' in navigator) {
+          const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+          if (!stopped) await registration.showNotification(title, options);
+        } else if (!stopped) {
+          new Notification(title, options);
+        }
+      })().catch(() => undefined);
     };
+    reportActivity();
     for (const event of ['pointerdown', 'keydown', 'touchstart', 'scroll']) {
       document.addEventListener(event, recordActivity, { passive: true });
     }
-    document.addEventListener('visibilitychange', remindIfIdle);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') recordActivity();
+      else remindIfIdle();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
     const timer = window.setInterval(remindIfIdle, 30_000);
     return () => {
+      stopped = true;
       window.clearInterval(timer);
       for (const event of ['pointerdown', 'keydown', 'touchstart', 'scroll']) {
         document.removeEventListener(event, recordActivity);
       }
-      document.removeEventListener('visibilitychange', remindIfIdle);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [activeId, activeStatus]);
+  }, [activeId, activeStatus, session?.access_token]);
 
   useEffect(() => {
     if (activeStatus === 'NEEDS_CORRECTION' && activeTimeIn && activeUpdatedAt) {
@@ -162,7 +178,6 @@ export function WorkAttendanceControl() {
       if (input.action === 'time-out') {
         setTimeOutOpen(false);
         setWorkSummary('');
-        setIdleReminder(false);
       }
       queryClient.setQueryData(workSessionKeys.current, response);
       await refreshAffectedQueries();
@@ -475,15 +490,6 @@ export function WorkAttendanceControl() {
             </form>
           )}
         </div>
-      )}
-      {idleReminder && active?.status === 'OPEN' && createPortal(
-        <section className="attendance-idle-reminder" role="status" aria-label="Work session idle reminder">
-          <strong>Still working?</strong>
-          <p>No activity detected for 30 minutes. Your timer is still running.</p>
-          <button type="button" onClick={() => setIdleReminder(false)}>Yes, I'm working</button>
-          <button type="button" onClick={() => { setIdleReminder(false); setTimeOutOpen(true); }}>Time out</button>
-        </section>,
-        document.body,
       )}
       {timeOutOpen && active?.status === 'OPEN' && createPortal(
         <div className="attendance-summary-backdrop" role="presentation">

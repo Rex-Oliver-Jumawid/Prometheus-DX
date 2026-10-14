@@ -18,6 +18,7 @@ const ServerEnvironmentSchema = z.object({
   BREVO_SENDER_NAME: z.string().min(1).optional(),
   INVITATION_DELIVERY_MODE: z.enum(['brevo', 'disabled']).default('brevo'),
   WORK_SESSION_MAX_HOURS: z.coerce.number().positive().max(168).default(16),
+  CRON_SECRET: z.string().min(16).optional(),
   WEB_PUSH_VAPID_SUBJECT: z.string().min(1).optional(),
   WEB_PUSH_VAPID_PUBLIC_KEY: z.string().min(1).optional(),
   WEB_PUSH_VAPID_PRIVATE_KEY: z.string().min(1).optional(),
@@ -53,6 +54,7 @@ export const serverEnvironment = {
   brevoSenderName: parsed.BREVO_SENDER_NAME,
   invitationDeliveryMode: parsed.INVITATION_DELIVERY_MODE,
   workSessionMaxHours: parsed.WORK_SESSION_MAX_HOURS,
+  cronSecret: parsed.CRON_SECRET,
   webPush:
     parsed.WEB_PUSH_VAPID_SUBJECT &&
     parsed.WEB_PUSH_VAPID_PUBLIC_KEY &&

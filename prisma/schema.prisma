@@ -277,6 +277,8 @@ model WorkSession {
   timeIn      DateTime                @map("time_in") @db.Timestamptz(6)
   timeOut     DateTime?               @map("time_out") @db.Timestamptz(6)
   summary     String?                 @db.VarChar(2000)
+  lastActivityAt DateTime?            @map("last_activity_at") @db.Timestamptz(6)
+  idleRemindedAt DateTime?            @map("idle_reminded_at") @db.Timestamptz(6)
   status      WorkSessionStatus       @default(OPEN)
   createdAt   DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -285,6 +287,7 @@ model WorkSession {
 
   @@index([memberId, timeIn])
   @@index([memberId, status])
+  @@index([status, idleRemindedAt, lastActivityAt])
   @@map("work_sessions")
 }
 
