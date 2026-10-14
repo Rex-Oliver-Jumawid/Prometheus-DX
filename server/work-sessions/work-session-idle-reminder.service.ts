@@ -54,10 +54,9 @@ export class WorkSessionIdleReminderService {
           status: 'OPEN',
           timeOut: null,
           idleRemindedAt: null,
-          lastActivityAt: session.lastActivityAt,
           ...(session.lastActivityAt
             ? { lastActivityAt: { lte: cutoff, equals: session.lastActivityAt } }
-            : { timeIn: { lte: cutoff } }),
+            : { lastActivityAt: null, timeIn: { lte: cutoff } }),
         },
         data: { idleRemindedAt: now },
       });

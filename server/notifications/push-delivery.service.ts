@@ -146,7 +146,7 @@ export class PushDeliveryService {
       }
       return result.ok ? 1 : 0;
     }));
-    return results.reduce((total, success) => total + success, 0);
+    return results.reduce<number>((total, success) => total + success, 0);
   }
 
   async flushPendingDeliveries() {
