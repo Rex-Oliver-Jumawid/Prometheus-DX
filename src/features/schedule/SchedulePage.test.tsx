@@ -468,6 +468,7 @@ describe('SchedulePage', () => {
     fireEvent.change(screen.getByLabelText('Start'), { target: { value: startTime } });
     fireEvent.change(screen.getByLabelText('End'), { target: { value: '00:00' } });
     expect(screen.getByLabelText('End')).toHaveValue('00:00');
+    fireEvent.blur(screen.getByLabelText('End'));
     await user.click(screen.getByRole('button', { name: 'Done configuring' }));
     await waitFor(() => expect(mocks.apiFetch).toHaveBeenCalledWith('/schedule/me', expect.anything(), expect.objectContaining({
       method: 'PUT', body: expect.objectContaining({ blocks: [{ weekday: 'MONDAY', startTime, endTime: '24:00' }] }),

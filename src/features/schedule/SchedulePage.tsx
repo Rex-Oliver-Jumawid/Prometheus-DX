@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { useSearchParams } from 'react-router-dom';
 import {
   MemberScheduleSchema,
@@ -1139,15 +1139,19 @@ export function SchedulePage() {
                         </label>
                         <label>
                           <span>End</span>
-                          <input
-                            aria-label={index === 0 ? 'End' : 'End ' + (index + 1)}
-                            type="time"
-                            {...form.register(`blocks.${index}.endTime`)}
-                            value={watchedBlocks[index]?.endTime === '24:00' ? '00:00' : watchedBlocks[index]?.endTime ?? ''}
-                            onChange={(event) => form.setValue(
-                              `blocks.${index}.endTime`,
-                              event.target.value === '00:00' ? '24:00' : event.target.value,
-                              { shouldDirty: true, shouldValidate: true },
+                          <Controller
+                            control={form.control}
+                            name={`blocks.${index}.endTime`}
+                            render={({ field }) => (
+                              <input
+                                {...field}
+                                aria-label={index === 0 ? 'End' : 'End ' + (index + 1)}
+                                type="time"
+                                value={field.value === '24:00' ? '00:00' : field.value ?? ''}
+                                onChange={(event) => field.onChange(
+                                  event.target.value === '00:00' ? '24:00' : event.target.value,
+                                )}
+                              />
                             )}
                           />
                         </label>
