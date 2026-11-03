@@ -14,7 +14,7 @@ describe('schedule editor placement and generation', () => {
     ];
     expect(isValidEditorPlacement(own, 1, { weekday: 'MONDAY', startTime: '10:00', endTime: '14:00' })).toBe(false);
     expect(isValidEditorPlacement(own, 1, { weekday: 'MONDAY', startTime: '15:00', endTime: '14:00' })).toBe(false);
-    expect(isValidEditorPlacement(own, 1, { weekday: 'MONDAY', startTime: '06:00', endTime: '08:00' })).toBe(false);
+    expect(isValidEditorPlacement(own, 1, { weekday: 'MONDAY', startTime: '23:00', endTime: '25:00' })).toBe(false);
     expect(isValidEditorPlacement(own, 1, { weekday: 'TUESDAY', startTime: '13:00', endTime: '16:00' })).toBe(true);
   });
 
@@ -27,5 +27,13 @@ describe('schedule editor placement and generation', () => {
     const incomplete = generateInitialSchedule(2400, 240, rest);
     expect(incomplete.remainingMinutes).toBe(1200);
     expect(initialRestDays(complete.blocks)).toEqual(['SATURDAY', 'SUNDAY']);
+  });
+});
+
+describe('midnight boundaries', () => {
+  it('allows a full day and a late shift ending at midnight', () => {
+    expect(isValidEditorPlacement([], 0, { weekday: 'MONDAY', startTime: '00:00', endTime: '24:00' })).toBe(true);
+    expect(isValidEditorPlacement([], 0, { weekday: 'MONDAY', startTime: '21:00', endTime: '24:00' })).toBe(true);
+    expect(generateInitialSchedule(1440, 1440, new Set()).blocks[0]).toEqual({ weekday: 'MONDAY', startTime: '00:00', endTime: '24:00' });
   });
 });

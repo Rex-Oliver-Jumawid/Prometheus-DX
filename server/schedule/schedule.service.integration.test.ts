@@ -61,6 +61,20 @@ describe.runIf(runDatabaseIntegration)(
       });
     }, 30_000);
 
+    it('persists and reloads full-day and late shifts ending at midnight', async () => {
+      const blocks = [
+        { weekday: 'MONDAY' as const, startTime: '00:00', endTime: '24:00' },
+        { weekday: 'TUESDAY' as const, startTime: '21:00', endTime: '24:00' },
+      ];
+      const saved = await service.replaceMemberSchedule(owner, owner.id, {
+        targetWeeklyMinutes: 1620, restDays: [], blocks,
+      });
+      expect(saved.blocks).toMatchObject(blocks);
+      expect((await service.getMemberSchedule(owner.id))?.blocks).toMatchObject(blocks);
+      const team = await service.getTeamSchedule();
+      expect(team.members.find((entry) => entry.id === owner.id)?.schedule?.blocks).toMatchObject(blocks);
+    });
+
     afterAll(async () => {
       await prisma.project.deleteMany({ where: { name: runId } });
       await prisma.member.deleteMany({

@@ -115,10 +115,21 @@ describe('EditableTeamCalendar pointer gestures', () => {
   });
 
   it('keeps a boundary block fully inside its day column', () => {
-    setup([{ weekday: 'MONDAY', startTime: '07:00', endTime: '10:00' }]);
-    const block = screen.getByRole('button', { name: /Select Monday schedule block, 7:00 AM to 10:00 AM/ });
+    setup([{ weekday: 'MONDAY', startTime: '00:00', endTime: '03:00' }]);
+    const block = screen.getByRole('button', { name: /Select Monday schedule block, 12:00 AM to 3:00 AM/ });
     expect(block).toHaveStyle({ top: '6px', height: '120px' });
     expect((block as HTMLElement).style.width).toContain('- 12px');
+  });
+
+  it('shows all 24 hours and resizes a late block through midnight', () => {
+    const s = setup([{ weekday: 'MONDAY', startTime: '21:00', endTime: '23:00' }]);
+    expect(s.container.querySelectorAll('.schedule-time-axis > div:not(.schedule-day-end)')).toHaveLength(24);
+    expect(s.container.querySelector('.schedule-time-axis')?.firstChild).toHaveTextContent('12:00 AM');
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Resize selected schedule block' }), { pointerId: 8, button: 0, clientX: 200, clientY: 200 });
+    fireEvent.pointerMove(s.stage, { pointerId: 8, clientX: 200, clientY: 244 });
+    fireEvent.pointerUp(s.stage, { pointerId: 8 });
+    expect(s.changed).toHaveBeenLastCalledWith([{ weekday: 'MONDAY', startTime: '21:00', endTime: '24:00' }]);
+    expect(screen.getByRole('button', { name: /Select Monday schedule block, 9:00 PM to 12:00 AM/ })).toBeInTheDocument();
   });
 
   it('delegates rest-day header clicks to the draft owner', () => {

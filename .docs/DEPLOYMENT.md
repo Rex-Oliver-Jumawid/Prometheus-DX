@@ -49,6 +49,13 @@ For a change with no migration, step 2 is not required.
 
 Never hand-edit production tables as a substitute for a tracked migration unless an emergency recovery is explicitly documented and reconciled back into Prisma migration history.
 
+## Midnight Schedule Update
+
+Before deploying the midnight schedule editor, apply `20261103170000_schedule_midnight` with `pnpm prisma:migrate:deploy`.
+This preserves existing schedule rows and permits end-of-day midnight in the time-order constraint.
+The API exposes an end at midnight as `24:00`; Prisma stores that endpoint as `00:00` and the schedule and team services restore its end-of-day meaning.
+Without the migration, the existing database constraint will reject midnight-ending saves.
+
 ## Environment Variables
 
 See `.docs/ENVIRONMENT.md` for the canonical variable reference.

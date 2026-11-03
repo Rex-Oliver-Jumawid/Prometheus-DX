@@ -1380,6 +1380,11 @@ updated_at
 ```
 
 Schedule times describe planned local working periods.
+The calendar and editor cover 00:00 through the following midnight.
+The API uses 00:00 for a midnight start and 24:00 for an end at the following midnight, including a full-day 00:00 to 24:00 block.
+ScheduleBlock.end_time stores end-of-day midnight as 00:00 because Prisma represents PostgreSQL TIME through JavaScript Date.
+The time-order constraint permits that end sentinel; API validation and derived minutes interpret it as minute 1440.
+Other end times must follow the start on the same day.
 
 Persistent event timestamps are still stored in UTC.
 

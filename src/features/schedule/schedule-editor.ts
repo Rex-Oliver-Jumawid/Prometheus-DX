@@ -5,9 +5,8 @@ import {
   type Weekday,
 } from '../../../shared/contracts/schedule';
 
-export const EDITOR_START_MINUTES = 7 * 60;
-// The current API accepts HH:mm up to 23:59, but not 24:00.
-export const EDITOR_END_MINUTES = 23 * 60;
+export const EDITOR_START_MINUTES = 0;
+export const EDITOR_END_MINUTES = 24 * 60;
 export const EDITOR_STEP_MINUTES = 60;
 
 export function editorClock(minutes: number): string {
@@ -56,7 +55,7 @@ export function generateInitialSchedule(
   const blocks: ScheduleBlockInput[] = [];
   let remainingMinutes = targetMinutes;
   // Match finalmodel.html's 2 PM starting point, shifting earlier if a
-  // longer daily block otherwise could not fit in the existing API's range.
+  // longer daily block otherwise could not fit within one day.
   const start = Math.max(
     EDITOR_START_MINUTES,
     Math.min(14 * 60, EDITOR_END_MINUTES - dailyMinutes),

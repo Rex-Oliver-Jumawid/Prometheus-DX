@@ -247,7 +247,7 @@ describe('SchedulePage', () => {
     const sundayBlock = sunday!.querySelector('.schedule-calendar-block.mine');
     expect(sundayBlock).not.toBeNull();
     expect(sundayBlock).toHaveAttribute('title', 'Member One: 2:00 PM - 5:00 PM');
-    expect(sundayBlock).toHaveStyle({ top: '314px' });
+    expect(sundayBlock).toHaveStyle({ top: '622px' });
     expect((sundayBlock as HTMLElement).style.width).toContain('- 12px');
     expect(container.querySelectorAll('.schedule-calendar-head-row .rest-day')).toHaveLength(2);
     expect(container.querySelector('.schedule-calendar-day[aria-label="Saturday"]')).toHaveClass('rest-day');
@@ -457,6 +457,21 @@ describe('SchedulePage', () => {
         }),
       ),
     );
+  });
+
+  it.each(['00:00', '21:00'])('saves a %s start through midnight from the time inputs', async (startTime) => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Configure My Schedule' }));
+    await user.click(screen.getByText('Fine-tune blocks using time inputs'));
+    await user.click(screen.getByRole('button', { name: 'Add Block' }));
+    fireEvent.change(screen.getByLabelText('Start'), { target: { value: startTime } });
+    fireEvent.change(screen.getByLabelText('End'), { target: { value: '00:00' } });
+    expect(screen.getByLabelText('End')).toHaveValue('00:00');
+    await user.click(screen.getByRole('button', { name: 'Done configuring' }));
+    await waitFor(() => expect(mocks.apiFetch).toHaveBeenCalledWith('/schedule/me', expect.anything(), expect.objectContaining({
+      method: 'PUT', body: expect.objectContaining({ blocks: [{ weekday: 'MONDAY', startTime, endTime: '24:00' }] }),
+    })));
   });
 
   it('clears a failed save message when configuration is reopened', async () => {

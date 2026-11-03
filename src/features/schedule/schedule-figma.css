@@ -32,7 +32,7 @@
 .schedule-calendar-scroll{overflow:auto;background:rgba(255,255,255,.18)}.schedule-calendar-stage{width:960px;min-width:960px}.schedule-calendar-head-row,.schedule-calendar-body{display:grid;grid-template-columns:70px repeat(7,127px)}.schedule-calendar-head-row{position:sticky;z-index:5;top:0;height:48px}
 .schedule-calendar-time-head,.schedule-calendar-day-head{display:flex;flex-direction:column;justify-content:center;min-width:0;padding:8px;border-right:1px solid rgba(115,96,86,.1);border-bottom:1px solid rgba(115,96,86,.12);background:rgba(248,244,241,.94);color:#4e4540;font-size:7.5px;backdrop-filter:blur(16px)}
 .schedule-calendar-time-head{font-weight:780}.schedule-calendar-day-head strong{font-size:7.5px;font-weight:780}.schedule-calendar-day-head small{margin-top:2px;color:#9a8e87;font-size:5.8px}.schedule-calendar-day-head.rest-day{background:rgba(230,225,221,.93);color:#8d827c}.schedule-calendar-day-head.rest-day span{align-self:flex-start;margin-top:2px;padding:2px 4px;border:1px solid rgba(102,91,85,.13);border-radius:999px;color:#8f847e;font:700 5px/1 var(--workspace-font-label)}
-.schedule-time-axis,.schedule-calendar-day{height:748px}.schedule-time-axis>div{height:44px;padding:7px;border-right:1px solid rgba(115,96,86,.1);border-bottom:1px solid rgba(115,96,86,.09);background:rgba(248,244,241,.75);color:#978b84;font:650 6px/1 var(--workspace-font-label)}
+.schedule-time-axis,.schedule-calendar-day{height:1056px}.schedule-time-axis>div{height:44px;padding:7px;border-right:1px solid rgba(115,96,86,.1);border-bottom:1px solid rgba(115,96,86,.09);background:rgba(248,244,241,.75);color:#978b84;font:650 6px/1 var(--workspace-font-label)}
 .schedule-calendar-day{position:relative;border-right:1px solid rgba(115,96,86,.1);background-color:rgba(255,253,250,.44);background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 43px,rgba(115,96,86,.09) 43px,rgba(115,96,86,.09) 44px)}.schedule-calendar-day.rest-day{background-color:rgba(239,235,232,.55)}
 .schedule-calendar-block{position:absolute;z-index:2;display:flex;flex-direction:column;align-items:center;min-width:0;padding:5px 3px 6px;overflow:hidden;border:1px solid rgba(88,113,128,.17);border-radius:8px;background:rgba(221,231,236,.84);color:#4b6573;text-align:center;box-shadow:0 5px 14px rgba(55,39,31,.055)}.schedule-calendar-block.mine{border-color:rgba(244,81,30,.34);background:rgba(255,230,219,.9);color:#a64524}
 .schedule-calendar-block strong,.schedule-calendar-block small{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis}.schedule-calendar-block strong{font-size:6px;font-weight:800}.schedule-calendar-block small{margin-top:3px;font-size:5px;white-space:nowrap}.schedule-calendar-block.thin strong{writing-mode:vertical-rl;transform:rotate(180deg)}.schedule-calendar-block.thin small{display:none}
@@ -476,3 +476,14 @@
 .day-inspector-summary { display: block; margin-top: 5px; white-space: pre-wrap; color: #403936; font-size: 8px; }
 .session-active-label { color: #227c59; font-weight: 750; }
 .session-completed-label { color: #786d66; }
+
+/* Label the closing midnight boundary after the 24 hourly bands. */
+.schedule-time-axis { position: relative; }
+.schedule-time-axis > .schedule-day-end {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: auto;
+  padding: 0 7px 2px;
+  border-bottom: 0;
+}

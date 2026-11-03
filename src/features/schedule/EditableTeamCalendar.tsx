@@ -81,7 +81,7 @@ export function EditableTeamCalendar({
   const stageRef = useRef<HTMLDivElement>(null);
   const gestureRef = useRef<Gesture | null>(null);
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
-  const hours = Array.from({ length: 17 }, (_, index) => (7 + index) * 60);
+  const hours = Array.from({ length: (EDITOR_END_MINUTES - EDITOR_START_MINUTES) / 60 }, (_, index) => EDITOR_START_MINUTES + index * 60);
   const teamEntries = members
     .filter((person) => person.id !== currentMemberId)
     .flatMap((person) =>
@@ -249,6 +249,7 @@ export function EditableTeamCalendar({
               {hours.map((minutes) => (
                 <div key={minutes}>{formatClock(editorClock(minutes))}</div>
               ))}
+              <div className="schedule-day-end">12:00 AM</div>
             </div>
             {WEEKDAYS.map((day) => {
               const entries: Entry[] = [

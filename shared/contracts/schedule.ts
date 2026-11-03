@@ -27,7 +27,7 @@ export const ClockTimeSchema = z
 export const ScheduleBlockInputSchema = z.object({
   weekday: WeekdaySchema,
   startTime: ClockTimeSchema,
-  endTime: ClockTimeSchema,
+  endTime: z.union([ClockTimeSchema, z.literal('24:00')]),
 });
 
 export type ScheduleBlockInput = z.infer<typeof ScheduleBlockInputSchema>;

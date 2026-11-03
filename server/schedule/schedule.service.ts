@@ -160,7 +160,7 @@ export class ScheduleService {
   }
 
   private toDatabaseTime(value: string): Date {
-    return new Date(`1970-01-01T${value}:00.000Z`);
+    return new Date(`1970-01-01T${value === '24:00' ? '00:00' : value}:00.000Z`);
   }
 
   private toClockTime(value: Date): string {
@@ -191,7 +191,7 @@ export class ScheduleService {
           id: block.id,
           weekday: block.weekday,
           startTime: this.toClockTime(block.startTime),
-          endTime: this.toClockTime(block.endTime),
+          endTime: this.toClockTime(block.endTime) === '00:00' ? '24:00' : this.toClockTime(block.endTime),
         })),
       createdAt: schedule.createdAt.toISOString(),
       updatedAt: schedule.updatedAt.toISOString(),

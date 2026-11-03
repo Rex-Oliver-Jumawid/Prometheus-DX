@@ -91,6 +91,34 @@ describe('ScheduleService', () => {
     expect(result.restDays).toEqual(['THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']);
   });
 
+  it('stores midnight endpoints and restores the end-of-day API value', async () => {
+    const createMany = vi.fn();
+    const schedule = {
+      id: '33333333-3333-4333-8333-333333333333', memberId: member().id,
+      targetWeeklyMinutes: 1440, restDays: [],
+      createdAt: new Date('2026-09-18T00:00:00Z'), updatedAt: new Date('2026-09-18T00:00:00Z'),
+      blocks: [{ id: '44444444-4444-4444-8444-444444444444', weekday: 'MONDAY',
+        startTime: new Date('1970-01-01T00:00:00Z'), endTime: new Date('1970-01-01T00:00:00Z') }],
+    };
+    const database = {
+      memberSchedule: { upsert: vi.fn().mockResolvedValue(schedule), findUniqueOrThrow: vi.fn().mockResolvedValue(schedule) },
+      scheduleBlock: { deleteMany: vi.fn(), createMany },
+    };
+    const service = new ScheduleService({
+      $transaction: (operation: (value: typeof database) => unknown) => operation(database),
+      memberSchedule: { findUnique: vi.fn().mockResolvedValue(schedule) },
+    } as unknown as PrismaService);
+    const saved = await service.replaceMemberSchedule(member(), member().id, {
+      targetWeeklyMinutes: 1440, restDays: [],
+      blocks: [{ weekday: 'MONDAY', startTime: '00:00', endTime: '24:00' }],
+    });
+    expect(createMany).toHaveBeenCalledWith({ data: [expect.objectContaining({
+      startTime: new Date('1970-01-01T00:00:00Z'), endTime: new Date('1970-01-01T00:00:00Z'),
+    })] });
+    expect(saved.blocks[0]).toMatchObject({ startTime: '00:00', endTime: '24:00' });
+    expect((await service.getMemberSchedule(member().id))?.blocks[0]).toMatchObject({ startTime: '00:00', endTime: '24:00' });
+  });
+
   it('lists only active Registry members in deterministic name order', async () => {
     const findMany = vi.fn().mockResolvedValue([
       {

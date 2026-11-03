@@ -50,7 +50,7 @@ const DAY_LABELS: Record<Weekday, string> = {
   SUNDAY: 'Sunday',
 };
 
-const CALENDAR_START_MINUTES = 7 * 60;
+const CALENDAR_START_MINUTES = EDITOR_START_MINUTES;
 const CALENDAR_END_MINUTES = 24 * 60;
 const CALENDAR_ROW_HEIGHT = 44;
 
@@ -1139,7 +1139,17 @@ export function SchedulePage() {
                         </label>
                         <label>
                           <span>End</span>
-                          <input aria-label={index === 0 ? 'End' : 'End ' + (index + 1)} type="time" {...form.register(`blocks.${index}.endTime`)} />
+                          <input
+                            aria-label={index === 0 ? 'End' : 'End ' + (index + 1)}
+                            type="time"
+                            {...form.register(`blocks.${index}.endTime`)}
+                            value={watchedBlocks[index]?.endTime === '24:00' ? '00:00' : watchedBlocks[index]?.endTime ?? ''}
+                            onChange={(event) => form.setValue(
+                              `blocks.${index}.endTime`,
+                              event.target.value === '00:00' ? '24:00' : event.target.value,
+                              { shouldDirty: true, shouldValidate: true },
+                            )}
+                          />
                         </label>
                         <button
                           type="button"
@@ -1426,6 +1436,7 @@ function TeamCalendar({
               {hours.map((minutes) => (
                 <div key={minutes}>{formatClock(minutesToClock(minutes))}</div>
               ))}
+              <div className="schedule-day-end">12:00 AM</div>
             </div>
             {WEEKDAYS.map((day) => (
               <CalendarDay

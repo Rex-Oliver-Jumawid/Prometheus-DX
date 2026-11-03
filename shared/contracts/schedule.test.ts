@@ -50,7 +50,7 @@ describe('schedule contracts', () => {
     },
     {
       label: 'a malformed end time',
-      block: { weekday: 'MONDAY', startTime: '09:00', endTime: '24:00' },
+      block: { weekday: 'MONDAY', startTime: '09:00', endTime: '24:01' },
     },
     {
       label: 'an equal start and end time',
@@ -67,6 +67,17 @@ describe('schedule contracts', () => {
         blocks: [block],
       }).success,
     ).toBe(false);
+  });
+
+  it.each(['00:00', '21:00', '23:59'])('accepts %s through end-of-day midnight', (startTime) => {
+    expect(UpdateScheduleRequestSchema.safeParse({
+      targetWeeklyMinutes: 1440,
+      blocks: [{ weekday: 'MONDAY', startTime, endTime: '24:00' }],
+    }).success).toBe(true);
+    expect(UpdateScheduleRequestSchema.safeParse({
+      targetWeeklyMinutes: 60,
+      blocks: [{ weekday: 'MONDAY', startTime: '24:00', endTime: '24:00' }],
+    }).success).toBe(false);
   });
 
   it('rejects duplicate blocks as an overlap', () => {

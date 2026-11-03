@@ -4,6 +4,21 @@ import type { WorkSessionsService } from '../work-sessions/work-sessions.service
 import { TeamService } from './team.service';
 
 describe('TeamService', () => {
+  it('counts a midnight-ending shift and a full day correctly', async () => {
+    const prisma = { member: { findMany: vi.fn().mockResolvedValue([{
+      id: 'member', fullName: 'Member', position: null, profileImagePath: null,
+      visiworkDepartmentId: null, department: {}, workSessions: [],
+      schedule: { blocks: [
+        { id: 'late', weekday: 'MONDAY', startTime: new Date('1970-01-01T21:00:00Z'), endTime: new Date('1970-01-01T00:00:00Z') },
+        { id: 'full', weekday: 'TUESDAY', startTime: new Date('1970-01-01T00:00:00Z'), endTime: new Date('1970-01-01T00:00:00Z') },
+      ] },
+    }]) } } as unknown as PrismaService;
+    const workSessions = { refreshStaleSessions: vi.fn() } as unknown as WorkSessionsService;
+    const result = await new TeamService(prisma, workSessions).getSummary();
+    expect(result.members[0].scheduledMinutes).toBe(1620);
+    expect(result.summary.scheduledMinutes).toBe(1620);
+  });
+
   it('aggregates Registry identity, Schedule, and WorkSessions independently', async () => {
     const prisma = {
       member: {

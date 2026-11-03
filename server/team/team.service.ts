@@ -52,8 +52,8 @@ export class TeamService {
           total +
           Math.max(
             0,
-            block.endTime.getUTCHours() * 60 +
-              block.endTime.getUTCMinutes() -
+            (block.endTime.getUTCHours() * 60 +
+              block.endTime.getUTCMinutes() || 1440) -
               (block.startTime.getUTCHours() * 60 +
                 block.startTime.getUTCMinutes()),
           ),
@@ -80,7 +80,7 @@ export class TeamService {
           id: block.id,
           weekday: block.weekday,
           startTime: this.clockTime(block.startTime),
-          endTime: this.clockTime(block.endTime),
+          endTime: this.clockTime(block.endTime) === '00:00' ? '24:00' : this.clockTime(block.endTime),
         }));
 
       return {

@@ -871,6 +871,8 @@ Registry and organization-level administrative activity remains subject to Admin
 # 24. Schedule Flow
 
 Members primarily manage their own schedules.
+The team calendar and configuration editor cover the full day from 12:00 AM to the following 12:00 AM.
+Selecting 12:00 AM in an end-time input means the end of that day, including when the start is also 12:00 AM.
 
 ```text
 Schedule
