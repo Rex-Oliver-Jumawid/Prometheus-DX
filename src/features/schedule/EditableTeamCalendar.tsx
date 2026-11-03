@@ -39,7 +39,7 @@ type Entry = {
 type Gesture = {
   pointerId: number;
   index: number;
-  mode: 'move' | 'resize';
+  mode: 'move' | 'resize' | 'resize-start';
   clientX: number;
   clientY: number;
   initialDay: Weekday;
@@ -94,7 +94,7 @@ export function EditableTeamCalendar({
       })),
     );
 
-  function startGesture(event: PointerEvent<HTMLDivElement>, index: number, mode: 'move' | 'resize') {
+  function startGesture(event: PointerEvent<HTMLDivElement>, index: number, mode: Gesture['mode']) {
     if (disabled || event.button !== 0) return;
     const block = blocks[index];
     if (!block) return;
@@ -126,7 +126,18 @@ export function EditableTeamCalendar({
     const hourDelta = Math.round((event.clientY - gesture.clientY) / ROW_HEIGHT) * EDITOR_STEP_MINUTES;
     const index = gesture.index;
     let candidate: ScheduleBlockInput;
-    if (gesture.mode === 'resize') {
+    if (gesture.mode === 'resize-start') {
+      candidate = {
+        weekday: gesture.initialDay,
+        startTime: editorClock(
+          Math.max(
+            EDITOR_START_MINUTES,
+            Math.min(gesture.initialEnd - EDITOR_STEP_MINUTES, gesture.initialStart + hourDelta),
+          ),
+        ),
+        endTime: editorClock(gesture.initialEnd),
+      };
+    } else if (gesture.mode === 'resize') {
       candidate = {
         weekday: gesture.initialDay,
         startTime: editorClock(gesture.initialStart),
@@ -320,12 +331,20 @@ export function EditableTeamCalendar({
                         <strong>{entry.name}</strong>
                         <small>{formatClock(editorClock(entry.start))} - {formatClock(editorClock(entry.end))}</small>
                         {own && (
-                          <div
-                            className="schedule-resize-handle"
-                            role="button"
-                            aria-label="Resize selected schedule block"
-                            onPointerDown={disabled ? undefined : (event) => startGesture(event, entry.ownIndex!, 'resize')}
-                          />
+                          <>
+                            <div
+                              className="schedule-resize-handle schedule-resize-handle-top"
+                              role="button"
+                              aria-label="Resize schedule block start"
+                              onPointerDown={disabled ? undefined : (event) => startGesture(event, entry.ownIndex!, 'resize-start')}
+                            />
+                            <div
+                              className="schedule-resize-handle"
+                              role="button"
+                              aria-label="Resize selected schedule block"
+                              onPointerDown={disabled ? undefined : (event) => startGesture(event, entry.ownIndex!, 'resize')}
+                            />
+                          </>
                         )}
                       </div>
                     );

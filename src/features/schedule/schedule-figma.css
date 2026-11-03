@@ -83,6 +83,7 @@
 .schedule-calendar-block.editable.selected{outline:2px solid rgba(244,81,30,.55);outline-offset:2px;z-index:6}
 .schedule-calendar-block.editable:focus-visible{outline:3px solid #e86e37;outline-offset:2px}
 .schedule-resize-handle{position:absolute;bottom:3px;left:8px;right:8px;height:8px;border-radius:999px;background:rgba(244,81,30,.29);cursor:ns-resize;touch-action:none}
+.schedule-resize-handle-top{top:3px;bottom:auto}
 .schedule-calendar-block.editable.selected .schedule-resize-handle{background:rgba(244,81,30,.55)}
 .schedule-compact-edit-block{display:block;width:100%;padding:9px;border:1px solid rgba(244,81,30,.2);border-radius:8px;background:rgba(255,236,226,.68);color:#9e4829;font-size:9px;text-align:left;cursor:pointer}
 .schedule-compact-edit-block.selected{border-color:#cb4d22;box-shadow:0 0 0 1px rgba(203,77,34,.25)}

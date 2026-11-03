@@ -65,6 +65,37 @@ describe('EditableTeamCalendar pointer gestures', () => {
     expect(s.changed).toHaveBeenLastCalledWith([{ weekday: 'MONDAY', startTime: '10:00', endTime: '13:00' }]);
   });
 
+  it.each([
+    { delta: -44, startTime: '09:00' },
+    { delta: 44, startTime: '11:00' },
+    { delta: -4400, startTime: '00:00' },
+    { delta: 4400, startTime: '11:00' },
+  ])('resizes the top by $delta pixels while keeping the end fixed', ({ delta, startTime }) => {
+    const s = setup();
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Resize schedule block start' }), { pointerId: 9, button: 0, clientX: 200, clientY: 200 });
+    fireEvent.pointerMove(s.stage, { pointerId: 9, clientX: 200, clientY: 200 + delta });
+    fireEvent.pointerUp(s.stage, { pointerId: 9 });
+    expect(s.changed).toHaveBeenLastCalledWith([{ weekday: 'MONDAY', startTime, endTime: '12:00' }]);
+  });
+
+  it('rejects a top resize into another own block', () => {
+    const s = setup([monday, { weekday: 'MONDAY', startTime: '08:00', endTime: '09:00' }]);
+    fireEvent.pointerDown(s.mine().querySelector('.schedule-resize-handle-top')!, { pointerId: 10, button: 0, clientX: 200, clientY: 200 });
+    fireEvent.pointerMove(s.stage, { pointerId: 10, clientX: 200, clientY: 112 });
+    fireEvent.pointerUp(s.stage, { pointerId: 10 });
+    expect(s.changed).not.toHaveBeenCalled();
+    expect(s.message).toHaveBeenCalledWith(expect.stringContaining('unavailable'));
+    expect(s.mine()).toBeInTheDocument();
+  });
+
+  it('restores the draft when a top resize is cancelled', () => {
+    const s = setup();
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Resize schedule block start' }), { pointerId: 11, button: 0, clientX: 200, clientY: 200 });
+    fireEvent.pointerMove(s.stage, { pointerId: 11, clientX: 200, clientY: 156 });
+    fireEvent.pointerCancel(s.stage, { pointerId: 11 });
+    expect(s.changed).toHaveBeenLastCalledWith([monday]);
+  });
+
   it('rejects moving onto a rest day when the source still has another block', () => {
     const s = setup([monday, { weekday: 'MONDAY', startTime: '13:00', endTime: '15:00' }]);
     fireEvent.pointerDown(s.mine(), { pointerId: 3, button: 0, clientX: 200, clientY: 200 });
