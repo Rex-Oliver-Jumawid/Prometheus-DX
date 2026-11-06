@@ -132,6 +132,18 @@ The documented default is 16 hours.
 
 The system does not silently invent a Time Out when the threshold is crossed.
 
+## Project Vault
+
+### \`VAULT_ENCRYPTION_KEY\`
+
+A **server-only** base64 string representing exactly 32 random bytes. Generate locally with:
+
+\`\`\`bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
+\`\`\`
+
+Configure in the secure deployment environment, never with a \`VITE_\` prefix or in source control. The application disables encryption and reveal operations when missing. Losing the key makes the encrypted Vault data unrecoverable. Protect and back up the key with independent access controls; plan for KMS and versioned key rotation before production release.
+
 ## Seed Configuration
 
 ### `PROMETHEUS_SEED_MEMBERS_JSON`
