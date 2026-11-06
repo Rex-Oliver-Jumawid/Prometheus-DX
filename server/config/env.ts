@@ -6,7 +6,8 @@ const ServerEnvironmentSchema = z.object({
   CLIENT_ORIGINS: z
     .string()
     .default('http://localhost:5173,http://localhost:4173'),
-  VAULT_ENCRYPTION_KEY: z.string().regex(/^[A-Za-z0-9+/]{43}=$/, 'VAULT_ENCRYPTION_KEY must be a base64-encoded 32-byte key.').optional(),
+  VAULT_ENCRYPTION_KEY: z.preprocess(value => value === '' ? undefined : value,
+    z.string().regex(/^[A-Za-z0-9+/]{43}=$/, 'VAULT_ENCRYPTION_KEY must be a base64-encoded 32-byte key.').optional()),
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
     .default('development'),

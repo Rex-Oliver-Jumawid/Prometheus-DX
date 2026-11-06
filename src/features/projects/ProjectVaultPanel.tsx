@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   SaveVaultItemRequestSchema, VaultAccessResponseSchema, VaultItemSchema,
@@ -236,7 +237,4 @@ export function ProjectVaultPanel({ projectId, accessToken, isLead }: {
     </div>}
   </section>;
 }
-const VaultDeleteSchema = { parse: (value: unknown) => {
-  if (value && typeof value === 'object' && 'success' in value && value.success === true) return value as { success: true };
-  throw new Error('Invalid response.');
-}} as import('zod').ZodType<{ success: true }>;
+const VaultDeleteSchema = z.object({ success: z.literal(true) });

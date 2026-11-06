@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import type { INestApplication } from '@nestjs/common';
+import { type NestExpressApplication } from '@nestjs/platform-express';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -18,7 +19,8 @@ export function configureNestApplication(app: INestApplication): void {
 }
 
 export async function createNestApplication(): Promise<INestApplication> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.useBodyParser('json', { limit: '512kb' });
   app.useGlobalInterceptors(app.get(PushDeliveryInterceptor));
   configureNestApplication(app);
   return app;
