@@ -6,6 +6,8 @@ const ServerEnvironmentSchema = z.object({
   CLIENT_ORIGINS: z
     .string()
     .default('http://localhost:5173,http://localhost:4173'),
+  VAULT_ENCRYPTION_KEY: z.preprocess(value => value === '' ? undefined : value,
+    z.string().regex(/^[A-Za-z0-9+/]{43}=$/, 'VAULT_ENCRYPTION_KEY must be a base64-encoded 32-byte key.').optional()),
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
     .default('development'),
@@ -45,6 +47,7 @@ const parsed = ServerEnvironmentSchema.parse(process.env);
 export const serverEnvironment = {
   port: parsed.PORT,
   nodeEnv: parsed.NODE_ENV,
+  vaultEncryptionKey: parsed.VAULT_ENCRYPTION_KEY,
   clientOrigins: parsed.CLIENT_ORIGINS.split(',')
     .map((origin) => origin.trim())
     .filter(Boolean),

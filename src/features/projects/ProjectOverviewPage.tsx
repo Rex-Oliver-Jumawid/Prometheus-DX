@@ -14,6 +14,7 @@ import {
 import { useAuth } from '../auth/auth-context';
 import { ApiRequestError, apiFetch } from '../../lib/api';
 import { ProjectMembersPanel } from './ProjectMembersPanel';
+import { ProjectVaultPanel } from './ProjectVaultPanel';
 import { ProjectActivityPanel } from './ProjectActivityPanel';
 import { ProjectChatPanel } from './ProjectChatPanel';
 import { ProjectAnnouncementsPanel } from './ProjectAnnouncementsPanel';
@@ -232,12 +233,14 @@ export function ProjectOverviewPage() {
   const navigate = useNavigate();
   const [projectDialog, setProjectDialog] = useState<'edit' | 'delete' | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') === 'activity'
+  const activeTab = searchParams.get('tab') === 'vault'
+    ? 'vault'
+    : searchParams.get('tab') === 'activity'
     ? 'activity'
     : searchParams.get('tab') === 'chat'
       ? 'chat'
       : 'content';
-  const chooseTab = (tab: 'content' | 'chat' | 'activity') => {
+  const chooseTab = (tab: 'content' | 'chat' | 'activity' | 'vault') => {
     setSearchParams((previous) => {
       const next = new URLSearchParams(previous);
       if (tab === 'content') next.delete('tab');
@@ -693,6 +696,14 @@ export function ProjectOverviewPage() {
             >
               Activity
             </button>
+
+            {(value.lead.id === member?.id || value.currentMemberAccess !== null) && (
+              <button className={'tab-btn ' + (activeTab === 'vault' ? 'active' : '')}
+                type="button" role="tab" id="pw-vault-tab" aria-selected={activeTab === 'vault'}
+                aria-controls="pw-vault-panel" onClick={() => chooseTab('vault')}>
+                Vault
+              </button>
+            )}
           </nav>
         </div>
 
@@ -739,6 +750,10 @@ export function ProjectOverviewPage() {
               </div>
             </aside>
           </div>
+        </div>
+      ) : activeTab === 'vault' && !outcomeId ? (
+        <div id="pw-vault-panel" role="tabpanel" aria-labelledby="pw-vault-tab">
+          <ProjectVaultPanel projectId={projectId!} accessToken={accessToken} isLead={value.lead.id === member?.id} />
         </div>
       ) : activeTab === 'activity' ? (
         <div id="pw-activity-panel" role="tabpanel" aria-labelledby="pw-activity-tab">

@@ -77,6 +77,18 @@ Normal Stage and Outcome deletion safeguards still apply.
 Membership assignments alone do not block deletion, but work, submission, acceptance, revision, and dependency history remain protected.
 `CAN_EDIT` does not bypass protected historical records or other integrity checks.
 
+## Project Vault
+
+Vault access is **not** company-readable. Project Lead access is automatic. Project Members require explicit Project Lead approval stored in a Vault grant, even if they joined an Outcome or have CAN_EDIT. A historical grant does not authorize a rejoined member; deactivated accounts cannot access the Vault.
+
+| Action | Nonmember | Unapproved Project Member | Approved CAN_VIEW | Approved CAN_EDIT | Project Lead |
+| --- | --- | --- | --- | --- | --- |
+| List/reveal/download Vault contents | No | No | Yes | Yes | Yes |
+| Create/update/delete Vault items | No | No | No | Yes | Yes |
+| Approve/revoke Vault grants | No | No | No | No | Yes |
+
+An Administrator has no special Vault override. Archived Vaults are read-only. Backend request-time checks are authoritative; a client-side tab is never an access-control boundary.
+
 ## Outcome Participation and Delivery
 
 Any active authorized Member may join a non-accepted Outcome, including while it is locked, for review, or needs revision.

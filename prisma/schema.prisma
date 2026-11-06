@@ -124,6 +124,11 @@ model Member {
   ledProjects                 Project[]                    @relation("ProjectLead")
   projectStatusChanges        ProjectStatusHistory[]       @relation("ProjectStatusChangedBy")
   projectMemberships          ProjectMember[]
+  vaultGrants                 ProjectVaultGrant[] @relation("VaultGrantMember")
+  vaultApprovals              ProjectVaultGrant[] @relation("VaultGrantApprover")
+  vaultItemsCreated           ProjectVaultItem[] @relation("VaultItemCreator")
+  vaultVersionsCreated        ProjectVaultVersion[] @relation("VaultVersionCreator")
+  vaultAuditEvents            ProjectVaultAuditEvent[] @relation("VaultAuditActor")
   projectAccessChanges        ProjectMemberAccessHistory[] @relation("ProjectAccessChangedBy")
   projectAccessHistory        ProjectMemberAccessHistory[] @relation("ProjectAccessTarget")
   createdOutcomes             Outcome[]                    @relation("OutcomeCreatedBy")
@@ -331,6 +336,9 @@ model Project {
   notifications       Notification[]
   messages            ProjectMessage[]
   announcements       ProjectAnnouncement[]
+  vaultItems          ProjectVaultItem[]
+  vaultGrants         ProjectVaultGrant[]
+  vaultAuditEvents    ProjectVaultAuditEvent[]
 
   @@index([createdByMemberId])
   @@index([leadMemberId])
@@ -750,4 +758,84 @@ model OutcomeAcceptanceMember {
   @@id([acceptanceId, memberId])
   @@index([memberId])
   @@map("outcome_acceptance_members")
+}
+
+
+enum VaultItemKind {
+  ENV_FILE
+  API_KEY
+  CREDENTIAL
+  SECURE_NOTE
+  FILE
+}
+
+model ProjectVaultGrant {
+  projectId          String    @map("project_id") @db.Uuid
+  memberId           String    @map("member_id") @db.Uuid
+  approvedAt         DateTime? @map("approved_at") @db.Timestamptz(6)
+  approvedByMemberId String?   @map("approved_by_member_id") @db.Uuid
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  project            Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  member             Member    @relation("VaultGrantMember", fields: [memberId], references: [id], onDelete: Restrict)
+  approvedBy         Member?   @relation("VaultGrantApprover", fields: [approvedByMemberId], references: [id], onDelete: Restrict)
+
+  @@id([projectId, memberId])
+  @@index([memberId])
+  @@map("project_vault_grants")
+}
+
+model ProjectVaultItem {
+  id                String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId         String                @map("project_id") @db.Uuid
+  title             String                @db.VarChar(160)
+  kind              VaultItemKind
+  environment       String                @db.VarChar(24)
+  description       String                @default("") @db.VarChar(1000)
+  fileName          String?               @map("file_name") @db.VarChar(180)
+  currentVersion    Int                   @default(1) @map("current_version")
+  createdByMemberId String                @map("created_by_member_id") @db.Uuid
+  createdAt         DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt         DateTime?             @map("deleted_at") @db.Timestamptz(6)
+  project           Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy         Member                @relation("VaultItemCreator", fields: [createdByMemberId], references: [id], onDelete: Restrict)
+  versions          ProjectVaultVersion[]
+
+  @@index([projectId, deletedAt, updatedAt])
+  @@map("project_vault_items")
+}
+
+model ProjectVaultVersion {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  itemId            String           @map("item_id") @db.Uuid
+  versionNumber     Int              @map("version_number")
+  ciphertext        String           @db.Text
+  nonce             String           @db.VarChar(24)
+  authTag           String           @map("auth_tag") @db.VarChar(24)
+  keyVersion        Int              @default(1) @map("key_version")
+  byteLength        Int              @map("byte_length")
+  createdByMemberId String           @map("created_by_member_id") @db.Uuid
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  item              ProjectVaultItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  createdBy         Member           @relation("VaultVersionCreator", fields: [createdByMemberId], references: [id], onDelete: Restrict)
+
+  @@unique([itemId, versionNumber])
+  @@index([createdByMemberId])
+  @@map("project_vault_versions")
+}
+
+model ProjectVaultAuditEvent {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId     String   @map("project_id") @db.Uuid
+  itemId        String?  @map("item_id") @db.Uuid
+  targetMemberId String? @map("target_member_id") @db.Uuid
+  actorMemberId String   @map("actor_member_id") @db.Uuid
+  action        String   @db.VarChar(32)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  actor         Member   @relation("VaultAuditActor", fields: [actorMemberId], references: [id], onDelete: Restrict)
+
+  @@index([projectId, createdAt, id])
+  @@index([actorMemberId])
+  @@map("project_vault_audit_events")
 }
