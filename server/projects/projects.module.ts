@@ -1,3 +1,5 @@
+import { ProjectVaultController } from './project-vault.controller';
+import { ProjectVaultService } from './project-vault.service';
 import { Module } from '@nestjs/common';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { ProjectsController } from './projects.controller';
@@ -25,6 +27,7 @@ import { ProjectAnnouncementService } from './project-announcement.service';
     ProjectActivityController,
     ProjectChatController,
     ProjectAnnouncementController,
+    ProjectVaultController,
   ],
   providers: [
     ProjectsService,
@@ -34,6 +37,7 @@ import { ProjectAnnouncementService } from './project-announcement.service';
     ProjectActivityService,
     ProjectChatService,
     ProjectAnnouncementService,
+    ProjectVaultService,
   ],
   exports: [ProjectsService],
 })
