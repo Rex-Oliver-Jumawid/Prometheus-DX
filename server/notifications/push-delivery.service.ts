@@ -19,7 +19,7 @@ const include = {
       endpoint: true,
       p256dh: true,
       auth: true,
-      member: { select: { visiworkDepartmentId: true } },
+      member: { select: { visiworkDepartmentId: true, status: true } },
     },
   },
   notification: { select: notificationSelect },
@@ -193,6 +193,10 @@ export class PushDeliveryService {
     delivery: Delivery,
     vapid: NonNullable<typeof serverEnvironment.webPush>,
   ) {
+    if (delivery.subscription.member.status !== 'ACTIVE') {
+      await this.completeSuppressedDelivery(delivery);
+      return;
+    }
     if (!delivery.notification) {
       const payload = QueuedPayloadSchema.parse(delivery.payload);
       const muted = await this.prisma.chatPushMute.findUnique({
@@ -217,7 +221,38 @@ export class PushDeliveryService {
         await this.completeSuppressedDelivery(delivery);
         return;
       }
-      const result = await sendWebPush(delivery.subscription, payload, vapid);
+      // Scheduled dispatch must respect edits and deletion after enqueueing.
+      const messageId = payload.tag.split(':').at(-1)!;
+      const select = {
+        body: true,
+        member: { select: { fullName: true } },
+      } as const;
+      const message = delivery.channelKey?.startsWith('project:')
+        ? await this.prisma.projectMessage.findFirst({
+            where: {
+              id: messageId,
+              projectId: delivery.channelKey.slice('project:'.length),
+              outcomeId: null,
+              deletedAt: null,
+            },
+            select,
+          })
+        : await this.prisma.visiWorkMessage.findFirst({
+            where: { id: messageId, departmentId, deletedAt: null },
+            select,
+          });
+      if (!message) {
+        await this.completeSuppressedDelivery(delivery);
+        return;
+      }
+      const result = await sendWebPush(
+        delivery.subscription,
+        {
+          ...payload,
+          body: `${message.member.fullName}: “${message.body.slice(0, 180)}”`,
+        },
+        vapid,
+      );
       await this.recordResult(delivery, result);
       return;
     }

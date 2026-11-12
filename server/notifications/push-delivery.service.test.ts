@@ -25,10 +25,18 @@ function fixture() {
       endpoint: 'https://fcm.googleapis.com/push/token',
       p256dh: 'key',
       auth: 'secret',
-      member: { visiworkDepartmentId: null },
+      member: { visiworkDepartmentId: null, status: 'ACTIVE' },
     },
   };
   const db = {
+    visiWorkMessage: {
+      findFirst: vi
+        .fn()
+        .mockResolvedValue({
+          body: 'current body',
+          member: { fullName: 'Author' },
+        }),
+    },
     chatPushMute: {
       findMany: vi.fn().mockResolvedValue([]),
       findUnique: vi.fn().mockResolvedValue(null),
@@ -121,5 +129,27 @@ describe('durable background push delivery', () => {
         data: expect.objectContaining({ deliveredAt: expect.any(Date) }),
       }),
     );
+  });
+  it('uses current message content after an edit', async () => {
+    enablePush();
+    vi.mocked(sendWebPush).mockResolvedValue({
+      ok: true,
+      stale: false,
+      error: null,
+    });
+    const { service } = fixture();
+    await service.flushPendingDeliveries();
+    expect(sendWebPush).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ body: 'Author: “current body”' }),
+      expect.anything(),
+    );
+  });
+  it('suppresses queued content after message deletion', async () => {
+    enablePush();
+    const { db, service } = fixture();
+    db.visiWorkMessage.findFirst.mockResolvedValue(null);
+    await service.flushPendingDeliveries();
+    expect(sendWebPush).not.toHaveBeenCalled();
   });
 });
