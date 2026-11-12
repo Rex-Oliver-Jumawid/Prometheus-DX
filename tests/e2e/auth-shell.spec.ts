@@ -415,6 +415,8 @@ test('non-admin Project Lead cannot see or open Registry', async ({ page }) => {
 
     await signIn(page);
     await expect(page).not.toHaveURL(/\/login$/);
+    // Revalidate the workspace after changing the shared identity's role.
+    await page.reload();
     await expect(page.getByRole('link', { name: 'Registry' })).toHaveCount(0);
     const registryApiStatus = await page.evaluate(async () => {
       const storageKey = Object.keys(localStorage).find(

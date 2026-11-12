@@ -75,6 +75,8 @@ test('Phase 6 visual, responsive, route, console, and network audit', async ({
     }
   });
   page.on('requestfailed', (request) => {
+    // Full navigations deliberately cancel pending query refetches.
+    if (request.failure()?.errorText === 'net::ERR_ABORTED') return;
     failedRequests.push(
       `${request.method()} ${request.url()} ${request.failure()?.errorText}`,
     );
@@ -158,7 +160,7 @@ test('Phase 6 visual, responsive, route, console, and network audit', async ({
   const attendance = page.getByLabel('Time attendance');
   await expect(attendance).toBeVisible();
   // The edge widget is intentionally collapsed offscreen until hovered or opened.
-  await attendance.hover();
+  await attendance.locator('.attendance-edge-handle').hover();
   await expect
     .poll(async () => {
       const box = await attendance.boundingBox();

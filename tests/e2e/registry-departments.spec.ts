@@ -170,14 +170,14 @@ test('administrator creates and edits a department with persistence', async ({
   const removeDialog = page.getByRole('dialog', { name: 'Remove department' });
   await expect(removeDialog).toBeVisible();
   await expect(
-    removeDialog.getByText('0 members', { exact: true }),
-  ).toBeVisible();
+    removeDialog.locator('.registry-reference-summary > span').nth(0),
+  ).toHaveText(/^0\s*members$/);
   await expect(
-    removeDialog.getByText('0 projects', { exact: true }),
-  ).toBeVisible();
+    removeDialog.locator('.registry-reference-summary > span').nth(1),
+  ).toHaveText(/^0\s*projects$/);
   await expect(
-    removeDialog.getByText('0 outcomes', { exact: true }),
-  ).toBeVisible();
+    removeDialog.locator('.registry-reference-summary > span').nth(2),
+  ).toHaveText(/^0\s*outcomes$/);
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(
     page.getByRole('button', { name: `View ${updatedName} members` }),

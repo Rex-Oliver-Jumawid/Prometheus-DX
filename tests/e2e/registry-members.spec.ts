@@ -176,6 +176,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
 
   await addMemberButton.click();
+  await expect(page.getByRole('dialog', { name: 'Add member' })).toBeFocused();
   await page.getByLabel('Full name').focus();
   await expect(existingMembersList).toBeVisible();
   const desktopOverlay = await page.evaluate(() => {
@@ -307,7 +308,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
   ).toBeVisible();
   await expect(
     page.locator('.registry-department-card').filter({
-      hasText: department.name,
+      hasText: department.shortLabel,
     }),
   ).toContainText('2 members');
 
@@ -369,12 +370,12 @@ test('administrator adds and edits a member with duplicate-email protection', as
 
   await expect(
     page.locator('.registry-department-card').filter({
-      hasText: department.name,
+      hasText: department.shortLabel,
     }),
   ).toContainText('1 member');
   await expect(
     page.locator('.registry-department-card').filter({
-      hasText: reassignedDepartment.name,
+      hasText: reassignedDepartment.shortLabel,
     }),
   ).toContainText('1 member');
 

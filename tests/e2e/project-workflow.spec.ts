@@ -351,7 +351,10 @@ test('F4-13: direct Outcome route persists across reload and browser history', a
     page.getByRole('heading', { name: 'Opportunity decision approved' }),
   ).toBeVisible();
   await expect(
-    page.getByText('Customer evidence collected - Waiting'),
+    page
+      .locator('.prereq-rail-item')
+      .filter({ hasText: 'Customer evidence collected' })
+      .getByText('Waiting', { exact: true }),
   ).toBeVisible();
   const reloadWorkflowResponse = page.waitForResponse(
     (response) =>

@@ -158,7 +158,7 @@ test('Chat persists a reply and author edit across reload', async ({
     .getByRole('listitem')
     .filter({ hasText: 'Persistent reply' });
   await reply.getByRole('button', { name: 'Message options' }).click();
-  await reply.getByRole('button', { name: 'Edit message' }).click();
+  await page.getByRole('button', { name: 'Edit message', exact: true }).click();
   await reply
     .getByRole('textbox', { name: 'Edit message' })
     .fill('Persistent edited reply');
@@ -258,7 +258,7 @@ test('Chat opens on recent messages and keeps the viewport when older history lo
   await signIn(page);
   await page.goto('/projects/' + projectId + '?tab=chat');
   const thread = page.getByRole('list', { name: 'Project messages' });
-  await expect(thread.locator('li')).toHaveCount(30);
+  await expect(thread.locator('[data-message-id]')).toHaveCount(30);
   await expect
     .poll(() =>
       thread.evaluate(
@@ -268,7 +268,7 @@ test('Chat opens on recent messages and keeps the viewport when older history lo
     )
     .toBeLessThan(4);
 
-  const visiblePageAnchor = thread.locator('li').first();
+  const visiblePageAnchor = thread.locator('[data-message-id]').first();
   const anchorText = await visiblePageAnchor
     .locator('.pw-chat-message-text')
     .innerText();
@@ -276,8 +276,8 @@ test('Chat opens on recent messages and keeps the viewport when older history lo
     (element) => element.getBoundingClientRect().top,
   );
   await page.getByRole('button', { name: 'Load earlier messages' }).click();
-  await expect(thread.locator('li')).toHaveCount(37);
-  const anchor = thread.locator('li').filter({
+  await expect(thread.locator('[data-message-id]')).toHaveCount(37);
+  const anchor = thread.locator('[data-message-id]').filter({
     has: page.getByText(anchorText, { exact: true }),
   });
   const after = await anchor.evaluate(
@@ -294,7 +294,9 @@ test('Search results focus the actual older chat message without scrolling the w
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/projects/' + projectId + '?tab=chat');
   await expect(
-    page.getByRole('list', { name: 'Project messages' }).locator('li'),
+    page
+      .getByRole('list', { name: 'Project messages' })
+      .locator('[data-message-id]'),
   ).toHaveCount(30);
   await page
     .getByRole('button', { name: 'Search project conversation' })

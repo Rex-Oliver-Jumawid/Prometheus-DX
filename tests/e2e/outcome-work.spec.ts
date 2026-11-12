@@ -209,7 +209,9 @@ test('F5-01 F5-08: joined member creates a persisted Feature', async ({
   ]);
   await signIn(page);
   await openWork(page);
-  await expect(page.getByText('✓ Joined Outcome')).toBeVisible();
+  await expect(
+    page.getByText('✓ Joined outcome', { exact: true }),
+  ).toBeVisible();
   await page
     .getByRole('button', { name: 'Add a feature to this outcome', exact: true })
     .click();

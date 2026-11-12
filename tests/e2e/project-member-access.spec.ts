@@ -268,7 +268,9 @@ test('F4-30 F4-32 F4-33 F4-34 F4-35 F4-36: CAN_EDIT changes status and workflow 
     }),
   ).toBe(1);
 
-  await expect(page.getByRole('button', { name: '+ Add Stage' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: '+ Stage', exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Edit Stage Access Stage' }),
   ).toBeVisible();
