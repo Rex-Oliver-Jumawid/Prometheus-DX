@@ -219,3 +219,13 @@ Compare:
 - Prisma client generation
 - migration state
 - browser origin/session
+
+## Authenticated CI verification
+
+CI runs all `server/**/*.integration.test.ts` suites against disposable PostgreSQL with production migrations applied.
+A separate authenticated-browser job starts disposable local Supabase, creates a confirmed Auth identity and Administrator membership, and runs Chromium with one shared-identity worker.
+No production identities, cloud Supabase project, or stored credential secrets are required.
+The authenticated job fails configuration validation when its credentials or Supabase values are missing.
+Some role-conditional tests may still intentionally skip for the Administrator fixture.
+Browser failure artifacts are retained for diagnosis.
+All verification workflows install from the frozen pnpm lockfile.

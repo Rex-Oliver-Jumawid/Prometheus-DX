@@ -1,12 +1,29 @@
 import 'dotenv/config';
 import { defineConfig, devices } from '@playwright/test';
 
+if (
+  process.env.CI_AUTHENTICATED_E2E === '1' &&
+  ![
+    'E2E_MEMBER_EMAIL',
+    'E2E_MEMBER_PASSWORD',
+    'VITE_SUPABASE_URL',
+    'VITE_SUPABASE_ANON_KEY',
+    'DATABASE_URL',
+  ].every((key) => process.env[key])
+) {
+  throw new Error(
+    'Authenticated CI requires provisioned Supabase and member credentials.',
+  );
+}
+
 const usesSharedMemberCredential = Boolean(
   process.env.E2E_MEMBER_EMAIL && process.env.E2E_MEMBER_PASSWORD,
 );
 const apiPort = Number(process.env.E2E_API_PORT || 3001);
 const webPort = Number(process.env.E2E_WEB_PORT || 5173);
-const isolatedPorts = Boolean(process.env.E2E_API_PORT || process.env.E2E_WEB_PORT);
+const isolatedPorts = Boolean(
+  process.env.E2E_API_PORT || process.env.E2E_WEB_PORT,
+);
 const webBaseUrl = `http://127.0.0.1:${webPort}`;
 const apiEnvironmentWithoutBrevo = Object.fromEntries(
   Object.entries(process.env).filter(([key]) => !key.startsWith('BREVO_')),
