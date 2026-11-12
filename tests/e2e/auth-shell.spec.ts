@@ -201,7 +201,9 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
 
   const profile = page.getByRole('dialog', { name: 'Profile settings' });
   await expect(profile).toBeVisible();
-  await expect(profile).toContainText(email!);
+  await expect(
+    profile.getByLabel('Email address', { exact: true }),
+  ).toHaveValue(email!);
   await expect(profile.getByLabel('Full name')).toHaveValue(/.+/);
   await expect(profile.getByLabel(/Email address/)).toHaveAttribute('readonly');
   await expect(profile.getByLabel(/Department/)).toHaveAttribute('readonly');
@@ -224,9 +226,7 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
   await expect(
     profile.getByRole('button', { name: 'Sign out', exact: true }),
   ).toHaveCount(0);
-  await profile
-    .getByRole('button', { name: 'Close profile settings' })
-    .click();
+  await profile.getByRole('button', { name: 'Close profile settings' }).click();
 
   await page.getByRole('button', { name: 'Open account menu' }).click();
   const accountMenu = page.getByRole('menu', { name: 'Account menu' });
