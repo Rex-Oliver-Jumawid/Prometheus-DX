@@ -148,8 +148,12 @@ test('Chat persists a reply and author edit across reload', async ({
   await expect(
     page.getByRole('button', { name: 'Send message' }),
   ).toBeInViewport();
-  await page.getByRole('textbox', { name: 'Message' }).fill('Persistent reply');
-  await page.getByRole('textbox', { name: 'Message' }).press('Enter');
+  await page
+    .getByRole('textbox', { name: 'Message', exact: true })
+    .fill('Persistent reply');
+  await page
+    .getByRole('textbox', { name: 'Message', exact: true })
+    .press('Enter');
   await expect(page.getByText('Persistent reply')).toBeVisible();
   await page.reload();
   await expect(page.getByText('Persistent reply')).toBeVisible();
@@ -344,8 +348,12 @@ test('Search results focus the actual older chat message without scrolling the w
   await expect(page.locator('.pw-chat-message--targeted')).toHaveCount(1);
 
   const sentBody = 'Search return to latest ' + Date.now();
-  await page.getByRole('textbox', { name: 'Message' }).fill(sentBody);
-  await page.getByRole('textbox', { name: 'Message' }).press('Enter');
+  await page
+    .getByRole('textbox', { name: 'Message', exact: true })
+    .fill(sentBody);
+  await page
+    .getByRole('textbox', { name: 'Message', exact: true })
+    .press('Enter');
   await expect(page.getByText(sentBody, { exact: true })).toBeVisible();
   await expect(page.locator('.pw-chat-message--targeted')).toHaveCount(0);
   await expect
