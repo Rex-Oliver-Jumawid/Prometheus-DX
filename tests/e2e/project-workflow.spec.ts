@@ -311,7 +311,10 @@ test('F4-07 through F4-10: Lead creates, links, and edits persistent Outcomes', 
   expect(dependent.prerequisites[0].prerequisiteOutcomeId).toBe(firstOutcomeId);
 
   await page
-    .getByRole('button', { name: 'Edit Outcome Opportunity decision' })
+    .getByRole('link', { name: 'Opportunity decision', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Outcome Details', exact: true })
     .click();
   const editDialog = page.getByRole('dialog', { name: 'Edit project outcome' });
   await editDialog

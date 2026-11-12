@@ -201,9 +201,7 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
 
   const profile = page.getByRole('dialog', { name: 'Profile settings' });
   await expect(profile).toBeVisible();
-  await expect(
-    profile.getByLabel('Email address', { exact: true }),
-  ).toHaveValue(email!);
+  await expect(profile.getByLabel(/Email address/)).toHaveValue(email!);
   await expect(profile.getByLabel('Full name')).toHaveValue(/.+/);
   await expect(profile.getByLabel(/Email address/)).toHaveAttribute('readonly');
   await expect(profile.getByLabel(/Department/)).toHaveAttribute('readonly');

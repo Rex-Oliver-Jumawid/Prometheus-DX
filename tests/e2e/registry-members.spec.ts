@@ -176,6 +176,8 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
 
   await addMemberButton.click();
+  await page.getByLabel('Full name').focus();
+  await expect(existingMembersList).toBeVisible();
   const desktopOverlay = await page.evaluate(() => {
     const backdrop = document.querySelector('.registry-dialog-backdrop');
     const dialog = document.querySelector('.registry-member-dialog');
@@ -343,9 +345,9 @@ test('administrator adds and edits a member with duplicate-email protection', as
 
   await page.reload();
   await expect(memberRow(page, updatedFullName)).toBeVisible();
-  await expect(memberRow(page, updatedFullName).locator('td').nth(1)).toHaveText(
-    reassignedDepartment.shortLabel,
-  );
+  await expect(
+    memberRow(page, updatedFullName).locator('td').nth(1),
+  ).toHaveText(reassignedDepartment.shortLabel);
 
   await page.getByLabel('Search members').fill(updatedFullName.slice(0, 18));
   await expect(memberRow(page, updatedFullName)).toBeVisible();
@@ -354,9 +356,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await expect(page.getByText('No matching members')).toBeVisible();
   await page.getByLabel('Search members').fill('');
 
-  await page
-    .getByLabel('Filter members by role')
-    .selectOption('ADMINISTRATOR');
+  await page.getByLabel('Filter members by role').selectOption('ADMINISTRATOR');
   await expect(memberRow(page, updatedFullName)).toBeVisible();
   await page.getByLabel('Filter members by role').selectOption('MEMBER');
   await expect(memberRow(page, updatedFullName)).toHaveCount(0);

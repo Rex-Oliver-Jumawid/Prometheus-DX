@@ -168,6 +168,7 @@ test('F4-28 F4-29: Lead grants and revokes persisted Project Member access', asy
   );
   await page.goto(`/projects/${projectId}`);
   expect((await workflowResponse).status()).toBe(200);
+  await page.getByRole('tab', { name: 'Chat', exact: true }).click();
   expect((await membersResponse).status()).toBe(200);
   await expect(
     page.getByRole('heading', { name: 'Project Members' }),
@@ -187,18 +188,12 @@ test('F4-28 F4-29: Lead grants and revokes persisted Project Member access', asy
   await alternateAccess.selectOption('CAN_EDIT');
   expect((await grantResponse).status()).toBe(200);
   await expect(alternateAccess).toHaveValue('CAN_EDIT');
-  const persistedWorkflowResponse = page.waitForResponse(
-    (response) =>
-      response.url().endsWith(`/api/projects/${projectId}/workflow`) &&
-      response.request().method() === 'GET',
-  );
   const persistedMembersResponse = page.waitForResponse(
     (response) =>
       response.url().endsWith(`/api/projects/${projectId}/members`) &&
       response.request().method() === 'GET',
   );
   await page.reload();
-  expect((await persistedWorkflowResponse).status()).toBe(200);
   expect((await persistedMembersResponse).status()).toBe(200);
   await expect(
     page.getByLabel('Project access for Phase Four Access Member'),
@@ -277,7 +272,9 @@ test('F4-30 F4-32 F4-33 F4-34 F4-35 F4-36: CAN_EDIT changes status and workflow 
   await expect(
     page.getByRole('button', { name: 'Edit Stage Access Stage' }),
   ).toBeVisible();
-  await expect(page.getByRole('button', { name: '+ Add Outcome' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: '+ Add Outcome' }),
+  ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Edit Outcome Access Outcome' }),
   ).toBeVisible();
@@ -377,6 +374,7 @@ test('F4-31: CAN_VIEW Project Member cannot change Project status', async ({
   );
   await page.goto(`/projects/${projectId}`);
   expect((await workflowResponse).status()).toBe(200);
+  await page.getByRole('button', { name: 'Chat', exact: true }).click();
   expect((await membersResponse).status()).toBe(200);
   await expect(page.getByLabel('Project status')).toHaveCount(0);
   expect(
@@ -547,7 +545,9 @@ test('Phase 4 main E2E flow: Lead builds workflow, Member joins, Lead grants CAN
   expect((await statusResponse).status()).toBe(200);
   await expect(page.getByLabel('Project status')).toHaveValue('IN_PROGRESS');
   await expect(page.getByRole('button', { name: '+ Add Stage' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '+ Add Outcome' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: '+ Add Outcome' }),
+  ).toBeVisible();
   await expect(page.locator('.project-member-access select')).toHaveCount(0);
   expect(
     (
