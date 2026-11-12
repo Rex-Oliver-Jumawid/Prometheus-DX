@@ -111,7 +111,7 @@ test('administrator creates and edits a department with persistence', async ({
     .click();
 
   const createdDepartment = page.getByRole('button', {
-    name: `Edit ${originalName}`,
+    name: `View ${originalName} members`,
   });
   await expect(createdDepartment).toBeVisible();
   await expect(
@@ -123,18 +123,22 @@ test('administrator creates and edits a department with persistence', async ({
   await expect(
     createdDepartment.getByText('0 outcomes', { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText(originalShortLabel, { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(originalShortLabel, { exact: true }),
+  ).toBeVisible();
   await expect(page.getByText(originalName, { exact: true })).toHaveCount(0);
-  await expect(page.getByText(originalDescription, { exact: true })).toHaveCount(
-    0,
-  );
+  await expect(
+    page.getByText(originalDescription, { exact: true }),
+  ).toHaveCount(0);
 
   await page.reload();
   await expect(
-    page.getByRole('button', { name: `Edit ${originalName}` }),
+    page.getByRole('button', { name: `View ${originalName} members` }),
   ).toBeVisible();
 
-  await page.getByRole('button', { name: `Edit ${originalName}` }).click();
+  await page
+    .getByRole('button', { name: `View ${originalName} members` })
+    .click();
   await expect(
     page.getByRole('dialog', { name: 'Edit department' }),
   ).toBeVisible();
@@ -144,9 +148,11 @@ test('administrator creates and edits a department with persistence', async ({
   await page.getByRole('button', { name: 'Save changes', exact: true }).click();
 
   await expect(
-    page.getByRole('button', { name: `Edit ${updatedName}` }),
+    page.getByRole('button', { name: `View ${updatedName} members` }),
   ).toBeVisible();
-  await expect(page.getByText(updatedShortLabel, { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(updatedShortLabel, { exact: true }),
+  ).toBeVisible();
   await expect(page.getByText(updatedName, { exact: true })).toHaveCount(0);
   await expect(page.getByText(updatedDescription, { exact: true })).toHaveCount(
     0,
@@ -154,19 +160,27 @@ test('administrator creates and edits a department with persistence', async ({
 
   await page.reload();
   await expect(
-    page.getByRole('button', { name: `Edit ${updatedName}` }),
+    page.getByRole('button', { name: `View ${updatedName} members` }),
   ).toBeVisible();
-  await expect(page.getByText(updatedShortLabel, { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(updatedShortLabel, { exact: true }),
+  ).toBeVisible();
 
   await page.getByRole('button', { name: `Remove ${updatedName}` }).click();
   const removeDialog = page.getByRole('dialog', { name: 'Remove department' });
   await expect(removeDialog).toBeVisible();
-  await expect(removeDialog.getByText('0 members', { exact: true })).toBeVisible();
-  await expect(removeDialog.getByText('0 projects', { exact: true })).toBeVisible();
-  await expect(removeDialog.getByText('0 outcomes', { exact: true })).toBeVisible();
+  await expect(
+    removeDialog.locator('.registry-reference-summary > span').nth(0),
+  ).toHaveText(/^0\s*members$/);
+  await expect(
+    removeDialog.locator('.registry-reference-summary > span').nth(1),
+  ).toHaveText(/^0\s*projects$/);
+  await expect(
+    removeDialog.locator('.registry-reference-summary > span').nth(2),
+  ).toHaveText(/^0\s*outcomes$/);
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: `Edit ${updatedName}` }),
+    page.getByRole('button', { name: `View ${updatedName} members` }),
   ).toBeVisible();
 
   await page.getByRole('button', { name: `Remove ${updatedName}` }).click();
@@ -180,7 +194,7 @@ test('administrator creates and edits a department with persistence', async ({
     .click();
   expect((await deleteResponse).status()).toBe(200);
   await expect(
-    page.getByRole('button', { name: `Edit ${updatedName}` }),
+    page.getByRole('button', { name: `View ${updatedName} members` }),
   ).toHaveCount(0);
   await expect(
     prisma.department.count({ where: { name: updatedName } }),

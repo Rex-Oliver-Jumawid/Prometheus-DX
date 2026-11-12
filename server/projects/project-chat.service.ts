@@ -20,7 +20,12 @@ import { writeNotifications } from '../notifications/notification-writer';
 import { PushDeliveryService } from '../notifications/push-delivery.service';
 
 const PAGE_SIZE = 30;
-const personSelect = { id: true, fullName: true, email: true, profileImagePath: true } as const;
+const personSelect = {
+  id: true,
+  fullName: true,
+  email: true,
+  profileImagePath: true,
+} as const;
 const messageInclude = {
   member: { select: personSelect },
   parent: {
@@ -44,7 +49,6 @@ export class ProjectChatService {
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(PushDeliveryService)
     private readonly pushDeliveries: PushDeliveryService = {
-      flushAfterCommit: async () => undefined,
       sendChatMessage: async () => undefined,
     } as unknown as PushDeliveryService,
   ) {}
@@ -112,12 +116,17 @@ export class ProjectChatService {
       project.leadMemberId,
       ...project.members.map((row) => row.memberId),
     ]);
-    const matches = people.filter((person) =>
-      permitted.has(person.id) &&
-      body.toLocaleLowerCase().includes('@' + person.fullName.toLocaleLowerCase()),
+    const matches = people.filter(
+      (person) =>
+        permitted.has(person.id) &&
+        body
+          .toLocaleLowerCase()
+          .includes('@' + person.fullName.toLocaleLowerCase()),
     );
     if (matches.length !== requested.length)
-      throw new BadRequestException('Mention an active Project Member who appears in the message.');
+      throw new BadRequestException(
+        'Mention an active Project Member who appears in the message.',
+      );
     return matches;
   }
 
@@ -136,16 +145,22 @@ export class ProjectChatService {
         ? {
             id: record.parent.id,
             authorName: record.parent.member.fullName,
-            preview: record.parent.deletedAt ? '[Message deleted]' : record.parent.body.slice(0, 160),
+            preview: record.parent.deletedAt
+              ? '[Message deleted]'
+              : record.parent.body.slice(0, 160),
           }
         : null,
       body: record.deletedAt ? '[Message deleted]' : record.body,
-      mentions: record.deletedAt ? [] : (record.mentions ?? []).map((entry) => entry.member),
+      mentions: record.deletedAt
+        ? []
+        : (record.mentions ?? []).map((entry) => entry.member),
       deletedAt: record.deletedAt?.toISOString() ?? null,
       createdAt: record.createdAt.toISOString(),
       editedAt: record.editedAt?.toISOString() ?? null,
-      canEdit: canWrite && !record.deletedAt && record.memberId === currentMemberId,
-      canDelete: canWrite && !record.deletedAt && record.memberId === currentMemberId,
+      canEdit:
+        canWrite && !record.deletedAt && record.memberId === currentMemberId,
+      canDelete:
+        canWrite && !record.deletedAt && record.memberId === currentMemberId,
     };
   }
 
@@ -209,7 +224,11 @@ export class ProjectChatService {
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: 30,
     });
-    return { items: rows.map((row) => this.toMessage(row, member.id, this.canWrite(member, project))) };
+    return {
+      items: rows.map((row) =>
+        this.toMessage(row, member.id, this.canWrite(member, project)),
+      ),
+    };
   }
 
   async context(member: Member, projectId: string, messageId: string) {
@@ -218,21 +237,30 @@ export class ProjectChatService {
       where: { id: messageId, projectId, outcomeId: null },
       include: messageInclude,
     });
-    if (!target) throw new NotFoundException('Message not found in this Project.');
+    if (!target)
+      throw new NotFoundException('Message not found in this Project.');
     const older = await this.prisma.projectMessage.findMany({
-      where: { projectId, outcomeId: null, OR: [
-        { createdAt: { lt: target.createdAt } },
-        { createdAt: target.createdAt, id: { lt: target.id } },
-      ] },
+      where: {
+        projectId,
+        outcomeId: null,
+        OR: [
+          { createdAt: { lt: target.createdAt } },
+          { createdAt: target.createdAt, id: { lt: target.id } },
+        ],
+      },
       include: messageInclude,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: 15,
     });
     const newer = await this.prisma.projectMessage.findMany({
-      where: { projectId, outcomeId: null, OR: [
-        { createdAt: { gt: target.createdAt } },
-        { createdAt: target.createdAt, id: { gt: target.id } },
-      ] },
+      where: {
+        projectId,
+        outcomeId: null,
+        OR: [
+          { createdAt: { gt: target.createdAt } },
+          { createdAt: target.createdAt, id: { gt: target.id } },
+        ],
+      },
       include: messageInclude,
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       take: 15,
@@ -240,7 +268,8 @@ export class ProjectChatService {
     return {
       targetMessageId: messageId,
       items: [...older.reverse(), target, ...newer].map((row) =>
-        this.toMessage(row, member.id, this.canWrite(member, project))),
+        this.toMessage(row, member.id, this.canWrite(member, project)),
+      ),
     };
   }
 
@@ -266,10 +295,17 @@ export class ProjectChatService {
           select: { id: true },
         });
         if (!parent)
-          throw new BadRequestException('Reply must reference a message in this Project.');
+          throw new BadRequestException(
+            'Reply must reference a message in this Project.',
+          );
       }
       const mentions = await this.validatedMentions(
-        db, member, project, projectId, input.body, input.mentionMemberIds ?? [],
+        db,
+        member,
+        project,
+        projectId,
+        input.body,
+        input.mentionMemberIds ?? [],
       );
       const message = await db.projectMessage.create({
         data: {
@@ -278,7 +314,13 @@ export class ProjectChatService {
           memberId: member.id,
           body: input.body,
           parentMessageId: input.parentMessageId,
-          ...(mentions.length ? { mentions: { create: mentions.map((person) => ({ memberId: person.id })) } } : {}),
+          ...(mentions.length
+            ? {
+                mentions: {
+                  create: mentions.map((person) => ({ memberId: person.id })),
+                },
+              }
+            : {}),
         },
         include: messageInclude,
       });
@@ -322,7 +364,6 @@ export class ProjectChatService {
     });
 
     await Promise.all([
-      this.pushDeliveries.flushAfterCommit(),
       ...(result.recipientMemberIds.length
         ? [
             this.pushDeliveries.sendChatMessage({
@@ -362,10 +403,13 @@ export class ProjectChatService {
       if (!original) throw new NotFoundException('Message not found.');
       if (original.memberId !== member.id)
         throw new ForbiddenException('Only the author may edit this message.');
-      if (original.deletedAt) throw new ConflictException('Deleted messages cannot be edited.');
+      if (original.deletedAt)
+        throw new ConflictException('Deleted messages cannot be edited.');
       // A stale editor must not replace another tab's more recent changes.
       if ((original.editedAt?.toISOString() ?? null) !== input.expectedEditedAt)
-        throw new ConflictException('This message was edited elsewhere. Cancel and reopen the editor.');
+        throw new ConflictException(
+          'This message was edited elsewhere. Cancel and reopen the editor.',
+        );
       const requestedMentionIds =
         input.mentionMemberIds ??
         original.mentions.map((mention) => mention.memberId);
@@ -380,9 +424,7 @@ export class ProjectChatService {
       const previousMentionIds = new Set(
         original.mentions.map((mention) => mention.memberId),
       );
-      const nextMentionIds = new Set(
-        mentions.map((mention) => mention.id),
-      );
+      const nextMentionIds = new Set(mentions.map((mention) => mention.id));
       const removedMentionIds = [...previousMentionIds].filter(
         (id) => !nextMentionIds.has(id),
       );
@@ -442,7 +484,6 @@ export class ProjectChatService {
 
       return this.toMessage(updated, member.id);
     });
-    await this.pushDeliveries.flushAfterCommit();
     return result;
   }
 
@@ -463,10 +504,15 @@ export class ProjectChatService {
       });
       if (!original) throw new NotFoundException('Message not found.');
       if (original.memberId !== member.id)
-        throw new ForbiddenException('Only the author may delete this message.');
-      if (original.deletedAt) throw new ConflictException('Message was already deleted.');
+        throw new ForbiddenException(
+          'Only the author may delete this message.',
+        );
+      if (original.deletedAt)
+        throw new ConflictException('Message was already deleted.');
       if ((original.editedAt?.toISOString() ?? null) !== input.expectedEditedAt)
-        throw new ConflictException('Message changed elsewhere. Refresh before deleting.');
+        throw new ConflictException(
+          'Message changed elsewhere. Refresh before deleting.',
+        );
       const updated = await db.projectMessage.update({
         where: { id: messageId },
         data: {

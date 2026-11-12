@@ -311,7 +311,10 @@ test('F4-07 through F4-10: Lead creates, links, and edits persistent Outcomes', 
   expect(dependent.prerequisites[0].prerequisiteOutcomeId).toBe(firstOutcomeId);
 
   await page
-    .getByRole('button', { name: 'Edit Outcome Opportunity decision' })
+    .getByRole('link', { name: 'Opportunity decision', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Outcome Details', exact: true })
     .click();
   const editDialog = page.getByRole('dialog', { name: 'Edit project outcome' });
   await editDialog
@@ -348,7 +351,10 @@ test('F4-13: direct Outcome route persists across reload and browser history', a
     page.getByRole('heading', { name: 'Opportunity decision approved' }),
   ).toBeVisible();
   await expect(
-    page.getByText('Customer evidence collected - Waiting'),
+    page
+      .locator('.prereq-rail-item')
+      .filter({ hasText: 'Customer evidence collected' })
+      .getByText('Waiting', { exact: true }),
   ).toBeVisible();
   const reloadWorkflowResponse = page.waitForResponse(
     (response) =>

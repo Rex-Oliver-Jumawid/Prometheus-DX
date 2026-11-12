@@ -84,16 +84,16 @@ enum WorkSessionStatus {
 }
 
 model Department {
-  id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String
-  shortLabel  String              @map("short_label") @db.VarChar(12)
-  description String?
-  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
-  members         Member[]            @relation("PrimaryDepartment")
-  visiworkMembers Member[]            @relation("VisiWorkDepartment")
-  projects        ProjectDepartment[]
-  outcomes        OutcomeDepartment[]
+  id               String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String
+  shortLabel       String              @map("short_label") @db.VarChar(12)
+  description      String?
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  members          Member[]            @relation("PrimaryDepartment")
+  visiworkMembers  Member[]            @relation("VisiWorkDepartment")
+  projects         ProjectDepartment[]
+  outcomes         OutcomeDepartment[]
   visiworkMessages VisiWorkMessage[]
 
   @@index([name])
@@ -124,11 +124,11 @@ model Member {
   ledProjects                 Project[]                    @relation("ProjectLead")
   projectStatusChanges        ProjectStatusHistory[]       @relation("ProjectStatusChangedBy")
   projectMemberships          ProjectMember[]
-  vaultGrants                 ProjectVaultGrant[] @relation("VaultGrantMember")
-  vaultApprovals              ProjectVaultGrant[] @relation("VaultGrantApprover")
-  vaultItemsCreated           ProjectVaultItem[] @relation("VaultItemCreator")
-  vaultVersionsCreated        ProjectVaultVersion[] @relation("VaultVersionCreator")
-  vaultAuditEvents            ProjectVaultAuditEvent[] @relation("VaultAuditActor")
+  vaultGrants                 ProjectVaultGrant[]          @relation("VaultGrantMember")
+  vaultApprovals              ProjectVaultGrant[]          @relation("VaultGrantApprover")
+  vaultItemsCreated           ProjectVaultItem[]           @relation("VaultItemCreator")
+  vaultVersionsCreated        ProjectVaultVersion[]        @relation("VaultVersionCreator")
+  vaultAuditEvents            ProjectVaultAuditEvent[]     @relation("VaultAuditActor")
   projectAccessChanges        ProjectMemberAccessHistory[] @relation("ProjectAccessChangedBy")
   projectAccessHistory        ProjectMemberAccessHistory[] @relation("ProjectAccessTarget")
   createdOutcomes             Outcome[]                    @relation("OutcomeCreatedBy")
@@ -153,7 +153,7 @@ model Member {
   visiworkMessages            VisiWorkMessage[]
   visiworkMentions            VisiWorkMessageMention[]
   projectMessages             ProjectMessage[]
-  projectMessageMentions      ProjectMessageMention[] @relation("ProjectMessageMentionTarget")
+  projectMessageMentions      ProjectMessageMention[]      @relation("ProjectMessageMentionTarget")
   projectAnnouncements        ProjectAnnouncement[]
   receivedNotifications       Notification[]               @relation("NotificationRecipient")
   actedNotifications          Notification[]               @relation("NotificationActor")
@@ -167,15 +167,15 @@ model Member {
 }
 
 model VisiWorkMessage {
-  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  departmentId String?     @map("department_id") @db.Uuid
-  memberId     String      @map("member_id") @db.Uuid
-  body         String      @db.VarChar(2000)
-  editedAt     DateTime?   @map("edited_at") @db.Timestamptz(6)
-  deletedAt    DateTime?   @map("deleted_at") @db.Timestamptz(6)
-  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
-  department   Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  member       Member      @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  id           String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  departmentId String?                  @map("department_id") @db.Uuid
+  memberId     String                   @map("member_id") @db.Uuid
+  body         String                   @db.VarChar(2000)
+  editedAt     DateTime?                @map("edited_at") @db.Timestamptz(6)
+  deletedAt    DateTime?                @map("deleted_at") @db.Timestamptz(6)
+  createdAt    DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  department   Department?              @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  member       Member                   @relation(fields: [memberId], references: [id], onDelete: Restrict)
   mentions     VisiWorkMessageMention[]
 
   @@index([departmentId, createdAt, id])
@@ -196,21 +196,21 @@ model VisiWorkMessageMention {
 }
 
 model ProjectMessage {
-  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  projectId       String           @map("project_id") @db.Uuid
-  outcomeId       String?          @map("outcome_id") @db.Uuid
-  memberId        String           @map("member_id") @db.Uuid
-  parentMessageId String?          @map("parent_message_id") @db.Uuid
-  body            String           @db.VarChar(4000)
-  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  editedAt        DateTime?        @map("edited_at") @db.Timestamptz(6)
-  deletedAt       DateTime?        @map("deleted_at") @db.Timestamptz(6)
+  id              String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId       String                  @map("project_id") @db.Uuid
+  outcomeId       String?                 @map("outcome_id") @db.Uuid
+  memberId        String                  @map("member_id") @db.Uuid
+  parentMessageId String?                 @map("parent_message_id") @db.Uuid
+  body            String                  @db.VarChar(4000)
+  createdAt       DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  editedAt        DateTime?               @map("edited_at") @db.Timestamptz(6)
+  deletedAt       DateTime?               @map("deleted_at") @db.Timestamptz(6)
   mentions        ProjectMessageMention[]
-  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  outcome         Outcome?         @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
-  member          Member           @relation(fields: [memberId], references: [id], onDelete: Restrict)
-  parent          ProjectMessage?  @relation("ProjectMessageReplies", fields: [parentMessageId], references: [id], onDelete: Restrict)
-  replies         ProjectMessage[] @relation("ProjectMessageReplies")
+  project         Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  outcome         Outcome?                @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+  member          Member                  @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  parent          ProjectMessage?         @relation("ProjectMessageReplies", fields: [parentMessageId], references: [id], onDelete: Restrict)
+  replies         ProjectMessage[]        @relation("ProjectMessageReplies")
 
   @@index([projectId, createdAt, id])
   @@index([outcomeId, createdAt, id])
@@ -231,22 +231,21 @@ model ProjectMessageMention {
 }
 
 model ProjectAnnouncement {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  projectId String   @map("project_id") @db.Uuid
-  memberId  String   @map("member_id") @db.Uuid
-  title     String   @db.VarChar(160)
-  body      String   @db.VarChar(1200)
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId String    @map("project_id") @db.Uuid
+  memberId  String    @map("member_id") @db.Uuid
+  title     String    @db.VarChar(160)
+  body      String    @db.VarChar(1200)
   pinnedAt  DateTime? @map("pinned_at") @db.Timestamptz(6)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  member    Member   @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  member    Member    @relation(fields: [memberId], references: [id], onDelete: Restrict)
 
   @@index([projectId, pinnedAt(sort: Desc), createdAt(sort: Desc), id(sort: Desc)])
   @@index([memberId])
   @@map("project_announcements")
 }
-
 
 model MemberSchedule {
   id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -277,18 +276,18 @@ model ScheduleBlock {
 }
 
 model WorkSession {
-  id          String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  memberId    String                  @map("member_id") @db.Uuid
-  timeIn      DateTime                @map("time_in") @db.Timestamptz(6)
-  timeOut     DateTime?               @map("time_out") @db.Timestamptz(6)
-  summary     String?                 @db.VarChar(2000)
-  lastActivityAt DateTime?            @map("last_activity_at") @db.Timestamptz(6)
-  idleRemindedAt DateTime?            @map("idle_reminded_at") @db.Timestamptz(6)
-  status      WorkSessionStatus       @default(OPEN)
-  createdAt   DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
-  member      Member                  @relation(fields: [memberId], references: [id], onDelete: Restrict)
-  corrections WorkSessionCorrection[]
+  id             String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId       String                  @map("member_id") @db.Uuid
+  timeIn         DateTime                @map("time_in") @db.Timestamptz(6)
+  timeOut        DateTime?               @map("time_out") @db.Timestamptz(6)
+  summary        String?                 @db.VarChar(2000)
+  lastActivityAt DateTime?               @map("last_activity_at") @db.Timestamptz(6)
+  idleRemindedAt DateTime?               @map("idle_reminded_at") @db.Timestamptz(6)
+  status         WorkSessionStatus       @default(OPEN)
+  createdAt      DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  member         Member                  @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  corrections    WorkSessionCorrection[]
 
   @@index([memberId, timeIn])
   @@index([memberId, status])
@@ -662,7 +661,9 @@ model ChatPushMute {
 
 model PushDelivery {
   id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  notificationId String           @map("notification_id") @db.Uuid
+  notificationId String?          @map("notification_id") @db.Uuid
+  payload        Json?
+  channelKey     String?          @map("channel_key") @db.VarChar(120)
   subscriptionId String           @map("subscription_id") @db.Uuid
   attempts       Int              @default(0)
   nextAttemptAt  DateTime         @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
@@ -672,7 +673,7 @@ model PushDelivery {
   lastError      String?          @map("last_error") @db.VarChar(1000)
   createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
-  notification   Notification     @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  notification   Notification?    @relation(fields: [notificationId], references: [id], onDelete: Cascade)
   subscription   PushSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@unique([notificationId, subscriptionId])
@@ -760,7 +761,6 @@ model OutcomeAcceptanceMember {
   @@map("outcome_acceptance_members")
 }
 
-
 enum VaultItemKind {
   ENV_FILE
   API_KEY
@@ -825,15 +825,15 @@ model ProjectVaultVersion {
 }
 
 model ProjectVaultAuditEvent {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  projectId     String   @map("project_id") @db.Uuid
-  itemId        String?  @map("item_id") @db.Uuid
-  targetMemberId String? @map("target_member_id") @db.Uuid
-  actorMemberId String   @map("actor_member_id") @db.Uuid
-  action        String   @db.VarChar(32)
-  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  actor         Member   @relation("VaultAuditActor", fields: [actorMemberId], references: [id], onDelete: Restrict)
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId      String   @map("project_id") @db.Uuid
+  itemId         String?  @map("item_id") @db.Uuid
+  targetMemberId String?  @map("target_member_id") @db.Uuid
+  actorMemberId  String   @map("actor_member_id") @db.Uuid
+  action         String   @db.VarChar(32)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  actor          Member   @relation("VaultAuditActor", fields: [actorMemberId], references: [id], onDelete: Restrict)
 
   @@index([projectId, createdAt, id])
   @@index([actorMemberId])

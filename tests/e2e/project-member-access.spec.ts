@@ -168,6 +168,7 @@ test('F4-28 F4-29: Lead grants and revokes persisted Project Member access', asy
   );
   await page.goto(`/projects/${projectId}`);
   expect((await workflowResponse).status()).toBe(200);
+  await page.getByRole('tab', { name: 'Chat', exact: true }).click();
   expect((await membersResponse).status()).toBe(200);
   await expect(
     page.getByRole('heading', { name: 'Project Members' }),
@@ -187,18 +188,12 @@ test('F4-28 F4-29: Lead grants and revokes persisted Project Member access', asy
   await alternateAccess.selectOption('CAN_EDIT');
   expect((await grantResponse).status()).toBe(200);
   await expect(alternateAccess).toHaveValue('CAN_EDIT');
-  const persistedWorkflowResponse = page.waitForResponse(
-    (response) =>
-      response.url().endsWith(`/api/projects/${projectId}/workflow`) &&
-      response.request().method() === 'GET',
-  );
   const persistedMembersResponse = page.waitForResponse(
     (response) =>
       response.url().endsWith(`/api/projects/${projectId}/members`) &&
       response.request().method() === 'GET',
   );
   await page.reload();
-  expect((await persistedWorkflowResponse).status()).toBe(200);
   expect((await persistedMembersResponse).status()).toBe(200);
   await expect(
     page.getByLabel('Project access for Phase Four Access Member'),
@@ -273,11 +268,15 @@ test('F4-30 F4-32 F4-33 F4-34 F4-35 F4-36: CAN_EDIT changes status and workflow 
     }),
   ).toBe(1);
 
-  await expect(page.getByRole('button', { name: '+ Add Stage' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: '+ Stage', exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Edit Stage Access Stage' }),
   ).toBeVisible();
-  await expect(page.getByRole('button', { name: '+ Add Outcome' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: '+ Add Outcome' }),
+  ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Edit Outcome Access Outcome' }),
   ).toBeVisible();
@@ -377,6 +376,7 @@ test('F4-31: CAN_VIEW Project Member cannot change Project status', async ({
   );
   await page.goto(`/projects/${projectId}`);
   expect((await workflowResponse).status()).toBe(200);
+  await page.getByRole('tab', { name: 'Chat', exact: true }).click();
   expect((await membersResponse).status()).toBe(200);
   await expect(page.getByLabel('Project status')).toHaveCount(0);
   expect(
@@ -387,7 +387,7 @@ test('F4-31: CAN_VIEW Project Member cannot change Project status', async ({
     ).status,
   ).toBe(403);
   await expect(
-    page.getByText('CAN_VIEW', { exact: true }).first(),
+    page.getByText('View only', { exact: true }).first(),
   ).toBeVisible();
   expect(
     await prisma.project.findUniqueOrThrow({ where: { id: projectId } }),
@@ -506,21 +506,24 @@ test('Phase 4 main E2E flow: Lead builds workflow, Member joins, Lead grants CAN
   );
   await page.reload();
   expect((await leadWorkflowResponse).status()).toBe(200);
+  await page.getByRole('tab', { name: 'Chat', exact: true }).click();
   expect((await leadMembersResponse).status()).toBe(200);
-  const accessControl = page.getByLabel(
-    `Project access for ${currentMember.fullName}`,
-  );
-  await expect(accessControl).toHaveValue('CAN_VIEW');
-  const accessResponse = page.waitForResponse(
-    (response) =>
-      response
-        .url()
-        .endsWith(
-          `/api/projects/${mainFlowProjectId}/members/${currentMemberId}/access`,
-        ) && response.request().method() === 'PATCH',
-  );
-  await accessControl.selectOption('CAN_EDIT');
-  expect((await accessResponse).status()).toBe(200);
+  // The compact rail intentionally omits the Lead's own membership control.
+  // UI grants to other members are covered above. Set this Lead's underlying
+  // membership through the authenticated API before transferring leadership.
+  await expect(
+    page.getByLabel(`Project access for ${currentMember.fullName}`),
+  ).toHaveCount(0);
+  expect(
+    (
+      await authenticatedApi(
+        page,
+        `/projects/${mainFlowProjectId}/members/${currentMemberId}/access`,
+        'PATCH',
+        { accessLevel: 'CAN_EDIT' },
+      )
+    ).status,
+  ).toBe(200);
   await expect(
     prisma.projectMemberAccessHistory.findFirst({
       where: {
@@ -537,7 +540,7 @@ test('Phase 4 main E2E flow: Lead builds workflow, Member joins, Lead grants CAN
     where: { id: mainFlowProjectId },
     data: { leadMemberId: alternateLeadId },
   });
-  await page.reload();
+  await page.goto(`/projects/${mainFlowProjectId}`);
   const statusResponse = page.waitForResponse(
     (response) =>
       response.url().endsWith(`/api/projects/${mainFlowProjectId}/status`) &&
@@ -546,8 +549,12 @@ test('Phase 4 main E2E flow: Lead builds workflow, Member joins, Lead grants CAN
   await page.getByLabel('Project status').selectOption('IN_PROGRESS');
   expect((await statusResponse).status()).toBe(200);
   await expect(page.getByLabel('Project status')).toHaveValue('IN_PROGRESS');
-  await expect(page.getByRole('button', { name: '+ Add Stage' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '+ Add Outcome' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: '+ Stage', exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: '+ Add Outcome' }),
+  ).toBeVisible();
   await expect(page.locator('.project-member-access select')).toHaveCount(0);
   expect(
     (

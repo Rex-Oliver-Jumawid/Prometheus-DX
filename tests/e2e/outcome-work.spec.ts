@@ -138,14 +138,15 @@ test.afterAll(async () => {
   await prisma.$disconnect();
 });
 
-test('F5-02: viewer cannot create Feature work', async ({
-  page,
-}) => {
+test('F5-02: viewer cannot create Feature work', async ({ page }) => {
   await signIn(page);
   await openWork(page);
   const workPlan = page.getByRole('region', { name: 'Team Work Plan' });
   await expect(
-    workPlan.getByText('No features defined yet', { exact: true }),
+    workPlan.getByText(
+      'No features have been defined yet. Join this outcome to contribute to its work plan.',
+      { exact: true },
+    ),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: '+ Add Feature' })).toHaveCount(
     0,
@@ -208,7 +209,9 @@ test('F5-01 F5-08: joined member creates a persisted Feature', async ({
   ]);
   await signIn(page);
   await openWork(page);
-  await expect(page.getByText('✓ Joined Outcome')).toBeVisible();
+  await expect(
+    page.getByText('✓ Joined outcome', { exact: true }),
+  ).toBeVisible();
   await page
     .getByRole('button', { name: 'Add a feature to this outcome', exact: true })
     .click();
@@ -234,7 +237,9 @@ test('F5-01 F5-08: joined member creates a persisted Feature', async ({
   expect(errors).toEqual([]);
 });
 
-test('F5-03 F5-08: joined member creates a persisted Task', async ({ page }) => {
+test('F5-03 F5-08: joined member creates a persisted Task', async ({
+  page,
+}) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await signIn(page);
@@ -260,7 +265,9 @@ test('F5-03 F5-08: joined member creates a persisted Task', async ({ page }) => 
   expect(errors).toEqual([]);
 });
 
-test('F5-05: completing a Task persists and updates progress', async ({ page }) => {
+test('F5-05: completing a Task persists and updates progress', async ({
+  page,
+}) => {
   await signIn(page);
   await openWork(page);
   const completed = page.waitForResponse(
@@ -564,17 +571,14 @@ test('Work area loading, error, and retry use the same protected direct route', 
   });
   const endpoint = `**/api/projects/${projectId}/outcomes/${outcomeId}/work`;
   const intercepted = page.waitForRequest(endpoint);
-  await page.route(
-    endpoint,
-    async (route) => {
-      await pending;
-      await route.fulfill({
-        status: 503,
-        contentType: 'application/json',
-        body: JSON.stringify({ message: 'Temporarily unavailable' }),
-      });
-    },
-  );
+  await page.route(endpoint, async (route) => {
+    await pending;
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ message: 'Temporarily unavailable' }),
+    });
+  });
   await page.goto(`/projects/${projectId}/outcomes/${outcomeId}`);
   await intercepted;
   await expect(

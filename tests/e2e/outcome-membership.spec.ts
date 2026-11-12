@@ -290,7 +290,9 @@ test('F4-14 F4-15 F4-23 F4-24: joining an open Outcome persists and derives CAN_
   );
   await page.getByRole('button', { name: '+ Join Outcome' }).click();
   expect((await joinResponse).status()).toBe(201);
-  await expect(page.getByText('✓ Joined Outcome')).toBeVisible();
+  await expect(
+    page.getByText('✓ Joined outcome', { exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: /leave/i })).toHaveCount(0);
   expect(
     await prisma.outcomeMember.count({
@@ -316,7 +318,9 @@ test('F4-14 F4-15 F4-23 F4-24: joining an open Outcome persists and derives CAN_
   );
   await page.reload();
   expect((await reloadResponse).status()).toBe(200);
-  await expect(page.getByText('✓ Joined Outcome')).toBeVisible();
+  await expect(
+    page.getByText('✓ Joined outcome', { exact: true }),
+  ).toBeVisible();
 });
 
 test('F4-16 F4-17 F4-18 F4-19 F4-27: repeated and eligible-state joins remain idempotent', async ({

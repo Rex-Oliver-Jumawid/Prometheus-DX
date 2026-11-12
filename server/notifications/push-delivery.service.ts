@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import {
@@ -18,11 +19,19 @@ const include = {
       endpoint: true,
       p256dh: true,
       auth: true,
-      member: { select: { visiworkDepartmentId: true } },
+      member: { select: { visiworkDepartmentId: true, status: true } },
     },
   },
   notification: { select: notificationSelect },
 } satisfies Prisma.PushDeliveryInclude;
+
+const QueuedPayloadSchema = z.object({
+  notificationId: z.string(),
+  title: z.string(),
+  body: z.string(),
+  url: z.string(),
+  tag: z.string(),
+});
 
 type Delivery = Prisma.PushDeliveryGetPayload<{ include: typeof include }>;
 
@@ -31,17 +40,6 @@ export class PushDeliveryService {
   private readonly logger = new Logger(PushDeliveryService.name);
 
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
-
-  async flushAfterCommit(): Promise<void> {
-    try {
-      await this.flushPendingDeliveries();
-    } catch (error) {
-      this.logger.error(
-        'Device push delivery failed after the database commit.',
-        error instanceof Error ? error.stack : undefined,
-      );
-    }
-  }
 
   async sendChatMessage(input: {
     recipientMemberIds: string[];
@@ -63,9 +61,7 @@ export class PushDeliveryService {
         },
         select: { memberId: true },
       });
-      const mutedMemberIds = new Set(
-        mutedMembers.map((mute) => mute.memberId),
-      );
+      const mutedMemberIds = new Set(mutedMembers.map((mute) => mute.memberId));
       const subscriptions = await this.prisma.pushSubscription.findMany({
         where: {
           memberId: {
@@ -77,38 +73,19 @@ export class PushDeliveryService {
         select: { id: true, endpoint: true, p256dh: true, auth: true },
       });
 
-      await Promise.all(
-        subscriptions.map(async (subscription) => {
-          const result = await sendWebPush(
-            {
-              endpoint: subscription.endpoint,
-              p256dh: subscription.p256dh,
-              auth: subscription.auth,
-            },
-            {
-              notificationId: input.tag,
-              title: `Prometheus DX - ${input.channelLabel}`,
-              body: input.body,
-              url: input.url,
-              tag: input.tag,
-            },
-            vapid,
-          );
-
-          if (result.stale) {
-            await this.prisma.pushSubscription.deleteMany({
-              where: { id: subscription.id },
-            });
-            return;
-          }
-
-          if (!result.ok) {
-            this.logger.warn(
-              `Transient chat push failed for subscription ${subscription.id}: ${result.error ?? 'unknown error'}`,
-            );
-          }
-        }),
-      );
+      await this.prisma.pushDelivery.createMany({
+        data: subscriptions.map((subscription) => ({
+          subscriptionId: subscription.id,
+          channelKey: input.channelKey,
+          payload: {
+            notificationId: input.tag,
+            title: `Prometheus DX - ${input.channelLabel}`,
+            body: input.body,
+            url: input.url,
+            tag: input.tag,
+          },
+        })),
+      });
     } catch (error) {
       this.logger.error(
         'Device chat push delivery failed after the message commit.',
@@ -117,35 +94,47 @@ export class PushDeliveryService {
     }
   }
 
-
   // Sends an OS Web Push banner to every subscribed device for this member.
   // A failed subscription is pruned; a transient provider error is logged.
-  async sendWorkSessionIdleReminder(memberId: string, workSessionId: string): Promise<number> {
+  async sendWorkSessionIdleReminder(
+    memberId: string,
+    workSessionId: string,
+  ): Promise<number> {
     const vapid = serverEnvironment.webPush;
     if (!vapid) return 0;
     const subscriptions = await this.prisma.pushSubscription.findMany({
       where: { memberId },
       select: { id: true, endpoint: true, p256dh: true, auth: true },
     });
-    const results = await Promise.all(subscriptions.map(async (subscription) => {
-      const result = await sendWebPush(
-        { endpoint: subscription.endpoint, p256dh: subscription.p256dh, auth: subscription.auth },
-        {
-          notificationId: workSessionId,
-          title: 'Still working?',
-          body: 'Your work session is still running without activity.',
-          url: '/schedule?view=shifts',
-          tag: 'prometheus-work-session-idle-' + workSessionId,
-        },
-        vapid,
-      );
-      if (result.stale) {
-        await this.prisma.pushSubscription.deleteMany({ where: { id: subscription.id } });
-      } else if (!result.ok) {
-        this.logger.warn('Work-session push failed: ' + (result.error ?? 'unknown error'));
-      }
-      return result.ok ? 1 : 0;
-    }));
+    const results = await Promise.all(
+      subscriptions.map(async (subscription) => {
+        const result = await sendWebPush(
+          {
+            endpoint: subscription.endpoint,
+            p256dh: subscription.p256dh,
+            auth: subscription.auth,
+          },
+          {
+            notificationId: workSessionId,
+            title: 'Still working?',
+            body: 'Your work session is still running without activity.',
+            url: '/schedule?view=shifts',
+            tag: 'prometheus-work-session-idle-' + workSessionId,
+          },
+          vapid,
+        );
+        if (result.stale) {
+          await this.prisma.pushSubscription.deleteMany({
+            where: { id: subscription.id },
+          });
+        } else if (!result.ok) {
+          this.logger.warn(
+            'Work-session push failed: ' + (result.error ?? 'unknown error'),
+          );
+        }
+        return result.ok ? 1 : 0;
+      }),
+    );
     return results.reduce<number>((total, success) => total + success, 0);
   }
 
@@ -188,9 +177,7 @@ export class PushDeliveryService {
     await Promise.all(deliveries.map((item) => this.deliver(item, vapid)));
   }
 
-  private async completeSuppressedDelivery(
-    delivery: Delivery,
-  ): Promise<void> {
+  private async completeSuppressedDelivery(delivery: Delivery): Promise<void> {
     await this.prisma.pushDelivery.updateMany({
       where: { id: delivery.id, claimToken: delivery.claimToken },
       data: {
@@ -206,6 +193,69 @@ export class PushDeliveryService {
     delivery: Delivery,
     vapid: NonNullable<typeof serverEnvironment.webPush>,
   ) {
+    if (delivery.subscription.member.status !== 'ACTIVE') {
+      await this.completeSuppressedDelivery(delivery);
+      return;
+    }
+    if (!delivery.notification) {
+      const payload = QueuedPayloadSchema.parse(delivery.payload);
+      const muted = await this.prisma.chatPushMute.findUnique({
+        where: {
+          memberId_channelKey: {
+            memberId: delivery.subscription.memberId,
+            channelKey: delivery.channelKey!,
+          },
+        },
+        select: { memberId: true },
+      });
+      const departmentId = delivery.channelKey?.startsWith(
+        'visiwork:department:',
+      )
+        ? delivery.channelKey.slice('visiwork:department:'.length)
+        : null;
+      if (
+        muted ||
+        (departmentId &&
+          delivery.subscription.member.visiworkDepartmentId !== departmentId)
+      ) {
+        await this.completeSuppressedDelivery(delivery);
+        return;
+      }
+      // Scheduled dispatch must respect edits and deletion after enqueueing.
+      const messageId = payload.tag.split(':').at(-1)!;
+      const select = {
+        body: true,
+        member: { select: { fullName: true } },
+      } as const;
+      const message = delivery.channelKey?.startsWith('project:')
+        ? await this.prisma.projectMessage.findFirst({
+            where: {
+              id: messageId,
+              projectId: delivery.channelKey.slice('project:'.length),
+              outcomeId: null,
+              deletedAt: null,
+            },
+            select,
+          })
+        : await this.prisma.visiWorkMessage.findFirst({
+            where: { id: messageId, departmentId, deletedAt: null },
+            select,
+          });
+      if (!message) {
+        await this.completeSuppressedDelivery(delivery);
+        return;
+      }
+      const result = await sendWebPush(
+        delivery.subscription,
+        {
+          ...payload,
+          body: `${message.member.fullName}: “${message.body.slice(0, 180)}”`,
+        },
+        vapid,
+      );
+      await this.recordResult(delivery, result);
+      return;
+    }
     const notification = toNotification(delivery.notification);
     const presentation = presentNotification(notification);
     const channelKey =
@@ -277,6 +327,13 @@ export class PushDeliveryService {
       vapid,
     );
 
+    await this.recordResult(delivery, result);
+  }
+
+  private async recordResult(
+    delivery: Delivery,
+    result: { ok: boolean; stale: boolean; error: string | null },
+  ) {
     if (result.stale) {
       await this.prisma.pushSubscription.deleteMany({
         where: { id: delivery.subscription.id },
@@ -303,7 +360,9 @@ export class PushDeliveryService {
       where: { id: delivery.id, claimToken: delivery.claimToken },
       data: {
         attempts: { increment: 1 },
-        nextAttemptAt: new Date(Date.now() + delays[Math.min(attempt - 1, delays.length - 1)]),
+        nextAttemptAt: new Date(
+          Date.now() + delays[Math.min(attempt - 1, delays.length - 1)],
+        ),
         claimToken: null,
         claimedAt: null,
         lastError: (result.error ?? 'Push delivery failed.').slice(0, 1000),

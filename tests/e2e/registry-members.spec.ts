@@ -176,6 +176,9 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
 
   await addMemberButton.click();
+  await expect(page.getByRole('dialog', { name: 'Add member' })).toBeFocused();
+  await page.getByLabel('Full name').focus();
+  await expect(existingMembersList).toBeVisible();
   const desktopOverlay = await page.evaluate(() => {
     const backdrop = document.querySelector('.registry-dialog-backdrop');
     const dialog = document.querySelector('.registry-member-dialog');
@@ -305,7 +308,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
   ).toBeVisible();
   await expect(
     page.locator('.registry-department-card').filter({
-      hasText: department.name,
+      hasText: department.shortLabel,
     }),
   ).toContainText('2 members');
 
@@ -327,6 +330,13 @@ test('administrator adds and edits a member with duplicate-email protection', as
   browserErrors.length = 0;
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
 
+  // A previously invited member remains listed after deactivation. An unlinked,
+  // never-invited deactivated record is the Registry's removal tombstone.
+  const invitedFixture = await prisma.member.updateMany({
+    where: { email },
+    data: { invitationSentAt: new Date() },
+  });
+  expect(invitedFixture.count).toBe(1);
   await memberRow(page, 'Registry Test Member').click();
   await page.getByLabel('Full name').fill(updatedFullName);
   await page.getByLabel('Position').fill(updatedPosition);
@@ -343,9 +353,9 @@ test('administrator adds and edits a member with duplicate-email protection', as
 
   await page.reload();
   await expect(memberRow(page, updatedFullName)).toBeVisible();
-  await expect(memberRow(page, updatedFullName).locator('td').nth(1)).toHaveText(
-    reassignedDepartment.shortLabel,
-  );
+  await expect(
+    memberRow(page, updatedFullName).locator('td').nth(1),
+  ).toHaveText(reassignedDepartment.shortLabel);
 
   await page.getByLabel('Search members').fill(updatedFullName.slice(0, 18));
   await expect(memberRow(page, updatedFullName)).toBeVisible();
@@ -354,9 +364,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await expect(page.getByText('No matching members')).toBeVisible();
   await page.getByLabel('Search members').fill('');
 
-  await page
-    .getByLabel('Filter members by role')
-    .selectOption('ADMINISTRATOR');
+  await page.getByLabel('Filter members by role').selectOption('ADMINISTRATOR');
   await expect(memberRow(page, updatedFullName)).toBeVisible();
   await page.getByLabel('Filter members by role').selectOption('MEMBER');
   await expect(memberRow(page, updatedFullName)).toHaveCount(0);
@@ -369,12 +377,12 @@ test('administrator adds and edits a member with duplicate-email protection', as
 
   await expect(
     page.locator('.registry-department-card').filter({
-      hasText: department.name,
+      hasText: department.shortLabel,
     }),
   ).toContainText('1 member');
   await expect(
     page.locator('.registry-department-card').filter({
-      hasText: reassignedDepartment.name,
+      hasText: reassignedDepartment.shortLabel,
     }),
   ).toContainText('1 member');
 

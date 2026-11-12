@@ -794,3 +794,14 @@ Keep notification navigation and read-state behavior in the normal regression su
 **Complete.**
 
 Notifications and Home are release-ready within the current Prometheus scope.
+
+## Maintenance decision P7-M01: bounded push destinations and background dispatch
+
+Source inspection reproduced the unsafe boundary: arbitrary subscription URLs reached server-side fetch, and mutation responses waited for provider delivery.
+Restrict registration and dispatch to supported HTTPS push providers and reject redirects.
+Reuse the persistent leased PushDelivery outbox instead of detached serverless promises or a new queue service.
+A nullable Notification source plus checked chat payload source supports non-mention chat delivery without introducing duplicate inbox notifications.
+Payload or configuration errors no longer mark a healthy subscription stale.
+The operational tradeoff is a required scheduler and bounded scheduling latency.
+Regression coverage exercises unsafe URLs, redirect policy, queue-only chat sends, retry state, scheduler authentication, and mute rechecks.
+Next approach: monitor queue depth and delivery lag before increasing concurrency or adding infrastructure.

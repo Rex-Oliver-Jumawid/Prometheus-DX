@@ -1,7 +1,7 @@
+import { PushDeliveryService } from '../notifications/push-delivery.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { serverEnvironment } from '../config/env';
-import { PushDeliveryService } from '../notifications/push-delivery.service';
 
 export const IDLE_REMINDER_MS = 30 * 60_000;
 
@@ -22,7 +22,11 @@ export class WorkSessionIdleReminderService {
     return { recorded: result.count > 0 };
   }
 
-  async claimBrowserReminder(memberId: string, workSessionId: string, now = new Date()) {
+  async claimBrowserReminder(
+    memberId: string,
+    workSessionId: string,
+    now = new Date(),
+  ) {
     const cutoff = new Date(now.getTime() - IDLE_REMINDER_MS);
     const result = await this.prisma.workSession.updateMany({
       where: {
@@ -74,7 +78,9 @@ export class WorkSessionIdleReminderService {
           timeOut: null,
           idleRemindedAt: null,
           ...(session.lastActivityAt
-            ? { lastActivityAt: { lte: cutoff, equals: session.lastActivityAt } }
+            ? {
+                lastActivityAt: { lte: cutoff, equals: session.lastActivityAt },
+              }
             : { lastActivityAt: null, timeIn: { lte: cutoff } }),
         },
         data: { idleRemindedAt: now },
