@@ -642,7 +642,7 @@ test('deactivated Prometheus member is denied after authentication', async ({
       data: { status: 'ACTIVE', deactivatedAt: null },
     });
     await page.reload();
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/workspace$/);
     await expect(
       page.getByRole('navigation', { name: 'Primary navigation' }),
     ).toBeVisible();

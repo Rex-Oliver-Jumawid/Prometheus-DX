@@ -376,7 +376,7 @@ test('F4-31: CAN_VIEW Project Member cannot change Project status', async ({
   );
   await page.goto(`/projects/${projectId}`);
   expect((await workflowResponse).status()).toBe(200);
-  await page.getByRole('button', { name: 'Chat', exact: true }).click();
+  await page.getByRole('tab', { name: 'Chat', exact: true }).click();
   expect((await membersResponse).status()).toBe(200);
   await expect(page.getByLabel('Project status')).toHaveCount(0);
   expect(

@@ -154,9 +154,10 @@ test('Chat persists a reply and author edit across reload', async ({
   await page.reload();
   await expect(page.getByText('Persistent reply')).toBeVisible();
   await expect(page.getByText(/Reply to/)).toBeVisible();
-  const reply = page
-    .getByRole('listitem')
-    .filter({ hasText: 'Persistent reply' });
+  const replyRecord = await prisma.projectMessage.findFirstOrThrow({
+    where: { projectId, body: 'Persistent reply', memberId },
+  });
+  const reply = page.locator(`[data-message-id="${replyRecord.id}"]`);
   await reply.getByRole('button', { name: 'Message options' }).click();
   await page.getByRole('button', { name: 'Edit message', exact: true }).click();
   await reply
