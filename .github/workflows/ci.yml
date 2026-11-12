@@ -144,7 +144,7 @@ jobs:
         run: pnpm exec tsx scripts/ci-auth-member.ts
       - run: pnpm exec playwright install --with-deps chromium
       - name: Authenticated Chromium journeys
-        run: pnpm test:e2e
+        run: pnpm exec playwright test --project=chromium --max-failures=1 --retries=0
       - name: Retain browser diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
