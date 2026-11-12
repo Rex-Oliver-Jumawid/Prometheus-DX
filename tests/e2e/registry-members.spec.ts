@@ -332,10 +332,11 @@ test('administrator adds and edits a member with duplicate-email protection', as
 
   // A previously invited member remains listed after deactivation. An unlinked,
   // never-invited deactivated record is the Registry's removal tombstone.
-  await prisma.member.update({
+  const invitedFixture = await prisma.member.updateMany({
     where: { email },
     data: { invitationSentAt: new Date() },
   });
+  expect(invitedFixture.count).toBe(1);
   await memberRow(page, 'Registry Test Member').click();
   await page.getByLabel('Full name').fill(updatedFullName);
   await page.getByLabel('Position').fill(updatedPosition);

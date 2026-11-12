@@ -510,3 +510,12 @@ This keeps the partition aligned with the date the user actually sees locally.
 
 Focused verification passed for lint, typecheck, chat-date grouping unit tests, the full Project Chat component suite, and the production build.
 Manual regression cases C9-31 through C9-36 are recorded in `.testcases/phase-09-collaboration-tests.md`.
+# Maintenance decision P9-M01: preserve history viewport anchors
+
+Authenticated Chromium exposed a viewport jump when the final older-history page removed the load button above the thread.
+The existing scroll-height calculation preserved offsets inside the list but missed changes to the list's position on screen.
+Capture an existing message ID and its viewport coordinate before loading, then restore that coordinate after the page is inserted.
+Retain the height-delta fallback when the anchor is unavailable.
+The existing browser journey verifies this behavior in the real layout; focused ProjectChatPanel component regression also covers the unchanged chat interactions.
+Authenticated acceptance fixtures now follow current tab navigation, read-only input values, portal menus, compact labels, stable message IDs, and invitation-history semantics.
+

@@ -329,4 +329,5 @@ Supported providers are FCM, Mozilla Autopush, Apple Web Push, and Windows notif
 Other push providers require an explicit policy addition and regression coverage.
 
 Rollback requires retaining the compatible database migration and restoring the previous dispatching application version.
+Drain pending chat-only deliveries before restoring an older dispatcher that assumes every delivery has a Notification.
 Do not remove outbox columns while queued chat deliveries exist.

@@ -387,7 +387,7 @@ test('F4-31: CAN_VIEW Project Member cannot change Project status', async ({
     ).status,
   ).toBe(403);
   await expect(
-    page.getByText('CAN_VIEW', { exact: true }).first(),
+    page.getByText('View only', { exact: true }).first(),
   ).toBeVisible();
   expect(
     await prisma.project.findUniqueOrThrow({ where: { id: projectId } }),
