@@ -518,4 +518,3 @@ Capture an existing message ID and its viewport coordinate before loading, then 
 Retain the height-delta fallback when the anchor is unavailable.
 The existing browser journey verifies this behavior in the real layout; focused ProjectChatPanel component regression also covers the unchanged chat interactions.
 Authenticated acceptance fixtures now follow current tab navigation, read-only input values, portal menus, compact labels, stable message IDs, and invitation-history semantics.
-

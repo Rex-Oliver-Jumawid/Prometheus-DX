@@ -1,11 +1,4 @@
-import {
-  Fragment,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type FormEvent,
-} from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import {
   useInfiniteQuery,
@@ -25,11 +18,7 @@ import {
 } from '../../../shared/contracts/project-chat';
 import { ProjectMembersResponseSchema } from '../../../shared/contracts/project-workflow';
 import { apiFetch } from '../../lib/api';
-import {
-  chatDateKey,
-  chatDateLabel,
-  startsNewChatDate,
-} from '../../lib/chat-date';
+import { chatDateKey, chatDateLabel, startsNewChatDate } from '../../lib/chat-date';
 import { projectKeys } from './project-queries';
 import { useRealtimeInvalidation } from '../../lib/use-realtime-invalidation';
 import { FloatingMessageMenu } from '../chat/FloatingMessageMenu';
@@ -92,12 +81,7 @@ export function ProjectChatPanel({
 }: {
   projectId: string;
   projectName: string;
-  projectLead?: {
-    id: string;
-    fullName: string;
-    email: string;
-    profileImagePath?: string | null;
-  };
+  projectLead?: { id: string; fullName: string; email: string; profileImagePath?: string | null };
   currentMemberId?: string;
   accessToken?: string;
   initialMessageId?: string | null;
@@ -118,14 +102,10 @@ export function ProjectChatPanel({
   const [messageMenuId, setMessageMenuId] = useState<string | null>(null);
   const [messageMenuAnchor, setMessageMenuAnchor] =
     useState<HTMLButtonElement | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<ProjectMessage | null>(
-    null,
-  );
+  const [pendingDelete, setPendingDelete] = useState<ProjectMessage | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [targetMessageId, setTargetMessageId] = useState<string | null>(
-    initialMessageId ?? null,
-  );
+  const [targetMessageId, setTargetMessageId] = useState<string | null>(initialMessageId ?? null);
   const [jumpRevision, setJumpRevision] = useState(0);
   const threadRef = useRef<HTMLOListElement>(null);
   const composerFormRef = useRef<HTMLFormElement>(null);
@@ -161,9 +141,7 @@ export function ProjectChatPanel({
     queryKey,
     queryFn: ({ pageParam }) =>
       apiFetch(
-        '/projects/' +
-          projectId +
-          '/messages' +
+        '/projects/' + projectId + '/messages' +
           (pageParam ? '?cursor=' + encodeURIComponent(pageParam) : ''),
         ProjectMessagePageSchema,
         { accessToken },
@@ -184,13 +162,9 @@ export function ProjectChatPanel({
   const members = useQuery({
     queryKey: projectKeys.members(projectId),
     queryFn: () =>
-      apiFetch(
-        '/projects/' + projectId + '/members',
-        ProjectMembersResponseSchema,
-        {
-          accessToken,
-        },
-      ),
+      apiFetch('/projects/' + projectId + '/members', ProjectMembersResponseSchema, {
+        accessToken,
+      }),
     enabled: Boolean(accessToken),
     retry: false,
     staleTime: 60_000,
@@ -201,9 +175,7 @@ export function ProjectChatPanel({
     queryKey: ['projects', projectId, 'chat-search', searchTerm.trim()],
     queryFn: () =>
       apiFetch(
-        '/projects/' +
-          projectId +
-          '/messages/search?q=' +
+        '/projects/' + projectId + '/messages/search?q=' +
           encodeURIComponent(searchTerm.trim()),
         ProjectMessageSearchResponseSchema,
         { accessToken },
@@ -231,11 +203,15 @@ export function ProjectChatPanel({
       parentMessageId: string | null;
       mentionMemberIds: string[];
     }) =>
-      apiFetch('/projects/' + projectId + '/messages', ProjectMessageSchema, {
-        accessToken,
-        method: 'POST',
-        body: CreateProjectMessageSchema.parse(input),
-      }),
+      apiFetch(
+        '/projects/' + projectId + '/messages',
+        ProjectMessageSchema,
+        {
+          accessToken,
+          method: 'POST',
+          body: CreateProjectMessageSchema.parse(input),
+        },
+      ),
     onSuccess: async () => {
       setSearchTerm('');
       setSearchOpen(false);
@@ -320,10 +296,10 @@ export function ProjectChatPanel({
 
   const isProjectParticipant = Boolean(
     currentMemberId &&
-    (projectLead?.id === currentMemberId ||
-      members.data?.members?.some(
-        (item) => item.member.id === currentMemberId,
-      )),
+      (projectLead?.id === currentMemberId ||
+        members.data?.members?.some(
+          (item) => item.member.id === currentMemberId,
+        )),
   );
 
   const memberChoices = [
@@ -344,9 +320,7 @@ export function ProjectChatPanel({
             (candidate) =>
               candidate.id !== currentMemberId &&
               candidate.fullName.toLowerCase().includes(mentionQuery) &&
-              !selectedMentions.some(
-                (selected) => selected.id === candidate.id,
-              ),
+              !selectedMentions.some((selected) => selected.id === candidate.id),
           )
           .slice(0, 6);
 
@@ -360,9 +334,7 @@ export function ProjectChatPanel({
             (candidate) =>
               candidate.id !== currentMemberId &&
               candidate.fullName.toLowerCase().includes(editMentionQuery) &&
-              !editing.mentions.some(
-                (selected) => selected.id === candidate.id,
-              ),
+              !editing.mentions.some((selected) => selected.id === candidate.id),
           )
           .slice(0, 6);
 
@@ -388,15 +360,13 @@ export function ProjectChatPanel({
     const composer = composerRef.current;
     if (!composer) return;
     composer.style.height = 'auto';
-    composer.style.height =
-      Math.max(36, Math.min(128, composer.scrollHeight)) + 'px';
+    composer.style.height = Math.max(36, Math.min(128, composer.scrollHeight)) + 'px';
   }, [body]);
 
   // When a reply banner appears, reveal the entire composer without requiring
   // the user to manually scroll the surrounding workspace.
   useLayoutEffect(() => {
-    if (replyTo)
-      composerFormRef.current?.scrollIntoView?.({ block: 'nearest' });
+    if (replyTo) composerFormRef.current?.scrollIntoView?.({ block: 'nearest' });
   }, [replyTo]);
 
   useLayoutEffect(() => {
@@ -410,15 +380,12 @@ export function ProjectChatPanel({
         return;
       }
       const anchor = previous.anchorId
-        ? thread.querySelector<HTMLElement>(
-            `[data-message-id="${previous.anchorId}"]`,
-          )
+        ? thread.querySelector<HTMLElement>(`[data-message-id="${previous.anchorId}"]`)
         : null;
       if (anchor && previous.anchorTop !== null) {
-        // Preserve the row's viewport position, including layout changes when
-        // the final history page removes the button above this scroll region.
-        thread.scrollTop +=
-          anchor.getBoundingClientRect().top - previous.anchorTop;
+        // Preserve the viewport position when the final page removes the
+        // load button above the thread as well as when rows are prepended.
+        thread.scrollTop += anchor.getBoundingClientRect().top - previous.anchorTop;
       } else {
         thread.scrollTop = previous.top + thread.scrollHeight - previous.height;
       }
@@ -447,19 +414,12 @@ export function ProjectChatPanel({
       const threadBounds = thread.getBoundingClientRect();
       const messageBounds = target.getBoundingClientRect();
       const centeredOffset =
-        messageBounds.top -
-        threadBounds.top -
+        messageBounds.top - threadBounds.top -
         (thread.clientHeight - messageBounds.height) / 2;
       thread.scrollTop += centeredOffset;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [
-    targetMessageId,
-    messages.isPending,
-    ordered.length,
-    context.data,
-    jumpRevision,
-  ]);
+  }, [targetMessageId, messages.isPending, ordered.length, context.data, jumpRevision]);
 
   function updateBody(value: string) {
     setBody(value);
@@ -526,8 +486,7 @@ export function ProjectChatPanel({
   }
 
   function sendMessage() {
-    if (!body.trim() || body.length > 4000 || !canWrite || send.isPending)
-      return;
+    if (!body.trim() || body.length > 4000 || !canWrite || send.isPending) return;
     const input = {
       body,
       parentMessageId: replyTo?.id ?? null,
@@ -558,10 +517,7 @@ export function ProjectChatPanel({
   }
 
   return (
-    <section
-      className="pw-collaboration-panel pw-chat-panel"
-      aria-label="Project chat"
-    >
+    <section className="pw-collaboration-panel pw-chat-panel" aria-label="Project chat">
       <div className="pw-chat-channel-heading">
         <div>
           <strong>{projectName}</strong>
@@ -577,29 +533,22 @@ export function ProjectChatPanel({
           )}
           <button
             type="button"
-            className={
-              searchOpen
-                ? 'pw-chat-search-toggle is-active'
-                : 'pw-chat-search-toggle'
-            }
-            aria-label="Search project conversation"
-            title="Search messages"
-            aria-expanded={searchOpen}
-            onClick={() => setSearchOpen((current) => !current)}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="6.5" />
-              <path d="m16 16 4 4" />
-            </svg>
+            className={searchOpen ? 'pw-chat-search-toggle is-active' : 'pw-chat-search-toggle'}
+          aria-label="Search project conversation"
+          title="Search messages"
+          aria-expanded={searchOpen}
+          onClick={() => setSearchOpen((current) => !current)}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="6.5" />
+            <path d="m16 16 4 4" />
+          </svg>
           </button>
         </div>
       </div>
 
       {searchOpen && (
-        <section
-          className="pw-chat-search"
-          aria-label="Search project messages"
-        >
+        <section className="pw-chat-search" aria-label="Search project messages">
           <div className="pw-chat-search-input">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="6.5" />
@@ -613,16 +562,12 @@ export function ProjectChatPanel({
               aria-label="Search project messages"
             />
             {searchTerm && (
-              <button type="button" onClick={clearSearchSelection}>
-                Clear
-              </button>
+              <button type="button" onClick={clearSearchSelection}>Clear</button>
             )}
           </div>
           <div className="pw-chat-search-results">
             {!searchTerm.trim() ? (
-              <p>
-                Search the conversation and jump back to the matching message.
-              </p>
+              <p>Search the conversation and jump back to the matching message.</p>
             ) : search.isPending ? (
               <p>Searching...</p>
             ) : search.isError ? (
@@ -633,15 +578,11 @@ export function ProjectChatPanel({
                   key={result.id}
                   type="button"
                   className="pw-chat-search-result"
-                  onClick={() =>
-                    jumpToMessage(ProjectMessageSchema.parse(result))
-                  }
+                  onClick={() => jumpToMessage(ProjectMessageSchema.parse(result))}
                 >
                   <span>
                     <strong>{result.author.fullName}</strong>
-                    <time dateTime={result.createdAt}>
-                      {messageTime(result.createdAt)}
-                    </time>
+                    <time dateTime={result.createdAt}>{messageTime(result.createdAt)}</time>
                   </span>
                   <p>{result.body}</p>
                 </button>
@@ -687,12 +628,9 @@ export function ProjectChatPanel({
           <strong>Project chat could not be loaded.</strong>
           <p>{errorMessage(messages.error)}</p>
           <p className="pw-chat-load-hint">
-            Your conversation will reappear when the service recovers. Try again
-            without leaving this page.
+            Your conversation will reappear when the service recovers. Try again without leaving this page.
           </p>
-          <button type="button" onClick={() => void messages.refetch()}>
-            Try again
-          </button>
+          <button type="button" onClick={() => void messages.refetch()}>Try again</button>
         </div>
       ) : (
         <>
@@ -703,8 +641,7 @@ export function ProjectChatPanel({
               onClick={() => {
                 const thread = threadRef.current;
                 if (thread) {
-                  const anchor =
-                    thread.querySelector<HTMLElement>('[data-message-id]');
+                  const anchor = thread.querySelector<HTMLElement>('[data-message-id]');
                   olderScroll.current = {
                     top: thread.scrollTop,
                     height: thread.scrollHeight,
@@ -720,19 +657,14 @@ export function ProjectChatPanel({
                     const current = threadRef.current;
                     if (current) {
                       pinnedToBottom.current =
-                        current.scrollHeight -
-                          current.scrollTop -
-                          current.clientHeight <
-                        80;
+                        current.scrollHeight - current.scrollTop - current.clientHeight < 80;
                     }
                   }
                 });
               }}
               disabled={messages.isFetchingNextPage}
             >
-              {messages.isFetchingNextPage
-                ? 'Loading…'
-                : 'Load earlier messages'}
+              {messages.isFetchingNextPage ? 'Loading…' : 'Load earlier messages'}
             </button>
           )}
 
@@ -743,9 +675,7 @@ export function ProjectChatPanel({
           )}
 
           {ordered.length === 0 ? (
-            <p className="pw-collaboration-state pw-chat-empty-state">
-              No messages yet. Start the conversation.
-            </p>
+            <p className="pw-collaboration-state pw-chat-empty-state">No messages yet. Start the conversation.</p>
           ) : (
             <ol
               className="pw-chat-thread"
@@ -754,8 +684,7 @@ export function ProjectChatPanel({
               onScroll={(event) => {
                 const thread = event.currentTarget;
                 pinnedToBottom.current =
-                  thread.scrollHeight - thread.scrollTop - thread.clientHeight <
-                  80;
+                  thread.scrollHeight - thread.scrollTop - thread.clientHeight < 80;
               }}
             >
               {ordered.map((message, index) => {
@@ -786,221 +715,169 @@ export function ProjectChatPanel({
                       </li>
                     )}
                     <li
-                      data-message-id={message.id}
-                      className={[
-                        ownMessage
-                          ? 'pw-chat-message pw-chat-message--own'
-                          : 'pw-chat-message',
-                        targeted ? 'pw-chat-message--targeted' : '',
-                        message.deletedAt ? 'pw-chat-message--deleted' : '',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                    >
-                      {!ownMessage && (
-                        <MemberAvatar
-                          name={message.author.fullName}
-                          profileImagePath={message.author.profileImagePath}
-                          className="pw-chat-avatar"
-                        />
-                      )}
-                      <div className="pw-chat-body">
-                        <div className="pw-chat-message-meta">
-                          {ownMessage ? (
-                            <span className="pw-chat-own-label">
-                              You <span aria-hidden="true">·</span>
-                              <time dateTime={message.createdAt}>
-                                {messageTime(message.createdAt)}
-                              </time>
-                            </span>
-                          ) : (
-                            <strong>{message.author.fullName}</strong>
-                          )}
-                          {message.editedAt && !message.deletedAt && (
-                            <span className="pw-chat-edited">Edited</span>
-                          )}
-                          {canWrite &&
-                            (message.canEdit || message.canDelete) &&
-                            !message.deletedAt && (
-                              <div className="pw-chat-message-options">
-                                <button
-                                  type="button"
-                                  aria-label="Message options"
-                                  aria-expanded={messageMenuId === message.id}
-                                  onClick={(event) => {
-                                    const nextOpen =
-                                      messageMenuId !== message.id;
-                                    setMessageMenuId(
-                                      nextOpen ? message.id : null,
-                                    );
-                                    setMessageMenuAnchor(
-                                      nextOpen ? event.currentTarget : null,
-                                    );
-                                  }}
-                                >
-                                  ⋯
-                                </button>
-                                {messageMenuId === message.id && (
-                                  <FloatingMessageMenu
-                                    anchor={messageMenuAnchor}
-                                    className="pw-chat-message-menu"
-                                  >
-                                    {message.canEdit && (
-                                      <button
-                                        type="button"
-                                        onClick={() => beginEdit(message)}
-                                      >
-                                        Edit message
-                                      </button>
-                                    )}
-                                    {message.canDelete && (
-                                      <button
-                                        type="button"
-                                        className="danger"
-                                        onClick={() => {
-                                          setMessageMenuId(null);
-                                          setMessageMenuAnchor(null);
-                                          setPendingDelete(message);
-                                        }}
-                                      >
-                                        Delete message
-                                      </button>
-                                    )}
-                                  </FloatingMessageMenu>
+                    data-message-id={message.id}
+                    className={[
+                      ownMessage ? 'pw-chat-message pw-chat-message--own' : 'pw-chat-message',
+                      targeted ? 'pw-chat-message--targeted' : '',
+                      message.deletedAt ? 'pw-chat-message--deleted' : '',
+                    ].filter(Boolean).join(' ')}
+                  >
+                    {!ownMessage && (
+                      <MemberAvatar
+                        name={message.author.fullName}
+                        profileImagePath={message.author.profileImagePath}
+                        className="pw-chat-avatar"
+                      />
+                    )}
+                    <div className="pw-chat-body">
+                      <div className="pw-chat-message-meta">
+                        {ownMessage ? (
+                          <span className="pw-chat-own-label">
+                            You <span aria-hidden="true">·</span>
+                            <time dateTime={message.createdAt}>{messageTime(message.createdAt)}</time>
+                          </span>
+                        ) : (
+                          <strong>{message.author.fullName}</strong>
+                        )}
+                        {message.editedAt && !message.deletedAt && (
+                          <span className="pw-chat-edited">Edited</span>
+                        )}
+                        {canWrite && (message.canEdit || message.canDelete) && !message.deletedAt && (
+                          <div className="pw-chat-message-options">
+                            <button
+                              type="button"
+                              aria-label="Message options"
+                              aria-expanded={messageMenuId === message.id}
+                              onClick={(event) => {
+                                const nextOpen = messageMenuId !== message.id;
+                                setMessageMenuId(nextOpen ? message.id : null);
+                                setMessageMenuAnchor(
+                                  nextOpen ? event.currentTarget : null,
+                                );
+                              }}
+                            >
+                              ⋯
+                            </button>
+                            {messageMenuId === message.id && (
+                              <FloatingMessageMenu
+                                anchor={messageMenuAnchor}
+                                className="pw-chat-message-menu"
+                              >
+                                {message.canEdit && (
+                                  <button type="button" onClick={() => beginEdit(message)}>
+                                    Edit message
+                                  </button>
                                 )}
-                              </div>
+                                {message.canDelete && (
+                                  <button
+                                    type="button"
+                                    className="danger"
+                                    onClick={() => {
+                                      setMessageMenuId(null);
+                                      setMessageMenuAnchor(null);
+                                      setPendingDelete(message);
+                                    }}
+                                  >
+                                    Delete message
+                                  </button>
+                                )}
+                              </FloatingMessageMenu>
                             )}
-                        </div>
-
-                        {message.replyTo && (
-                          <div className="pw-chat-in-reply-to">
-                            Reply to {message.replyTo.authorName}:{' '}
-                            {message.replyTo.preview}
                           </div>
                         )}
+                      </div>
 
-                        {editing?.id === message.id ? (
-                          <form
-                            className="pw-chat-edit"
-                            onSubmit={(event) => {
-                              event.preventDefault();
-                              if (!editing.body.trim() || edit.isPending)
-                                return;
-                              edit.mutate({
-                                id: editing.id,
-                                body: editing.body,
-                                expectedEditedAt: editing.expectedEditedAt,
-                                mentionMemberIds: editing.mentions.map(
-                                  (mention) => mention.id,
-                                ),
-                              });
-                            }}
-                          >
-                            <div className="pw-chat-edit-input">
-                              <textarea
-                                aria-label="Edit message"
-                                value={editing.body}
-                                onChange={(event) =>
-                                  updateEditBody(event.target.value)
+                      {message.replyTo && (
+                        <div className="pw-chat-in-reply-to">
+                          Reply to {message.replyTo.authorName}: {message.replyTo.preview}
+                        </div>
+                      )}
+
+                      {editing?.id === message.id ? (
+                        <form
+                          className="pw-chat-edit"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            if (!editing.body.trim() || edit.isPending) return;
+                            edit.mutate({
+                              id: editing.id,
+                              body: editing.body,
+                              expectedEditedAt: editing.expectedEditedAt,
+                              mentionMemberIds: editing.mentions.map((mention) => mention.id),
+                            });
+                          }}
+                        >
+                          <div className="pw-chat-edit-input">
+                            <textarea
+                              aria-label="Edit message"
+                              value={editing.body}
+                              onChange={(event) => updateEditBody(event.target.value)}
+                              onKeyDown={(event) => {
+                                if (
+                                  editMentionSuggestions.length > 0 &&
+                                  event.key === 'Tab'
+                                ) {
+                                  event.preventDefault();
+                                  selectEditMention(editMentionSuggestions[0]);
                                 }
-                                onKeyDown={(event) => {
-                                  if (
-                                    editMentionSuggestions.length > 0 &&
-                                    event.key === 'Tab'
-                                  ) {
-                                    event.preventDefault();
-                                    selectEditMention(
-                                      editMentionSuggestions[0],
-                                    );
-                                  }
-                                  if (event.key === 'Escape') setEditing(null);
-                                }}
-                                maxLength={4000}
-                                disabled={edit.isPending}
-                                required
-                              />
-                              {editMentionSuggestions.length > 0 && (
-                                <div
-                                  className="pw-chat-mention-menu"
-                                  role="listbox"
-                                >
-                                  {editMentionSuggestions.map((candidate) => (
-                                    <button
-                                      key={candidate.id}
-                                      type="button"
-                                      role="option"
-                                      onClick={() =>
-                                        selectEditMention(candidate)
-                                      }
-                                    >
-                                      <MemberAvatar
-                                        name={candidate.fullName}
-                                        profileImagePath={
-                                          candidate.profileImagePath
-                                        }
-                                      />
-                                      <strong>{candidate.fullName}</strong>
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                            {edit.isError && (
-                              <p
-                                className="pw-collaboration-warning"
-                                role="alert"
-                              >
-                                {errorMessage(edit.error)}
-                              </p>
-                            )}
-                            <div className="pw-chat-actions">
-                              <button
-                                type="submit"
-                                disabled={
-                                  edit.isPending || !editing.body.trim()
-                                }
-                              >
-                                {edit.isPending ? 'Saving…' : 'Save'}
-                              </button>
-                              <button
-                                type="button"
-                                disabled={edit.isPending}
-                                onClick={() => setEditing(null)}
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </form>
-                        ) : (
-                          <>
-                            <p className="pw-chat-message-text">
-                              {message.deletedAt ? (
-                                <em>Message deleted</em>
-                              ) : (
-                                <MessageBody message={message} />
-                              )}
-                            </p>
-                            {canWrite && !message.deletedAt && !ownMessage && (
-                              <div className="pw-chat-actions">
-                                <button
-                                  type="button"
-                                  onClick={() => setReplyTo(message)}
-                                >
-                                  Reply
-                                </button>
+                                if (event.key === 'Escape') setEditing(null);
+                              }}
+                              maxLength={4000}
+                              disabled={edit.isPending}
+                              required
+                            />
+                            {editMentionSuggestions.length > 0 && (
+                              <div className="pw-chat-mention-menu" role="listbox">
+                                {editMentionSuggestions.map((candidate) => (
+                                  <button
+                                    key={candidate.id}
+                                    type="button"
+                                    role="option"
+                                    onClick={() => selectEditMention(candidate)}
+                                  >
+                                    <MemberAvatar name={candidate.fullName} profileImagePath={candidate.profileImagePath} />
+                                    <strong>{candidate.fullName}</strong>
+                                  </button>
+                                ))}
                               </div>
                             )}
-                          </>
-                        )}
-                      </div>
-                      {!ownMessage && (
-                        <time
-                          className="pw-chat-message-time"
-                          dateTime={message.createdAt}
-                        >
-                          {messageTime(message.createdAt)}
-                        </time>
+                          </div>
+                          {edit.isError && (
+                            <p className="pw-collaboration-warning" role="alert">
+                              {errorMessage(edit.error)}
+                            </p>
+                          )}
+                          <div className="pw-chat-actions">
+                            <button type="submit" disabled={edit.isPending || !editing.body.trim()}>
+                              {edit.isPending ? 'Saving…' : 'Save'}
+                            </button>
+                            <button type="button" disabled={edit.isPending} onClick={() => setEditing(null)}>
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <>
+                          <p className="pw-chat-message-text">
+                            {message.deletedAt ? (
+                              <em>Message deleted</em>
+                            ) : (
+                              <MessageBody message={message} />
+                            )}
+                          </p>
+                          {canWrite && !message.deletedAt && !ownMessage && (
+                            <div className="pw-chat-actions">
+                              <button type="button" onClick={() => setReplyTo(message)}>Reply</button>
+                            </div>
+                          )}
+                        </>
                       )}
+                    </div>
+                    {!ownMessage && (
+                      <time className="pw-chat-message-time" dateTime={message.createdAt}>
+                        {messageTime(message.createdAt)}
+                      </time>
+                    )}
                     </li>
                   </Fragment>
                 );
@@ -1014,93 +891,71 @@ export function ProjectChatPanel({
             </p>
           )}
 
-          <form
-            ref={composerFormRef}
-            className="pw-chat-composer"
-            onSubmit={submit}
-            aria-label="Project chat composer"
-          >
-            {replyTo && (
-              <div className="pw-chat-reply-banner">
-                <span>Replying to {replyTo.author.fullName}</span>
-                <button type="button" onClick={() => setReplyTo(null)}>
-                  Cancel reply
+          <form ref={composerFormRef} className="pw-chat-composer" onSubmit={submit} aria-label="Project chat composer">
+              {replyTo && (
+                <div className="pw-chat-reply-banner">
+                  <span>Replying to {replyTo.author.fullName}</span>
+                  <button type="button" onClick={() => setReplyTo(null)}>Cancel reply</button>
+                </div>
+              )}
+              <label htmlFor="pw-chat-input" className="sr-only">Message</label>
+              <div className="pw-chat-compose-row">
+                <div className="pw-chat-input-wrap">
+                  <textarea
+                    ref={composerRef}
+                    id="pw-chat-input"
+                    placeholder="Message the project..."
+                    rows={1}
+                    maxLength={4000}
+                    value={body}
+                    onChange={(event) => updateBody(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.nativeEvent.isComposing) return;
+                      if (
+                        mentionSuggestions.length > 0 &&
+                        !event.shiftKey &&
+                        (event.key === 'Enter' || event.key === 'Tab')
+                      ) {
+                        event.preventDefault();
+                        selectMention(mentionSuggestions[0]);
+                        return;
+                      }
+                      // Enter sends; Shift+Enter deliberately inserts a newline.
+                      if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        if (!event.repeat) sendMessage();
+                      }
+                    }}
+                    disabled={!canWrite}
+                    title={!canWrite ? 'Only Project Members and the Project Lead can send messages.' : undefined}
+                  />
+                  {canWrite && mentionSuggestions.length > 0 && (
+                    <div className="pw-chat-mention-menu" role="listbox">
+                      {mentionSuggestions.map((candidate) => (
+                        <button
+                          key={candidate.id}
+                          type="button"
+                          role="option"
+                          onClick={() => selectMention(candidate)}
+                        >
+                          <MemberAvatar name={candidate.fullName} profileImagePath={candidate.profileImagePath} />
+                          <strong>{candidate.fullName}</strong>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button type="submit" aria-label="Send message" disabled={!canWrite || send.isPending || !body.trim()}>
+                  {send.isPending ? 'Sending…' : 'Send'}
                 </button>
               </div>
-            )}
-            <label htmlFor="pw-chat-input" className="sr-only">
-              Message
-            </label>
-            <div className="pw-chat-compose-row">
-              <div className="pw-chat-input-wrap">
-                <textarea
-                  ref={composerRef}
-                  id="pw-chat-input"
-                  placeholder="Message the project..."
-                  rows={1}
-                  maxLength={4000}
-                  value={body}
-                  onChange={(event) => updateBody(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.nativeEvent.isComposing) return;
-                    if (
-                      mentionSuggestions.length > 0 &&
-                      !event.shiftKey &&
-                      (event.key === 'Enter' || event.key === 'Tab')
-                    ) {
-                      event.preventDefault();
-                      selectMention(mentionSuggestions[0]);
-                      return;
-                    }
-                    // Enter sends; Shift+Enter deliberately inserts a newline.
-                    if (event.key === 'Enter' && !event.shiftKey) {
-                      event.preventDefault();
-                      if (!event.repeat) sendMessage();
-                    }
-                  }}
-                  disabled={!canWrite}
-                  title={
-                    !canWrite
-                      ? 'Only Project Members and the Project Lead can send messages.'
-                      : undefined
-                  }
-                />
-                {canWrite && mentionSuggestions.length > 0 && (
-                  <div className="pw-chat-mention-menu" role="listbox">
-                    {mentionSuggestions.map((candidate) => (
-                      <button
-                        key={candidate.id}
-                        type="button"
-                        role="option"
-                        onClick={() => selectMention(candidate)}
-                      >
-                        <MemberAvatar
-                          name={candidate.fullName}
-                          profileImagePath={candidate.profileImagePath}
-                        />
-                        <strong>{candidate.fullName}</strong>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <button
-                type="submit"
-                aria-label="Send message"
-                disabled={!canWrite || send.isPending || !body.trim()}
-              >
-                {send.isPending ? 'Sending…' : 'Send'}
-              </button>
-            </div>
-            <span className="sr-only" aria-live="polite">
-              {body.length} / 4000 characters
-            </span>
-            {send.isError && (
-              <p className="pw-collaboration-warning" role="alert">
-                {errorMessage(send.error)}
-              </p>
-            )}
-          </form>
+              <span className="sr-only" aria-live="polite">{body.length} / 4000 characters</span>
+              {send.isError && (
+                <p className="pw-collaboration-warning" role="alert">
+                  {errorMessage(send.error)}
+                </p>
+              )}
+            </form>
         </>
       )}
 
@@ -1122,14 +977,11 @@ export function ProjectChatPanel({
               aria-labelledby="pw-chat-delete-title"
               aria-describedby="pw-chat-delete-description"
             >
-              <span className="pw-chat-delete-icon" aria-hidden="true">
-                ×
-              </span>
+              <span className="pw-chat-delete-icon" aria-hidden="true">×</span>
               <div>
                 <h3 id="pw-chat-delete-title">Delete message?</h3>
                 <p id="pw-chat-delete-description">
-                  This removes the message for everyone while keeping replies
-                  connected to a deleted-message placeholder.
+                  This removes the message for everyone while keeping replies connected to a deleted-message placeholder.
                 </p>
               </div>
               <div className="pw-chat-delete-actions">
