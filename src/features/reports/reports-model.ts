@@ -4,7 +4,7 @@ import type { TeamWorkSummaryResponse } from '../../../shared/contracts/work-ses
 
 export interface ReportsFilters {
   projectId: string;
-  departmentId: string;
+  ventureId: string;
 }
 
 export interface ProjectHealthRow {
@@ -32,13 +32,13 @@ export interface PipelineMetric {
 export interface CapacityRow {
   id: string;
   name: string;
-  departmentId: string;
+  ventureId: string;
   actualSeconds: number;
   plannedSeconds: number;
   percent: number;
 }
 
-export interface DepartmentWorkloadRow {
+export interface VentureWorkloadRow {
   id: string;
   name: string;
   total: number;
@@ -59,7 +59,7 @@ export interface ReportsAnalyticsModel {
   projectHealth: ProjectHealthRow[];
   pipeline: PipelineMetric[];
   capacity: CapacityRow[];
-  departments: DepartmentWorkloadRow[];
+  ventures: VentureWorkloadRow[];
 }
 
 const projectStatusLabel = (status: Project['status']) =>
@@ -85,9 +85,9 @@ export function buildReportsAnalyticsModel(
   const scopedProjects = projects.filter(
     (project) =>
       (!filters.projectId || project.id === filters.projectId) &&
-      (!filters.departmentId ||
-        project.departments.some(
-          (department) => department.id === filters.departmentId,
+      (!filters.ventureId ||
+        project.ventures.some(
+          (venture) => venture.id === filters.ventureId,
         )),
   );
 
@@ -98,9 +98,9 @@ export function buildReportsAnalyticsModel(
       stage.outcomes
         .filter(
           (outcome) =>
-            !filters.departmentId ||
-            outcome.departments.some(
-              (department) => department.id === filters.departmentId,
+            !filters.ventureId ||
+            outcome.ventures.some(
+              (venture) => venture.id === filters.ventureId,
             ),
         )
         .map((outcome) => ({ project, outcome })),
@@ -114,7 +114,7 @@ export function buildReportsAnalyticsModel(
     ).length;
     const total = outcomes.length;
     const progress =
-      filters.departmentId || !project.metrics
+      filters.ventureId || !project.metrics
         ? percent(accepted, total)
         : project.metrics.progressPercentage;
 
@@ -161,7 +161,7 @@ export function buildReportsAnalyticsModel(
 
   const capacityMembers = team.members.filter(
     (member) =>
-      !filters.departmentId || member.department.id === filters.departmentId,
+      !filters.ventureId || (member.ventures?.some(v => v.id === filters.ventureId) || member.venture?.id === filters.ventureId),
   );
   const actualSeconds = capacityMembers.reduce(
     (sum, member) => sum + member.actualWorkedSeconds,
@@ -176,7 +176,7 @@ export function buildReportsAnalyticsModel(
     .map((member) => ({
       id: member.id,
       name: member.fullName,
-      departmentId: member.department.id,
+      ventureId: member.venture?.id ?? '',
       actualSeconds: member.actualWorkedSeconds,
       plannedSeconds: member.scheduledMinutes * 60,
       percent: percent(
@@ -186,34 +186,34 @@ export function buildReportsAnalyticsModel(
     }))
     .sort((left, right) => right.percent - left.percent);
 
-  const departmentMap = new Map<
+  const ventureMap = new Map<
     string,
     { id: string; name: string; total: number; open: number }
   >();
 
   scopedOutcomes.forEach(({ outcome }) => {
-    outcome.departments.forEach((department) => {
-      if (filters.departmentId && department.id !== filters.departmentId) return;
-      const current = departmentMap.get(department.id) ?? {
-        id: department.id,
-        name: department.name,
+    outcome.ventures.forEach((venture) => {
+      if (filters.ventureId && venture.id !== filters.ventureId) return;
+      const current = ventureMap.get(venture.id) ?? {
+        id: venture.id,
+        name: venture.name,
         total: 0,
         open: 0,
       };
       current.total += 1;
       if (outcome.lifecycleStatus !== 'ACCEPTED') current.open += 1;
-      departmentMap.set(department.id, current);
+      ventureMap.set(venture.id, current);
     });
   });
 
-  const ownershipTotal = Array.from(departmentMap.values()).reduce(
-    (sum, department) => sum + department.total,
+  const ownershipTotal = Array.from(ventureMap.values()).reduce(
+    (sum, venture) => sum + venture.total,
     0,
   );
-  const departments = Array.from(departmentMap.values())
-    .map((department) => ({
-      ...department,
-      share: percent(department.total, ownershipTotal),
+  const ventures = Array.from(ventureMap.values())
+    .map((venture) => ({
+      ...venture,
+      share: percent(venture.total, ownershipTotal),
     }))
     .sort((left, right) => right.total - left.total);
 
@@ -275,6 +275,6 @@ export function buildReportsAnalyticsModel(
       },
     ],
     capacity,
-    departments,
+    ventures,
   };
 }

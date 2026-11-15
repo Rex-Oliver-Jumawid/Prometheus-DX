@@ -850,3 +850,12 @@ The same endpoint policy runs at subscription registration and immediately befor
 Provider redirects are rejected.
 Notification and chat provider calls run through the PostgreSQL PushDelivery outbox and a trusted scheduler, rather than a global mutation interceptor.
 The API does not rely on detached promises that may be terminated by serverless suspension.
+
+
+## Post-release venture foundation (in progress)
+
+The active expansion replaces Department product workflows with Ventures on branch feat/venture-foundation, based on unmerged maintenance PR #69.
+Physical Department table and column names remain mapped for data compatibility; new APIs and application models use Venture terminology.
+Optional primary venture grouping is separate from many-to-many membership, multiple operational roles, and scoped venture permissions.
+No cash, equity, contribution verification, or governance engine is included.
+See .docs/phases/post-release-01-ventures.md for decisions and verification status.

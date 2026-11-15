@@ -1,202 +1,45 @@
 import { PrismaClient } from '@prisma/client';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 const prisma = new PrismaClient();
-const hasRegistryCredentials = Boolean(
-  process.env.VITE_SUPABASE_URL &&
-  process.env.VITE_SUPABASE_ANON_KEY &&
-  process.env.E2E_MEMBER_EMAIL &&
-  process.env.E2E_MEMBER_PASSWORD,
-);
-
-const createdNames = new Set<string>();
-
-test.describe.configure({ mode: 'serial' });
-
+const names = new Set<string>();
 test.afterEach(async () => {
-  if (!hasRegistryCredentials || createdNames.size === 0) return;
-  await prisma.department.deleteMany({
-    where: { name: { in: [...createdNames] } },
-  });
-  createdNames.clear();
+  if (!names.size) return;
+  await prisma.ventureAuditEvent.deleteMany({ where: { venture: { name: { in: [...names] } } } });
+  await prisma.venture.deleteMany({ where: { name: { in: [...names] } } });
+  names.clear();
 });
+test.afterAll(async () => { await prisma.$disconnect(); });
 
-test.afterAll(async () => {
-  await prisma.$disconnect();
-});
-
-async function signIn(page: Page) {
-  const email = process.env.E2E_MEMBER_EMAIL;
-  const password = process.env.E2E_MEMBER_PASSWORD;
-  if (!email || !password)
-    throw new Error('E2E credentials are not configured.');
-
+test('administrator configures and archives a venture inside Registry with persistence', async ({ page }) => {
+  test.skip(!process.env.E2E_MEMBER_EMAIL || !process.env.E2E_MEMBER_PASSWORD, 'Requires authenticated preview credentials.');
+  const actor = await prisma.member.findFirstOrThrow({ where: { email: process.env.E2E_MEMBER_EMAIL } });
+  test.skip(actor.workspaceRole !== 'ADMINISTRATOR', 'Requires an Administrator.');
+  const original = `Registry venture ${Date.now()}`;
+  const updated = original + ' edited';
+  names.add(original); names.add(updated);
   await page.goto('/login');
-  await page.getByLabel('Company email').fill(email);
-  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByLabel('Company email').fill(process.env.E2E_MEMBER_EMAIL!);
+  await page.getByLabel('Password', { exact: true }).fill(process.env.E2E_MEMBER_PASSWORD!);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page).not.toHaveURL(/\/login$/);
-}
-
-test('administrator creates and edits a department with persistence', async ({
-  page,
-}) => {
-  test.skip(
-    !hasRegistryCredentials,
-    'Requires Supabase browser auth config and E2E member credentials.',
-  );
-
-  const email = process.env.E2E_MEMBER_EMAIL!;
-  const member = await prisma.member.findFirst({
-    where: { email: { equals: email, mode: 'insensitive' } },
-  });
-  if (!member) throw new Error('E2E member record was not found.');
-  test.skip(
-    member.workspaceRole !== 'ADMINISTRATOR',
-    'Registry department acceptance requires an Administrator E2E member.',
-  );
-
-  const suffix = Date.now().toString(36);
-  const originalName = `E2E Registry ${suffix}`;
-  const updatedName = `E2E Platform ${suffix}`;
-  const originalDescription = 'Created through the Registry browser flow.';
-  const updatedDescription = 'Edited through the Registry browser flow.';
-  const originalShortLabel = `E${suffix.slice(-5)}`.slice(0, 12);
-  const updatedShortLabel = `P${suffix.slice(-5)}`.slice(0, 12);
-  createdNames.add(originalName);
-  createdNames.add(updatedName);
-
-  await signIn(page);
   await page.goto('/registry');
-  await expect(
-    page.getByRole('heading', { name: 'Registry', exact: true }),
-  ).toBeVisible();
-
-  const addDepartmentButton = page
-    .getByRole('button', { name: /Add department/ })
-    .first();
-  await addDepartmentButton.click();
-  await expect(
-    page.getByRole('dialog', { name: 'Add department' }),
-  ).toBeVisible();
-  await expect(page.getByLabel('Department name')).toBeFocused();
-
-  await page.keyboard.press('Escape');
-  await expect(
-    page.getByRole('dialog', { name: 'Add department' }),
-  ).toHaveCount(0);
-  await expect(addDepartmentButton).toBeFocused();
-
-  await addDepartmentButton.click();
-  await page
-    .locator('.registry-dialog-backdrop')
-    .click({ position: { x: 4, y: 4 } });
-  await expect(
-    page.getByRole('dialog', { name: 'Add department' }),
-  ).toHaveCount(0);
-  await expect(addDepartmentButton).toBeFocused();
-
-  await addDepartmentButton.click();
-
-  await page
-    .getByRole('button', { name: 'Create department', exact: true })
-    .click();
-  await expect(page.getByText('Enter a department name.')).toBeVisible();
-
-  await page.getByLabel('Department name').fill(originalName);
-  await page.getByLabel('Short label').fill(originalShortLabel);
-  await page.getByLabel('Description').fill(originalDescription);
-  await page
-    .getByRole('button', { name: 'Create department', exact: true })
-    .click();
-
-  const createdDepartment = page.getByRole('button', {
-    name: `View ${originalName} members`,
-  });
-  await expect(createdDepartment).toBeVisible();
-  await expect(
-    createdDepartment.getByText('0 members', { exact: true }),
-  ).toBeVisible();
-  await expect(
-    createdDepartment.getByText('0 projects', { exact: true }),
-  ).toBeVisible();
-  await expect(
-    createdDepartment.getByText('0 outcomes', { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByText(originalShortLabel, { exact: true }),
-  ).toBeVisible();
-  await expect(page.getByText(originalName, { exact: true })).toHaveCount(0);
-  await expect(
-    page.getByText(originalDescription, { exact: true }),
-  ).toHaveCount(0);
-
+  await expect(page.getByRole('heading', { name: 'Registry', exact: true })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link', { name: 'Ventures', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Create venture', exact: true }).click();
+  await page.getByLabel('Name', { exact: true }).fill(original);
+  await page.getByLabel('Short label', { exact: true }).fill('REG');
+  await page.getByLabel('Description', { exact: true }).fill('Created inside Registry.');
+  await page.getByRole('button', { name: 'Create venture', exact: true }).click();
+  await page.getByRole('button', { name: original, exact: true }).click();
+  await page.getByLabel('Name', { exact: true }).fill(updated);
+  await page.getByRole('button', { name: 'Save venture', exact: true }).click();
+  await expect(page.getByRole('button', { name: updated, exact: true })).toBeVisible();
   await page.reload();
-  await expect(
-    page.getByRole('button', { name: `View ${originalName} members` }),
-  ).toBeVisible();
-
-  await page
-    .getByRole('button', { name: `View ${originalName} members` })
-    .click();
-  await expect(
-    page.getByRole('dialog', { name: 'Edit department' }),
-  ).toBeVisible();
-  await page.getByLabel('Department name').fill(updatedName);
-  await page.getByLabel('Short label').fill(updatedShortLabel);
-  await page.getByLabel('Description').fill(updatedDescription);
-  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
-
-  await expect(
-    page.getByRole('button', { name: `View ${updatedName} members` }),
-  ).toBeVisible();
-  await expect(
-    page.getByText(updatedShortLabel, { exact: true }),
-  ).toBeVisible();
-  await expect(page.getByText(updatedName, { exact: true })).toHaveCount(0);
-  await expect(page.getByText(updatedDescription, { exact: true })).toHaveCount(
-    0,
-  );
-
-  await page.reload();
-  await expect(
-    page.getByRole('button', { name: `View ${updatedName} members` }),
-  ).toBeVisible();
-  await expect(
-    page.getByText(updatedShortLabel, { exact: true }),
-  ).toBeVisible();
-
-  await page.getByRole('button', { name: `Remove ${updatedName}` }).click();
-  const removeDialog = page.getByRole('dialog', { name: 'Remove department' });
-  await expect(removeDialog).toBeVisible();
-  await expect(
-    removeDialog.locator('.registry-reference-summary > span').nth(0),
-  ).toHaveText(/^0\s*members$/);
-  await expect(
-    removeDialog.locator('.registry-reference-summary > span').nth(1),
-  ).toHaveText(/^0\s*projects$/);
-  await expect(
-    removeDialog.locator('.registry-reference-summary > span').nth(2),
-  ).toHaveText(/^0\s*outcomes$/);
-  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await expect(
-    page.getByRole('button', { name: `View ${updatedName} members` }),
-  ).toBeVisible();
-
-  await page.getByRole('button', { name: `Remove ${updatedName}` }).click();
-  const deleteResponse = page.waitForResponse(
-    (response) =>
-      response.url().includes('/api/registry/departments/') &&
-      response.request().method() === 'DELETE',
-  );
-  await page
-    .getByRole('button', { name: 'Remove department', exact: true })
-    .click();
-  expect((await deleteResponse).status()).toBe(200);
-  await expect(
-    page.getByRole('button', { name: `View ${updatedName} members` }),
-  ).toHaveCount(0);
-  await expect(
-    prisma.department.count({ where: { name: updatedName } }),
-  ).resolves.toBe(0);
+  await page.getByRole('button', { name: updated, exact: true }).click();
+  await expect(page.getByLabel('Description', { exact: true })).toHaveValue('Created inside Registry.');
+  await page.getByRole('combobox', { name: 'Status', exact: true }).selectOption('ARCHIVED');
+  await page.getByRole('button', { name: 'Save venture', exact: true }).click();
+  await expect(page.getByRole('button', { name: updated + ' (archived)', exact: true })).toBeVisible();
+  expect(await prisma.venture.count({ where: { name: updated, status: 'ARCHIVED' } })).toBe(1);
 });

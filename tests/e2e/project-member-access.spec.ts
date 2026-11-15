@@ -9,7 +9,7 @@ const runId = `phase4-slice4-${Date.now()}`;
 let currentMemberId = '';
 let originalWorkspaceRole: 'ADMINISTRATOR' | 'MEMBER' = 'MEMBER';
 let alternateLeadId = '';
-let departmentId = '';
+let ventureId = '';
 let projectId = '';
 let stageId = '';
 let mainFlowProjectId = '';
@@ -70,15 +70,15 @@ test.beforeAll(async () => {
   });
   currentMemberId = currentMember.id;
   originalWorkspaceRole = currentMember.workspaceRole;
-  const department = await prisma.department.create({
+  const venture = await prisma.venture.create({
     data: { name: `${runId} Access`, shortLabel: 'P4ACC' },
   });
-  departmentId = department.id;
+  ventureId = venture.id;
   const alternateLead = await prisma.member.create({
     data: {
       email: `${runId}@example.com`,
       fullName: 'Phase Four Access Member',
-      departmentId,
+      ventureId,
       status: 'ACTIVE',
       workspaceRole: 'MEMBER',
     },
@@ -90,7 +90,7 @@ test.beforeAll(async () => {
       description: 'Focused Phase 4 Project Member access acceptance.',
       createdByMemberId: alternateLead.id,
       leadMemberId: currentMember.id,
-      departments: { create: { departmentId } },
+      ventures: { create: { ventureId } },
       stages: {
         create: {
           name: 'Access Stage',
@@ -100,7 +100,7 @@ test.beforeAll(async () => {
               title: 'Access Outcome',
               position: 0,
               createdByMemberId: currentMember.id,
-              departments: { create: { departmentId } },
+              ventures: { create: { ventureId } },
               acceptanceCriteria: {
                 create: { description: 'Access is verified.', position: 0 },
               },
@@ -144,8 +144,8 @@ test.afterAll(async () => {
   if (alternateLeadId) {
     await prisma.member.delete({ where: { id: alternateLeadId } });
   }
-  if (departmentId) {
-    await prisma.department.delete({ where: { id: departmentId } });
+  if (ventureId) {
+    await prisma.venture.delete({ where: { id: ventureId } });
   }
   await prisma.$disconnect();
 });
@@ -298,7 +298,7 @@ test('F4-30 F4-32 F4-33 F4-34 F4-35 F4-36: CAN_EDIT changes status and workflow 
         {
           title: 'CAN_EDIT Outcome',
           description: null,
-          departmentIds: [departmentId],
+          ventureIds: [ventureId],
           acceptanceCriteria: ['Editable Project Member can create this.'],
           prerequisiteOutcomeIds: [],
         },
@@ -408,7 +408,7 @@ test('Phase 4 main E2E flow: Lead builds workflow, Member joins, Lead grants CAN
       description: 'Canonical Phase 4 end-to-end acceptance flow.',
       createdByMemberId: alternateLeadId,
       leadMemberId: currentMemberId,
-      departments: { create: { departmentId } },
+      ventures: { create: { ventureId } },
     },
   });
   mainFlowProjectId = project.id;
@@ -439,7 +439,7 @@ test('Phase 4 main E2E flow: Lead builds workflow, Member joins, Lead grants CAN
     name: 'Add project outcome',
   });
   await outcomeDialog.getByLabel('Outcome title').fill('Main Flow Outcome');
-  await outcomeDialog.locator(`input[value="${departmentId}"]`).check();
+  await outcomeDialog.locator(`input[value="${ventureId}"]`).check();
   await outcomeDialog
     .getByRole('textbox', { name: 'Acceptance criterion 1', exact: true })
     .fill('The complete Phase 4 authority flow is verified.');
@@ -575,7 +575,7 @@ test('Phase 4 main E2E flow: Lead builds workflow, Member joins, Lead grants CAN
         {
           title: 'Editable Main Flow Outcome',
           description: null,
-          departmentIds: [departmentId],
+          ventureIds: [ventureId],
           acceptanceCriteria: ['CAN_EDIT workflow authority is active.'],
           prerequisiteOutcomeIds: [],
         },

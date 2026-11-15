@@ -56,14 +56,14 @@ function visiworkMentionData(
 ): Notification['visiworkMention'] {
   if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
   const messageId = typeof data.messageId === 'string' ? data.messageId : null;
-  const departmentId =
-    data.departmentId === null || typeof data.departmentId === 'string'
-      ? data.departmentId
+  const ventureId =
+    data.ventureId === null || typeof data.ventureId === 'string'
+      ? data.ventureId
       : null;
   const roomLabel = typeof data.roomLabel === 'string' ? data.roomLabel : null;
   const preview = typeof data.preview === 'string' ? data.preview : null;
   if (!messageId || !roomLabel || preview === null) return null;
-  return { messageId, departmentId, roomLabel, preview };
+  return { messageId, ventureId, roomLabel, preview };
 }
 
 function projectChatMentionData(
@@ -124,24 +124,24 @@ export class NotificationsService {
           : null,
       )
       .filter((id): id is string => Boolean(id));
-    const departmentIds = mutes
+    const ventureIds = mutes
       .map((mute) =>
-        mute.channelKey.startsWith('visiwork:department:')
-          ? mute.channelKey.slice('visiwork:department:'.length)
+        mute.channelKey.startsWith('visiwork:venture:')
+          ? mute.channelKey.slice('visiwork:venture:'.length)
           : null,
       )
       .filter((id): id is string => Boolean(id));
 
-    const [projects, departments] = await Promise.all([
+    const [projects, ventures] = await Promise.all([
       projectIds.length
         ? this.prisma.project.findMany({
             where: { id: { in: projectIds } },
             select: { id: true, name: true },
           })
         : Promise.resolve([]),
-      departmentIds.length
-        ? this.prisma.department.findMany({
-            where: { id: { in: departmentIds } },
+      ventureIds.length
+        ? this.prisma.venture.findMany({
+            where: { id: { in: ventureIds } },
             select: { id: true, shortLabel: true },
           })
         : Promise.resolve([]),
@@ -150,8 +150,8 @@ export class NotificationsService {
     const projectsById = new Map(
       projects.map((project) => [project.id, project.name]),
     );
-    const departmentsById = new Map(
-      departments.map((department) => [department.id, department.shortLabel]),
+    const venturesById = new Map(
+      ventures.map((venture) => [venture.id, venture.shortLabel]),
     );
 
     return {
@@ -166,13 +166,13 @@ export class NotificationsService {
           };
         }
 
-        if (channelKey.startsWith('visiwork:department:')) {
-          const departmentId = channelKey.slice('visiwork:department:'.length);
+        if (channelKey.startsWith('visiwork:venture:')) {
+          const ventureId = channelKey.slice('visiwork:venture:'.length);
           return {
             channelKey,
-            kind: 'department' as const,
-            label: departmentsById.get(departmentId) ?? 'Department Chat',
-            path: `/visiwork?department=${departmentId}`,
+            kind: 'venture' as const,
+            label: venturesById.get(ventureId) ?? 'Venture Chat',
+            path: `/visiwork?venture=${ventureId}`,
           };
         }
 

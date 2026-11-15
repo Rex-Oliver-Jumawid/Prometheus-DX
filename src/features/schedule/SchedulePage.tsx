@@ -340,7 +340,7 @@ function SchedulePageSkeleton() {
         </header>
         <section className="schedule-filters">
           <div className="schedule-filterbar">
-            {['People', 'Department', 'View', 'Time range'].map((label, index) => (
+            {['People', 'Venture', 'View', 'Time range'].map((label, index) => (
               <div key={label} className={index === 0 ? 'schedule-people-filter schedule-skeleton-filter' : 'schedule-filter-field schedule-skeleton-filter'}>
                 <span className="schedule-filter-control-label">{label}</span>
                 <span className="schedule-skeleton-line schedule-skeleton-control" />
@@ -422,7 +422,7 @@ export function SchedulePage() {
     () => requestedMemberId ?? member?.id ?? '',
   );
   const [selectedPeopleIds, setSelectedPeopleIds] = useState<string[] | null>(null);
-  const [departmentId, setDepartmentId] = useState('');
+  const [ventureId, setVentureId] = useState('');
   const [weekParam, setWeekParam] = useState<string | undefined>(undefined);
   const [selectedDay, setSelectedDay] = useState<Weekday | null>(null);
   const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(null);
@@ -701,14 +701,14 @@ export function SchedulePage() {
   const displayedRestDays = new Set(
     ownSchedule?.restDays ?? initialRestDays(ownSchedule?.blocks ?? []),
   );
-  const departments = Array.from(
-    new Map(members.map((item) => [item.department.id, item.department])).values(),
+  const ventures = Array.from(
+    new Map(members.flatMap((item) => (item.ventures?.length ? item.ventures : item.venture ? [item.venture] : []).map(v => [v.id, v] as const))).values(),
   ).sort((left, right) => left.name.localeCompare(right.name));
   const peopleIds = selectedPeopleIds ?? members.map((item) => item.id);
   const filteredMembers = members.filter(
     (item) =>
       peopleIds.includes(item.id) &&
-      (!departmentId || item.department.id === departmentId),
+      (!ventureId || (item.ventures?.some(v => v.id === ventureId) || item.venture?.id === ventureId)),
   );
   const visibleBlockCount = filteredMembers.reduce(
     (total, item) => total + (item.schedule?.blocks.length ?? 0),
@@ -957,16 +957,16 @@ export function SchedulePage() {
               </details>
 
               <label className="schedule-filter-field">
-                <span>Department</span>
+                <span>Venture</span>
                 <select
-                  aria-label="Department"
-                  value={departmentId}
-                  onChange={(event) => setDepartmentId(event.target.value)}
+                  aria-label="Venture"
+                  value={ventureId}
+                  onChange={(event) => setVentureId(event.target.value)}
                 >
-                  <option value="">All departments</option>
-                  {departments.map((department) => (
-                    <option key={department.id} value={department.id}>
-                      {department.name}
+                  <option value="">All ventures</option>
+                  {ventures.map((venture) => (
+                    <option key={venture.id} value={venture.id}>
+                      {venture.name}
                     </option>
                   ))}
                 </select>

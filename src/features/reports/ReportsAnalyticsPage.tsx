@@ -158,7 +158,7 @@ function ReportsSkeleton() {
           </div>
         </article>
 
-        <article className="reports-panel reports-departments">
+        <article className="reports-panel reports-ventures">
           <div className="reports-panel-title">
             <SkeletonLine width="112px" height={10} />
             <SkeletonLine width="180px" height={7} />
@@ -237,7 +237,7 @@ export function ReportsAnalyticsPage() {
     team.data,
     {
       projectId: '',
-      departmentId: '',
+      ventureId: '',
     },
   );
 
@@ -350,30 +350,30 @@ export function ReportsAnalyticsPage() {
           </div>
         </article>
 
-        <article className="reports-panel reports-departments">
+        <article className="reports-panel reports-ventures">
           <div className="reports-panel-title">
-            <h2>Department workload</h2>
-            <p>Outcomes currently owned by each department.</p>
+            <h2>Venture workload</h2>
+            <p>Outcomes currently owned by each venture.</p>
           </div>
           <div className="reports-list">
-            {model.departments.length ? (
-              model.departments.map((department) => (
-                <div className="reports-progress-row" key={department.id}>
+            {model.ventures.length ? (
+              model.ventures.map((venture) => (
+                <div className="reports-progress-row" key={venture.id}>
                   <div className="reports-row-heading">
-                    <strong>{department.name}</strong>
-                    <span>{department.total} outcomes</span>
+                    <strong>{venture.name}</strong>
+                    <span>{venture.total} outcomes</span>
                   </div>
                   <div className="reports-progress-track" aria-hidden="true">
-                    <i style={{ width: `${department.share}%` }} />
+                    <i style={{ width: `${venture.share}%` }} />
                   </div>
                   <small>
-                    {department.open} open · {department.share}% of company
+                    {venture.open} open · {venture.share}% of company
                     outcome ownership
                   </small>
                 </div>
               ))
             ) : (
-              <div className="reports-empty">No department workload yet.</div>
+              <div className="reports-empty">No venture workload yet.</div>
             )}
           </div>
         </article>

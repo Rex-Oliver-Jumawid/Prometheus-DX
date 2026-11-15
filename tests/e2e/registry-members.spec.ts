@@ -12,7 +12,7 @@ const hasRegistryCredentials = Boolean(
 test.describe.configure({ mode: 'serial' });
 
 const createdMemberEmails = new Set<string>();
-const createdDepartmentIds = new Set<string>();
+const createdVentureIds = new Set<string>();
 
 test.afterEach(async () => {
   if (!hasRegistryCredentials) return;
@@ -22,11 +22,11 @@ test.afterEach(async () => {
     });
     createdMemberEmails.clear();
   }
-  if (createdDepartmentIds.size > 0) {
-    await prisma.department.deleteMany({
-      where: { id: { in: [...createdDepartmentIds] } },
+  if (createdVentureIds.size > 0) {
+    await prisma.venture.deleteMany({
+      where: { id: { in: [...createdVentureIds] } },
     });
-    createdDepartmentIds.clear();
+    createdVentureIds.clear();
   }
 });
 
@@ -76,22 +76,22 @@ test('administrator adds and edits a member with duplicate-email protection', as
   );
 
   const suffix = Date.now().toString(36);
-  const department = await prisma.department.create({
+  const venture = await prisma.venture.create({
     data: {
       name: `Member E2E ${suffix}`,
       shortLabel: `M${suffix.slice(-5)}`,
       description: 'Registry member acceptance fixture.',
     },
   });
-  createdDepartmentIds.add(department.id);
-  const reassignedDepartment = await prisma.department.create({
+  createdVentureIds.add(venture.id);
+  const reassignedVenture = await prisma.venture.create({
     data: {
       name: `Reassigned E2E ${suffix}`,
       shortLabel: `R${suffix.slice(-5)}`,
       description: 'Registry reassignment acceptance fixture.',
     },
   });
-  createdDepartmentIds.add(reassignedDepartment.id);
+  createdVentureIds.add(reassignedVenture.id);
 
   const email = `registry-${suffix}@example.com`;
   const existingSuggestionEmail = `existing-${suffix}@example.com`;
@@ -106,7 +106,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
     data: {
       email: existingSuggestionEmail,
       fullName: existingSuggestionName,
-      departmentId: department.id,
+      ventureId: venture.id,
       position: 'Existing Member Fixture',
       workspaceRole: 'MEMBER',
       status: 'INVITED',
@@ -119,7 +119,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
   page.on('pageerror', (error) => browserErrors.push(error.message));
 
   await signIn(page);
-  await page.goto('/registry');
+  await page.goto('/registry?tab=members');
   const addMemberButton = page.getByRole('button', { name: /Add member/ });
   await expect(memberRow(page, existingSuggestionName)).toBeVisible();
   await addMemberButton.click();
@@ -256,27 +256,27 @@ test('administrator adds and edits a member with duplicate-email protection', as
 
   await page.getByLabel('Full name').fill('Registry Test Member');
   await page.getByLabel('Email address').fill(email);
-  const departmentSearch = page
+  const ventureSearch = page
     .getByRole('dialog', { name: 'Add member' })
-    .getByLabel('Department');
-  await departmentSearch.fill('Not a persisted department');
+    .getByLabel('Primary venture (optional)');
+  await ventureSearch.fill('Not a persisted venture');
   await page.getByLabel('Position').fill('Product Specialist');
   await page.getByLabel('Workspace role').selectOption('MEMBER');
   await expect(page.getByLabel('Member status')).toBeDisabled();
   await page.getByRole('button', { name: 'Add member', exact: true }).click();
-  await expect(page.getByText('Choose a department.')).toBeVisible();
-  await departmentSearch.fill(department.name.slice(0, 8));
+  await expect(page.getByText('Choose a venture.')).toBeVisible();
+  await ventureSearch.fill(venture.name.slice(0, 8));
   await expect(
-    page.locator('#registry-department-options option').filter({
-      hasText: department.shortLabel,
+    page.locator('#registry-venture-options option').filter({
+      hasText: venture.shortLabel,
     }),
   ).toHaveCount(1);
-  await departmentSearch.fill(department.name);
+  await ventureSearch.fill(venture.name);
   await expect(
     page
       .getByRole('dialog', { name: 'Add member' })
-      .locator('input[name="departmentId"]'),
-  ).toHaveValue(department.id);
+      .locator('input[name="ventureId"]'),
+  ).toHaveValue(venture.id);
   const createMemberRequest = page.waitForRequest(
     (request) =>
       request.url().endsWith('/api/registry/members') &&
@@ -291,7 +291,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
   expect((await createMemberRequest).postDataJSON()).toEqual({
     fullName: 'Registry Test Member',
     email,
-    departmentId: department.id,
+    ventureId: venture.id,
     position: 'Product Specialist',
     workspaceRole: 'MEMBER',
     status: 'INVITED',
@@ -307,8 +307,8 @@ test('administrator adds and edits a member with duplicate-email protection', as
       .getByRole('button', { name: /Send invitation|Resend invitation/ }),
   ).toBeVisible();
   await expect(
-    page.locator('.registry-department-card').filter({
-      hasText: department.shortLabel,
+    page.locator('.registry-venture-card').filter({
+      hasText: venture.shortLabel,
     }),
   ).toContainText('2 members');
 
@@ -320,8 +320,8 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await page.getByLabel('Email address').fill(email.toUpperCase());
   await page
     .getByRole('dialog', { name: 'Add member' })
-    .getByLabel('Department')
-    .fill(department.name);
+    .getByLabel('Primary venture (optional)')
+    .fill(venture.name);
   await page.getByLabel('Position').fill('Duplicate');
   await page.getByRole('button', { name: 'Add member', exact: true }).click();
   await expect(
@@ -342,8 +342,8 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await page.getByLabel('Position').fill(updatedPosition);
   await page
     .getByRole('dialog', { name: 'Edit member' })
-    .getByLabel('Department')
-    .fill(reassignedDepartment.name);
+    .getByLabel('Primary venture (optional)')
+    .fill(reassignedVenture.name);
   await page.getByLabel('Workspace role').selectOption('ADMINISTRATOR');
   await page.getByLabel('Member status').selectOption('DEACTIVATED');
   await page.getByRole('button', { name: 'Save changes' }).click();
@@ -355,7 +355,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await expect(memberRow(page, updatedFullName)).toBeVisible();
   await expect(
     memberRow(page, updatedFullName).locator('td').nth(1),
-  ).toHaveText(reassignedDepartment.shortLabel);
+  ).toHaveText(reassignedVenture.shortLabel);
 
   await page.getByLabel('Search members').fill(updatedFullName.slice(0, 18));
   await expect(memberRow(page, updatedFullName)).toBeVisible();
@@ -376,13 +376,13 @@ test('administrator adds and edits a member with duplicate-email protection', as
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
 
   await expect(
-    page.locator('.registry-department-card').filter({
-      hasText: department.shortLabel,
+    page.locator('.registry-venture-card').filter({
+      hasText: venture.shortLabel,
     }),
-  ).toContainText('1 member');
+  ).toContainText('2 members');
   await expect(
-    page.locator('.registry-department-card').filter({
-      hasText: reassignedDepartment.shortLabel,
+    page.locator('.registry-venture-card').filter({
+      hasText: reassignedVenture.shortLabel,
     }),
   ).toContainText('1 member');
 
@@ -391,7 +391,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
   });
   expect(persisted).toMatchObject({
     fullName: updatedFullName,
-    departmentId: reassignedDepartment.id,
+    ventureId: reassignedVenture.id,
     position: updatedPosition,
     workspaceRole: 'ADMINISTRATOR',
     status: 'DEACTIVATED',

@@ -42,17 +42,17 @@ export class VisiWorkController {
   }
 
   @Put('presence')
-  joinDepartment(
+  joinVenture(
     @CurrentMember() member: Member,
     @Body() body: unknown,
   ) {
     const parsed = SetVisiWorkPresenceRequestSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException(
-        parsed.error.issues[0]?.message ?? 'Invalid VisiWork department.',
+        parsed.error.issues[0]?.message ?? 'Invalid VisiWork venture.',
       );
     }
-    return this.visiworkService.joinDepartment(member, parsed.data);
+    return this.visiworkService.joinVenture(member, parsed.data);
   }
 
   @Get('messages/search')
@@ -126,25 +126,25 @@ export class VisiWorkController {
     return this.visiworkService.sendMessage(member, parsed.data);
   }
 
-  @Get('departments/:departmentId/messages')
-  listDepartmentMessages(
+  @Get('ventures/:ventureId/messages')
+  listVentureMessages(
     @CurrentMember() member: Member,
-    @Param('departmentId', new ParseUUIDPipe({ version: '4' }))
-    departmentId: string,
+    @Param('ventureId', new ParseUUIDPipe({ version: '4' }))
+    ventureId: string,
     @Query('cursor') cursor?: string,
   ) {
     return this.visiworkService.listMessages(
       member,
-      departmentId,
+      ventureId,
       this.validateCursor(cursor),
     );
   }
 
-  @Post('departments/:departmentId/messages')
-  sendDepartmentMessage(
+  @Post('ventures/:ventureId/messages')
+  sendVentureMessage(
     @CurrentMember() member: Member,
-    @Param('departmentId', new ParseUUIDPipe({ version: '4' }))
-    departmentId: string,
+    @Param('ventureId', new ParseUUIDPipe({ version: '4' }))
+    ventureId: string,
     @Body() body: unknown,
   ) {
     const parsed = CreateVisiWorkMessageSchema.safeParse(body);
@@ -156,7 +156,7 @@ export class VisiWorkController {
     return this.visiworkService.sendMessage(
       member,
       parsed.data,
-      departmentId,
+      ventureId,
     );
   }
 }

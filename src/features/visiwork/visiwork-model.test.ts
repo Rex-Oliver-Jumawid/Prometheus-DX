@@ -4,8 +4,8 @@ import type { ProjectWorkflowResponse } from '../../../shared/contracts/project-
 import type { TeamWorkSummaryResponse } from '../../../shared/contracts/work-session';
 import {
   buildVisiWorkModel,
-  departmentStages,
-  groupDepartmentProjects,
+  ventureStages,
+  groupVentureProjects,
 } from './visiwork-model';
 
 const rd = {
@@ -39,7 +39,7 @@ function project(
     description: 'Project description',
     lead: nico,
     creator: nico,
-    departments: [rd],
+    ventures: [rd],
     isParticipating: true,
     currentMemberAccess: 'CAN_VIEW',
     canChangeStatus: false,
@@ -70,7 +70,7 @@ const projects: Project[] = [
     id: '00000000-0000-4000-8000-000000000301',
     name: 'Client Management System',
     status: 'IN_PROGRESS',
-    departments: [rd, creatives],
+    ventures: [rd, creatives],
     metrics: {
       totalOutcomes: 2,
       openOutcomes: 1,
@@ -90,7 +90,7 @@ const projects: Project[] = [
     id: '00000000-0000-4000-8000-000000000302',
     name: 'Prometheus Brand Site',
     status: 'DONE',
-    departments: [creatives],
+    ventures: [creatives],
     metrics: {
       totalOutcomes: 1,
       openOutcomes: 0,
@@ -123,7 +123,7 @@ const workflows: ProjectWorkflowResponse[] = [
             description: 'Research and organize the next validation experiment.',
             lifecycleStatus: 'OPEN',
             position: 0,
-            departments: [rd],
+            ventures: [rd],
             acceptanceCriteria: [],
             prerequisites: [],
             members: [nico],
@@ -141,7 +141,7 @@ const workflows: ProjectWorkflowResponse[] = [
             description: null,
             lifecycleStatus: 'ACCEPTED',
             position: 1,
-            departments: [creatives],
+            ventures: [creatives],
             acceptanceCriteria: [],
             prerequisites: [],
             members: [bea],
@@ -180,8 +180,8 @@ const team: TeamWorkSummaryResponse = {
       fullName: nico.fullName,
       position: 'Developer',
       profileImagePath: null,
-      department: rd,
-      visiworkDepartmentId: null,
+      venture: rd,
+      visiworkVentureId: null,
       workingNow: true,
       scheduledMinutes: 1200,
       actualWorkedSeconds: 18000,
@@ -192,8 +192,8 @@ const team: TeamWorkSummaryResponse = {
       fullName: bea.fullName,
       position: 'Designer',
       profileImagePath: null,
-      department: creatives,
-      visiworkDepartmentId: null,
+      venture: creatives,
+      visiworkVentureId: null,
       workingNow: false,
       scheduledMinutes: 1200,
       actualWorkedSeconds: 18000,
@@ -203,7 +203,7 @@ const team: TeamWorkSummaryResponse = {
 };
 
 describe('buildVisiWorkModel', () => {
-  it('preserves profile images for department members and working presence', () => {
+  it('preserves profile images for venture members and working presence', () => {
     const withPhotos: TeamWorkSummaryResponse = {
       ...team,
       members: team.members.map((member) =>
@@ -213,27 +213,27 @@ describe('buildVisiWorkModel', () => {
       ),
     };
     const model = buildVisiWorkModel(projects, workflows, withPhotos);
-    const department = model.departments.find((item) => item.id === rd.id);
-    expect(department?.members.find((member) => member.id === nico.id)?.profileImagePath)
+    const venture = model.ventures.find((item) => item.id === rd.id);
+    expect(venture?.members.find((member) => member.id === nico.id)?.profileImagePath)
       .toBe('/member-photos/nico.png');
-    expect(department?.workingMembers[0]?.profileImagePath)
+    expect(venture?.workingMembers[0]?.profileImagePath)
       .toBe('/member-photos/nico.png');
     expect(
-      model.departments.find((item) => item.id === creatives.id)?.members[0]?.profileImagePath,
+      model.ventures.find((item) => item.id === creatives.id)?.members[0]?.profileImagePath,
     ).toBeNull();
   });
 
-  it('derives department presence and project progress from canonical records', () => {
+  it('derives venture presence and project progress from canonical records', () => {
     const model = buildVisiWorkModel(projects, workflows, team);
-    const department = model.departments.find((item) => item.id === rd.id);
+    const venture = model.ventures.find((item) => item.id === rd.id);
     const clientProject = model.projects.find(
       (item) => item.id === projects[0].id,
     );
 
-    expect(department?.workingMembers.map((member) => member.fullName)).toEqual([
+    expect(venture?.workingMembers.map((member) => member.fullName)).toEqual([
       'Nico Ramos',
     ]);
-    expect(department?.projects.map((item) => item.name)).toContain(
+    expect(venture?.projects.map((item) => item.name)).toContain(
       'Client Management System',
     );
     expect(clientProject?.progress).toBe(54);
@@ -241,14 +241,14 @@ describe('buildVisiWorkModel', () => {
     expect(clientProject?.workingMemberNames).toContain('Nico Ramos');
   });
 
-  it('scopes department detail outcomes to the responsible department', () => {
+  it('scopes venture detail outcomes to the responsible venture', () => {
     const model = buildVisiWorkModel(projects, workflows, team);
     const clientProject = model.projects.find(
       (item) => item.id === projects[0].id,
     );
 
     expect(clientProject).toBeDefined();
-    const stages = departmentStages(clientProject!, rd.id);
+    const stages = ventureStages(clientProject!, rd.id);
 
     expect(stages).toHaveLength(1);
     expect(stages[0].outcomes.map((outcome) => outcome.title)).toEqual([
@@ -256,40 +256,40 @@ describe('buildVisiWorkModel', () => {
     ]);
   });
 
-  it('moves live presence to the explicitly joined department without changing the home department', () => {
+  it('moves live presence to the explicitly joined venture without changing the home venture', () => {
     const focusedTeam: TeamWorkSummaryResponse = {
       ...team,
       members: team.members.map((member) =>
         member.id === nico.id
-          ? { ...member, visiworkDepartmentId: creatives.id }
+          ? { ...member, visiworkVentureId: creatives.id }
           : member,
       ),
     };
     const model = buildVisiWorkModel(projects, workflows, focusedTeam);
-    const rdDepartment = model.departments.find((item) => item.id === rd.id);
-    const creativeDepartment = model.departments.find(
+    const rdVenture = model.ventures.find((item) => item.id === rd.id);
+    const creativeVenture = model.ventures.find(
       (item) => item.id === creatives.id,
     );
 
     expect(
-      rdDepartment?.members.find((member) => member.id === nico.id),
+      rdVenture?.members.find((member) => member.id === nico.id),
     ).toBeUndefined();
     expect(
-      creativeDepartment?.members.find((member) => member.id === nico.id),
+      creativeVenture?.members.find((member) => member.id === nico.id),
     ).toMatchObject({
       fullName: 'Nico Ramos',
       workingNow: true,
     });
   });
 
-  it('groups department projects by their current project state', () => {
+  it('groups venture projects by their current project state', () => {
     const model = buildVisiWorkModel(projects, workflows, team);
-    const department = model.departments.find(
+    const venture = model.ventures.find(
       (item) => item.id === creatives.id,
     );
 
-    expect(department).toBeDefined();
-    const groups = groupDepartmentProjects(department!);
+    expect(venture).toBeDefined();
+    const groups = groupVentureProjects(venture!);
 
     expect(groups.IN_PROGRESS.map((item) => item.name)).toEqual([
       'Client Management System',

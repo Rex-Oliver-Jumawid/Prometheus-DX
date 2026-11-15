@@ -180,7 +180,7 @@ export function OutcomeDeliveryPanel({
   isJoined,
   outcomeTitle,
   outcomeDescription,
-  departmentLabels = [],
+  ventureLabels = [],
 }: {
   projectId: string;
   outcomeId: string;
@@ -188,7 +188,7 @@ export function OutcomeDeliveryPanel({
   isJoined: boolean;
   outcomeTitle: string;
   outcomeDescription: string;
-  departmentLabels?: string[];
+  ventureLabels?: string[];
 }) {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Submission | null>(null);
@@ -627,10 +627,10 @@ export function OutcomeDeliveryPanel({
                 Submitted by <strong>{selected.submitter.fullName}</strong>
               </span>
               <span>
-                Departments{' '}
+                Ventures{' '}
                 <strong>
-                  {departmentLabels.length > 0
-                    ? departmentLabels.join(', ')
+                  {ventureLabels.length > 0
+                    ? ventureLabels.join(', ')
                     : 'General'}
                 </strong>
               </span>

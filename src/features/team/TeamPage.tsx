@@ -52,9 +52,9 @@ function TeamAvatar({
 
 function memberSubtitle(
   position: string | null | undefined,
-  departmentName: string,
+  ventureName: string,
 ): string {
-  return [position?.trim(), departmentName.trim()].filter(Boolean).join(' / ');
+  return [position?.trim(), ventureName.trim()].filter(Boolean).join(' / ');
 }
 
 function TeamHeader() {
@@ -200,10 +200,10 @@ export function TeamPage() {
                       className="team-person-subtitle"
                       title={memberSubtitle(
                         member.position,
-                        member.department.name,
+                        (member.ventures?.length ? member.ventures.map(v => v.name).join(', ') : member.venture?.name ?? 'No venture'),
                       )}
                     >
-                      {memberSubtitle(member.position, member.department.name)}
+                      {memberSubtitle(member.position, (member.ventures?.length ? member.ventures.map(v => v.name).join(', ') : member.venture?.name ?? 'No venture'))}
                     </span>
                   </div>
                 </div>

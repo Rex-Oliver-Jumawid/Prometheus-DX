@@ -145,7 +145,7 @@ function WorkingMember({ member }: { member: HomeWorkingMember }) {
       </span>
       <span>
         <strong>{member.fullName}</strong>
-        <small>{member.department.shortLabel}</small>
+        <small>{(member.venture?.shortLabel ?? 'Unassigned')}</small>
       </span>
       <i aria-label="Currently working" />
     </li>

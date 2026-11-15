@@ -36,7 +36,7 @@ const sampleProjects: Project[] = [
       fullName: 'Rex Jumawid',
       email: 'rex@example.com',
     },
-    departments: [
+    ventures: [
       { id: 'dept-1', name: 'Sales & Marketing', shortLabel: 'Sales' },
       { id: 'dept-2', name: 'X Team', shortLabel: 'X' },
     ],
@@ -71,7 +71,7 @@ const sampleProjects: Project[] = [
       fullName: 'Lead Two',
       email: 'two@example.com',
     },
-    departments: [
+    ventures: [
       { id: 'dept-3', name: 'R&D', shortLabel: 'R&D' },
     ],
     isParticipating: false,
@@ -105,7 +105,7 @@ const sampleProjects: Project[] = [
       fullName: 'Bea Santos',
       email: 'bea@example.com',
     },
-    departments: [
+    ventures: [
       { id: 'dept-3', name: 'R&D', shortLabel: 'R&D' },
       { id: 'dept-4', name: 'Creatives', shortLabel: 'Creatives' },
     ],
@@ -140,7 +140,7 @@ const sampleProjects: Project[] = [
       fullName: 'Lead Two',
       email: 'two@example.com',
     },
-    departments: [
+    ventures: [
       { id: 'dept-5', name: 'Operations', shortLabel: 'Ops' },
     ],
     isParticipating: true,
@@ -170,7 +170,7 @@ vi.mock('../../lib/api', () => ({
       return Promise.resolve(sampleProjects);
     }
     if (url === '/projects/create-options') {
-      return Promise.resolve({ leads: [], departments: [] });
+      return Promise.resolve({ leads: [], ventures: [] });
     }
     return Promise.resolve({});
   }),
@@ -210,7 +210,7 @@ describe('ProjectsPage', () => {
     expect(screen.getByText('Prometheus Brand Site v1')).toBeInTheDocument();
   });
 
-  it('displays card metrics, department tags, workers, and workspace link', async () => {
+  it('displays card metrics, venture tags, workers, and workspace link', async () => {
     renderProjectsPage();
 
     expect(await screen.findByText('First 10 Customers')).toBeInTheDocument();

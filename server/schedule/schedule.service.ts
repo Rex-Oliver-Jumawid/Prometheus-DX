@@ -36,7 +36,8 @@ export class ScheduleService {
         id: true,
         fullName: true,
         position: true,
-        department: {
+        ventureMemberships: { where: { endedAt: null, venture: { status: 'ACTIVE' } }, select: { venture: { select: { id: true, name: true, shortLabel: true } } } },
+        venture: {
           select: { id: true, name: true, shortLabel: true },
         },
         schedule: {
@@ -58,7 +59,8 @@ export class ScheduleService {
     return {
       timezone: 'Asia/Manila',
       members: members.map((member) => ({
-        ...member,
+        id: member.id, fullName: member.fullName, position: member.position, venture: member.venture,
+        ventures: member.ventureMemberships?.map(m => m.venture) ?? [],
         schedule: member.schedule
           ? this.toSchedule(member.schedule as ScheduleWithBlocks)
           : null,

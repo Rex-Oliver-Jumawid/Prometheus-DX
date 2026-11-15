@@ -30,9 +30,10 @@ export function navigationForRole(role: WorkspaceRole): NavigationItem[] {
 
 export function utilityNavigationForRole(
   role: WorkspaceRole,
+  canManageVentures = false,
 ): NavigationItem[] {
   return [
-    ...(role === 'ADMINISTRATOR'
+    ...(role === 'ADMINISTRATOR' || canManageVentures
       ? [{ label: 'Registry', path: '/registry', icon: 'registry' as const }]
       : []),
     {

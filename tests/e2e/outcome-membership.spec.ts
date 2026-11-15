@@ -8,7 +8,7 @@ const hasCredentials = Boolean(
 const runId = `phase4-slice3-${Date.now()}`;
 let currentMemberId = '';
 let alternateLeadId = '';
-let departmentId = '';
+let ventureId = '';
 let participatingProjectId = '';
 let creatorOnlyProjectId = '';
 let leadingProjectId = '';
@@ -71,15 +71,15 @@ test.beforeAll(async () => {
     },
   });
   currentMemberId = currentMember.id;
-  const department = await prisma.department.create({
+  const venture = await prisma.venture.create({
     data: { name: `${runId} Membership`, shortLabel: 'P4MEM' },
   });
-  departmentId = department.id;
+  ventureId = venture.id;
   const alternateLead = await prisma.member.create({
     data: {
       email: `${runId}@example.com`,
       fullName: 'Phase Four Membership Lead',
-      departmentId,
+      ventureId,
       status: 'ACTIVE',
       workspaceRole: 'MEMBER',
     },
@@ -92,7 +92,7 @@ test.beforeAll(async () => {
       description: 'Outcome Membership participation fixture.',
       createdByMemberId: alternateLead.id,
       leadMemberId: alternateLead.id,
-      departments: { create: { departmentId } },
+      ventures: { create: { ventureId } },
       stages: {
         create: {
           name: 'Membership Stage',
@@ -103,7 +103,7 @@ test.beforeAll(async () => {
                 title: 'Open Outcome',
                 position: 0,
                 createdByMemberId: alternateLead.id,
-                departments: { create: { departmentId } },
+                ventures: { create: { ventureId } },
                 acceptanceCriteria: {
                   create: { description: 'Open result exists.', position: 0 },
                 },
@@ -112,7 +112,7 @@ test.beforeAll(async () => {
                 title: 'Second Outcome',
                 position: 1,
                 createdByMemberId: alternateLead.id,
-                departments: { create: { departmentId } },
+                ventures: { create: { ventureId } },
                 acceptanceCriteria: {
                   create: { description: 'Second result exists.', position: 0 },
                 },
@@ -121,7 +121,7 @@ test.beforeAll(async () => {
                 title: 'Locked Outcome',
                 position: 2,
                 createdByMemberId: alternateLead.id,
-                departments: { create: { departmentId } },
+                ventures: { create: { ventureId } },
                 acceptanceCriteria: {
                   create: { description: 'Locked result exists.', position: 0 },
                 },
@@ -131,7 +131,7 @@ test.beforeAll(async () => {
                 lifecycleStatus: 'NEEDS_REVISION',
                 position: 3,
                 createdByMemberId: alternateLead.id,
-                departments: { create: { departmentId } },
+                ventures: { create: { ventureId } },
                 acceptanceCriteria: {
                   create: {
                     description: 'Revision result exists.',
@@ -145,7 +145,7 @@ test.beforeAll(async () => {
                 acceptedAt: new Date(),
                 position: 4,
                 createdByMemberId: alternateLead.id,
-                departments: { create: { departmentId } },
+                ventures: { create: { ventureId } },
                 acceptanceCriteria: {
                   create: {
                     description: 'Accepted result exists.',
@@ -192,7 +192,7 @@ test.beforeAll(async () => {
       description: 'Creation alone is not participation.',
       createdByMemberId: currentMember.id,
       leadMemberId: alternateLead.id,
-      departments: { create: { departmentId } },
+      ventures: { create: { ventureId } },
     },
   });
   creatorOnlyProjectId = creatorOnlyProject.id;
@@ -203,7 +203,7 @@ test.beforeAll(async () => {
       description: 'A Lead may join without duplicate Participating grouping.',
       createdByMemberId: currentMember.id,
       leadMemberId: currentMember.id,
-      departments: { create: { departmentId } },
+      ventures: { create: { ventureId } },
       stages: {
         create: {
           name: 'Lead Stage',
@@ -213,7 +213,7 @@ test.beforeAll(async () => {
               title: 'Lead Joined Outcome',
               position: 0,
               createdByMemberId: currentMember.id,
-              departments: { create: { departmentId } },
+              ventures: { create: { ventureId } },
               acceptanceCriteria: {
                 create: { description: 'Lead result exists.', position: 0 },
               },
@@ -255,8 +255,8 @@ test.afterAll(async () => {
   if (alternateLeadId) {
     await prisma.member.delete({ where: { id: alternateLeadId } });
   }
-  if (departmentId) {
-    await prisma.department.delete({ where: { id: departmentId } });
+  if (ventureId) {
+    await prisma.venture.delete({ where: { id: ventureId } });
   }
   await prisma.$disconnect();
 });

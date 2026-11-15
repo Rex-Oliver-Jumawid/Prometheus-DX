@@ -1,6 +1,6 @@
 import type {
   Project,
-  ProjectDepartmentSummary,
+  ProjectVentureSummary,
 } from '../../../shared/contracts/project';
 import type {
   Outcome,
@@ -27,7 +27,7 @@ export interface VisiWorkOutcome {
   description: string | null;
   lifecycleStatus: Outcome['lifecycleStatus'];
   memberNames: string[];
-  departmentIds: string[];
+  ventureIds: string[];
 }
 
 export interface VisiWorkStage {
@@ -46,7 +46,7 @@ export interface VisiWorkProject {
   totalOutcomes: number;
   openOutcomes: number;
   activeStagesCount: number;
-  departments: Project['departments'];
+  ventures: Project['ventures'];
   memberNames: string[];
   workingMemberNames: string[];
   currentStageName: string | null;
@@ -54,7 +54,7 @@ export interface VisiWorkProject {
   isParticipating: boolean;
 }
 
-export interface VisiWorkDepartment {
+export interface VisiWorkVenture {
   id: string;
   name: string;
   shortLabel: string;
@@ -64,7 +64,7 @@ export interface VisiWorkDepartment {
 }
 
 export interface VisiWorkModel {
-  departments: VisiWorkDepartment[];
+  ventures: VisiWorkVenture[];
   projects: VisiWorkProject[];
 }
 
@@ -127,7 +127,7 @@ function toStages(
       description: outcome.description,
       lifecycleStatus: outcome.lifecycleStatus,
       memberNames: uniq(outcome.members.map((member) => member.fullName)),
-      departmentIds: outcome.departments.map((department) => department.id),
+      ventureIds: outcome.ventures.map((venture) => venture.id),
     })),
   }));
 }
@@ -136,7 +136,7 @@ export function buildVisiWorkModel(
   projects: Project[],
   workflows: ProjectWorkflowResponse[],
   team: TeamWorkSummaryResponse,
-  departmentOptions: ProjectDepartmentSummary[] = [],
+  ventureOptions: ProjectVentureSummary[] = [],
 ): VisiWorkModel {
   const workflowsByProject = workflowByProject(workflows);
   const teamById = new Map(team.members.map((member) => [member.id, member]));
@@ -145,16 +145,16 @@ export function buildVisiWorkModel(
     const workflow = workflowsByProject.get(project.id);
     const participants = membersForWorkflow(project, workflow);
     const memberNames = participants.map((member) => member.fullName);
-    const projectDepartmentIds = new Set(
-      project.departments.map((department) => department.id),
+    const projectVentureIds = new Set(
+      project.ventures.map((venture) => venture.id),
     );
     const workingMemberNames = participants
       .filter((member) => {
         const teamMember = teamById.get(member.id);
         if (!teamMember?.workingNow) return false;
-        const focusedDepartmentId =
-          teamMember.visiworkDepartmentId ?? teamMember.department.id;
-        return projectDepartmentIds.has(focusedDepartmentId);
+        const focusedVentureId =
+          teamMember.visiworkVentureId ?? teamMember.venture?.id;
+        return Boolean(focusedVentureId && projectVentureIds.has(focusedVentureId));
       })
       .map((member) => member.fullName);
     const metrics = project.metrics;
@@ -169,7 +169,7 @@ export function buildVisiWorkModel(
       totalOutcomes: metrics?.totalOutcomes ?? 0,
       openOutcomes: metrics?.openOutcomes ?? 0,
       activeStagesCount: metrics?.activeStagesCount ?? 0,
-      departments: project.departments,
+      ventures: project.ventures,
       memberNames,
       workingMemberNames,
       currentStageName: currentStageName(workflow),
@@ -178,33 +178,34 @@ export function buildVisiWorkModel(
     };
   });
 
-  const departmentMap = new Map<
+  const ventureMap = new Map<
     string,
     { id: string; name: string; shortLabel: string }
   >();
 
-  for (const department of departmentOptions) {
-    departmentMap.set(department.id, department);
+  for (const venture of ventureOptions) {
+    ventureMap.set(venture.id, venture);
   }
   for (const member of team.members) {
-    departmentMap.set(member.department.id, member.department);
+    if (member.venture) ventureMap.set(member.venture.id, member.venture);
+    for (const venture of member.ventures ?? []) ventureMap.set(venture.id, venture);
   }
   for (const project of projects) {
-    for (const department of project.departments) {
-      departmentMap.set(department.id, department);
+    for (const venture of project.ventures) {
+      ventureMap.set(venture.id, venture);
     }
   }
 
-  const departments = [...departmentMap.values()]
-    .map((department): VisiWorkDepartment => {
+  const ventures = [...ventureMap.values()]
+    .map((venture): VisiWorkVenture => {
       const members = team.members
         .filter((member) => {
-          const focusedDepartmentId =
-            member.visiworkDepartmentId ?? member.department.id;
+          const focusedVentureId =
+            member.visiworkVentureId ?? member.venture?.id;
           // VisiWork membership represents the member's current working room,
-          // not their Registry/home department. The home department remains
+          // not their Registry/home venture. The home venture remains
           // unchanged in the database.
-          return focusedDepartmentId === department.id;
+          return focusedVentureId === venture.id;
         })
         .map((member) => ({
           id: member.id,
@@ -218,43 +219,43 @@ export function buildVisiWorkModel(
             Number(right.workingNow) - Number(left.workingNow) ||
             left.fullName.localeCompare(right.fullName),
         );
-      const departmentProjects = projectModels.filter(
+      const ventureProjects = projectModels.filter(
         (project) =>
           project.status !== 'ARCHIVED' &&
-          project.departments.some((item) => item.id === department.id),
+          project.ventures.some((item) => item.id === venture.id),
       );
 
       return {
-        ...department,
+        ...venture,
         members,
         workingMembers: members.filter((member) => member.workingNow),
-        projects: departmentProjects,
+        projects: ventureProjects,
       };
     })
     .sort((left, right) => left.name.localeCompare(right.name));
 
   return {
-    departments,
+    ventures,
     projects: projectModels,
   };
 }
 
-export function departmentStages(
+export function ventureStages(
   project: VisiWorkProject,
-  departmentId: string,
+  ventureId: string,
 ): VisiWorkStage[] {
   return project.stages
     .map((stage) => ({
       ...stage,
       outcomes: stage.outcomes.filter((outcome) =>
-        outcome.departmentIds.includes(departmentId),
+        outcome.ventureIds.includes(ventureId),
       ),
     }))
     .filter((stage) => stage.outcomes.length > 0);
 }
 
-export function groupDepartmentProjects(
-  department: VisiWorkDepartment,
+export function groupVentureProjects(
+  venture: VisiWorkVenture,
 ): Record<VisiWorkStatusGroup, VisiWorkProject[]> {
   const groups: Record<VisiWorkStatusGroup, VisiWorkProject[]> = {
     PLANNING: [],
@@ -262,7 +263,7 @@ export function groupDepartmentProjects(
     DONE: [],
   };
 
-  for (const project of department.projects) {
+  for (const project of venture.projects) {
     groups[normalizedStatus(project.status)].push(project);
   }
 

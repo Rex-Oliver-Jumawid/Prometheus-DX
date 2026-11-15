@@ -13,7 +13,7 @@ const prisma = new PrismaService();
 const runId = `phase-7-notifications-${randomUUID()}`;
 
 describe.runIf(runDatabaseIntegration)('notification transaction integration', () => {
-  let departmentId: string;
+  let ventureId: string;
   let projectId: string;
   let outcomeId: string;
   let creator: Member;
@@ -21,17 +21,17 @@ describe.runIf(runDatabaseIntegration)('notification transaction integration', (
   let participant: Member;
 
   beforeAll(async () => {
-    const department = await prisma.department.create({
+    const venture = await prisma.venture.create({
       data: { name: runId, shortLabel: 'P7TEST' },
     });
-    departmentId = department.id;
+    ventureId = venture.id;
     [creator, lead, participant] = await Promise.all(
       ['creator', 'lead', 'participant'].map((label) =>
         prisma.member.create({
           data: {
             email: `${runId}-${label}@example.com`,
             fullName: `${label} ${runId}`,
-            departmentId,
+            ventureId,
             status: 'ACTIVE',
           },
         }),
@@ -76,8 +76,8 @@ describe.runIf(runDatabaseIntegration)('notification transaction integration', (
     await prisma.member.deleteMany({
       where: { email: { startsWith: runId } },
     });
-    if (departmentId)
-      await prisma.department.deleteMany({ where: { id: departmentId } });
+    if (ventureId)
+      await prisma.venture.deleteMany({ where: { id: ventureId } });
     await prisma.$disconnect();
   }, 30_000);
 
@@ -129,7 +129,7 @@ describe.runIf(runDatabaseIntegration)('notification transaction integration', (
       name: `${runId}-created`,
       description: 'Project Lead assignment notification.',
       leadMemberId: lead.id,
-      departmentIds: [departmentId],
+      ventureIds: [ventureId],
     });
 
     try {

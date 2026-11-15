@@ -58,7 +58,7 @@ describe('TeamPage', () => {
           fullName: 'Member One',
           position: 'Designer',
           profileImagePath: 'https://example.com/member-one.jpg',
-          department: {
+          venture: {
             id: '22222222-2222-4222-8222-222222222222',
             name: 'Creative',
             shortLabel: 'CRT',
@@ -124,7 +124,7 @@ describe('TeamPage', () => {
           fullName: 'Member One',
           position: null,
           profileImagePath: null,
-          department: {
+          venture: {
             id: '22222222-2222-4222-8222-222222222222',
             name: 'Creative',
             shortLabel: 'CRT',

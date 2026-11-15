@@ -23,16 +23,10 @@ export class MeController {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   private async toResponse(member: Member): Promise<CurrentMemberResponse> {
-    const department = await this.prisma.department.findUnique({
-      where: { id: member.departmentId },
+    const venture = member.ventureId ? await this.prisma.venture.findUnique({
+      where: { id: member.ventureId },
       select: { id: true, name: true, shortLabel: true },
-    });
-
-    if (!department) {
-      throw new BadRequestException(
-        'Your member record is not assigned to a valid department.',
-      );
-    }
+    }) : null;
 
     return CurrentMemberSchema.parse({
       id: member.id,
@@ -45,7 +39,7 @@ export class MeController {
       phoneNumber: member.phoneNumber,
       about: member.about,
       profileImagePath: member.profileImagePath,
-      department,
+      venture,
       createdAt: member.createdAt.toISOString(),
       updatedAt: member.updatedAt.toISOString(),
     });

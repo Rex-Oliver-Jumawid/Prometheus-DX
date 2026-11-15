@@ -51,7 +51,7 @@ export class HomeService {
               id: true,
               fullName: true,
               profileImagePath: true,
-              department: {
+              venture: {
                 select: { id: true, name: true, shortLabel: true },
               },
             },

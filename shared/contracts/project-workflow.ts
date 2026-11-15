@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import {
   ProjectAccessLevelSchema,
-  ProjectDepartmentSummarySchema,
+  ProjectVentureSummarySchema,
   ProjectMemberSummarySchema,
 } from './project';
 
@@ -54,7 +54,7 @@ export const OutcomeSchema = z.object({
   description: z.string().nullable(),
   lifecycleStatus: OutcomeLifecycleStatusSchema,
   position: z.number().int().nonnegative(),
-  departments: z.array(ProjectDepartmentSummarySchema),
+  ventures: z.array(ProjectVentureSummarySchema),
   acceptanceCriteria: z.array(AcceptanceCriterionSchema),
   prerequisites: z.array(OutcomePrerequisiteSchema),
   members: z.array(ProjectMemberSummarySchema),
@@ -94,7 +94,7 @@ export const UpdateStageRequestSchema = StageFieldsSchema;
 const uniqueUuidArray = (
   message: string,
   minimum = 0,
-  minMessage = 'Choose at least one responsible department.',
+  minMessage = 'Choose at least one responsible venture.',
 ) =>
   z
     .array(z.string().uuid(message))
@@ -106,7 +106,7 @@ const uniqueUuidArray = (
 const OutcomeFieldsSchema = z.object({
   title: z.string().trim().min(1, 'Enter an outcome title.').max(160),
   description: z.string().trim().max(4000).nullable().optional(),
-  departmentIds: uniqueUuidArray('Choose an existing department.', 1),
+  ventureIds: uniqueUuidArray('Choose an existing venture.'),
   acceptanceCriteria: z
     .array(
       z.string().trim().min(1, 'Acceptance criteria cannot be empty.').max(500),

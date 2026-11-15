@@ -14,7 +14,7 @@ vi.mock('../../lib/use-realtime-invalidation', () => ({
   useRealtimeInvalidation: () => () => undefined,
 }));
 
-function renderRoom(departmentId?: string) {
+function renderRoom(ventureId?: string) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -22,12 +22,12 @@ function renderRoom(departmentId?: string) {
     <QueryClientProvider client={client}>
       <MemoryRouter>
         <RoomPanel
-          roomType={departmentId ? 'DEPARTMENT ROOM' : 'GENERAL ROOM'}
-          title={departmentId ? 'R&D Chat' : 'General Chat'}
+          roomType={ventureId ? 'VENTURE ROOM' : 'GENERAL ROOM'}
+          title={ventureId ? 'R&D Chat' : 'General Chat'}
           subtitle="Company chat"
           accessToken="test-token"
           currentMemberId="11111111-1111-4111-8111-111111111111"
-          departmentId={departmentId}
+          ventureId={ventureId}
           mentionMembers={[]}
         />
       </MemoryRouter>
@@ -35,7 +35,7 @@ function renderRoom(departmentId?: string) {
   );
 }
 
-describe('VisiWork general and department chat composer', () => {
+describe('VisiWork general and venture chat composer', () => {
   beforeEach(() => {
     vi.mocked(apiFetch).mockReset();
     vi.mocked(apiFetch).mockImplementation((_path, _schema, options) =>
@@ -48,15 +48,15 @@ describe('VisiWork general and department chat composer', () => {
   it.each([
     ['general', undefined, '/visiwork/messages', 'Message General Chat'],
     [
-      'department',
+      'venture',
       '22222222-2222-4222-8222-222222222222',
-      '/visiwork/departments/22222222-2222-4222-8222-222222222222/messages',
+      '/visiwork/ventures/22222222-2222-4222-8222-222222222222/messages',
       'Message R&D Chat',
     ],
   ])('%s chat supports Enter, Shift+Enter and uninterrupted typing', async (
-    _room, departmentId, endpoint, label,
+    _room, ventureId, endpoint, label,
   ) => {
-    renderRoom(departmentId);
+    renderRoom(ventureId);
     const input = await screen.findByRole('textbox', { name: label });
     expect(input).toHaveAttribute('rows', '1');
     expect(input).toHaveStyle({ height: '30px' });

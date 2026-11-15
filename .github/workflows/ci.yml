@@ -109,8 +109,8 @@ jobs:
           CREATE ROLE authenticated NOLOGIN;
           SQL
 
-      - name: Apply production migrations
-        run: pnpm prisma:migrate:deploy
+      - name: Verify legacy venture upgrade and apply production migrations
+        run: node scripts/verify-venture-upgrade.mjs
 
       - name: All PostgreSQL integration suites
         run: pnpm exec vitest run $(find server -name '*.integration.test.ts') --maxWorkers=1 --minWorkers=1

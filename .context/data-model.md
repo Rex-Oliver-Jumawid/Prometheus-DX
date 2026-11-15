@@ -1993,3 +1993,16 @@ Non-mention chat sends persist per-device payloads rather than contacting provid
 The scheduler claims batches with the existing lease, retry, and backoff fields.
 Chat mute preferences and Department focus are rechecked at dispatch.
 A database check constraint rejects missing or ambiguous delivery sources.
+
+
+## Post-release venture replacement decision (15 November 2026)
+
+The approved venture foundation replaces Departments in application terminology and workflows.
+Existing Department database rows and relationship IDs are preserved using mapped physical names for migration safety.
+Members may have zero or many explicit VentureMembership records, with several operational roles per venture.
+The optional primary venture is a grouping preference and does not grant permissions.
+Workspace Administrators retain structural Registry administration, while explicitly granted venture managers may manage their assigned venture.
+Operational titles and founder designation do not grant financial, equity, Project Lead, or project editing authority.
+Existing project visibility and workflow permissions remain unchanged.
+Projects and Outcomes retain their existing grouping links, now exposed as ventures; no mandatory venture assignment is introduced.
+Implementation evidence and pending verification live in .docs/phases/post-release-01-ventures.md.

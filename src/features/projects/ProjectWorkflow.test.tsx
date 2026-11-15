@@ -32,7 +32,7 @@ const workflowFixture: ProjectWorkflowResponse = {
           isLocked: false,
           hasForReview: false,
           workProgress: 42,
-          departments: [
+          ventures: [
             {
               id: '44444444-4444-4444-8444-444444444444',
               name: 'Design',
@@ -843,7 +843,7 @@ describe('ProjectWorkflow Stage & Outcome Deletion', () => {
         });
       }
       if (path === '/projects/create-options') {
-        return Promise.resolve({ leads: [], departments: [] });
+        return Promise.resolve({ leads: [], ventures: [] });
       }
       return Promise.resolve({ success: true });
     });

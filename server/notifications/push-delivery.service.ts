@@ -19,7 +19,7 @@ const include = {
       endpoint: true,
       p256dh: true,
       auth: true,
-      member: { select: { visiworkDepartmentId: true, status: true } },
+      member: { select: { visiworkVentureId: true, status: true } },
     },
   },
   notification: { select: notificationSelect },
@@ -208,15 +208,15 @@ export class PushDeliveryService {
         },
         select: { memberId: true },
       });
-      const departmentId = delivery.channelKey?.startsWith(
-        'visiwork:department:',
+      const ventureId = delivery.channelKey?.startsWith(
+        'visiwork:venture:',
       )
-        ? delivery.channelKey.slice('visiwork:department:'.length)
+        ? delivery.channelKey.slice('visiwork:venture:'.length)
         : null;
       if (
         muted ||
-        (departmentId &&
-          delivery.subscription.member.visiworkDepartmentId !== departmentId)
+        (ventureId &&
+          delivery.subscription.member.visiworkVentureId !== ventureId)
       ) {
         await this.completeSuppressedDelivery(delivery);
         return;
@@ -238,7 +238,7 @@ export class PushDeliveryService {
             select,
           })
         : await this.prisma.visiWorkMessage.findFirst({
-            where: { id: messageId, departmentId, deletedAt: null },
+            where: { id: messageId, ventureId, deletedAt: null },
             select,
           });
       if (!message) {
@@ -260,8 +260,8 @@ export class PushDeliveryService {
     const presentation = presentNotification(notification);
     const channelKey =
       notification.type === 'VISIWORK_MENTION'
-        ? notification.visiworkMention?.departmentId
-          ? `visiwork:department:${notification.visiworkMention.departmentId}`
+        ? notification.visiworkMention?.ventureId
+          ? `visiwork:venture:${notification.visiworkMention.ventureId}`
           : 'visiwork:general'
         : notification.type === 'PROJECT_CHAT_MENTION' && notification.project
           ? `project:${notification.project.id}`
@@ -269,9 +269,9 @@ export class PushDeliveryService {
 
     if (
       notification.type === 'VISIWORK_MENTION' &&
-      notification.visiworkMention?.departmentId &&
-      delivery.subscription.member.visiworkDepartmentId !==
-        notification.visiworkMention.departmentId
+      notification.visiworkMention?.ventureId &&
+      delivery.subscription.member.visiworkVentureId !==
+        notification.visiworkMention.ventureId
     ) {
       await this.completeSuppressedDelivery(delivery);
       return;
@@ -301,7 +301,7 @@ export class PushDeliveryService {
       Boolean(notification.project) &&
       Boolean(notification.projectChatMention);
     const title = isVisiWorkMention
-      ? `Prometheus DX - ${notification.visiworkMention?.departmentId ? notification.visiworkMention.roomLabel : 'Visiwork'}`
+      ? `Prometheus DX - ${notification.visiworkMention?.ventureId ? notification.visiworkMention.roomLabel : 'Visiwork'}`
       : isProjectChatMention
         ? `Prometheus DX - ${notification.project?.name ?? 'Project'}`
         : 'Prometheus DX';

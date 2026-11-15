@@ -23,7 +23,7 @@ const projects: Project[] = [
     status: 'IN_PROGRESS',
     lead: member,
     creator: member,
-    departments: [
+    ventures: [
       { id: engineeringId, name: 'Engineering', shortLabel: 'ENG' },
     ],
     isParticipating: true,
@@ -49,7 +49,7 @@ const projects: Project[] = [
     status: 'PLANNING',
     lead: member,
     creator: member,
-    departments: [{ id: designId, name: 'Design', shortLabel: 'DSN' }],
+    ventures: [{ id: designId, name: 'Design', shortLabel: 'DSN' }],
     isParticipating: true,
     currentMemberAccess: 'CAN_VIEW',
     canChangeStatus: false,
@@ -71,8 +71,8 @@ const projects: Project[] = [
 const outcome = (
   id: string,
   projectId: string,
-  departmentId: string,
-  departmentName: string,
+  ventureId: string,
+  ventureName: string,
   lifecycleStatus: 'OPEN' | 'NEEDS_REVISION' | 'ACCEPTED',
   options: { hasForReview?: boolean; isLocked?: boolean } = {},
 ) => ({
@@ -85,11 +85,11 @@ const outcome = (
   description: null,
   lifecycleStatus,
   position: 0,
-  departments: [
+  ventures: [
     {
-      id: departmentId,
-      name: departmentName,
-      shortLabel: departmentName.slice(0, 3).toUpperCase(),
+      id: ventureId,
+      name: ventureName,
+      shortLabel: ventureName.slice(0, 3).toUpperCase(),
     },
   ],
   acceptanceCriteria: [],
@@ -186,12 +186,12 @@ const team: TeamWorkSummaryResponse = {
       fullName: member.fullName,
       position: 'Developer',
       profileImagePath: null,
-      department: {
+      venture: {
         id: engineeringId,
         name: 'Engineering',
         shortLabel: 'ENG',
       },
-      visiworkDepartmentId: null,
+      visiworkVentureId: null,
       workingNow: false,
       scheduledMinutes: 1200,
       actualWorkedSeconds: 54000,
@@ -202,8 +202,8 @@ const team: TeamWorkSummaryResponse = {
       fullName: 'Ana Mendoza',
       position: 'Designer',
       profileImagePath: null,
-      department: { id: designId, name: 'Design', shortLabel: 'DSN' },
-      visiworkDepartmentId: null,
+      venture: { id: designId, name: 'Design', shortLabel: 'DSN' },
+      visiworkVentureId: null,
       workingNow: false,
       scheduledMinutes: 600,
       actualWorkedSeconds: 21600,
@@ -216,7 +216,7 @@ describe('buildReportsAnalyticsModel', () => {
   it('derives reporting metrics from project, outcome, and work-session sources', () => {
     const model = buildReportsAnalyticsModel(projects, workflows, team, {
       projectId: '',
-      departmentId: '',
+      ventureId: '',
     });
 
     expect(model.projectProgress).toBe(30);
@@ -228,17 +228,17 @@ describe('buildReportsAnalyticsModel', () => {
     expect(model.pipeline.find((item) => item.key === 'planned')?.value).toBe(1);
   });
 
-  it('applies department filters to outcome ownership and team capacity', () => {
+  it('applies venture filters to outcome ownership and team capacity', () => {
     const model = buildReportsAnalyticsModel(projects, workflows, team, {
       projectId: '',
-      departmentId: engineeringId,
+      ventureId: engineeringId,
     });
 
     expect(model.totalOutcomes).toBe(3);
     expect(model.acceptedOutcomes).toBe(1);
     expect(model.capacity).toHaveLength(1);
     expect(model.capacity[0]?.name).toBe('Rex Jumawid');
-    expect(model.departments.map((department) => department.name)).toEqual([
+    expect(model.ventures.map((venture) => venture.name)).toEqual([
       'Engineering',
     ]);
   });

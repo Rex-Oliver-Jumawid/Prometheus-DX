@@ -97,9 +97,9 @@ describe('NotificationsService', () => {
     );
   });
 
-  it('lists muted chats with readable Project and Department labels', async () => {
+  it('lists muted chats with readable Project and Venture labels', async () => {
     const projectId = '44444444-4444-4444-8444-444444444444';
-    const departmentId = '55555555-5555-4555-8555-555555555555';
+    const ventureId = '55555555-5555-4555-8555-555555555555';
     const chatPushMute = {
       findMany: vi.fn().mockResolvedValue([
         {
@@ -107,7 +107,7 @@ describe('NotificationsService', () => {
           createdAt: new Date('2026-10-01T03:00:00.000Z'),
         },
         {
-          channelKey: `visiwork:department:${departmentId}`,
+          channelKey: `visiwork:venture:${ventureId}`,
           createdAt: new Date('2026-10-01T02:00:00.000Z'),
         },
         {
@@ -119,13 +119,13 @@ describe('NotificationsService', () => {
     const project = {
       findMany: vi.fn().mockResolvedValue([{ id: projectId, name: 'Interlude' }]),
     };
-    const department = {
-      findMany: vi.fn().mockResolvedValue([{ id: departmentId, shortLabel: 'R&D' }]),
+    const venture = {
+      findMany: vi.fn().mockResolvedValue([{ id: ventureId, shortLabel: 'R&D' }]),
     };
     const service = new NotificationsService({
       chatPushMute,
       project,
-      department,
+      venture,
     } as unknown as PrismaService);
 
     await expect(service.listMutedChats(recipientId)).resolves.toEqual({
@@ -137,10 +137,10 @@ describe('NotificationsService', () => {
           path: `/projects/${projectId}?tab=chat`,
         },
         {
-          channelKey: `visiwork:department:${departmentId}`,
-          kind: 'department',
+          channelKey: `visiwork:venture:${ventureId}`,
+          kind: 'venture',
           label: 'R&D',
-          path: `/visiwork?department=${departmentId}`,
+          path: `/visiwork?venture=${ventureId}`,
         },
         {
           channelKey: 'visiwork:general',

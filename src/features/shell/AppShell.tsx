@@ -7,6 +7,7 @@ import {
   projectCreateOptionsQuery,
   projectsListQuery,
 } from '../projects/project-queries';
+import { venturesQuery } from '../ventures/venture-queries';
 import { registryOverviewQuery } from '../registry/registry-queries';
 import { teamScheduleQuery } from '../schedule/schedule-queries';
 import { WorkAttendanceControl } from '../work-sessions/WorkAttendanceControl';
@@ -42,6 +43,8 @@ export function AppShell() {
     enabled: Boolean(accessToken && member),
   });
   const unreadCount = unreadNotifications.data?.count ?? 0;
+  const scopedVentures = useQuery({ ...venturesQuery(member?.id, accessToken), enabled: Boolean(member && accessToken && workspaceRole !== 'ADMINISTRATOR') });
+  const canManageVentures = Array.isArray(scopedVentures.data) && scopedVentures.data.some(v => v.canManage || v.canManageMembers);
 
   useEffect(() => {
     if (!accountMenuOpen) return undefined;
@@ -110,7 +113,7 @@ export function AppShell() {
   const prefetchNavigation = (path: string) => {
     if (path === '/projects') {
       void queryClient.prefetchQuery(projectsListQuery(accessToken));
-    } else if (path === '/registry') {
+    } else if (path === '/registry' && workspaceRole === 'ADMINISTRATOR') {
       void Promise.all([
         loadRegistryRoute(),
         queryClient.prefetchQuery(registryOverviewQuery(accessToken)),
@@ -179,7 +182,7 @@ export function AppShell() {
         </nav>
         <div className="sidebar-bottom">
           <nav className="sidebar-utilities" aria-label="Workspace utilities">
-            {utilityNavigationForRole(member.workspaceRole).map((item) => (
+            {utilityNavigationForRole(member.workspaceRole, canManageVentures).map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
@@ -262,8 +265,8 @@ export function AppShell() {
                 <Avatar member={member} />
                 <span className="account-copy">
                   <strong title={member.fullName}>{member.fullName}</strong>
-                  <small title={member.department.name}>
-                    {member.department.name}
+                  <small title={(member.venture?.name ?? 'No venture')}>
+                    {(member.venture?.name ?? 'No venture')}
                   </small>
                 </span>
               </button>

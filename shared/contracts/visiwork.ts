@@ -2,13 +2,13 @@ import { z } from 'zod';
 
 export const SetVisiWorkPresenceRequestSchema = z
   .object({
-    departmentId: z.string().uuid('Choose an existing department.'),
+    ventureId: z.string().uuid('Choose an existing venture.'),
   })
   .strict();
 
 export const VisiWorkPresenceResponseSchema = z.object({
   memberId: z.string().uuid(),
-  departmentId: z.string().uuid(),
+  ventureId: z.string().uuid(),
 });
 
 export type SetVisiWorkPresenceRequest = z.infer<
@@ -26,7 +26,7 @@ export const VisiWorkMessageAuthorSchema = z.object({
 
 export const VisiWorkMessageSchema = z.object({
   id: z.string().uuid(),
-  departmentId: z.string().uuid().nullable(),
+  ventureId: z.string().uuid().nullable(),
   author: VisiWorkMessageAuthorSchema,
   body: z.string(),
   mentions: z.array(VisiWorkMessageAuthorSchema).default([]),
@@ -53,7 +53,7 @@ export const UpdateVisiWorkMessageSchema = CreateVisiWorkMessageSchema;
 export const VisiWorkMessageSearchQuerySchema = z
   .object({
     q: z.string().trim().min(1).max(120),
-    departmentId: z.string().uuid().optional(),
+    ventureId: z.string().uuid().optional(),
   })
   .strict();
 
@@ -64,7 +64,7 @@ export const VisiWorkMessageSearchResponseSchema = z.object({
 
 export const VisiWorkMessageContextResponseSchema = z.object({
   targetMessageId: z.string().uuid(),
-  departmentId: z.string().uuid().nullable(),
+  ventureId: z.string().uuid().nullable(),
   items: z.array(VisiWorkMessageSchema),
 });
 

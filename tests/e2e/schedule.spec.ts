@@ -58,7 +58,7 @@ test.beforeAll(async () => {
     data: {
       email: `schedule-e2e-${Date.now()}@prometheus.test`,
       fullName: 'Schedule Teammate',
-      departmentId: member.departmentId,
+      ventureId: member.ventureId,
       position: 'Schedule Visibility Fixture',
       status: 'ACTIVE',
       schedule: {

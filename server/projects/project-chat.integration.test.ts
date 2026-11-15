@@ -14,7 +14,7 @@ const enabled = process.env.RUN_DATABASE_INTEGRATION === '1';
 const db = new PrismaService();
 const chat = new ProjectChatService(db);
 const runId = 'project-chat-integration-' + randomUUID();
-let departmentId = '';
+let ventureId = '';
 let projectId = '';
 let secondProjectId = '';
 let lead: Awaited<ReturnType<typeof db.member.create>>;
@@ -23,17 +23,17 @@ let viewer: typeof lead;
 
 describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
   beforeAll(async () => {
-    const department = await db.department.create({
+    const venture = await db.venture.create({
       data: { name: runId, shortLabel: 'CHAT' },
     });
-    departmentId = department.id;
+    ventureId = venture.id;
     [lead, participant, viewer] = await Promise.all(
       ['lead', 'participant', 'viewer'].map((label) => db.member.create({
         data: {
           email: runId + '-' + label + '@example.com',
           fullName: label,
           status: 'ACTIVE',
-          departmentId,
+          ventureId,
         },
       })),
     );
@@ -44,7 +44,7 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
           description: 'Project Chat integration fixture.',
           createdByMemberId: lead.id,
           leadMemberId: lead.id,
-          departments: { create: { departmentId } },
+          ventures: { create: { ventureId } },
         },
       })),
     );
@@ -61,9 +61,9 @@ describe.runIf(enabled)('Project Chat PostgreSQL integration', () => {
         where: { id: { in: [projectId, secondProjectId].filter(Boolean) } },
       });
     }
-    if (departmentId) {
+    if (ventureId) {
       await db.member.deleteMany({ where: { email: { startsWith: runId } } });
-      await db.department.delete({ where: { id: departmentId } });
+      await db.venture.delete({ where: { id: ventureId } });
     }
     await db.$disconnect();
   }, 30_000);

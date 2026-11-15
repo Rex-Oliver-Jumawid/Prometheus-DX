@@ -331,3 +331,16 @@ Other push providers require an explicit policy addition and regression coverage
 Rollback requires retaining the compatible database migration and restoring the previous dispatching application version.
 Drain pending chat-only deliveries before restoring an older dispatcher that assumes every delivery has a Notification.
 Do not remove outbox columns while queued chat deliveries exist.
+
+
+## Venture foundation rollout
+
+This feature branch depends on maintenance PR #69 and its background-push migration/scheduler setup.
+Apply 20261115000000_venture_foundation only after its earlier migrations; the new migration is transactional and preserves all legacy relationship IDs.
+It backfills memberships from existing primary/focused Department assignments, makes primary grouping optional, adds venture settings/history, and migrates chat mute/outbox keys and notification payload terminology.
+Old public Department API names are replaced with Venture names, so deploy frontend/backend together and refresh stale clients.
+The Prisma Venture model maps to the existing departments table; this is deliberate compatibility, not a second Department product domain.
+Do not roll back to code requiring every Member.department_id to be non-null once unassigned members have been created.
+Do not drop membership or audit tables as a rollback shortcut.
+Verify migration history, health, authenticated access, unassigned-member sign-in, Registry, project grouping, Reports, VisiWork chat and push before rollout is accepted.
+Production has not been changed by the implementation task.

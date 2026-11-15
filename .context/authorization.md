@@ -246,3 +246,25 @@ The following are explicitly not global overrides:
 Every protected mutation must validate its required relationship on the backend at request time.
 
 If a future feature needs a permission not represented here, update the canonical authorization model before shipping the mutation.
+
+
+## Post-release venture replacement decision (15 November 2026)
+
+The approved venture foundation replaces Departments in application terminology and workflows.
+Existing Department database rows and relationship IDs are preserved using mapped physical names for migration safety.
+Members may have zero or many explicit VentureMembership records, with several operational roles per venture.
+The optional primary venture is a grouping preference and does not grant permissions.
+Workspace Administrators retain structural Registry administration, while explicitly granted venture managers may manage their assigned venture.
+Operational titles and founder designation do not grant financial, equity, Project Lead, or project editing authority.
+Existing project visibility and workflow permissions remain unchanged.
+Projects and Outcomes retain their existing grouping links, now exposed as ventures; no mandatory venture assignment is introduced.
+Implementation evidence and pending verification live in .docs/phases/post-release-01-ventures.md.
+
+
+## Registry consolidation (15 November 2026)
+
+Venture settings, memberships, operational roles, and management grants live under Registry, not a separate primary navigation page.
+Registry has Ventures and Workspace members sections; workspace member administration remains Administrator-only.
+An explicitly authorized venture manager can open only the scoped venture configuration section, without requesting the administrative Registry overview or workspace member directory.
+The former /ventures browser route redirects to /registry for existing bookmarks.
+Venture API authorization is unchanged.

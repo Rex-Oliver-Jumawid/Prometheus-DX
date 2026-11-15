@@ -15,7 +15,7 @@ const mutedChatsQueryKey = ['notifications', 'muted-chats'] as const;
 
 function kindLabel(kind: ChatPushMutedChat['kind']) {
   if (kind === 'project') return 'Project Chat';
-  if (kind === 'department') return 'Department Chat';
+  if (kind === 'venture') return 'Venture Chat';
   return 'VisiWork';
 }
 

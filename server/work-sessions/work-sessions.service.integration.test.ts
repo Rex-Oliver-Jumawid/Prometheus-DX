@@ -11,7 +11,7 @@ const prisma = new PrismaService();
 const service = new WorkSessionsService(prisma);
 const runId = `work-session-integration-${randomUUID()}`;
 
-let departmentId: string;
+let ventureId: string;
 let owner: Member;
 let administrator: Member;
 let projectLead: Member;
@@ -24,7 +24,7 @@ async function createMember(
     data: {
       email: `${runId}-${label}@example.com`,
       fullName: `${label} ${runId}`,
-      departmentId,
+      ventureId,
       position: `${label} position`,
       status: 'ACTIVE',
       workspaceRole,
@@ -36,10 +36,10 @@ describe.runIf(runDatabaseIntegration)(
   'WorkSessionsService database integration',
   () => {
     beforeAll(async () => {
-      const department = await prisma.department.create({
+      const venture = await prisma.venture.create({
         data: { name: runId, shortLabel: 'WORK' },
       });
-      departmentId = department.id;
+      ventureId = venture.id;
       [owner, administrator, projectLead] = await Promise.all([
         createMember('owner'),
         createMember('administrator', WorkspaceRole.ADMINISTRATOR),
@@ -51,7 +51,7 @@ describe.runIf(runDatabaseIntegration)(
           description: 'Work Session authority isolation fixture.',
           createdByMemberId: projectLead.id,
           leadMemberId: projectLead.id,
-          departments: { create: { departmentId } },
+          ventures: { create: { ventureId } },
         },
       });
     }, 30_000);
@@ -68,8 +68,8 @@ describe.runIf(runDatabaseIntegration)(
       });
       await prisma.project.deleteMany({ where: { name: runId } });
       await prisma.member.deleteMany({ where: { id: { in: memberIds } } });
-      if (departmentId) {
-        await prisma.department.deleteMany({ where: { id: departmentId } });
+      if (ventureId) {
+        await prisma.venture.deleteMany({ where: { id: ventureId } });
       }
       await prisma.$disconnect();
     }, 30_000);

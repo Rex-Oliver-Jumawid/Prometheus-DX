@@ -9,7 +9,7 @@ export const ProjectStatusSchema = z.enum([
 
 export const ProjectAccessLevelSchema = z.enum(['CAN_VIEW', 'CAN_EDIT']);
 
-export const ProjectDepartmentSummarySchema = z.object({
+export const ProjectVentureSummarySchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1),
   shortLabel: z.string().min(1).max(12),
@@ -44,7 +44,7 @@ export const ProjectSchema = z.object({
   status: ProjectStatusSchema,
   lead: ProjectMemberSummarySchema,
   creator: ProjectMemberSummarySchema,
-  departments: z.array(ProjectDepartmentSummarySchema),
+  ventures: z.array(ProjectVentureSummarySchema),
   isParticipating: z.boolean(),
   currentMemberAccess: ProjectAccessLevelSchema.nullable(),
   canChangeStatus: z.boolean(),
@@ -60,20 +60,19 @@ export const ProjectDetailResponseSchema = ProjectSchema;
 
 export const ProjectCreateOptionsResponseSchema = z.object({
   leads: z.array(ProjectMemberSummarySchema),
-  departments: z.array(ProjectDepartmentSummarySchema),
+  ventures: z.array(ProjectVentureSummarySchema),
 });
 
 export const CreateProjectRequestSchema = z.object({
   name: z.string().trim().min(1, 'Enter a project name.'),
   description: z.string().trim().min(1, 'Enter a project description.'),
   leadMemberId: z.string().uuid('Choose an active Project Lead.'),
-  departmentIds: z
-    .array(z.string().uuid('Choose an existing department.'))
-    .min(1, 'Choose at least one department.')
+  ventureIds: z
+    .array(z.string().uuid('Choose an existing venture.'))
     .refine(
-      (departmentIds) => new Set(departmentIds).size === departmentIds.length,
+      (ventureIds) => new Set(ventureIds).size === ventureIds.length,
       {
-        message: 'Choose each department only once.',
+        message: 'Choose each venture only once.',
       },
     ),
 });
@@ -100,8 +99,8 @@ export const DeleteProjectResponseSchema = z.object({
 
 export type ProjectStatus = z.infer<typeof ProjectStatusSchema>;
 export type ProjectAccessLevel = z.infer<typeof ProjectAccessLevelSchema>;
-export type ProjectDepartmentSummary = z.infer<
-  typeof ProjectDepartmentSummarySchema
+export type ProjectVentureSummary = z.infer<
+  typeof ProjectVentureSummarySchema
 >;
 export type ProjectMemberSummary = z.infer<typeof ProjectMemberSummarySchema>;
 export type Project = z.infer<typeof ProjectSchema>;
@@ -121,3 +120,5 @@ export type ProjectStatusUpdateResponse = z.infer<
 export type DeleteProjectResponse = z.infer<typeof DeleteProjectResponseSchema>;
 export type ProjectStageSummary = z.infer<typeof ProjectStageSummarySchema>;
 export type ProjectMetrics = z.infer<typeof ProjectMetricsSchema>;
+
+export const UpdateProjectVenturesRequestSchema = z.object({ ventureIds: z.array(z.string().uuid()).max(50).refine(v => new Set(v).size === v.length) }).strict();

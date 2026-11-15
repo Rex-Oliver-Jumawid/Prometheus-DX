@@ -5,7 +5,7 @@ import {
   UpdateOutcomeRequestSchema,
 } from './project-workflow';
 
-const departmentId = '11111111-1111-4111-8111-111111111111';
+const ventureId = '11111111-1111-4111-8111-111111111111';
 const prerequisiteId = '22222222-2222-4222-8222-222222222222';
 
 describe('project workflow contracts', () => {
@@ -18,30 +18,34 @@ describe('project workflow contracts', () => {
     );
   });
 
-  it('accepts canonical Outcome metadata', () => {
+  it('allows outcomes before venture grouping has been configured', () => {
+    expect(CreateOutcomeRequestSchema.safeParse({ title: 'Independent outcome', ventureIds: [], acceptanceCriteria: ['Delivery is verified.'], prerequisiteOutcomeIds: [] }).success).toBe(true);
+  });
+
+  it('accepts canonical Outcome metadata' , () => {
     expect(
       CreateOutcomeRequestSchema.parse({
         title: '  Validated opportunity  ',
         description: '  Confirm demand.  ',
-        departmentIds: [departmentId],
+        ventureIds: [ventureId],
         acceptanceCriteria: ['  Interview evidence exists.  '],
         prerequisiteOutcomeIds: [prerequisiteId],
       }),
     ).toEqual({
       title: 'Validated opportunity',
       description: 'Confirm demand.',
-      departmentIds: [departmentId],
+      ventureIds: [ventureId],
       acceptanceCriteria: ['Interview evidence exists.'],
       prerequisiteOutcomeIds: [prerequisiteId],
       memberIds: [],
     });
   });
 
-  it('rejects duplicate Department, member, and prerequisite references', () => {
+  it('rejects duplicate Venture, member, and prerequisite references', () => {
     const memberId = '33333333-3333-4333-8333-333333333333';
     const base = {
       title: 'Validated opportunity',
-      departmentIds: [departmentId],
+      ventureIds: [ventureId],
       acceptanceCriteria: ['Interview evidence exists.'],
       prerequisiteOutcomeIds: [prerequisiteId],
       memberIds: [memberId],
@@ -49,7 +53,7 @@ describe('project workflow contracts', () => {
     expect(
       UpdateOutcomeRequestSchema.safeParse({
         ...base,
-        departmentIds: [departmentId, departmentId],
+        ventureIds: [ventureId, ventureId],
       }).success,
     ).toBe(false);
     expect(

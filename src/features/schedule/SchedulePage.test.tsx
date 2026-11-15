@@ -50,7 +50,7 @@ function teamResponse(schedule: MemberSchedule | null) {
         id: '11111111-1111-4111-8111-111111111111',
         fullName: 'Member One',
         position: 'Designer',
-        department: {
+        venture: {
           id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
           name: 'Creatives',
           shortLabel: 'Creative',
@@ -61,7 +61,7 @@ function teamResponse(schedule: MemberSchedule | null) {
         id: '22222222-2222-4222-8222-222222222222',
         fullName: 'Member Two',
         position: 'Developer',
-        department: {
+        venture: {
           id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
           name: 'Research and Development',
           shortLabel: 'R&D',
@@ -166,7 +166,7 @@ describe('SchedulePage', () => {
               id: item.id,
               fullName: item.fullName,
               position: item.position,
-              department: item.department,
+              venture: item.venture,
               workingNow: false,
               scheduledMinutes: item.schedule?.targetWeeklyMinutes ?? 0,
               actualWorkedSeconds: index === 0 ? 18_000 : 0,
@@ -279,7 +279,7 @@ describe('SchedulePage', () => {
     });
   });
 
-  it('filters the merged calendar by people and department', async () => {
+  it('filters the merged calendar by people and venture', async () => {
     const user = userEvent.setup();
     renderPage();
 
@@ -294,7 +294,7 @@ describe('SchedulePage', () => {
     expect(screen.queryByText('Member Two')).not.toBeInTheDocument();
 
     await user.selectOptions(
-      screen.getByRole('combobox', { name: 'Department' }),
+      screen.getByRole('combobox', { name: 'Venture' }),
       'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
     );
     expect(

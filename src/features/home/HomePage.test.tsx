@@ -18,7 +18,7 @@ const member: CurrentMember = {
   phoneNumber: null,
   about: null,
   profileImagePath: null,
-  department: {
+  venture: {
     id: '22222222-2222-4222-8222-222222222222',
     name: 'X Team',
     shortLabel: 'X Team',
@@ -66,7 +66,7 @@ const data: HomeDashboardResponse = {
       id: member.id,
       fullName: member.fullName,
       profileImagePath: member.profileImagePath,
-      department: member.department,
+      venture: member.venture,
     },
   ],
   needsAttention: [

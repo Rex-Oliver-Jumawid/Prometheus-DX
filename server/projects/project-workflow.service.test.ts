@@ -13,7 +13,7 @@ const otherProjectId = '22222222-2222-4222-8222-222222222222';
 const stageId = '33333333-3333-4333-8333-333333333333';
 const outcomeId = '44444444-4444-4444-8444-444444444444';
 const prerequisiteId = '55555555-5555-4555-8555-555555555555';
-const departmentId = '66666666-6666-4666-8666-666666666666';
+const ventureId = '66666666-6666-4666-8666-666666666666';
 const now = new Date('2026-09-16T00:00:00.000Z');
 
 const lead = {
@@ -31,8 +31,8 @@ const member = {
   fullName: 'Ordinary Member',
 } as Member;
 
-const department = {
-  id: departmentId,
+const venture = {
+  id: ventureId,
   name: 'Research and Development',
   shortLabel: 'R&D',
 };
@@ -47,7 +47,7 @@ function outcomeRecord(overrides: Record<string, unknown> = {}) {
     position: 0,
     createdAt: now,
     updatedAt: now,
-    departments: [{ department }],
+    ventures: [{ venture }],
     acceptanceCriteria: [
       {
         id: '99999999-9999-4999-8999-999999999999',
@@ -86,7 +86,7 @@ function createDatabase(
     stageProjectId?: string | null;
     outcomeProjectId?: string | null;
     prerequisiteProjectId?: string;
-    departmentsFound?: boolean;
+    venturesFound?: boolean;
     outcomeLifecycleStatus?: 'OPEN' | 'NEEDS_REVISION' | 'ACCEPTED';
     membershipProjectId?: string | null;
     projectAccessLevel?: 'CAN_VIEW' | 'CAN_EDIT';
@@ -162,11 +162,11 @@ function createDatabase(
       update: vi.fn().mockResolvedValue(stageRecord({ name: 'Research' })),
       delete: vi.fn().mockResolvedValue(undefined),
     },
-    department: {
+    venture: {
       findMany: vi
         .fn()
         .mockResolvedValue(
-          options.departmentsFound === false ? [] : [{ id: departmentId }],
+          options.venturesFound === false ? [] : [{ id: ventureId }],
         ),
     },
     member: {
@@ -253,7 +253,7 @@ function createDatabase(
     acceptanceCriterion: {
       deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
-    outcomeDepartment: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
+    outcomeVenture: { deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
     outcomeMember: {
       upsert: vi.fn().mockResolvedValue({ outcomeId, memberId: member.id }),
       findMany: vi.fn().mockResolvedValue([]),
@@ -367,7 +367,7 @@ function createDatabase(
 const outcomeInput = {
   title: 'Validated opportunity',
   description: 'Confirm demand.',
-  departmentIds: [departmentId],
+  ventureIds: [ventureId],
   acceptanceCriteria: ['Interview evidence exists.'],
   prerequisiteOutcomeIds: [prerequisiteId],
   memberIds: [],
@@ -484,7 +484,7 @@ describe('ProjectWorkflowService', () => {
     expect(database.stage.update).not.toHaveBeenCalled();
   });
 
-  it('creates an Outcome with Departments, criteria, and same-Project prerequisites', async () => {
+  it('creates an Outcome with Ventures, criteria, and same-Project prerequisites', async () => {
     const database = createDatabase();
     const service = new ProjectWorkflowService(database);
 
@@ -493,7 +493,7 @@ describe('ProjectWorkflowService', () => {
     ).resolves.toMatchObject({
       id: outcomeId,
       title: outcomeInput.title,
-      departments: [department],
+      ventures: [venture],
       acceptanceCriteria: [{ description: outcomeInput.acceptanceCriteria[0] }],
     });
     expect(database.outcome.create).toHaveBeenCalledWith(
@@ -501,7 +501,7 @@ describe('ProjectWorkflowService', () => {
         data: expect.objectContaining({
           stageId,
           createdByMemberId: lead.id,
-          departments: { create: [{ departmentId }] },
+          ventures: { create: [{ ventureId }] },
           acceptanceCriteria: {
             create: [
               { description: 'Interview evidence exists.', position: 0 },
@@ -564,7 +564,7 @@ describe('ProjectWorkflowService', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           title: 'Updated outcome',
-          departments: expect.objectContaining({ create: [{ departmentId }] }),
+          ventures: expect.objectContaining({ create: [{ ventureId }] }),
           acceptanceCriteria: expect.objectContaining({
             create: [
               { description: 'Interview evidence exists.', position: 0 },
@@ -592,7 +592,7 @@ describe('ProjectWorkflowService', () => {
     expect(database.acceptanceCriterion.deleteMany).toHaveBeenCalledWith({
       where: { outcomeId },
     });
-    expect(database.outcomeDepartment.deleteMany).toHaveBeenCalledWith({
+    expect(database.outcomeVenture.deleteMany).toHaveBeenCalledWith({
       where: { outcomeId },
     });
     expect(database.activityLog.create).toHaveBeenCalledWith({
@@ -649,12 +649,12 @@ describe('ProjectWorkflowService', () => {
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
-  it('rejects missing Departments and cross-Project prerequisites', async () => {
-    const missingDepartment = new ProjectWorkflowService(
-      createDatabase({ departmentsFound: false }),
+  it('rejects missing Ventures and cross-Project prerequisites', async () => {
+    const missingVenture = new ProjectWorkflowService(
+      createDatabase({ venturesFound: false }),
     );
     await expect(
-      missingDepartment.createOutcome(lead, projectId, stageId, outcomeInput),
+      missingVenture.createOutcome(lead, projectId, stageId, outcomeInput),
     ).rejects.toBeInstanceOf(BadRequestException);
 
     const crossProject = new ProjectWorkflowService(

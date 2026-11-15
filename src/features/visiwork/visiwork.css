@@ -1,10 +1,10 @@
 .workspace-content-inner:has(> .visiwork-page),
-.workspace-content-inner:has(> .visiwork-department-view) {
+.workspace-content-inner:has(> .visiwork-venture-view) {
   padding: var(--workspace-page-gutter);
 }
 
 .visiwork-page,
-.visiwork-department-view {
+.visiwork-venture-view {
   min-width: 0;
   padding: 0 0 28px;
   color: #302925;
@@ -136,7 +136,7 @@
   box-shadow: 0 12px 34px rgba(58, 41, 33, 0.04);
 }
 
-.visiwork-department-grid,
+.visiwork-venture-grid,
 .visiwork-project-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -144,7 +144,7 @@
   min-width: 0;
 }
 
-.visiwork-department-card {
+.visiwork-venture-card {
   display: flex;
   min-width: 0;
   min-height: 306px;
@@ -156,27 +156,27 @@
   box-shadow: 0 9px 12px rgba(58, 41, 33, 0.04);
 }
 
-.visiwork-department-card > header {
+.visiwork-venture-card > header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
 }
 
-.visiwork-department-title {
+.visiwork-venture-title {
   display: flex;
   min-width: 0;
   align-items: center;
   gap: 12px;
 }
 
-.visiwork-department-title > div {
+.visiwork-venture-title > div {
   display: grid;
   min-width: 0;
   gap: 2px;
 }
 
-.visiwork-department-title strong {
+.visiwork-venture-title strong {
   color: #24201d;
   font-size: 14px;
   font-weight: 850;
@@ -186,7 +186,7 @@
   overflow-wrap: anywhere;
 }
 
-.visiwork-department-title small {
+.visiwork-venture-title small {
   overflow: hidden;
   color: #968a83;
   font-size: 10.25px;
@@ -195,7 +195,7 @@
   white-space: nowrap;
 }
 
-.visiwork-department-glyph {
+.visiwork-venture-glyph {
   width: 39px;
   height: 39px;
   display: grid;
@@ -274,7 +274,7 @@
   color: #4d7c5d;
 }
 
-.visiwork-department-projects {
+.visiwork-venture-projects {
   display: grid;
   align-content: start;
   gap: 9px;
@@ -373,7 +373,7 @@
   flex-basis: 4px;
 }
 
-.visiwork-department-card > footer,
+.visiwork-venture-card > footer,
 .visiwork-project-card > footer {
   align-items: center;
   gap: 12px;
@@ -383,7 +383,7 @@
   font-size: 9px;
 }
 
-.visiwork-department-card > footer {
+.visiwork-venture-card > footer {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
@@ -398,7 +398,7 @@
   margin-right: auto;
 }
 
-.visiwork-department-card > footer button,
+.visiwork-venture-card > footer button,
 .visiwork-project-card > footer a {
   padding: 0;
   border: 0;
@@ -890,7 +890,7 @@
   padding: 48px 20px;
 }
 
-.visiwork-department-view {
+.visiwork-venture-view {
   display: grid;
   gap: 12px;
 }
@@ -1019,7 +1019,7 @@
   padding: 7px 4px 3px 28px;
 }
 
-.visiwork-department-project-detail {
+.visiwork-venture-project-detail {
   overflow: hidden;
   border: 1px solid #ded6d0;
   border-radius: 11px;
@@ -1029,12 +1029,12 @@
     box-shadow 150ms ease;
 }
 
-.visiwork-department-project-detail.expanded {
+.visiwork-venture-project-detail.expanded {
   border-color: #d7cbc3;
   box-shadow: 0 8px 20px rgba(65, 47, 38, 0.045);
 }
 
-.visiwork-department-project-summary {
+.visiwork-venture-project-summary {
   width: 100%;
   display: grid;
   grid-template-columns: 14px minmax(0, 1fr) 130px;
@@ -1048,11 +1048,11 @@
   cursor: pointer;
 }
 
-.visiwork-department-project-summary:hover {
+.visiwork-venture-project-summary:hover {
   background: rgba(245, 239, 235, 0.42);
 }
 
-.visiwork-department-project-summary:focus-visible {
+.visiwork-venture-project-summary:focus-visible {
   outline: 2px solid rgba(203, 77, 34, 0.42);
   outline-offset: -2px;
 }
@@ -1064,17 +1064,17 @@
   line-height: 1;
 }
 
-.visiwork-department-project-copy {
+.visiwork-venture-project-copy {
   min-width: 0;
 }
 
-.visiwork-department-project-summary strong {
+.visiwork-venture-project-summary strong {
   color: #2f2925;
   font-size: 11px;
   line-height: 14px;
 }
 
-.visiwork-department-project-summary p {
+.visiwork-venture-project-summary p {
   margin: 5px 0 0;
   overflow: hidden;
   color: #988c85;
@@ -1260,7 +1260,7 @@
     gap: 12px;
   }
 
-  .visiwork-department-grid,
+  .visiwork-venture-grid,
   .visiwork-project-grid {
     grid-template-columns: 1fr;
   }
@@ -1272,7 +1272,7 @@
 
 @media (max-width: 820px) {
   .visiwork-page,
-  .visiwork-department-view {
+  .visiwork-venture-view {
     padding: 20px;
   }
 
@@ -1293,7 +1293,7 @@
 
 @media (max-width: 620px) {
   .visiwork-page,
-  .visiwork-department-view {
+  .visiwork-venture-view {
     padding: 16px 14px 28px;
   }
 
@@ -1318,12 +1318,12 @@
     grid-template-columns: 1fr;
   }
 
-  .visiwork-department-card > header,
+  .visiwork-venture-card > header,
   .visiwork-detail-heading {
     flex-direction: column;
   }
 
-  .visiwork-department-project-summary {
+  .visiwork-venture-project-summary {
     grid-template-columns: 1fr;
   }
 
@@ -1858,7 +1858,7 @@
 }
 
 
-/* Compact VisiWork roster overflow and department member modal */
+/* Compact VisiWork roster overflow and venture member modal */
 .visiwork-more-members {
   min-width: 0;
   min-height: 58px;
@@ -2031,7 +2031,7 @@
   background: #58a273;
 }
 
-/* Keep general and department chat compact for one line; grow only for multiline drafts. */
+/* Keep general and venture chat compact for one line; grow only for multiline drafts. */
 .visiwork-room-composer {
   align-items: end;
 }

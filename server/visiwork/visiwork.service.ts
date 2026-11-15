@@ -51,37 +51,38 @@ export class VisiWorkService {
     } as unknown as PushDeliveryService,
   ) {}
 
-  async joinDepartment(
+  async joinVenture(
     member: Member,
     input: SetVisiWorkPresenceRequest,
   ): Promise<VisiWorkPresenceResponse> {
-    const department = await this.prisma.department.findUnique({
-      where: { id: input.departmentId },
+    const venture = await this.prisma.venture.findUnique({
+      where: { id: input.ventureId },
       select: { id: true },
     });
-    if (!department) throw new NotFoundException('Department not found.');
+    if (!venture) throw new NotFoundException('Venture not found.');
 
     await this.prisma.member.update({
       where: { id: member.id },
-      data: { visiworkDepartmentId: department.id },
+      data: { visiworkVentureId: venture.id },
     });
 
-    return { memberId: member.id, departmentId: department.id };
+    return { memberId: member.id, ventureId: venture.id };
   }
 
-  private async requireDepartment(departmentId: string) {
-    const department = await this.prisma.department.findUnique({
-      where: { id: departmentId },
+  private async requireVenture(ventureId: string) {
+    const venture = await this.prisma.venture.findUnique({
+      where: { id: ventureId },
       select: { id: true, name: true, shortLabel: true },
     });
-    if (!department) throw new NotFoundException('Department not found.');
-    return department;
+    if (!venture) throw new NotFoundException('Venture not found.');
+    return venture;
   }
 
-  private canWriteDepartment(member: Member, departmentId: string): boolean {
+  private async canWriteVenture(member: Member, ventureId: string): Promise<boolean> {
     return (
-      member.departmentId === departmentId ||
-      member.visiworkDepartmentId === departmentId
+      member.ventureId === ventureId ||
+      member.visiworkVentureId === ventureId ||
+      (await this.prisma.ventureMembership.count({ where: { memberId: member.id, ventureId, endedAt: null, venture: { status: 'ACTIVE' } } })) > 0
     );
   }
 
@@ -89,7 +90,7 @@ export class VisiWorkService {
     const deleted = Boolean(record.deletedAt);
     return {
       id: record.id,
-      departmentId: record.departmentId,
+      ventureId: record.ventureId,
       author: record.member,
       body: deleted ? 'Message deleted' : record.body,
       mentions: deleted
@@ -105,7 +106,7 @@ export class VisiWorkService {
     sender: Member,
     body: string,
     mentionMemberIds: string[],
-    departmentId?: string,
+    ventureId?: string,
   ): Promise<MentionMember[]> {
     const uniqueMentionIds = [...new Set(mentionMemberIds)].filter(
       (id) => id !== sender.id,
@@ -116,9 +117,9 @@ export class VisiWorkService {
       where: {
         id: { in: uniqueMentionIds },
         status: 'ACTIVE',
-        ...(departmentId
+        ...(ventureId
           ? {
-              OR: [{ departmentId }, { visiworkDepartmentId: departmentId }],
+              OR: [{ ventureId }, { visiworkVentureId: ventureId }],
             }
           : {}),
       },
@@ -134,28 +135,28 @@ export class VisiWorkService {
   private mentionNotificationData(
     messageId: string,
     body: string,
-    department: { name: string; shortLabel: string } | null,
-    departmentId: string | null,
+    venture: { name: string; shortLabel: string } | null,
+    ventureId: string | null,
   ): Prisma.InputJsonValue {
     return {
       messageId,
-      departmentId,
-      roomLabel: department ? department.shortLabel : 'Visiwork',
+      ventureId,
+      roomLabel: venture ? venture.shortLabel : 'Visiwork',
       preview: body.slice(0, 180),
     };
   }
 
   async listMessages(
     member: Member,
-    departmentId?: string,
+    ventureId?: string,
     cursor?: string,
   ): Promise<VisiWorkMessagePage> {
-    const roomDepartmentId = departmentId ?? null;
-    if (departmentId) await this.requireDepartment(departmentId);
+    const roomVentureId = ventureId ?? null;
+    if (ventureId) await this.requireVenture(ventureId);
 
     const previous = cursor
       ? await this.prisma.visiWorkMessage.findFirst({
-          where: { id: cursor, departmentId: roomDepartmentId },
+          where: { id: cursor, ventureId: roomVentureId },
           select: { id: true, createdAt: true },
         })
       : null;
@@ -166,7 +167,7 @@ export class VisiWorkService {
 
     const records = await this.prisma.visiWorkMessage.findMany({
       where: {
-        departmentId: roomDepartmentId,
+        ventureId: roomVentureId,
         ...(previous
           ? {
               OR: [
@@ -186,8 +187,8 @@ export class VisiWorkService {
     return {
       items: items.map((record) => this.toMessage(record)),
       nextCursor: hasMore ? items[items.length - 1].id : null,
-      canWrite: departmentId
-        ? this.canWriteDepartment(member, departmentId)
+      canWrite: ventureId
+        ? await this.canWriteVenture(member, ventureId)
         : true,
     };
   }
@@ -195,15 +196,15 @@ export class VisiWorkService {
   async sendMessage(
     member: Member,
     input: CreateVisiWorkMessage,
-    departmentId?: string,
+    ventureId?: string,
   ): Promise<VisiWorkMessage> {
-    const department = departmentId
-      ? await this.requireDepartment(departmentId)
+    const venture = ventureId
+      ? await this.requireVenture(ventureId)
       : null;
 
-    if (departmentId && !this.canWriteDepartment(member, departmentId)) {
+    if (ventureId && !(await this.canWriteVenture(member, ventureId))) {
       throw new ForbiddenException(
-        'Join this department before sending messages to its room.',
+        'Join this venture before sending messages to its room.',
       );
     }
 
@@ -211,13 +212,13 @@ export class VisiWorkService {
       member,
       input.body,
       input.mentionMemberIds,
-      departmentId,
+      ventureId,
     );
 
     const message = await this.prisma.$transaction(async (db) => {
       const created = await db.visiWorkMessage.create({
         data: {
-          departmentId: departmentId ?? null,
+          ventureId: ventureId ?? null,
           memberId: member.id,
           body: input.body,
           mentions: {
@@ -239,8 +240,8 @@ export class VisiWorkService {
             data: this.mentionNotificationData(
               created.id,
               input.body,
-              department,
-              departmentId ?? null,
+              venture,
+              ventureId ?? null,
             ),
           })),
           skipDuplicates: true,
@@ -258,21 +259,21 @@ export class VisiWorkService {
       where: {
         status: 'ACTIVE',
         id: { notIn: excludedMemberIds },
-        ...(departmentId ? { visiworkDepartmentId: departmentId } : {}),
+        ...(ventureId ? { visiworkVentureId: ventureId } : {}),
       },
       select: { id: true },
     });
-    const channelLabel = department ? department.shortLabel : 'Visiwork';
+    const channelLabel = venture ? venture.shortLabel : 'Visiwork';
     const params = new URLSearchParams({ message: message.id });
-    if (departmentId) params.set('department', departmentId);
+    if (ventureId) params.set('venture', ventureId);
 
     await Promise.all([
       ...(recipients.length
         ? [
             this.pushDeliveries.sendChatMessage({
               recipientMemberIds: recipients.map((recipient) => recipient.id),
-              channelKey: departmentId
-                ? `visiwork:department:${departmentId}`
+              channelKey: ventureId
+                ? `visiwork:venture:${ventureId}`
                 : 'visiwork:general',
               channelLabel,
               body: `${member.fullName}: “${input.body.slice(0, 180)}”`,
@@ -303,14 +304,14 @@ export class VisiWorkService {
       throw new BadRequestException('Deleted messages cannot be edited.');
     }
 
-    const department = existing.departmentId
-      ? await this.requireDepartment(existing.departmentId)
+    const venture = existing.ventureId
+      ? await this.requireVenture(existing.ventureId)
       : null;
     const mentionedMembers = await this.resolveMentionedMembers(
       member,
       input.body,
       input.mentionMemberIds,
-      existing.departmentId ?? undefined,
+      existing.ventureId ?? undefined,
     );
 
     const previousMentionIds = new Set(
@@ -332,8 +333,8 @@ export class VisiWorkService {
     const notificationData = this.mentionNotificationData(
       existing.id,
       input.body,
-      department,
-      existing.departmentId,
+      venture,
+      existing.ventureId,
     );
 
     const updated = await this.prisma.$transaction(async (db) => {
@@ -433,12 +434,12 @@ export class VisiWorkService {
     member: Member,
     query: VisiWorkMessageSearchQuery,
   ): Promise<VisiWorkMessageSearchResponse> {
-    const departmentId = query.departmentId ?? null;
-    if (query.departmentId) await this.requireDepartment(query.departmentId);
+    const ventureId = query.ventureId ?? null;
+    if (query.ventureId) await this.requireVenture(query.ventureId);
 
     const records = await this.prisma.visiWorkMessage.findMany({
       where: {
-        departmentId,
+        ventureId,
         deletedAt: null,
         body: { contains: query.q, mode: 'insensitive' },
       },
@@ -459,11 +460,11 @@ export class VisiWorkService {
       include: messageInclude,
     });
     if (!target) throw new NotFoundException('Message not found.');
-    if (target.departmentId) await this.requireDepartment(target.departmentId);
+    if (target.ventureId) await this.requireVenture(target.ventureId);
 
     const before = await this.prisma.visiWorkMessage.findMany({
       where: {
-        departmentId: target.departmentId,
+        ventureId: target.ventureId,
         OR: [
           { createdAt: { lt: target.createdAt } },
           { createdAt: target.createdAt, id: { lt: target.id } },
@@ -476,7 +477,7 @@ export class VisiWorkService {
 
     const after = await this.prisma.visiWorkMessage.findMany({
       where: {
-        departmentId: target.departmentId,
+        ventureId: target.ventureId,
         OR: [
           { createdAt: { gt: target.createdAt } },
           { createdAt: target.createdAt, id: { gt: target.id } },
@@ -493,7 +494,7 @@ export class VisiWorkService {
 
     return {
       targetMessageId: target.id,
-      departmentId: target.departmentId,
+      ventureId: target.ventureId,
       items,
     };
   }

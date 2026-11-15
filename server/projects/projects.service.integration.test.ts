@@ -11,7 +11,7 @@ const prisma = new PrismaService();
 const service = new ProjectsService(prisma);
 const runId = `project-status-integration-${randomUUID()}`;
 
-let departmentId: string;
+let ventureId: string;
 let projectId: string;
 let lead: Member;
 let editableMember: Member;
@@ -27,7 +27,7 @@ async function createMember(
     data: {
       email: `${runId}-${label}@example.com`,
       fullName: `${label} ${runId}`,
-      departmentId,
+      ventureId,
       status: 'ACTIVE',
       workspaceRole,
     },
@@ -64,13 +64,13 @@ describe.runIf(runDatabaseIntegration)(
   'ProjectsService raw-SQL status mutation integration',
   () => {
     beforeAll(async () => {
-      const department = await prisma.department.create({
+      const venture = await prisma.venture.create({
         data: {
           name: runId,
           shortLabel: 'PSTAT',
         },
       });
-      departmentId = department.id;
+      ventureId = venture.id;
 
       [lead, editableMember, viewMember, unrelatedMember, administrator] =
         await Promise.all([
@@ -87,7 +87,7 @@ describe.runIf(runDatabaseIntegration)(
           description: 'Raw-SQL Project status mutation integration fixture.',
           createdByMemberId: unrelatedMember.id,
           leadMemberId: lead.id,
-          departments: { create: { departmentId } },
+          ventures: { create: { ventureId } },
           members: {
             create: [
               { memberId: editableMember.id, accessLevel: 'CAN_EDIT' },
@@ -114,8 +114,8 @@ describe.runIf(runDatabaseIntegration)(
       await prisma.member.deleteMany({
         where: { email: { startsWith: runId } },
       });
-      if (departmentId) {
-        await prisma.department.deleteMany({ where: { id: departmentId } });
+      if (ventureId) {
+        await prisma.venture.deleteMany({ where: { id: ventureId } });
       }
       await prisma.$disconnect();
     }, 30_000);

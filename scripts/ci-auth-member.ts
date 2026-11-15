@@ -29,7 +29,7 @@ async function main() {
     throw error ?? new Error('Could not provision CI identity.');
   const prisma = new PrismaClient();
   try {
-    const department = await prisma.department.create({
+    const venture = await prisma.venture.create({
       data: { name: 'CI fixtures', shortLabel: 'CI' },
     });
     await prisma.member.create({
@@ -39,7 +39,7 @@ async function main() {
         fullName: 'CI Administrator',
         status: 'ACTIVE',
         workspaceRole: 'ADMINISTRATOR',
-        departmentId: department.id,
+        ventureId: venture.id,
       },
     });
     appendFileSync(

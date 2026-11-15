@@ -228,7 +228,7 @@ describe('NotificationsPage', () => {
         newAccessLevel: null,
         visiworkMention: {
           messageId: '99999999-9999-4999-8999-999999999999',
-          departmentId: null,
+          ventureId: null,
           roomLabel: 'General Chat',
           preview: 'Can @Oliver review this?',
         },

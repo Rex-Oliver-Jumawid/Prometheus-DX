@@ -14,11 +14,11 @@ export const CurrentMemberSchema = z.object({
   phoneNumber: z.string().max(32).nullable(),
   about: z.string().max(240).nullable(),
   profileImagePath: z.string().nullable(),
-  department: z.object({
+  venture: z.object({
     id: z.string().uuid(),
     name: z.string().min(1),
     shortLabel: z.string().min(1),
-  }),
+  }).nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });

@@ -44,10 +44,10 @@ import {
 } from '../work-sessions/work-session-queries';
 import {
   buildVisiWorkModel,
-  departmentStages,
-  groupDepartmentProjects,
+  ventureStages,
+  groupVentureProjects,
   projectStatusLabel,
-  type VisiWorkDepartment,
+  type VisiWorkVenture,
   type VisiWorkOutcome,
   type VisiWorkProject,
   type VisiWorkStatusGroup,
@@ -64,9 +64,9 @@ function clampPercent(value: number): number {
   return Math.min(100, Math.max(0, Math.round(value)));
 }
 
-function DepartmentGlyph({ index }: { index: number }) {
+function VentureGlyph({ index }: { index: number }) {
   return (
-    <span className="visiwork-department-glyph" aria-hidden="true">
+    <span className="visiwork-venture-glyph" aria-hidden="true">
       {index % 3 === 0 ? '⌁' : index % 3 === 1 ? '✦' : '◇'}
     </span>
   );
@@ -130,7 +130,7 @@ export function RoomPanel({
   subtitle,
   accessToken,
   currentMemberId,
-  departmentId,
+  ventureId,
   mentionMembers,
   canMutePush = true,
 }: {
@@ -139,7 +139,7 @@ export function RoomPanel({
   subtitle: string;
   accessToken?: string;
   currentMemberId?: string;
-  departmentId?: string;
+  ventureId?: string;
   mentionMembers: Array<{ id: string; fullName: string; profileImagePath?: string | null }>;
   canMutePush?: boolean;
 }) {
@@ -165,10 +165,10 @@ export function RoomPanel({
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const pinnedToBottom = useRef(true);
   const initiallyScrolled = useRef(false);
-  const roomKey = departmentId ?? 'general';
+  const roomKey = ventureId ?? 'general';
   const queryKey = ['visiwork', 'messages', roomKey] as const;
-  const basePath = departmentId
-    ? '/visiwork/departments/' + departmentId + '/messages'
+  const basePath = ventureId
+    ? '/visiwork/ventures/' + ventureId + '/messages'
     : '/visiwork/messages';
   const targetMessageId = searchParams.get('message');
   const broadcastChatChange = useRealtimeInvalidation({
@@ -224,7 +224,7 @@ export function RoomPanel({
     queryKey: ['visiwork', 'message-search', roomKey, searchTerm.trim()],
     queryFn: () => {
       const params = new URLSearchParams({ q: searchTerm.trim() });
-      if (departmentId) params.set('departmentId', departmentId);
+      if (ventureId) params.set('ventureId', ventureId);
       return apiFetch(
         '/visiwork/messages/search?' + params.toString(),
         VisiWorkMessageSearchResponseSchema,
@@ -301,7 +301,7 @@ export function RoomPanel({
     messages.data?.pages.flatMap((page) => page.items) ?? []
   ).map((message) => ({ ...message, mentions: message.mentions ?? [] }));
   const contextual: VisiWorkMessage[] = (
-    context.data?.departmentId === (departmentId ?? null)
+    context.data?.ventureId === (ventureId ?? null)
       ? context.data.items
       : []
   ).map((message) => ({ ...message, mentions: message.mentions ?? [] }));
@@ -313,7 +313,7 @@ export function RoomPanel({
       left.createdAt.localeCompare(right.createdAt) ||
       left.id.localeCompare(right.id),
   );
-  const canWrite = messages.data?.pages[0]?.canWrite ?? !departmentId;
+  const canWrite = messages.data?.pages[0]?.canWrite ?? !ventureId;
   const latestMessageId = ordered.at(-1)?.id;
 
   const mentionMatch = body.match(/(?:^|\s)@([^@\n]*)$/);
@@ -369,7 +369,7 @@ export function RoomPanel({
     if (
       !targetMessageId ||
       !context.data ||
-      context.data.departmentId !== (departmentId ?? null)
+      context.data.ventureId !== (ventureId ?? null)
     ) {
       return;
     }
@@ -380,7 +380,7 @@ export function RoomPanel({
       element?.scrollIntoView({ block: 'center', behavior: 'smooth' });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [departmentId, targetMessageId, context.data]);
+  }, [ventureId, targetMessageId, context.data]);
 
   function updateBody(value: string) {
     setBody(value);
@@ -481,8 +481,8 @@ export function RoomPanel({
   function jumpToMessage(message: VisiWorkMessage) {
     const next = new URLSearchParams(searchParams);
     next.set('message', message.id);
-    if (message.departmentId) next.set('department', message.departmentId);
-    else next.delete('department');
+    if (message.ventureId) next.set('venture', message.ventureId);
+    else next.delete('venture');
     next.delete('view');
     pinnedToBottom.current = false;
     setSearchParams(next);
@@ -503,8 +503,8 @@ export function RoomPanel({
             <ChatPushMuteButton
               accessToken={accessToken}
               channelKey={
-                departmentId
-                  ? `visiwork:department:${departmentId}`
+                ventureId
+                  ? `visiwork:venture:${ventureId}`
                   : 'visiwork:general'
               }
               label={title}
@@ -814,7 +814,7 @@ export function RoomPanel({
               rows={1}
               aria-label={'Message ' + title}
               placeholder={
-                departmentId ? 'Message this department...' : 'Message everyone...'
+                ventureId ? 'Message this venture...' : 'Message everyone...'
               }
               value={body}
               maxLength={2000}
@@ -866,7 +866,7 @@ export function RoomPanel({
         </form>
       ) : (
         <div className="visiwork-chat-readonly">
-          Join this department to send messages.
+          Join this venture to send messages.
         </div>
       )}
 
@@ -941,7 +941,7 @@ function ViewSwitcher({ projectView }: { projectView: boolean }) {
         aria-pressed={!projectView}
         onClick={() => setSearchParams({})}
       >
-        Department
+        Venture
       </button>
       <button
         type="button"
@@ -965,8 +965,8 @@ function BirdViewBreadcrumb({ projectView }: { projectView: boolean }) {
   );
 }
 
-function DepartmentCard({
-  department,
+function VentureCard({
+  venture,
   index,
   joined,
   joining,
@@ -974,7 +974,7 @@ function DepartmentCard({
   onJoin,
   onEnter,
 }: {
-  department: VisiWorkDepartment;
+  venture: VisiWorkVenture;
   index: number;
   joined: boolean;
   joining: boolean;
@@ -983,29 +983,29 @@ function DepartmentCard({
   onEnter: () => void;
 }) {
   const [showAllMembers, setShowAllMembers] = useState(false);
-  const hasMemberOverflow = department.members.length > 3;
+  const hasMemberOverflow = venture.members.length > 3;
   const hiddenMemberCount = hasMemberOverflow
-    ? department.members.length - 2
+    ? venture.members.length - 2
     : 0;
   const visibleMembers = hasMemberOverflow
-    ? department.members.slice(0, 2)
-    : department.members.slice(0, 3);
-  const visibleProjects = department.projects.slice(0, 4);
+    ? venture.members.slice(0, 2)
+    : venture.members.slice(0, 3);
+  const visibleProjects = venture.projects.slice(0, 4);
 
   return (
     <>
-    <article className="visiwork-department-card">
+    <article className="visiwork-venture-card">
       <header>
-        <div className="visiwork-department-title">
-          <DepartmentGlyph index={index} />
+        <div className="visiwork-venture-title">
+          <VentureGlyph index={index} />
           <div>
-            <strong>{department.name}</strong>
+            <strong>{venture.name}</strong>
             <small>Projects, people, and delivery activity.</small>
           </div>
         </div>
         <span className="visiwork-working-count">
           <i aria-hidden="true" />
-          {department.workingMembers.length} working
+          {venture.workingMembers.length} working
         </span>
       </header>
 
@@ -1026,7 +1026,7 @@ function DepartmentCard({
                 type="button"
                 className="visiwork-more-members"
                 aria-label={
-                  'Show ' + hiddenMemberCount + ' more members in ' + department.name
+                  'Show ' + hiddenMemberCount + ' more members in ' + venture.name
                 }
                 onClick={() => setShowAllMembers(true)}
               >
@@ -1039,7 +1039,7 @@ function DepartmentCard({
         )}
       </div>
 
-      <div className="visiwork-department-projects">
+      <div className="visiwork-venture-projects">
         {visibleProjects.length ? (
           visibleProjects.map((project) => (
             <div className="visiwork-mini-project" key={project.id}>
@@ -1072,21 +1072,21 @@ function DepartmentCard({
 
       <footer>
         <span>
-          {department.projects.length} active project
-          {department.projects.length === 1 ? '' : 's'}
+          {venture.projects.length} active project
+          {venture.projects.length === 1 ? '' : 's'}
         </span>
         <button
           className={joined ? 'visiwork-join-button joined' : 'visiwork-join-button'}
           type="button"
           disabled={joining || joined}
           aria-pressed={joined}
-          title={joinError ?? (joined ? 'You are working in this department.' : undefined)}
+          title={joinError ?? (joined ? 'You are working in this venture.' : undefined)}
           onClick={onJoin}
         >
           {joining ? 'Joining...' : joined ? 'Joined' : 'Join'}
         </button>
         <button className="visiwork-enter-button" type="button" onClick={onEnter}>
-          Enter {department.shortLabel} →
+          Enter {venture.shortLabel} →
         </button>
       </footer>
     </article>
@@ -1103,15 +1103,15 @@ function DepartmentCard({
             className="visiwork-members-modal"
             role="dialog"
             aria-modal="true"
-            aria-labelledby={'visiwork-members-title-' + department.id}
+            aria-labelledby={'visiwork-members-title-' + venture.id}
           >
             <header>
               <div>
-                <span>DEPARTMENT PRESENCE</span>
-                <h2 id={'visiwork-members-title-' + department.id}>
-                  {department.name}
+                <span>VENTURE PRESENCE</span>
+                <h2 id={'visiwork-members-title-' + venture.id}>
+                  {venture.name}
                 </h2>
-                <p>{department.members.length} members currently assigned to this VisiWork room.</p>
+                <p>{venture.members.length} members currently assigned to this VisiWork room.</p>
               </div>
               <button
                 type="button"
@@ -1122,7 +1122,7 @@ function DepartmentCard({
               </button>
             </header>
             <div className="visiwork-members-modal-list">
-              {department.members.map((member) => (
+              {venture.members.map((member) => (
                 <div className="visiwork-members-modal-person" key={member.id}>
                   <MemberAvatar name={member.fullName} profileImagePath={member.profileImagePath} className="visiwork-member-avatar" />
                   <div>
@@ -1185,8 +1185,8 @@ function ProjectCard({ project }: { project: VisiWorkProject }) {
       </div>
 
       <div className="visiwork-tag-row">
-        {project.departments.slice(0, 4).map((department) => (
-          <span key={department.id}>{department.shortLabel}</span>
+        {project.ventures.slice(0, 4).map((venture) => (
+          <span key={venture.id}>{venture.shortLabel}</span>
         ))}
       </div>
       <div className="visiwork-project-people">
@@ -1201,8 +1201,8 @@ function ProjectCard({ project }: { project: VisiWorkProject }) {
 
       <footer>
         <span>
-          {project.departments.length} department
-          {project.departments.length === 1 ? '' : 's'} involved
+          {project.ventures.length} venture
+          {project.ventures.length === 1 ? '' : 's'} involved
         </span>
         <Link to={'/projects/' + project.id}>Open Workspace →</Link>
       </footer>
@@ -1225,16 +1225,16 @@ function outcomeState(
   return { label: 'Planned', progress };
 }
 
-function DepartmentProjectDetail({
+function VentureProjectDetail({
   project,
-  departmentId,
+  ventureId,
   workByOutcome,
 }: {
   project: VisiWorkProject;
-  departmentId: string;
+  ventureId: string;
   workByOutcome: Map<string, OutcomeWork>;
 }) {
-  const stages = departmentStages(project, departmentId);
+  const stages = ventureStages(project, ventureId);
   const [expanded, setExpanded] = useState(false);
   const detailsId = `visiwork-project-details-${project.id}`;
 
@@ -1242,13 +1242,13 @@ function DepartmentProjectDetail({
     <article
       className={
         expanded
-          ? 'visiwork-department-project-detail expanded'
-          : 'visiwork-department-project-detail'
+          ? 'visiwork-venture-project-detail expanded'
+          : 'visiwork-venture-project-detail'
       }
     >
       <button
         type="button"
-        className="visiwork-department-project-summary"
+        className="visiwork-venture-project-summary"
         aria-expanded={expanded}
         aria-controls={detailsId}
         onClick={() => setExpanded((current) => !current)}
@@ -1256,7 +1256,7 @@ function DepartmentProjectDetail({
         <span className="visiwork-project-disclosure" aria-hidden="true">
           {expanded ? '▼' : '▶'}
         </span>
-        <span className="visiwork-department-project-copy">
+        <span className="visiwork-venture-project-copy">
           <strong>{project.name}</strong>
           <p>{project.description}</p>
         </span>
@@ -1311,7 +1311,7 @@ function DepartmentProjectDetail({
             })
           ) : (
             <div className="visiwork-detail-empty">
-              No outcomes are assigned to this department in this project yet.
+              No outcomes are assigned to this venture in this project yet.
             </div>
           )}
         </div>
@@ -1320,22 +1320,22 @@ function DepartmentProjectDetail({
   );
 }
 
-function DepartmentView({
-  department,
+function VentureView({
+  venture,
   workByOutcome,
   accessToken,
   currentMemberId,
-  joinedDepartmentId,
+  joinedVentureId,
   onBack,
 }: {
-  department: VisiWorkDepartment;
+  venture: VisiWorkVenture;
   workByOutcome: Map<string, OutcomeWork>;
   accessToken?: string;
   currentMemberId?: string;
-  joinedDepartmentId?: string | null;
+  joinedVentureId?: string | null;
   onBack: () => void;
 }) {
-  const groups = groupDepartmentProjects(department);
+  const groups = groupVentureProjects(venture);
   const [expanded, setExpanded] = useState<Record<VisiWorkStatusGroup, boolean>>({
     PLANNING: true,
     IN_PROGRESS: false,
@@ -1343,7 +1343,7 @@ function DepartmentView({
   });
 
   return (
-    <div className="visiwork-department-view">
+    <div className="visiwork-venture-view">
       <div className="visiwork-detail-toolbar">
         <button type="button" onClick={onBack}>
           ← Back to Bird&apos;s View
@@ -1355,7 +1355,7 @@ function DepartmentView({
             Bird&apos;s View
           </button>
           <i>›</i>
-          <strong>{department.shortLabel}</strong>
+          <strong>{venture.shortLabel}</strong>
         </nav>
       </div>
 
@@ -1363,8 +1363,8 @@ function DepartmentView({
         <section className="visiwork-detail-panel">
           <header className="visiwork-detail-heading">
             <div>
-              <h1>{department.name} Department View</h1>
-              <p>Projects, stages, and outcomes this department is responsible for.</p>
+              <h1>{venture.name} Venture View</h1>
+              <p>Projects, stages, and outcomes this venture is responsible for.</p>
             </div>
             <span>VIEW ONLY</span>
           </header>
@@ -1396,10 +1396,10 @@ function DepartmentView({
                     <div className="visiwork-status-body">
                       {groups[status].length ? (
                         groups[status].map((project) => (
-                          <DepartmentProjectDetail
+                          <VentureProjectDetail
                             key={project.id}
                             project={project}
-                            departmentId={department.id}
+                            ventureId={venture.id}
                             workByOutcome={workByOutcome}
                           />
                         ))
@@ -1417,17 +1417,17 @@ function DepartmentView({
         </section>
 
         <RoomPanel
-          roomType="DEPARTMENT ROOM"
-          title={department.shortLabel + ' Chat'}
-          subtitle={department.workingMembers.length + ' members currently working'}
+          roomType="VENTURE ROOM"
+          title={venture.shortLabel + ' Chat'}
+          subtitle={venture.workingMembers.length + ' members currently working'}
           accessToken={accessToken}
           currentMemberId={currentMemberId}
-          departmentId={department.id}
-          canMutePush={joinedDepartmentId === department.id}
-          mentionMembers={department.members.map((departmentMember) => ({
-            id: departmentMember.id,
-            fullName: departmentMember.fullName,
-            profileImagePath: departmentMember.profileImagePath,
+          ventureId={venture.id}
+          canMutePush={joinedVentureId === venture.id}
+          mentionMembers={venture.members.map((ventureMember) => ({
+            id: ventureMember.id,
+            fullName: ventureMember.fullName,
+            profileImagePath: ventureMember.profileImagePath,
           }))}
         />
       </div>
@@ -1441,7 +1441,7 @@ function VisiWorkSkeleton() {
       <div className="visiwork-skeleton-toolbar" />
       <div className="visiwork-main-grid">
         <div className="visiwork-birds-panel">
-          <div className="visiwork-department-grid">
+          <div className="visiwork-venture-grid">
             {Array.from({ length: 4 }, (_, index) => (
               <div className="visiwork-skeleton-card" key={index} />
             ))}
@@ -1459,7 +1459,7 @@ export function VisiWorkPage() {
   const accessToken = session?.access_token;
   const [searchParams, setSearchParams] = useSearchParams();
   const projectView = searchParams.get('view') === 'projects';
-  const selectedDepartmentId = searchParams.get('department');
+  const selectedVentureId = searchParams.get('venture');
 
   const projects = useQuery(projectsListQuery(accessToken));
   const createOptions = useQuery(projectCreateOptionsQuery(accessToken));
@@ -1467,12 +1467,12 @@ export function VisiWorkPage() {
     ...teamWorkSummaryQuery(accessToken),
     refetchInterval: 30_000,
   });
-  const joinDepartment = useMutation({
-    mutationFn: (departmentId: string) =>
+  const joinVenture = useMutation({
+    mutationFn: (ventureId: string) =>
       apiFetch('/visiwork/presence', VisiWorkPresenceResponseSchema, {
         accessToken,
         method: 'PUT',
-        body: SetVisiWorkPresenceRequestSchema.parse({ departmentId }),
+        body: SetVisiWorkPresenceRequestSchema.parse({ ventureId }),
       }),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: teamWorkKeys.all }),
@@ -1497,19 +1497,19 @@ export function VisiWorkPage() {
         projects.data ?? [],
         workflows,
         team.data,
-        createOptions.data.departments,
+        createOptions.data.ventures,
       )
     : null;
 
-  const selectedDepartment = model?.departments.find(
-    (department) => department.id === selectedDepartmentId,
+  const selectedVenture = model?.ventures.find(
+    (venture) => venture.id === selectedVentureId,
   );
 
-  const departmentOutcomeRefs = (() => {
-    if (!selectedDepartment) return [];
+  const ventureOutcomeRefs = (() => {
+    if (!selectedVenture) return [];
     const refs = new Map<string, { projectId: string; outcomeId: string }>();
-    for (const project of selectedDepartment.projects) {
-      for (const stage of departmentStages(project, selectedDepartment.id)) {
+    for (const project of selectedVenture.projects) {
+      for (const stage of ventureStages(project, selectedVenture.id)) {
         for (const outcome of stage.outcomes) {
           refs.set(outcome.id, {
             projectId: project.id,
@@ -1522,7 +1522,7 @@ export function VisiWorkPage() {
   })();
 
   const outcomeWorkQueries = useQueries({
-    queries: departmentOutcomeRefs.map((ref) => ({
+    queries: ventureOutcomeRefs.map((ref) => ({
       queryKey: ['visiwork', 'outcome-work', ref.projectId, ref.outcomeId],
       queryFn: () =>
         apiFetch(
@@ -1537,7 +1537,7 @@ export function VisiWorkPage() {
   });
 
   const workByOutcome = new Map<string, OutcomeWork>();
-  departmentOutcomeRefs.forEach((ref, index) => {
+  ventureOutcomeRefs.forEach((ref, index) => {
     const data = outcomeWorkQueries[index]?.data;
     if (data) workByOutcome.set(ref.outcomeId, data);
   });
@@ -1588,15 +1588,15 @@ export function VisiWorkPage() {
   const currentTeamMember = team.data.members.find(
     (teamMember) => teamMember.id === member?.id,
   );
-  const joinedDepartmentId = currentTeamMember?.visiworkDepartmentId ?? null;
+  const joinedVentureId = currentTeamMember?.visiworkVentureId ?? null;
 
-  if (selectedDepartmentId) {
-    if (!selectedDepartment) {
+  if (selectedVentureId) {
+    if (!selectedVenture) {
       return (
         <section className="visiwork-state">
           <span>OPERATIONAL VISIBILITY</span>
-          <h1>Department not found</h1>
-          <p>The selected department is no longer available in VisiWork.</p>
+          <h1>Venture not found</h1>
+          <p>The selected venture is no longer available in VisiWork.</p>
           <button type="button" onClick={() => setSearchParams({})}>
             Back to Bird&apos;s View
           </button>
@@ -1605,12 +1605,12 @@ export function VisiWorkPage() {
     }
 
     return (
-      <DepartmentView
-        department={selectedDepartment}
+      <VentureView
+        venture={selectedVenture}
         workByOutcome={workByOutcome}
         accessToken={accessToken}
         currentMemberId={member?.id}
-        joinedDepartmentId={joinedDepartmentId}
+        joinedVentureId={joinedVentureId}
         onBack={() => setSearchParams({})}
       />
     );
@@ -1635,33 +1635,33 @@ export function VisiWorkPage() {
             ) : (
               <div className="visiwork-empty-state">No projects are available yet.</div>
             )
-          ) : model.departments.length ? (
-            <div className="visiwork-department-grid">
-              {model.departments.map((department, index) => (
-                <DepartmentCard
-                  key={department.id}
-                  department={department}
+          ) : model.ventures.length ? (
+            <div className="visiwork-venture-grid">
+              {model.ventures.map((venture, index) => (
+                <VentureCard
+                  key={venture.id}
+                  venture={venture}
                   index={index}
-                  joined={joinedDepartmentId === department.id}
+                  joined={joinedVentureId === venture.id}
                   joining={
-                    joinDepartment.isPending &&
-                    joinDepartment.variables === department.id
+                    joinVenture.isPending &&
+                    joinVenture.variables === venture.id
                   }
                   joinError={
-                    joinDepartment.isError &&
-                    joinDepartment.variables === department.id
-                      ? joinDepartment.error.message
+                    joinVenture.isError &&
+                    joinVenture.variables === venture.id
+                      ? joinVenture.error.message
                       : null
                   }
-                  onJoin={() => joinDepartment.mutate(department.id)}
+                  onJoin={() => joinVenture.mutate(venture.id)}
                   onEnter={() =>
-                    setSearchParams({ department: department.id })
+                    setSearchParams({ venture: venture.id })
                   }
                 />
               ))}
             </div>
           ) : (
-            <div className="visiwork-empty-state">No departments are available yet.</div>
+            <div className="visiwork-empty-state">No ventures are available yet.</div>
           )}
         </section>
 

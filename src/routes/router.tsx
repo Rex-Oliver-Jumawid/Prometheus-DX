@@ -59,6 +59,7 @@ export const router = createBrowserRouter([
           { path: '/reports', lazy: loadReportsAnalyticsRoute },
           { path: '/notifications', lazy: loadNotificationsRoute },
           { path: '/registry', lazy: loadRegistryRoute },
+          { path: '/ventures', element: <Navigate to="/registry" replace /> },
         ],
       },
     ],

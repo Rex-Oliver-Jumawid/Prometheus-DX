@@ -12,22 +12,22 @@ const workSessions = new WorkSessionsService(prisma);
 const service = new TeamService(prisma, workSessions);
 const runId = `team-integration-${randomUUID()}`;
 
-let departmentId: string;
+let ventureId: string;
 let workingMember: Member;
 let emptyMember: Member;
 
 describe.runIf(runDatabaseIntegration)('TeamService database integration', () => {
   beforeAll(async () => {
-    const department = await prisma.department.create({
+    const venture = await prisma.venture.create({
       data: { name: runId, shortLabel: 'TEAM' },
     });
-    departmentId = department.id;
+    ventureId = venture.id;
     [workingMember, emptyMember] = await Promise.all([
       prisma.member.create({
         data: {
           email: `${runId}-working@example.com`,
           fullName: `Working ${runId}`,
-          departmentId,
+          ventureId,
           position: 'Integration Designer',
           status: 'ACTIVE',
           schedule: {
@@ -48,7 +48,7 @@ describe.runIf(runDatabaseIntegration)('TeamService database integration', () =>
         data: {
           email: `${runId}-empty@example.com`,
           fullName: `Empty ${runId}`,
-          departmentId,
+          ventureId,
           position: null,
           status: 'ACTIVE',
         },
@@ -73,8 +73,8 @@ describe.runIf(runDatabaseIntegration)('TeamService database integration', () =>
       where: { memberId: { in: memberIds } },
     });
     await prisma.member.deleteMany({ where: { id: { in: memberIds } } });
-    if (departmentId) {
-      await prisma.department.deleteMany({ where: { id: departmentId } });
+    if (ventureId) {
+      await prisma.venture.deleteMany({ where: { id: ventureId } });
     }
     await prisma.$disconnect();
   }, 30_000);
@@ -85,7 +85,7 @@ describe.runIf(runDatabaseIntegration)('TeamService database integration', () =>
 
     expect(result).toMatchObject({
       position: 'Integration Designer',
-      department: { id: departmentId, name: runId, shortLabel: 'TEAM' },
+      venture: { id: ventureId, name: runId, shortLabel: 'TEAM' },
       workingNow: true,
       scheduledMinutes: 360,
     });

@@ -13,12 +13,12 @@ import { describe, expect, it, vi } from 'vitest';
 import type { PrismaService } from '../database/prisma.service';
 import { ProjectsService } from './projects.service';
 
-const department = {
+const venture = {
   id: '11111111-1111-4111-8111-111111111111',
   name: 'Research and Development',
   shortLabel: 'R&D',
 };
-const secondDepartment = {
+const secondVenture = {
   id: '22222222-2222-4222-8222-222222222222',
   name: 'Operations',
   shortLabel: 'OPS',
@@ -49,7 +49,7 @@ function projectRecord(overrides: Record<string, unknown> = {}) {
     updatedAt: new Date('2026-09-16T00:00:00.000Z'),
     createdByMember: creator,
     leadMember: lead,
-    departments: [{ department }],
+    ventures: [{ venture }],
     members: [],
     ...overrides,
   };
@@ -60,12 +60,12 @@ function createDatabase(
     listedProjects?: ReturnType<typeof projectRecord>[];
     foundProject?: ReturnType<typeof projectRecord> | null;
     foundLead?: { id: string; status: MemberStatus } | null;
-    foundDepartments?: { id: string }[];
+    foundVentures?: { id: string }[];
     createdProject?: ReturnType<typeof projectRecord>;
     updatedProject?: ReturnType<typeof projectRecord>;
     statusRows?: ReturnType<typeof projectRecord>[];
     createOptionLeads?: { id: string; fullName: string; email: string }[];
-    createOptionDepartments?: {
+    createOptionVentures?: {
       id: string;
       name: string;
       shortLabel: string;
@@ -86,14 +86,14 @@ function createDatabase(
         .mockResolvedValue('foundLead' in options ? options.foundLead : lead),
       findMany: vi.fn().mockResolvedValue(options.createOptionLeads ?? []),
     },
-    department: {
+    venture: {
       findMany: vi
         .fn()
-        .mockImplementation((query: { where?: unknown }) =>
+        .mockImplementation((query: { where?: { id?: unknown } }) =>
           Promise.resolve(
-            query.where
-              ? (options.foundDepartments ?? [{ id: department.id }])
-              : (options.createOptionDepartments ?? [department]),
+            query.where?.id
+              ? (options.foundVentures ?? [{ id: venture.id }])
+              : (options.createOptionVentures ?? [venture]),
           ),
         ),
     },
@@ -141,11 +141,11 @@ const input = {
   name: 'Phase 3 Project',
   description: 'A persisted Project.',
   leadMemberId: lead.id,
-  departmentIds: [department.id],
+  ventureIds: [venture.id],
 };
 
 describe('ProjectsService', () => {
-  it('returns active Members and persisted Departments as narrow create options', async () => {
+  it('returns active Members and persisted Ventures as narrow create options', async () => {
     const activeLead = {
       id: lead.id,
       fullName: lead.fullName,
@@ -153,20 +153,21 @@ describe('ProjectsService', () => {
     };
     const database = createDatabase({
       createOptionLeads: [activeLead],
-      createOptionDepartments: [department],
+      createOptionVentures: [venture],
     });
     const service = new ProjectsService(database);
 
     await expect(service.getCreateOptions()).resolves.toEqual({
       leads: [activeLead],
-      departments: [department],
+      ventures: [venture],
     });
     expect(database.member.findMany).toHaveBeenCalledWith({
       where: { status: MemberStatus.ACTIVE },
       select: { id: true, fullName: true, email: true, profileImagePath: true },
       orderBy: [{ fullName: 'asc' }, { id: 'asc' }],
     });
-    expect(database.department.findMany).toHaveBeenCalledWith({
+    expect(database.venture.findMany).toHaveBeenCalledWith({
+      where: { status: 'ACTIVE' },
       select: { id: true, name: true, shortLabel: true },
       orderBy: [{ name: 'asc' }, { id: 'asc' }],
     });
@@ -330,8 +331,8 @@ describe('ProjectsService', () => {
     expect(database.project.create).not.toHaveBeenCalled();
   });
 
-  it('rejects a nonexistent Department without creating a partial Project', async () => {
-    const database = createDatabase({ foundDepartments: [] });
+  it('rejects a nonexistent Venture without creating a partial Project', async () => {
+    const database = createDatabase({ foundVentures: [] });
     const service = new ProjectsService(database);
 
     await expect(service.createProject(creator, input)).rejects.toBeInstanceOf(
@@ -340,11 +341,11 @@ describe('ProjectsService', () => {
     expect(database.project.create).not.toHaveBeenCalled();
   });
 
-  it('persists multiple Department associations', async () => {
+  it('persists multiple Venture associations', async () => {
     const database = createDatabase({
-      foundDepartments: [{ id: department.id }, { id: secondDepartment.id }],
+      foundVentures: [{ id: venture.id }, { id: secondVenture.id }],
       createdProject: projectRecord({
-        departments: [{ department }, { department: secondDepartment }],
+        ventures: [{ venture }, { venture: secondVenture }],
       }),
     });
     const service = new ProjectsService(database);
@@ -352,16 +353,16 @@ describe('ProjectsService', () => {
     await expect(
       service.createProject(creator, {
         ...input,
-        departmentIds: [department.id, secondDepartment.id],
+        ventureIds: [venture.id, secondVenture.id],
       }),
-    ).resolves.toMatchObject({ departments: [department, secondDepartment] });
+    ).resolves.toMatchObject({ ventures: [venture, secondVenture] });
     expect(database.project.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          departments: {
+          ventures: {
             create: [
-              { departmentId: department.id },
-              { departmentId: secondDepartment.id },
+              { ventureId: venture.id },
+              { ventureId: secondVenture.id },
             ],
           },
         }),

@@ -11,7 +11,7 @@ const prisma = new PrismaService();
 const service = new ScheduleService(prisma);
 const runId = `schedule-integration-${randomUUID()}`;
 
-let departmentId: string;
+let ventureId: string;
 let owner: Member;
 let administrator: Member;
 let projectLead: Member;
@@ -26,7 +26,7 @@ async function createMember(
     data: {
       email: `${runId}-${label}@example.com`,
       fullName: `${label} ${runId}`,
-      departmentId,
+      ventureId,
       position: `${label} position`,
       status,
       deactivatedAt: status === 'DEACTIVATED' ? new Date() : null,
@@ -39,10 +39,10 @@ describe.runIf(runDatabaseIntegration)(
   'ScheduleService database integration',
   () => {
     beforeAll(async () => {
-      const department = await prisma.department.create({
+      const venture = await prisma.venture.create({
         data: { name: runId, shortLabel: 'SCHED' },
       });
-      departmentId = department.id;
+      ventureId = venture.id;
       [owner, administrator, projectLead, deactivatedMember] =
         await Promise.all([
           createMember('owner'),
@@ -56,7 +56,7 @@ describe.runIf(runDatabaseIntegration)(
           description: 'Schedule authority isolation fixture.',
           createdByMemberId: projectLead.id,
           leadMemberId: projectLead.id,
-          departments: { create: { departmentId } },
+          ventures: { create: { ventureId } },
         },
       });
     }, 30_000);
@@ -80,8 +80,8 @@ describe.runIf(runDatabaseIntegration)(
       await prisma.member.deleteMany({
         where: { email: { startsWith: runId } },
       });
-      if (departmentId) {
-        await prisma.department.deleteMany({ where: { id: departmentId } });
+      if (ventureId) {
+        await prisma.venture.deleteMany({ where: { id: ventureId } });
       }
       await prisma.$disconnect();
     }, 30_000);
@@ -149,8 +149,8 @@ describe.runIf(runDatabaseIntegration)(
       const ownerResult = team.members.find((member) => member.id === owner.id);
       expect(ownerResult).toMatchObject({
         position: 'owner position',
-        department: {
-          id: departmentId,
+        venture: {
+          id: ventureId,
           name: runId,
           shortLabel: 'SCHED',
         },

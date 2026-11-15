@@ -111,8 +111,8 @@ async function main() {
         candidate.email.toLowerCase() ===
         process.env.E2E_MEMBER_EMAIL!.toLowerCase(),
     );
-    const department = options.departments[0];
-    if (currentLead && department) {
+    const venture = options.ventures[0];
+    if (currentLead && venture) {
       measuredProject = await request<Project>('/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -121,7 +121,7 @@ async function main() {
           description:
             'Dedicated Project for repeatable authorized status latency measurement.',
           leadMemberId: currentLead.id,
-          departmentIds: [department.id],
+          ventureIds: [venture.id],
         }),
       });
     }
