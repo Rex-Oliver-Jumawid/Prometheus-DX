@@ -461,8 +461,7 @@ function RemoveVentureDialog({
 
         {hasBlockingReferences && (
           <p className="registry-remove-guidance">
-            Non-zero references block deletion. Reassign members and remove the
-            venture from the listed projects or outcomes first.
+            Existing members, project links, outcomes, and history will be preserved when this venture is archived.
           </p>
         )}
 

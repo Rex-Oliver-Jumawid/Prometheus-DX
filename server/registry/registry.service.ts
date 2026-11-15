@@ -216,32 +216,6 @@ export class RegistryService {
     });
     if (!venture) throw new NotFoundException('Venture not found.');
 
-    if (
-      venture._count.members > 0 ||
-      venture._count.projects > 0 ||
-      venture._count.outcomes > 0
-    ) {
-      const references: string[] = [];
-      if (venture._count.members > 0) {
-        references.push(
-          `${venture._count.members} ${venture._count.members === 1 ? 'member' : 'members'}`,
-        );
-      }
-      if (venture._count.projects > 0) {
-        references.push(
-          `${venture._count.projects} ${venture._count.projects === 1 ? 'project' : 'projects'}`,
-        );
-      }
-      if (venture._count.outcomes > 0) {
-        references.push(
-          `${venture._count.outcomes} ${venture._count.outcomes === 1 ? 'outcome' : 'outcomes'}`,
-        );
-      }
-      throw new ConflictException(
-        `This venture is still in use: ${references.join(', ')}. Reassign or remove these references before deleting it.`,
-      );
-    }
-
     try {
       await this.prisma.venture.update({ where: { id: ventureId }, data: { status: 'ARCHIVED', auditEvents: { create: { actorMemberId, action: 'VENTURE_ARCHIVED', metadata: {} } } } });
       return { id: ventureId };
@@ -251,7 +225,7 @@ export class RegistryService {
         error.code === 'P2003'
       ) {
         throw new ConflictException(
-          'This venture is still in use. Remove its references before deleting it.',
+          'This venture is still in use. Remove its references before archiving it.',
         );
       }
       throw error;

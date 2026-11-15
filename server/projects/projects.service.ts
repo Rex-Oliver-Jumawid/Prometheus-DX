@@ -234,6 +234,8 @@ export class ProjectsService {
   async updateVentures(actor: Member, projectId: string, ventureIds: string[]) {
     await this.prisma.$transaction(async db => {
       await this.requireProjectLead(db, projectId, actor.id);
+      const project = await db.project.findUniqueOrThrow({ where: { id: projectId }, select: { status: true } });
+      if (project.status === 'ARCHIVED') throw new BadRequestException('Archived project venture links are read-only.');
       const ventures = await db.venture.findMany({ where: { id: { in: ventureIds }, status: 'ACTIVE' }, select: { id: true } });
       if (ventures.length !== ventureIds.length) throw new BadRequestException('Choose active ventures.');
       await db.projectVenture.deleteMany({ where: { projectId } });

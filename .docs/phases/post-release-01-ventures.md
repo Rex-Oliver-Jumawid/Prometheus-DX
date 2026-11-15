@@ -56,3 +56,9 @@ The corresponding Registry count assertion now expects both memberships instead 
 The new member selector is tested through its accessible combobox role; its wrapping select label includes option text for exact label-text matching.
 A component interaction test now submits multiple selected operational roles through that control.
 Project creation no longer requires any venture to exist, and active member profile access is tested with a null primary venture.
+
+
+Project venture reassignment is explicitly Lead-only and rejects archived projects below the UI.
+Three service tests cover the Administrator/non-Lead boundary, archived writes, and clearing optional grouping with an activity event.
+Registry and the dedicated Ventures screen both archive rather than delete venture records, preserving linked members, projects, outcomes, and history.
+Remaining acceptance work is the final authenticated browser gate and human visual/responsive review against an accessible Figma reference.

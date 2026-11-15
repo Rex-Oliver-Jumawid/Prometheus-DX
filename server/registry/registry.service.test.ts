@@ -61,22 +61,20 @@ describe('RegistryService invitation behavior', () => {
     }));
   });
 
-  it('rejects deleting a venture that is still referenced', async () => {
+  it('archives a referenced venture while retaining existing links', async () => {
     const database = {
       venture: {
         findUnique: vi.fn().mockResolvedValue({
           id: venture.id,
           _count: { members: 1, projects: 0, outcomes: 0 },
         }),
-        delete: vi.fn(),
+        update: vi.fn().mockResolvedValue(venture),
       },
     } as unknown as PrismaService;
     const service = new RegistryService(database, delivery());
 
-    await expect(service.deleteVenture(venture.id)).rejects.toBeInstanceOf(
-      ConflictException,
-    );
-    expect(database.venture.delete).not.toHaveBeenCalled();
+    await expect(service.deleteVenture(venture.id)).resolves.toEqual({ id: venture.id });
+    expect(database.venture.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ status: 'ARCHIVED' }) }));
   });
 
   it('loads Registry ventures and members in one overview operation', async () => {
