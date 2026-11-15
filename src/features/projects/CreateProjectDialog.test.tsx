@@ -10,7 +10,7 @@ vi.mock('../../lib/api', () => ({ apiFetch: vi.fn(async () => ({
 it('creates a project before any venture exists', async () => {
   const save = vi.fn().mockResolvedValue(undefined);
   render(<QueryClientProvider client={new QueryClient()}><CreateProjectDialog accessToken="test" isSaving={false} saveError={null} onClose={vi.fn()} onSave={save} /></QueryClientProvider>);
-  const button = await screen.findByRole('button', { name: 'Create Project', exact: true });
+  const button = await screen.findByRole('button', { name: 'Create Project' });
   await waitFor(() => expect(button).toBeEnabled());
   fireEvent.change(screen.getByLabelText('Project name'), { target: { value: 'Independent project' } });
   fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'No venture grouping yet' } });

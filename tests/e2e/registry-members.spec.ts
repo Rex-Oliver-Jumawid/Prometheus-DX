@@ -379,7 +379,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
     page.locator('.registry-venture-card').filter({
       hasText: venture.shortLabel,
     }),
-  ).toContainText('1 member');
+  ).toContainText('2 members');
   await expect(
     page.locator('.registry-venture-card').filter({
       hasText: reassignedVenture.shortLabel,

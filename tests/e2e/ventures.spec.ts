@@ -28,7 +28,7 @@ test('administrator creates ventures, assigns multiple roles, and preserves them
       await expect(button).toBeVisible();
       ids.push((await db.venture.findFirstOrThrow({ where: { name } })).id);
       await button.click();
-      await page.getByLabel('Member', { exact: true }).selectOption(actor.id);
+      await page.getByRole('combobox', { name: 'Member', exact: true }).selectOption(actor.id);
       await page.getByLabel('Founder', { exact: true }).check();
       await page.getByLabel('CEO', { exact: true }).check();
       await page.getByLabel('CTO', { exact: true }).check();

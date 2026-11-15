@@ -35,6 +35,9 @@ describe('VenturesPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Parkey' }));
     expect(await screen.findByText('CEO, CTO')).toBeVisible();
     expect(screen.getByText(/does not issue shares/)).toBeVisible();
+    fireEvent.change(screen.getByRole('combobox', { name: /^Member$/ }), { target: { value: '22222222-2222-4222-8222-222222222222' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save membership' }));
+    await waitFor(() => expect(mocks.api).toHaveBeenCalledWith(`/ventures/${venture.id}/members`, expect.anything(), expect.objectContaining({ method: 'POST', body: expect.objectContaining({ memberId: '22222222-2222-4222-8222-222222222222', roles: ['CEO', 'CTO'] }) })));
   });
   it('shows a readable request failure and retry', async () => {
     mocks.api.mockRejectedValue(new Error('offline'));

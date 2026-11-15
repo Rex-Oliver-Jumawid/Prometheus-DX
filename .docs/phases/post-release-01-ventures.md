@@ -49,3 +49,10 @@ The API now returns explicit public projections instead of spreading database ro
 The optional-primary form still rejects nonempty text that does not identify a persisted venture; leaving it blank remains valid.
 Legacy browser expectations requiring a venture for every Project/Member are updated to the approved optional grouping behavior.
 The feature PR now relies on pull_request CI events to avoid duplicate push/PR workflow runs.
+
+
+Browser traces confirmed that changing a primary grouping preserves membership in the previous venture, as intended for multi-venture participation.
+The corresponding Registry count assertion now expects both memberships instead of treating primary selection as an implicit removal.
+The new member selector is tested through its accessible combobox role; its wrapping select label includes option text for exact label-text matching.
+A component interaction test now submits multiple selected operational roles through that control.
+Project creation no longer requires any venture to exist, and active member profile access is tested with a null primary venture.
