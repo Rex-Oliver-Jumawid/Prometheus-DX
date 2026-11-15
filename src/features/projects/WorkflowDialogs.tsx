@@ -511,7 +511,7 @@ export function OutcomeDialog({
             <div className="vw-add-project-field">
               <label>
                 Ventures{' '}
-                <span className="pw-field-hint">Select one or more</span>
+                <span className="pw-field-hint">Optional grouping</span>
               </label>
               <div
                 className="pw-multi-check-grid pw-venture-check-grid"
@@ -550,7 +550,7 @@ export function OutcomeDialog({
             <div className="vw-add-project-field">
               <label>
                 Members{' '}
-                <span className="pw-field-hint">Select one or more</span>
+                <span className="pw-field-hint">Optional grouping</span>
               </label>
               {members.length > 0 ? (
                 <div

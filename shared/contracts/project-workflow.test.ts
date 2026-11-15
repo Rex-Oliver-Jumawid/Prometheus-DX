@@ -18,7 +18,11 @@ describe('project workflow contracts', () => {
     );
   });
 
-  it('accepts canonical Outcome metadata', () => {
+  it('allows outcomes before venture grouping has been configured', () => {
+    expect(CreateOutcomeRequestSchema.safeParse({ title: 'Independent outcome', ventureIds: [], acceptanceCriteria: ['Delivery is verified.'], prerequisiteOutcomeIds: [] }).success).toBe(true);
+  });
+
+  it('accepts canonical Outcome metadata' , () => {
     expect(
       CreateOutcomeRequestSchema.parse({
         title: '  Validated opportunity  ',

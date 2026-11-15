@@ -106,7 +106,7 @@ const uniqueUuidArray = (
 const OutcomeFieldsSchema = z.object({
   title: z.string().trim().min(1, 'Enter an outcome title.').max(160),
   description: z.string().trim().max(4000).nullable().optional(),
-  ventureIds: uniqueUuidArray('Choose an existing venture.', 1),
+  ventureIds: uniqueUuidArray('Choose an existing venture.'),
   acceptanceCriteria: z
     .array(
       z.string().trim().min(1, 'Acceptance criteria cannot be empty.').max(500),

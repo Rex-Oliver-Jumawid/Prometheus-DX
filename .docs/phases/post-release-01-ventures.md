@@ -62,3 +62,8 @@ Project venture reassignment is explicitly Lead-only and rejects archived projec
 Three service tests cover the Administrator/non-Lead boundary, archived writes, and clearing optional grouping with an activity event.
 Registry and the dedicated Ventures screen both archive rather than delete venture records, preserving linked members, projects, outcomes, and history.
 Remaining acceptance work is the final authenticated browser gate and human visual/responsive review against an accessible Figma reference.
+
+
+The final dependency review also removed the old mandatory Outcome grouping requirement.
+A real PostgreSQL integration journey creates an ungrouped Project, Stage, and Outcome, protecting the existing delivery workflow when no venture is assigned.
+Projects and Outcomes retain independent optional grouping links, matching the former independent grouping relationships without requiring Departments to exist.

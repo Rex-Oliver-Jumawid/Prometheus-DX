@@ -4,6 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Member } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { VentureDetailSchema } from '../../shared/contracts/venture';
+import { ProjectsService } from '../projects/projects.service';
+import { ProjectWorkflowService } from '../projects/project-workflow.service';
 import { VenturesService } from './ventures.service';
 
 describe.runIf(process.env.RUN_DATABASE_INTEGRATION === '1')('venture persistence and authorization', () => {
@@ -36,7 +38,20 @@ describe.runIf(process.env.RUN_DATABASE_INTEGRATION === '1')('venture persistenc
     expect(founder.ventureId).toBeNull();
     expect(await service.list(founder)).toEqual([]);
   });
-  it('stores several roles across two ventures without duplicate membership', async () => {
+  it('preserves the complete project and outcome creation path with no venture assignment', async () => {
+    const project = await new ProjectsService(db).createProject(admin, { name: prefix, description: 'Ungrouped delivery', leadMemberId: admin.id, ventureIds: [] });
+    try {
+      const workflow = new ProjectWorkflowService(db);
+      const stage = await workflow.createStage(admin, project.id, { name: 'Delivery' });
+      const outcome = await workflow.createOutcome(admin, project.id, stage.id, { title: 'Independent outcome', description: null, ventureIds: [], acceptanceCriteria: ['Delivery is verified.'], prerequisiteOutcomeIds: [], memberIds: [] });
+      expect(outcome.ventures).toEqual([]);
+      expect(await db.outcome.count({ where: { id: outcome.id } })).toBe(1);
+    } finally {
+      await db.project.delete({ where: { id: project.id } });
+    }
+  });
+
+  it('stores several roles across two ventures without duplicate membership' , async () => {
     const input = { memberId: founder.id, roles: ['CEO', 'CTO'] as ('CEO' | 'CTO')[], permissions: [], founder: true, active: true };
     await Promise.all([service.membership(admin, first, input), service.membership(admin, second, input)]);
     await service.membership(admin, second, input);

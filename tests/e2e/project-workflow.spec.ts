@@ -247,7 +247,7 @@ test('F4-07 through F4-10: Lead creates, links, and edits persistent Outcomes', 
   await createDialog.getByRole('button', { name: 'Create outcome' }).click();
   await expect(
     createDialog.getByText('Choose at least one responsible venture.'),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await createDialog
     .getByLabel('Outcome title')
     .fill('Customer evidence collected');
