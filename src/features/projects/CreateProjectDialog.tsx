@@ -115,7 +115,7 @@ export function CreateProjectDialog({
 
   const unavailable =
     options.isSuccess &&
-    (!options.data.leads.length || !options.data.ventures.length);
+    !options.data.leads.length;
 
   return createPortal(
     <div
@@ -264,7 +264,7 @@ export function CreateProjectDialog({
             )}
 
             <div className="vw-add-project-field">
-              <label>Ventures involved</label>
+              <label>Ventures involved (optional)</label>
               {options.isPending ? (
                 <div className="vw-add-project-loading-text">
                   Loading ventures...

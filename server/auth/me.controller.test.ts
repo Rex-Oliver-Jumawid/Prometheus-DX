@@ -30,6 +30,12 @@ const venture = {
 };
 
 describe('MeController', () => {
+  it('allows an active workspace member without a primary venture', async () => {
+    const findUnique = vi.fn();
+    const controller = new MeController({ venture: { findUnique } } as unknown as PrismaService);
+    await expect(controller.getMe({ ...member, ventureId: null })).resolves.toMatchObject({ id: member.id, venture: null });
+    expect(findUnique).not.toHaveBeenCalled();
+  });
   it('returns organization-managed venture context with the current member', async () => {
     const prisma = {
       venture: {
