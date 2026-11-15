@@ -166,7 +166,7 @@ test('an active Member creates a Project with another active Lead and multiple V
   await expect(page.getByText('Enter a project name.')).toBeVisible();
   await expect(page.getByText('Enter a project description.')).toBeVisible();
   await expect(page.getByText('Choose an active Project Lead.')).toBeVisible();
-  await expect(page.getByText('Choose at least one venture.')).toBeVisible();
+  await expect(page.getByText('Choose at least one venture.')).toHaveCount(0);
 
   await page.getByLabel('Project name').fill(name);
   await page

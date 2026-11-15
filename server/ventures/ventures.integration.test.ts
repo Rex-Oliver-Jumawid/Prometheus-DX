@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Member } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
+import { VentureDetailSchema } from '../../shared/contracts/venture';
 import { VenturesService } from './ventures.service';
 
 describe.runIf(process.env.RUN_DATABASE_INTEGRATION === '1')('venture persistence and authorization', () => {
@@ -40,7 +41,8 @@ describe.runIf(process.env.RUN_DATABASE_INTEGRATION === '1')('venture persistenc
     await Promise.all([service.membership(admin, first, input), service.membership(admin, second, input)]);
     await service.membership(admin, second, input);
     expect(await db.ventureMembership.count({ where: { memberId: founder.id, endedAt: null } })).toBe(2);
-    expect((await service.detail(founder, second)).members[0].roles).toEqual(['CEO', 'CTO']);
+    const detail = VentureDetailSchema.parse(JSON.parse(JSON.stringify(await service.detail(founder, second))));
+    expect(detail.members[0].roles).toEqual(['CEO', 'CTO']);
     await expect(service.detail(outsider, second)).rejects.toThrow('Venture not found');
   });
   it('rejects concurrent hierarchy changes that would form a cycle', async () => {

@@ -34,7 +34,12 @@ export class VenturesService {
       ? []
       : (membership?.permissions ?? []);
     return {
-      ...venture,
+      id: venture.id,
+      name: venture.name,
+      shortLabel: venture.shortLabel,
+      description: venture.description,
+      parentId: venture.parentId,
+      status: venture.status,
       canManage: admin || permissions.includes('venture.manage'),
       canManageMembers: admin || permissions.includes('venture.members.manage'),
       canGrantPermissions: admin,
@@ -79,7 +84,13 @@ export class VenturesService {
     return {
       venture,
       members: members.map((m) => ({
-        ...m,
+        id: m.id,
+        memberId: m.memberId,
+        founder: m.founder,
+        roles: m.roles,
+        permissions: m.permissions,
+        joinedAt: m.joinedAt,
+        endedAt: m.endedAt,
         fullName: m.member.fullName,
         memberStatus: m.member.status,
         active: !m.endedAt,

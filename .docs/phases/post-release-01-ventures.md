@@ -40,3 +40,12 @@ V1-D05: The real database caught a membership-ending upsert candidate whose impl
 PostgreSQL validates CHECK constraints before resolving an INSERT conflict, so an existing-row update can still fail its candidate INSERT.
 The fix supplies a single explicit timestamp for joinedAt/endedAt in the candidate and clamps it to existing join time; the constraint remains enforced.
 Authenticated browser CI and final integration confirmation remain pending.
+
+
+The populated-schema upgrade test passed in CI, including stable Member/Project IDs, primary/focus membership backfill, notification data, and mute-key conversion.
+All 37 PostgreSQL integration checks passed after the timestamp fix.
+V1-D06: Authenticated browser verification exposed strict shared contracts rejecting extra Prisma fields on the new venture list/detail responses.
+The API now returns explicit public projections instead of spreading database rows; contract round-trip checks cover list and detail responses.
+The optional-primary form still rejects nonempty text that does not identify a persisted venture; leaving it blank remains valid.
+Legacy browser expectations requiring a venture for every Project/Member are updated to the approved optional grouping behavior.
+The feature PR now relies on pull_request CI events to avoid duplicate push/PR workflow runs.

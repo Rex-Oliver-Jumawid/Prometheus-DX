@@ -638,6 +638,10 @@ function MemberDialog({
 
   const submit = handleSubmit(async (values) => {
     clearErrors();
+    if (ventureSearch.trim() && !values.ventureId) {
+      setError('ventureId', { type: 'validate', message: 'Choose a venture.' });
+      return;
+    }
     const parsed = (
       state.mode === 'create'
         ? CreateMemberRequestSchema

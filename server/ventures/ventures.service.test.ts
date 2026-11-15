@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { PrismaService } from '../database/prisma.service';
+import { VentureListSchema } from '../../shared/contracts/venture';
 import { VenturesService } from './ventures.service';
 
 const ventureId = '11111111-1111-4111-8111-111111111111';
@@ -75,6 +76,12 @@ function setup(
   return { db, service: new VenturesService(db as unknown as PrismaService) };
 }
 describe('venture authorization and history', () => {
+  it('returns the exact public response contract without leaking Prisma fields', async () => {
+    const { service, db } = setup();
+    db.venture.findMany.mockResolvedValue([{ id: ventureId }] as never[]);
+    const result = await service.list(admin);
+    expect(VentureListSchema.safeParse(JSON.parse(JSON.stringify(result))).success).toBe(true);
+  });
   it('does not grant a CEO metadata management authority', async () => {
     const { service, db } = setup();
     await expect(
