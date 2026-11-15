@@ -102,12 +102,13 @@ export const TeamWorkMemberSchema = z.object({
   fullName: z.string(),
   position: z.string().nullable(),
   profileImagePath: z.string().nullable(),
-  department: z.object({
+  ventures: z.array(z.object({ id: z.string().uuid(), name: z.string(), shortLabel: z.string() })).optional(),
+  venture: z.object({
     id: z.string().uuid(),
     name: z.string(),
     shortLabel: z.string(),
-  }),
-  visiworkDepartmentId: z.string().uuid().nullable(),
+  }).nullable(),
+  visiworkVentureId: z.string().uuid().nullable(),
   workingNow: z.boolean(),
   scheduledMinutes: z.number().int().nonnegative(),
   actualWorkedSeconds: z.number().int().nonnegative(),

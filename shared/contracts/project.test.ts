@@ -11,19 +11,20 @@ describe('CreateProjectRequestSchema', () => {
     name: 'Phase 3 Project',
     description: 'A persisted Project.',
     leadMemberId: '11111111-1111-4111-8111-111111111111',
-    departmentIds: ['22222222-2222-4222-8222-222222222222'],
+    ventureIds: ['22222222-2222-4222-8222-222222222222'],
   };
 
-  it('requires project details, a Lead, and a Department', () => {
+  it('requires project details and a Lead; venture grouping is optional', () => {
     expect(CreateProjectRequestSchema.safeParse({}).success).toBe(false);
     expect(CreateProjectRequestSchema.safeParse(input).success).toBe(true);
+    expect(CreateProjectRequestSchema.safeParse({ ...input, ventureIds: [] }).success).toBe(true);
   });
 
-  it('rejects duplicate Department IDs', () => {
+  it('rejects duplicate Venture IDs', () => {
     expect(
       CreateProjectRequestSchema.safeParse({
         ...input,
-        departmentIds: [input.departmentIds[0], input.departmentIds[0]],
+        ventureIds: [input.ventureIds[0], input.ventureIds[0]],
       }).success,
     ).toBe(false);
   });
@@ -60,7 +61,7 @@ describe('ProjectCreateOptionsResponseSchema', () => {
             email: 'active@example.com',
           },
         ],
-        departments: [
+        ventures: [
           {
             id: '22222222-2222-4222-8222-222222222222',
             name: 'Operations',

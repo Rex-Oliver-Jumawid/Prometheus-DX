@@ -5,7 +5,7 @@ const descriptions: Record<string, string> = {
   Schedule: 'Schedules and work sessions belong to Phase 6.',
   Team: 'Team availability and work activity belong to Phase 6.',
   Notifications: 'The notification inbox and event delivery belong to Phase 7.',
-  Registry: 'Member and department administration begins in Phase 2.',
+  Registry: 'Member and venture administration begins in Phase 2.',
 };
 
 export function PlaceholderPage({

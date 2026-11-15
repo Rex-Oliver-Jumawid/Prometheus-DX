@@ -184,3 +184,12 @@ They should preserve enough context that a future developer can answer:
 - What failed before this approach worked?
 - What did we learn from the failure?
 - What should we do differently in the next phase?
+
+
+## Post-release venture foundation (in progress)
+
+The active expansion replaces Department product workflows with Ventures on branch feat/venture-foundation, based on unmerged maintenance PR #69.
+Physical Department table and column names remain mapped for data compatibility; new APIs and application models use Venture terminology.
+Optional primary venture grouping is separate from many-to-many membership, multiple operational roles, and scoped venture permissions.
+No cash, equity, contribution verification, or governance engine is included.
+See .docs/phases/post-release-01-ventures.md for decisions and verification status.

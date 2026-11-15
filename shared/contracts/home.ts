@@ -15,11 +15,11 @@ export const HomeWorkingMemberSchema = z.object({
   id: z.string().uuid(),
   fullName: z.string().min(1),
   profileImagePath: z.string().nullable(),
-  department: z.object({
+  venture: z.object({
     id: z.string().uuid(),
     name: z.string().min(1),
     shortLabel: z.string().min(1),
-  }),
+  }).nullable(),
 });
 
 export const HomeAttentionItemSchema = z.object({

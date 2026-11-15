@@ -717,7 +717,7 @@ export function ProjectWorkflow({
                 <span className="workspace-accent-line" aria-hidden="true" />
                 <p className="kicker">
                   {selectedStage.name.toUpperCase()} /{' '}
-                  {selectedOutcome.departments[0]?.name.toUpperCase() ||
+                  {selectedOutcome.ventures[0]?.name.toUpperCase() ||
                     'OUTCOME'}
                 </p>
               </div>
@@ -817,8 +817,8 @@ export function ProjectWorkflow({
               outcomeDescription={
                 selectedOutcome.description || selectedOutcome.title
               }
-              departmentLabels={selectedOutcome.departments.map(
-                (department) => department.shortLabel || department.name,
+              ventureLabels={selectedOutcome.ventures.map(
+                (venture) => venture.shortLabel || venture.name,
               )}
             />
           </main>
@@ -835,7 +835,7 @@ export function ProjectWorkflow({
             stage={editor.stage}
             stages={workflow.data.stages}
             outcome={editor.outcome}
-            departments={options.data.departments}
+            ventures={options.data.ventures}
             members={options.data.leads}
             availablePrerequisites={allOutcomes.filter(
               (item) => item.id !== editor.outcome.id,
@@ -1044,7 +1044,7 @@ export function ProjectWorkflow({
           <div className="toolbar-sub" id="pwContentBoardSubtitle">
             {scope === 'mine'
               ? `My Work - ${scopedOutcomes.length} outcome${scopedOutcomes.length === 1 ? '' : 's'} joined by you.`
-              : 'Whole Work - complete project visibility across every stage, department, and assigned member.'}
+              : 'Whole Work - complete project visibility across every stage, venture, and assigned member.'}
           </div>
         </div>
         <div className="content-board-actions scope-actions-right">
@@ -1261,12 +1261,12 @@ export function ProjectWorkflow({
                               (item) => item.id === prereq.id,
                             );
                             const prereqDept =
-                              prereqOutcome?.departments[0]?.shortLabel ??
-                              prereqOutcome?.departments[0]?.name ??
+                              prereqOutcome?.ventures[0]?.shortLabel ??
+                              prereqOutcome?.ventures[0]?.name ??
                               'General';
                             const depDept =
-                              outcome.departments[0]?.shortLabel ??
-                              outcome.departments[0]?.name ??
+                              outcome.ventures[0]?.shortLabel ??
+                              outcome.ventures[0]?.name ??
                               'General';
                             const dependencyResolution =
                               prereq.resolution ??
@@ -1623,14 +1623,14 @@ export function ProjectWorkflow({
                             </p>
 
                             <div className="tags">
-                              {outcome.departments.map((department) => (
+                              {outcome.ventures.map((venture) => (
                                 <span
-                                  key={department.id}
+                                  key={venture.id}
                                   className={`dept ${deptClass(
-                                    department.shortLabel,
+                                    venture.shortLabel,
                                   )}`}
                                 >
-                                  {department.shortLabel}
+                                  {venture.shortLabel}
                                 </span>
                               ))}
                               {outcome.members && outcome.members.length > 0 ? (
@@ -1860,7 +1860,7 @@ export function ProjectWorkflow({
               ? outcomeEditor.outcome
               : undefined
           }
-          departments={options.data?.departments ?? []}
+          ventures={options.data?.ventures ?? []}
           members={options.data?.leads ?? []}
           availablePrerequisites={allOutcomes.filter(
             (item) =>

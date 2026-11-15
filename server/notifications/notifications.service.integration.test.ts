@@ -15,7 +15,7 @@ const createdAt = new Date('2026-09-22T00:00:00.000Z');
 describe.runIf(runDatabaseIntegration)(
   'notification inbox database integration',
   () => {
-    let departmentId: string;
+    let ventureId: string;
     let projectId: string;
     let recipient: Member;
     let otherMember: Member;
@@ -23,17 +23,17 @@ describe.runIf(runDatabaseIntegration)(
     const otherNotificationId = randomUUID();
 
     beforeAll(async () => {
-      const department = await prisma.department.create({
+      const venture = await prisma.venture.create({
         data: { name: runId, shortLabel: 'P7API' },
       });
-      departmentId = department.id;
+      ventureId = venture.id;
       [recipient, otherMember] = await Promise.all(
         ['recipient', 'other'].map((label) =>
           prisma.member.create({
             data: {
               email: `${runId}-${label}@example.com`,
               fullName: `${label} ${runId}`,
-              departmentId,
+              ventureId,
               status: 'ACTIVE',
             },
           }),
@@ -82,8 +82,8 @@ describe.runIf(runDatabaseIntegration)(
       await prisma.member.deleteMany({
         where: { email: { startsWith: runId } },
       });
-      if (departmentId)
-        await prisma.department.deleteMany({ where: { id: departmentId } });
+      if (ventureId)
+        await prisma.venture.deleteMany({ where: { id: ventureId } });
       await prisma.$disconnect();
     }, 30_000);
 

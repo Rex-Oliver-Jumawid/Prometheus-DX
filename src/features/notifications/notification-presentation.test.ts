@@ -16,7 +16,7 @@ describe('notification presentation for VisiWork mentions', () => {
       newAccessLevel: null,
       visiworkMention: {
         messageId: '33333333-3333-4333-8333-333333333333',
-        departmentId: null,
+        ventureId: null,
         roomLabel: 'General Chat',
         preview: 'Can @Oliver review this?',
       },
@@ -58,7 +58,7 @@ describe('notification presentation for VisiWork mentions', () => {
     expect(notificationPath({ ...notification, project: null })).toBeNull();
   });
 
-  it('links a department mention to the room and exact message', () => {
+  it('links a venture mention to the room and exact message', () => {
     const notification: Notification = {
       id: '44444444-4444-4444-8444-444444444444',
       type: 'VISIWORK_MENTION',
@@ -68,7 +68,7 @@ describe('notification presentation for VisiWork mentions', () => {
       newAccessLevel: null,
       visiworkMention: {
         messageId: '55555555-5555-4555-8555-555555555555',
-        departmentId: '66666666-6666-4666-8666-666666666666',
+        ventureId: '66666666-6666-4666-8666-666666666666',
         roomLabel: 'R&D Chat',
         preview: 'Please check this.',
       },
@@ -77,7 +77,7 @@ describe('notification presentation for VisiWork mentions', () => {
     };
 
     expect(notificationPath(notification)).toBe(
-      '/visiwork?message=55555555-5555-4555-8555-555555555555&department=66666666-6666-4666-8666-666666666666',
+      '/visiwork?message=55555555-5555-4555-8555-555555555555&venture=66666666-6666-4666-8666-666666666666',
     );
   });
 });

@@ -6,7 +6,7 @@ const hasCredentials = Boolean(
   process.env.E2E_MEMBER_EMAIL && process.env.E2E_MEMBER_PASSWORD,
 );
 const runId = `phase3-slice3-${Date.now()}`;
-let fixtureDepartmentIds: string[] = [];
+let fixtureVentureIds: string[] = [];
 let fixtureLeadId: string | undefined;
 let createdProjectId: string | undefined;
 let unrelatedProjectId: string | undefined;
@@ -34,20 +34,20 @@ test.beforeAll(async () => {
   });
   if (!currentMember) throw new Error('E2E member record was not found.');
   currentMemberId = currentMember.id;
-  const [firstDepartment, secondDepartment] = await Promise.all([
-    prisma.department.create({
+  const [firstVenture, secondVenture] = await Promise.all([
+    prisma.venture.create({
       data: { name: `${runId} Design`, shortLabel: 'P3DES' },
     }),
-    prisma.department.create({
+    prisma.venture.create({
       data: { name: `${runId} Delivery`, shortLabel: 'P3DEL' },
     }),
   ]);
-  fixtureDepartmentIds = [firstDepartment.id, secondDepartment.id];
+  fixtureVentureIds = [firstVenture.id, secondVenture.id];
   const lead = await prisma.member.create({
     data: {
       email: `${runId}@example.com`,
       fullName: 'Phase Three Alternate Lead',
-      departmentId: firstDepartment.id,
+      ventureId: firstVenture.id,
       status: 'ACTIVE',
       workspaceRole: 'MEMBER',
     },
@@ -60,7 +60,7 @@ test.beforeAll(async () => {
         'A real Project visible to an active Member without authority.',
       createdByMemberId: lead.id,
       leadMemberId: lead.id,
-      departments: { create: { departmentId: firstDepartment.id } },
+      ventures: { create: { ventureId: firstVenture.id } },
     },
   });
   unrelatedProjectId = unrelatedProject.id;
@@ -71,7 +71,7 @@ test.beforeAll(async () => {
         'A real Project for exercising Project Lead status controls.',
       createdByMemberId: lead.id,
       leadMemberId: currentMember.id,
-      departments: { create: { departmentId: secondDepartment.id } },
+      ventures: { create: { ventureId: secondVenture.id } },
     },
   });
   leadProjectId = leadProject.id;
@@ -102,9 +102,9 @@ test.afterAll(async () => {
   });
   if (fixtureLeadId)
     await prisma.member.delete({ where: { id: fixtureLeadId } });
-  if (fixtureDepartmentIds.length)
-    await prisma.department.deleteMany({
-      where: { id: { in: fixtureDepartmentIds } },
+  if (fixtureVentureIds.length)
+    await prisma.venture.deleteMany({
+      where: { id: { in: fixtureVentureIds } },
     });
   await prisma.$disconnect();
 });
@@ -136,7 +136,7 @@ async function apiStatusUpdate(page: Page, projectId: string, status: string) {
   );
 }
 
-test('an active Member creates a Project with another active Lead and multiple Departments', async ({
+test('an active Member creates a Project with another active Lead and multiple Ventures', async ({
   page,
 }) => {
   test.skip(!hasCredentials, 'Requires E2E member credentials.');
@@ -166,7 +166,7 @@ test('an active Member creates a Project with another active Lead and multiple D
   await expect(page.getByText('Enter a project name.')).toBeVisible();
   await expect(page.getByText('Enter a project description.')).toBeVisible();
   await expect(page.getByText('Choose an active Project Lead.')).toBeVisible();
-  await expect(page.getByText('Choose at least one department.')).toBeVisible();
+  await expect(page.getByText('Choose at least one venture.')).toBeVisible();
 
   await page.getByLabel('Project name').fill(name);
   await page
@@ -174,8 +174,8 @@ test('an active Member creates a Project with another active Lead and multiple D
     .fill('Created through the focused Phase 3 browser acceptance path.');
   await page.getByLabel('Project Lead').selectOption(creator.id);
   await page.getByLabel('Project Lead').selectOption(fixtureLeadId!);
-  for (const departmentId of fixtureDepartmentIds)
-    await page.locator(`input[value="${departmentId}"]`).check();
+  for (const ventureId of fixtureVentureIds)
+    await page.locator(`input[value="${ventureId}"]`).check();
   const requestPromise = page.waitForRequest(
     (request) =>
       request.url().endsWith('/api/projects') && request.method() === 'POST',
@@ -197,23 +197,23 @@ test('an active Member creates a Project with another active Lead and multiple D
   });
   expect(
     (
-      request.postDataJSON() as { departmentIds: string[] }
-    ).departmentIds.sort(),
-  ).toEqual([...fixtureDepartmentIds].sort());
+      request.postDataJSON() as { ventureIds: string[] }
+    ).ventureIds.sort(),
+  ).toEqual([...fixtureVentureIds].sort());
   await expect(page.getByRole('dialog', { name: 'Add Project' })).toHaveCount(
     0,
   );
   await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
   const project = await prisma.project.findFirstOrThrow({
     where: { name },
-    include: { departments: true },
+    include: { ventures: true },
   });
   createdProjectId = project.id;
   expect(await prisma.project.count({ where: { name } })).toBe(1);
   expect(project.createdByMemberId).toBe(creator.id);
   expect(project.leadMemberId).toBe(fixtureLeadId);
-  expect(project.departments.map((item) => item.departmentId).sort()).toEqual(
-    [...fixtureDepartmentIds].sort(),
+  expect(project.ventures.map((item) => item.ventureId).sort()).toEqual(
+    [...fixtureVentureIds].sort(),
   );
   await page.reload();
   await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();

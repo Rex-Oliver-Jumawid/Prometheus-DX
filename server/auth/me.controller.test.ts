@@ -9,7 +9,7 @@ const member = {
   authUserId: '22222222-2222-4222-8222-222222222222',
   email: 'member@example.com',
   fullName: 'Member Example',
-  departmentId: '33333333-3333-4333-8333-333333333333',
+  ventureId: '33333333-3333-4333-8333-333333333333',
   workspaceRole: 'MEMBER',
   status: 'ACTIVE',
   position: 'Engineer',
@@ -23,17 +23,17 @@ const member = {
   updatedAt: new Date('2026-09-01T00:00:00.000Z'),
 } as Member;
 
-const department = {
-  id: member.departmentId,
+const venture = {
+  id: member.ventureId,
   name: 'Research and Development',
   shortLabel: 'R&D',
 };
 
 describe('MeController', () => {
-  it('returns organization-managed department context with the current member', async () => {
+  it('returns organization-managed venture context with the current member', async () => {
     const prisma = {
-      department: {
-        findUnique: vi.fn().mockResolvedValue(department),
+      venture: {
+        findUnique: vi.fn().mockResolvedValue(venture),
       },
     } as unknown as PrismaService;
     const controller = new MeController(prisma);
@@ -41,7 +41,7 @@ describe('MeController', () => {
     await expect(controller.getMe(member)).resolves.toMatchObject({
       id: member.id,
       email: member.email,
-      department,
+      venture,
     });
   });
 
@@ -56,8 +56,8 @@ describe('MeController', () => {
     });
     const prisma = {
       member: { update },
-      department: {
-        findUnique: vi.fn().mockResolvedValue(department),
+      venture: {
+        findUnique: vi.fn().mockResolvedValue(venture),
       },
     } as unknown as PrismaService;
     const controller = new MeController(prisma);
@@ -77,7 +77,7 @@ describe('MeController', () => {
       nickname: 'Oli',
       phoneNumber: '+63 917 123 4567',
       about: 'Building useful software.',
-      department,
+      venture,
     });
 
     expect(update).toHaveBeenCalledWith({

@@ -204,7 +204,7 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
   await expect(profile.getByLabel(/Email address/)).toHaveValue(email!);
   await expect(profile.getByLabel('Full name')).toHaveValue(/.+/);
   await expect(profile.getByLabel(/Email address/)).toHaveAttribute('readonly');
-  await expect(profile.getByLabel(/Department/)).toHaveAttribute('readonly');
+  await expect(profile.getByLabel(/Venture/)).toHaveAttribute('readonly');
   await expect(profile.getByLabel(/Access role/)).toHaveAttribute('readonly');
   await expect(profile.getByLabel('Nickname')).toBeEditable();
   await expect(profile.getByLabel('Phone number')).toBeEditable();
@@ -408,7 +408,7 @@ test('non-admin Project Lead cannot see or open Registry', async ({ page }) => {
         description: 'Playwright fixture for Project Lead Registry isolation.',
         createdByMemberId: member.id,
         leadMemberId: member.id,
-        departments: { create: { departmentId: member.departmentId } },
+        ventures: { create: { ventureId: member.ventureId } },
       },
     });
     projectId = project.id;

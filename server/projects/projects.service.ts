@@ -29,9 +29,9 @@ const projectInclude = {
   leadMember: {
     select: { id: true, fullName: true, email: true, profileImagePath: true },
   },
-  departments: {
+  ventures: {
     include: {
-      department: { select: { id: true, name: true, shortLabel: true } },
+      venture: { select: { id: true, name: true, shortLabel: true } },
     },
   },
   members: { select: { memberId: true, accessLevel: true } },
@@ -72,9 +72,9 @@ function projectListSelect(currentMemberId: string) {
     leadMember: {
       select: { id: true, fullName: true, email: true, profileImagePath: true },
     },
-    departments: {
+    ventures: {
       include: {
-        department: { select: { id: true, name: true, shortLabel: true } },
+        venture: { select: { id: true, name: true, shortLabel: true } },
       },
     },
     members: {
@@ -124,7 +124,7 @@ export class ProjectsService {
   }
 
   async getCreateOptions(): Promise<ProjectCreateOptionsResponse> {
-    const [leads, departments] = await Promise.all([
+    const [leads, ventures] = await Promise.all([
       this.prisma.member.findMany({
         where: { status: MemberStatus.ACTIVE },
         select: {
@@ -135,13 +135,14 @@ export class ProjectsService {
         },
         orderBy: [{ fullName: 'asc' }, { id: 'asc' }],
       }),
-      this.prisma.department.findMany({
+      this.prisma.venture.findMany({
+        where: { status: 'ACTIVE' },
         select: { id: true, name: true, shortLabel: true },
         orderBy: [{ name: 'asc' }, { id: 'asc' }],
       }),
     ]);
 
-    return { leads, departments };
+    return { leads, ventures };
   }
 
   async getProject(currentMember: Member, projectId: string): Promise<Project> {
@@ -159,13 +160,13 @@ export class ProjectsService {
     input: CreateProjectRequest,
   ): Promise<Project> {
     const project = await this.prisma.$transaction(async (transaction) => {
-      const [lead, departments] = await Promise.all([
+      const [lead, ventures] = await Promise.all([
         transaction.member.findUnique({
           where: { id: input.leadMemberId },
           select: { id: true, status: true },
         }),
-        transaction.department.findMany({
-          where: { id: { in: input.departmentIds } },
+        transaction.venture.findMany({
+          where: { id: { in: input.ventureIds }, status: 'ACTIVE' },
           select: { id: true },
         }),
       ]);
@@ -176,8 +177,8 @@ export class ProjectsService {
       if (lead.status !== MemberStatus.ACTIVE) {
         throw new BadRequestException('Choose an active Project Lead.');
       }
-      if (departments.length !== input.departmentIds.length) {
-        throw new BadRequestException('Choose only existing departments.');
+      if (ventures.length !== input.ventureIds.length) {
+        throw new BadRequestException('Choose only existing ventures.');
       }
 
       const created = await transaction.project.create({
@@ -186,9 +187,9 @@ export class ProjectsService {
           description: input.description,
           createdByMemberId: currentMember.id,
           leadMemberId: lead.id,
-          departments: {
-            create: input.departmentIds.map((departmentId) => ({
-              departmentId,
+          ventures: {
+            create: input.ventureIds.map((ventureId) => ({
+              ventureId,
             })),
           },
           statusHistory: {
@@ -228,6 +229,18 @@ export class ProjectsService {
     });
 
     return this.toProject(project, currentMember.id);
+  }
+
+  async updateVentures(actor: Member, projectId: string, ventureIds: string[]) {
+    await this.prisma.$transaction(async db => {
+      await this.requireProjectLead(db, projectId, actor.id);
+      const ventures = await db.venture.findMany({ where: { id: { in: ventureIds }, status: 'ACTIVE' }, select: { id: true } });
+      if (ventures.length !== ventureIds.length) throw new BadRequestException('Choose active ventures.');
+      await db.projectVenture.deleteMany({ where: { projectId } });
+      if (ventureIds.length) await db.projectVenture.createMany({ data: ventureIds.map(ventureId => ({ projectId, ventureId })) });
+      await db.activityLog.create({ data: { projectId, actorMemberId: actor.id, entityType: 'Project', entityId: projectId, action: 'PROJECT_VENTURES_UPDATED', metadata: { ventureIds } } });
+    });
+    return this.getProject(actor, projectId);
   }
 
   async updateProject(
@@ -501,7 +514,7 @@ export class ProjectsService {
       status: project.status,
       lead: project.leadMember,
       creator: project.createdByMember,
-      departments: project.departments.map(({ department }) => department),
+      ventures: project.ventures.map(({ venture }) => venture),
       isParticipating: project.members.some(
         ({ memberId }) => memberId === currentMemberId,
       ),
@@ -554,7 +567,7 @@ export class ProjectsService {
       status: project.status,
       lead: project.leadMember,
       creator: project.createdByMember,
-      departments: project.departments.map(({ department }) => department),
+      ventures: project.ventures.map(({ venture }) => venture),
       isParticipating: Boolean(currentProjectMember),
       currentMemberAccess: currentProjectMember?.accessLevel ?? null,
       canChangeStatus:

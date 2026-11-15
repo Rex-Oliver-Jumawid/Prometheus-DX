@@ -27,7 +27,7 @@ const baseOutcome = {
   isLocked: false,
   hasForReview: false,
   workProgress: 0,
-  departments: [{ id: 'dep1', name: 'Engineering', shortLabel: 'Eng' }],
+  ventures: [{ id: 'dep1', name: 'Engineering', shortLabel: 'Eng' }],
   acceptanceCriteria: [{ id: 'crit1', position: 0, description: 'All tests pass' }],
   prerequisites: [] as Array<{ id: string; title: string; lifecycleStatus: 'OPEN' | 'NEEDS_REVISION' | 'ACCEPTED'; resolved: boolean }>,
   members: [],

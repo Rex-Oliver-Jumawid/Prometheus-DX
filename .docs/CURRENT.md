@@ -113,3 +113,12 @@ Keep this file concise.
 The 2026-11-12 maintenance change restricts push endpoints, rejects provider redirects, introduces scheduler-driven durable push delivery, expands CI to all database integration suites and disposable authenticated Supabase journeys, and extracts Project Workflow dialogs.
 The current release boundary is unchanged.
 Apply the new migration and configure the push worker scheduler as documented in DEPLOYMENT.md before rollout.
+
+
+## Post-release venture foundation (in progress)
+
+The active expansion replaces Department product workflows with Ventures on branch feat/venture-foundation, based on unmerged maintenance PR #69.
+Physical Department table and column names remain mapped for data compatibility; new APIs and application models use Venture terminology.
+Optional primary venture grouping is separate from many-to-many membership, multiple operational roles, and scoped venture permissions.
+No cash, equity, contribution verification, or governance engine is included.
+See .docs/phases/post-release-01-ventures.md for decisions and verification status.

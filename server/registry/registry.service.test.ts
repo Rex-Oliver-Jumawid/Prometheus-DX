@@ -8,7 +8,7 @@ import type { PrismaService } from '../database/prisma.service';
 import type { InvitationDelivery } from './invitation.service';
 import { RegistryService } from './registry.service';
 
-const department = {
+const venture = {
   id: '11111111-1111-4111-8111-111111111111',
   name: 'Research and Development',
   shortLabel: 'R&D',
@@ -22,8 +22,8 @@ const member = {
   authUserId: null,
   email: 'invited@example.com',
   fullName: 'Invited Member',
-  departmentId: department.id,
-  department,
+  ventureId: venture.id,
+  venture,
   position: 'Engineer',
   workspaceRole: 'MEMBER' as const,
   status: 'INVITED' as const,
@@ -41,31 +41,31 @@ function delivery(send = vi.fn().mockResolvedValue(undefined)) {
 }
 
 describe('RegistryService invitation behavior', () => {
-  it('deletes an unreferenced department', async () => {
+  it('archives an unreferenced venture without deleting history', async () => {
     const database = {
-      department: {
+      venture: {
         findUnique: vi.fn().mockResolvedValue({
-          id: department.id,
+          id: venture.id,
           _count: { members: 0, projects: 0, outcomes: 0 },
         }),
-        delete: vi.fn().mockResolvedValue(department),
+        update: vi.fn().mockResolvedValue(venture),
       },
     } as unknown as PrismaService;
     const service = new RegistryService(database, delivery());
 
-    await expect(service.deleteDepartment(department.id)).resolves.toEqual({
-      id: department.id,
+    await expect(service.deleteVenture(venture.id)).resolves.toEqual({
+      id: venture.id,
     });
-    expect(database.department.delete).toHaveBeenCalledWith({
-      where: { id: department.id },
-    });
+    expect(database.venture.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: venture.id }, data: expect.objectContaining({ status: 'ARCHIVED' })
+    }));
   });
 
-  it('rejects deleting a department that is still referenced', async () => {
+  it('rejects deleting a venture that is still referenced', async () => {
     const database = {
-      department: {
+      venture: {
         findUnique: vi.fn().mockResolvedValue({
-          id: department.id,
+          id: venture.id,
           _count: { members: 1, projects: 0, outcomes: 0 },
         }),
         delete: vi.fn(),
@@ -73,20 +73,20 @@ describe('RegistryService invitation behavior', () => {
     } as unknown as PrismaService;
     const service = new RegistryService(database, delivery());
 
-    await expect(service.deleteDepartment(department.id)).rejects.toBeInstanceOf(
+    await expect(service.deleteVenture(venture.id)).rejects.toBeInstanceOf(
       ConflictException,
     );
-    expect(database.department.delete).not.toHaveBeenCalled();
+    expect(database.venture.delete).not.toHaveBeenCalled();
   });
 
-  it('loads Registry departments and members in one overview operation', async () => {
+  it('loads Registry ventures and members in one overview operation', async () => {
     const database = {
-      department: {
+      venture: {
         findMany: vi
           .fn()
           .mockResolvedValue([
             {
-              ...department,
+              ...venture,
               _count: { members: 1, projects: 2, outcomes: 3 },
             },
           ]),
@@ -96,17 +96,18 @@ describe('RegistryService invitation behavior', () => {
     const service = new RegistryService(database, delivery());
 
     await expect(service.getOverview()).resolves.toMatchObject({
-      departments: [
+      ventures: [
         {
-          id: department.id,
+          id: venture.id,
           memberCount: 1,
           projectCount: 2,
           outcomeCount: 3,
         },
       ],
-      members: [{ id: member.id, departmentId: department.id }],
+      members: [{ id: member.id, ventureId: venture.id }],
     });
-    expect(database.department.findMany).toHaveBeenCalledWith({
+    expect(database.venture.findMany).toHaveBeenCalledWith({
+      where: { status: 'ACTIVE' },
       include: {
         _count: {
           select: {
@@ -119,6 +120,7 @@ describe('RegistryService invitation behavior', () => {
                 },
               },
             },
+            memberships: { where: { endedAt: null } },
             projects: true,
             outcomes: true,
           },
@@ -132,7 +134,7 @@ describe('RegistryService invitation behavior', () => {
   it('keeps one invited Member when initial delivery is unavailable', async () => {
     const send = vi.fn().mockRejectedValue(new Error('unavailable'));
     const database = {
-      department: { findUnique: vi.fn().mockResolvedValue(department) },
+      venture: { findUnique: vi.fn().mockResolvedValue(venture) },
       member: {
         findFirst: vi.fn().mockResolvedValue(null),
         create: vi.fn().mockResolvedValue(member),
@@ -146,7 +148,7 @@ describe('RegistryService invitation behavior', () => {
       service.createMember({
         email: member.email,
         fullName: member.fullName,
-        departmentId: member.departmentId,
+        ventureId: member.ventureId,
         position: member.position,
         workspaceRole: member.workspaceRole,
         status: member.status,
@@ -170,7 +172,7 @@ describe('RegistryService invitation behavior', () => {
         ),
       );
     const database = {
-      department: { findUnique: vi.fn().mockResolvedValue(department) },
+      venture: { findUnique: vi.fn().mockResolvedValue(venture) },
       member: {
         findFirst: vi.fn().mockResolvedValue(null),
         create: vi.fn().mockResolvedValue(member),
@@ -184,7 +186,7 @@ describe('RegistryService invitation behavior', () => {
       service.createMember({
         email: member.email,
         fullName: member.fullName,
-        departmentId: member.departmentId,
+        ventureId: member.ventureId,
         position: member.position,
         workspaceRole: member.workspaceRole,
         status: member.status,

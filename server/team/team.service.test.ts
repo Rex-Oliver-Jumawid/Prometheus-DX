@@ -7,7 +7,7 @@ describe('TeamService', () => {
   it('counts a midnight-ending shift and a full day correctly', async () => {
     const prisma = { member: { findMany: vi.fn().mockResolvedValue([{
       id: 'member', fullName: 'Member', position: null, profileImagePath: null,
-      visiworkDepartmentId: null, department: {}, workSessions: [],
+      visiworkVentureId: null, venture: {}, workSessions: [],
       schedule: { blocks: [
         { id: 'late', weekday: 'MONDAY', startTime: new Date('1970-01-01T21:00:00Z'), endTime: new Date('1970-01-01T00:00:00Z') },
         { id: 'full', weekday: 'TUESDAY', startTime: new Date('1970-01-01T00:00:00Z'), endTime: new Date('1970-01-01T00:00:00Z') },
@@ -28,9 +28,9 @@ describe('TeamService', () => {
             fullName: 'Member One',
             position: 'Designer',
             profileImagePath: 'https://example.com/member-one.jpg',
-            visiworkDepartmentId: null,
+            visiworkVentureId: null,
             createdAt: new Date('2026-09-01T00:00:00.000Z'),
-            department: {
+            venture: {
               id: '22222222-2222-4222-8222-222222222222',
               name: 'Creative',
               shortLabel: 'CRT',
@@ -73,8 +73,8 @@ describe('TeamService', () => {
       fullName: 'Member One',
       position: 'Designer',
       profileImagePath: 'https://example.com/member-one.jpg',
-      department: { name: 'Creative' },
-      visiworkDepartmentId: null,
+      venture: { name: 'Creative' },
+      visiworkVentureId: null,
       workingNow: true,
       scheduledMinutes: 360,
     });

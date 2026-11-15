@@ -19,7 +19,7 @@ vi.mock('../auth/auth-context', () => ({
     member: {
       id: '11111111-1111-4111-8111-111111111111',
       fullName: 'Rex Jumawid',
-      department: { name: 'X Team' },
+      venture: { name: 'X Team' },
       workspaceRole: mocks.role,
     },
     session: { access_token: 'fake-token' },

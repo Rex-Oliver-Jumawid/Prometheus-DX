@@ -79,7 +79,7 @@ test.beforeAll(async () => {
     data: {
       fullName: 'Other Outcome Member',
       email: `${runId}@example.com`,
-      departmentId: member.departmentId,
+      ventureId: member.ventureId,
       status: 'ACTIVE',
     },
   });
@@ -90,7 +90,7 @@ test.beforeAll(async () => {
       description: 'Shared submission workflow fixture.',
       createdByMemberId: memberId,
       leadMemberId: otherId,
-      departments: { create: { departmentId: member.departmentId } },
+      ventures: { create: { ventureId: member.ventureId } },
       stages: {
         create: {
           name: 'Delivery',
@@ -100,7 +100,7 @@ test.beforeAll(async () => {
               title: 'Shared Delivery',
               position: 0,
               createdByMemberId: otherId,
-              departments: { create: { departmentId: member.departmentId } },
+              ventures: { create: { ventureId: member.ventureId } },
               acceptanceCriteria: {
                 create: {
                   description: 'Combined output satisfies the objective.',

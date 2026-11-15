@@ -15,7 +15,7 @@ const authFixtures: Awaited<ReturnType<typeof createAuthFixture>>[] = [];
 const memberIds: string[] = [];
 const contexts: BrowserContext[] = [];
 let admin: Page, lead: Page, worker: Page, newcomer: Page;
-let departmentId = '',
+let ventureId = '',
   projectId = '',
   stageId = '',
   outcomeId = '';
@@ -110,7 +110,7 @@ test.beforeAll(async ({ browser }) => {
     },
   });
   expect(administrator.workspaceRole).toBe('ADMINISTRATOR');
-  departmentId = administrator.departmentId;
+  ventureId = administrator.ventureId;
   for (let i = 0; i < 3; i++)
     authFixtures.push(await createAuthFixture(prisma, `${runId}-${i}`));
   for (let i = 0; i < 4; i++)
@@ -148,7 +148,7 @@ test('Core 01: Administrator authorizes three isolated members through Registry'
     const response = await api(admin, '/registry/members', 'POST', {
       fullName: `Core ${['Lead', 'Worker', 'Newcomer'][index]} ${runId}`,
       email: fixture.email,
-      departmentId,
+      ventureId,
       position: 'E2E tester',
       workspaceRole: 'MEMBER',
       status: 'INVITED',
@@ -184,7 +184,7 @@ test('Core 03: Member creates a Project and assigns themselves Lead', async () =
     .getByLabel('Description')
     .fill('Complete authenticated delivery workflow.');
   await dialog.getByLabel('Project Lead').selectOption(memberIds[0]);
-  await dialog.locator(`input[value="${departmentId}"]`).check();
+  await dialog.locator(`input[value="${ventureId}"]`).check();
   const response = lead.waitForResponse(
     (response) =>
       response.url().endsWith('/api/projects') &&
@@ -212,7 +212,7 @@ test('Core 04: Lead creates Stage and Outcome through the workflow UI', async ()
     .click();
   const dialog = lead.getByRole('dialog', { name: 'Add project outcome' });
   await dialog.getByLabel('Outcome title').fill('Core evidence delivered');
-  await dialog.locator(`input[value="${departmentId}"]`).check();
+  await dialog.locator(`input[value="${ventureId}"]`).check();
   await dialog
     .getByLabel('Acceptance criterion 1', { exact: true })
     .fill('The revised evidence meets the objective.');
@@ -459,7 +459,7 @@ test('Core 12 F5-35 F5-36: Lead configures a dependent Outcome and a Member join
     {
       title: 'Direct acceptance source',
       description: '',
-      departmentIds: [departmentId],
+      ventureIds: [ventureId],
       acceptanceCriteria: ['Ready to proceed'],
       prerequisiteOutcomeIds: [],
     },
@@ -473,7 +473,7 @@ test('Core 12 F5-35 F5-36: Lead configures a dependent Outcome and a Member join
     {
       title: 'Dependent work',
       description: '',
-      departmentIds: [departmentId],
+      ventureIds: [ventureId],
       acceptanceCriteria: ['Dependent work complete'],
       prerequisiteOutcomeIds: [directId],
     },
@@ -546,7 +546,7 @@ test('Core 16: unchanged dependencies preserve overrides and dependency cycles a
   const updated = await api(lead, base(dependentId), 'PATCH', {
     title: 'Dependent work updated',
     description: '',
-    departmentIds: [departmentId],
+    ventureIds: [ventureId],
     acceptanceCriteria: ['Dependent work complete'],
     prerequisiteOutcomeIds: [directId],
   });
@@ -557,7 +557,7 @@ test('Core 16: unchanged dependencies preserve overrides and dependency cycles a
       await api(lead, base(directId), 'PATCH', {
         title: 'Cycle',
         description: '',
-        departmentIds: [departmentId],
+        ventureIds: [ventureId],
         acceptanceCriteria: ['Ready'],
         prerequisiteOutcomeIds: [dependentId],
       })
@@ -709,7 +709,7 @@ test('Core 21: create a non-overridden dependent after direct prerequisite accep
     'POST',
     {
       title: 'Previously accepted dependent',
-      departmentIds: [departmentId],
+      ventureIds: [ventureId],
       acceptanceCriteria: ['Delivered'],
       prerequisiteOutcomeIds: [directId],
     },

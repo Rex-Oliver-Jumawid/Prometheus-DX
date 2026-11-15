@@ -49,7 +49,7 @@ export function CreateProjectDialog({
       name: '',
       description: '',
       leadMemberId: '',
-      departmentIds: [],
+      ventureIds: [],
     },
   });
 
@@ -99,7 +99,7 @@ export function CreateProjectDialog({
           field === 'name' ||
           field === 'description' ||
           field === 'leadMemberId' ||
-          field === 'departmentIds'
+          field === 'ventureIds'
         ) {
           setError(field, { type: 'validate', message: issue.message });
         }
@@ -115,7 +115,7 @@ export function CreateProjectDialog({
 
   const unavailable =
     options.isSuccess &&
-    (!options.data.leads.length || !options.data.departments.length);
+    (!options.data.leads.length || !options.data.ventures.length);
 
   return createPortal(
     <div
@@ -258,41 +258,41 @@ export function CreateProjectDialog({
                 <span>
                   {!options.data?.leads.length
                     ? 'No active Members are available to lead a Project.'
-                    : 'No persisted Departments are available.'}
+                    : 'No persisted Ventures are available.'}
                 </span>
               </div>
             )}
 
             <div className="vw-add-project-field">
-              <label>Departments involved</label>
+              <label>Ventures involved</label>
               {options.isPending ? (
                 <div className="vw-add-project-loading-text">
-                  Loading departments...
+                  Loading ventures...
                 </div>
               ) : (
                 <div
                   className="vw-new-project-depts"
                   role="group"
-                  aria-label="Departments involved"
+                  aria-label="Ventures involved"
                 >
-                  {options.data?.departments.map((department) => (
+                  {options.data?.ventures.map((venture) => (
                     <label
-                      key={department.id}
+                      key={venture.id}
                       className="vw-dept-checkbox-card"
                     >
                       <input
                         type="checkbox"
-                        value={department.id}
-                        {...register('departmentIds')}
+                        value={venture.id}
+                        {...register('ventureIds')}
                       />
-                      <span>{department.name}</span>
+                      <span>{venture.name}</span>
                     </label>
                   ))}
                 </div>
               )}
-              {errors.departmentIds?.message && (
+              {errors.ventureIds?.message && (
                 <small className="projects-field-error">
-                  {errors.departmentIds.message}
+                  {errors.ventureIds.message}
                 </small>
               )}
             </div>

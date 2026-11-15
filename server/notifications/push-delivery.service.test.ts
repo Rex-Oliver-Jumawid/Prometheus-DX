@@ -25,7 +25,7 @@ function fixture() {
       endpoint: 'https://fcm.googleapis.com/push/token',
       p256dh: 'key',
       auth: 'secret',
-      member: { visiworkDepartmentId: null, status: 'ACTIVE' },
+      member: { visiworkVentureId: null, status: 'ACTIVE' },
     },
   };
   const db = {

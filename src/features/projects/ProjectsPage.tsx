@@ -178,7 +178,7 @@ function ProjectCard({
       </div>
 
       <div className="vw-overview-depts">
-        {project.departments.map((dept) => (
+        {project.ventures.map((dept) => (
           <span key={dept.id} className="vw-overview-dept" title={dept.name}>
             {dept.name}
           </span>
@@ -197,8 +197,8 @@ function ProjectCard({
 
       <div className="vw-overview-project-foot">
         <span>
-          {project.departments.length} department
-          {project.departments.length === 1 ? '' : 's'} involved
+          {project.ventures.length} venture
+          {project.ventures.length === 1 ? '' : 's'} involved
         </span>
         <Link
           to={`/projects/${project.id}`}
@@ -312,8 +312,8 @@ export function ProjectsPage() {
         project.description,
         project.lead.fullName,
         statusLabel(project.status),
-        ...project.departments.map((d) => d.name),
-        ...project.departments.map((d) => d.shortLabel),
+        ...project.ventures.map((d) => d.name),
+        ...project.ventures.map((d) => d.shortLabel),
       ]
         .join(' ')
         .toLowerCase();
@@ -453,7 +453,7 @@ export function ProjectsPage() {
                       {formatCompletionDate(project.updatedAt)}
                     </div>
                     <div className="vw-archive-depts">
-                      {project.departments.map((dept) => (
+                      {project.ventures.map((dept) => (
                         <span key={dept.id}>{dept.name}</span>
                       ))}
                     </div>

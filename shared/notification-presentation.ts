@@ -26,7 +26,7 @@ export function presentNotification(notification: Notification) {
 export function notificationPath(notification: Notification): string | null {
   if (notification.type === 'VISIWORK_MENTION' && notification.visiworkMention) {
     const params = new URLSearchParams({ message: notification.visiworkMention.messageId });
-    if (notification.visiworkMention.departmentId) params.set('department', notification.visiworkMention.departmentId);
+    if (notification.visiworkMention.ventureId) params.set('venture', notification.visiworkMention.ventureId);
     return `/visiwork?${params.toString()}`;
   }
   if (notification.type === 'PROJECT_CHAT_MENTION') {

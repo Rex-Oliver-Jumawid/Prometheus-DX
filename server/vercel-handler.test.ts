@@ -17,7 +17,7 @@ describe('createVercelRequestHandler', () => {
     const handler = createVercelRequestHandler(createApplication);
     const firstRequest = {
       method: 'GET',
-      url: '/api/me?include=department',
+      url: '/api/me?include=venture',
     } as IncomingMessage;
     const firstResponse = {} as ServerResponse;
     const secondRequest = {
@@ -40,7 +40,7 @@ describe('createVercelRequestHandler', () => {
       secondRequest,
       secondResponse,
     );
-    expect(firstRequest.url).toBe('/api/me?include=department');
+    expect(firstRequest.url).toBe('/api/me?include=venture');
     expect(secondRequest.url).toBe(
       '/api/projects/123/outcomes/456?view=details',
     );

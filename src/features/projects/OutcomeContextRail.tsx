@@ -16,7 +16,7 @@ type OutcomeMember = {
   profileImagePath?: string | null;
 };
 
-type OutcomeDepartment = {
+type OutcomeVenture = {
   id: string;
   name: string;
 };
@@ -29,7 +29,7 @@ export interface OutcomeContextRailProps {
   outcome: {
     title: string;
     lifecycleStatus: string;
-    departments: OutcomeDepartment[];
+    ventures: OutcomeVenture[];
     members: OutcomeMember[];
     prerequisites: OutcomePrerequisite[];
   };
@@ -114,10 +114,10 @@ export function OutcomeContextRail({
   const primaryMember = outcome.members[0];
   const avatarInitials = primaryMember
     ? getInitials(primaryMember.fullName)
-    : outcome.departments[0]?.name.slice(0, 2).toUpperCase() || 'PW';
+    : outcome.ventures[0]?.name.slice(0, 2).toUpperCase() || 'PW';
 
-  const departmentText =
-    outcome.departments.map((d) => d.name).join(', ') || 'General';
+  const ventureText =
+    outcome.ventures.map((d) => d.name).join(', ') || 'General';
 
   const contributorsText =
     outcome.members.map((m) => m.fullName).join(', ') ||
@@ -188,8 +188,8 @@ export function OutcomeContextRail({
             <div className="ownership-avatar" aria-hidden="true">{avatarInitials}</div>
           )}
           <div className="ownership-info">
-            <div className="meta-label">Department</div>
-            <strong>{departmentText}</strong>
+            <div className="meta-label">Venture</div>
+            <strong>{ventureText}</strong>
             <div className="meta-label ownership-member-label">
               Contributors
             </div>

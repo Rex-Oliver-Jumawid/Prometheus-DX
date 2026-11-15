@@ -16,6 +16,7 @@ import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import type { Member } from '@prisma/client';
 import {
   CreateProjectRequestSchema,
+  UpdateProjectVenturesRequestSchema,
   UpdateProjectRequestSchema,
   UpdateProjectStatusRequestSchema,
   type CreateProjectRequest,
@@ -89,6 +90,13 @@ export class ProjectsController {
     @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
   ) {
     return this.projectsService.deleteProject(currentMember, projectId);
+  }
+
+  @Patch(':projectId/ventures')
+  updateVentures(@CurrentMember() actor: Member, @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string, @Body() body: unknown) {
+    const parsed = UpdateProjectVenturesRequestSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException('Choose unique venture IDs.');
+    return this.projectsService.updateVentures(actor, projectId, parsed.data.ventureIds);
   }
 
   @Patch(':projectId/status')

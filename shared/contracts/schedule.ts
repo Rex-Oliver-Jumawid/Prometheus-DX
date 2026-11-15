@@ -133,11 +133,12 @@ export const TeamScheduleMemberSchema = z.object({
   id: z.string().uuid(),
   fullName: z.string(),
   position: z.string().nullable(),
-  department: z.object({
+  ventures: z.array(z.object({ id: z.string().uuid(), name: z.string(), shortLabel: z.string() })).optional(),
+  venture: z.object({
     id: z.string().uuid(),
     name: z.string(),
     shortLabel: z.string(),
-  }),
+  }).nullable(),
   schedule: MemberScheduleSchema.nullable(),
 });
 

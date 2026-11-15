@@ -262,8 +262,8 @@ export function AppShell() {
                 <Avatar member={member} />
                 <span className="account-copy">
                   <strong title={member.fullName}>{member.fullName}</strong>
-                  <small title={member.department.name}>
-                    {member.department.name}
+                  <small title={(member.venture?.name ?? 'No venture')}>
+                    {(member.venture?.name ?? 'No venture')}
                   </small>
                 </span>
               </button>

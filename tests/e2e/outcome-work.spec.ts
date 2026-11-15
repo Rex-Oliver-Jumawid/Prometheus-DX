@@ -8,7 +8,7 @@ let outcomeId = '';
 let prerequisiteId = '';
 let leadId = '';
 let memberId = '';
-let departmentId = '';
+let ventureId = '';
 const hasCredentials = Boolean(
   process.env.E2E_MEMBER_EMAIL && process.env.E2E_MEMBER_PASSWORD,
 );
@@ -79,12 +79,12 @@ test.beforeAll(async () => {
     },
   });
   memberId = member.id;
-  departmentId = member.departmentId;
+  ventureId = member.ventureId;
   const lead = await prisma.member.create({
     data: {
       fullName: 'Work Slice Lead',
       email: `${runId}@example.com`,
-      departmentId,
+      ventureId,
       status: 'ACTIVE',
     },
   });

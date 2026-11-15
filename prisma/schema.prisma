@@ -83,17 +83,23 @@ enum WorkSessionStatus {
   NEEDS_CORRECTION
 }
 
-model Department {
+model Venture {
   id               String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name             String
   shortLabel       String              @map("short_label") @db.VarChar(12)
   description      String?
   createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
-  members          Member[]            @relation("PrimaryDepartment")
-  visiworkMembers  Member[]            @relation("VisiWorkDepartment")
-  projects         ProjectDepartment[]
-  outcomes         OutcomeDepartment[]
+  members          Member[]            @relation("PrimaryVenture")
+  status           VentureStatus       @default(ACTIVE)
+  parentId         String?             @map("parent_id") @db.Uuid
+  parent           Venture?            @relation("VentureHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children         Venture[]           @relation("VentureHierarchy")
+  memberships      VentureMembership[]
+  auditEvents      VentureAuditEvent[]
+  visiworkMembers  Member[]            @relation("VisiWorkVenture")
+  projects         ProjectVenture[]
+  outcomes         OutcomeVenture[]
   visiworkMessages VisiWorkMessage[]
 
   @@index([name])
@@ -102,13 +108,15 @@ model Department {
 
 model Member {
   id                          String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ventureMemberships          VentureMembership[]
+  ventureAuditEvents          VentureAuditEvent[]
   authUserId                  String?                      @unique @map("auth_user_id") @db.Uuid
   email                       String
   fullName                    String                       @map("full_name")
-  departmentId                String                       @map("department_id") @db.Uuid
-  department                  Department                   @relation("PrimaryDepartment", fields: [departmentId], references: [id], onDelete: Restrict)
-  visiworkDepartmentId        String?                      @map("visiwork_department_id") @db.Uuid
-  visiworkDepartment          Department?                  @relation("VisiWorkDepartment", fields: [visiworkDepartmentId], references: [id], onDelete: SetNull)
+  ventureId                   String?                      @map("department_id") @db.Uuid
+  venture                     Venture?                     @relation("PrimaryVenture", fields: [ventureId], references: [id], onDelete: Restrict)
+  visiworkVentureId           String?                      @map("visiwork_department_id") @db.Uuid
+  visiworkVenture             Venture?                     @relation("VisiWorkVenture", fields: [visiworkVentureId], references: [id], onDelete: SetNull)
   workspaceRole               WorkspaceRole                @default(MEMBER) @map("workspace_role")
   status                      MemberStatus                 @default(INVITED)
   position                    String?
@@ -160,25 +168,25 @@ model Member {
   pushSubscriptions           PushSubscription[]
   chatPushMutes               ChatPushMute[]
 
-  @@index([departmentId])
-  @@index([visiworkDepartmentId])
+  @@index([ventureId])
+  @@index([visiworkVentureId])
   @@index([status])
   @@map("members")
 }
 
 model VisiWorkMessage {
-  id           String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  departmentId String?                  @map("department_id") @db.Uuid
-  memberId     String                   @map("member_id") @db.Uuid
-  body         String                   @db.VarChar(2000)
-  editedAt     DateTime?                @map("edited_at") @db.Timestamptz(6)
-  deletedAt    DateTime?                @map("deleted_at") @db.Timestamptz(6)
-  createdAt    DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
-  department   Department?              @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  member       Member                   @relation(fields: [memberId], references: [id], onDelete: Restrict)
-  mentions     VisiWorkMessageMention[]
+  id        String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ventureId String?                  @map("department_id") @db.Uuid
+  memberId  String                   @map("member_id") @db.Uuid
+  body      String                   @db.VarChar(2000)
+  editedAt  DateTime?                @map("edited_at") @db.Timestamptz(6)
+  deletedAt DateTime?                @map("deleted_at") @db.Timestamptz(6)
+  createdAt DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  venture   Venture?                 @relation(fields: [ventureId], references: [id], onDelete: Cascade)
+  member    Member                   @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  mentions  VisiWorkMessageMention[]
 
-  @@index([departmentId, createdAt, id])
+  @@index([ventureId, createdAt, id])
   @@index([createdAt, id])
   @@index([memberId])
   @@map("visiwork_messages")
@@ -326,7 +334,7 @@ model Project {
   updatedAt           DateTime                     @updatedAt @map("updated_at") @db.Timestamptz(6)
   createdByMember     Member                       @relation("ProjectCreatedBy", fields: [createdByMemberId], references: [id], onDelete: Restrict)
   leadMember          Member                       @relation("ProjectLead", fields: [leadMemberId], references: [id], onDelete: Restrict)
-  departments         ProjectDepartment[]
+  ventures            ProjectVenture[]
   statusHistory       ProjectStatusHistory[]
   stages              Stage[]
   members             ProjectMember[]
@@ -345,15 +353,15 @@ model Project {
   @@map("projects")
 }
 
-model ProjectDepartment {
-  projectId    String     @map("project_id") @db.Uuid
-  departmentId String     @map("department_id") @db.Uuid
-  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  project      Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+model ProjectVenture {
+  projectId String   @map("project_id") @db.Uuid
+  ventureId String   @map("department_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  venture   Venture  @relation(fields: [ventureId], references: [id], onDelete: Restrict)
 
-  @@id([projectId, departmentId])
-  @@index([departmentId])
+  @@id([projectId, ventureId])
+  @@index([ventureId])
   @@map("project_departments")
 }
 
@@ -433,7 +441,7 @@ model Outcome {
   updatedAt          DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
   stage              Stage                    @relation(fields: [stageId], references: [id], onDelete: Cascade)
   createdByMember    Member                   @relation("OutcomeCreatedBy", fields: [createdByMemberId], references: [id], onDelete: Restrict)
-  departments        OutcomeDepartment[]
+  ventures           OutcomeVenture[]
   acceptanceCriteria AcceptanceCriterion[]
   members            OutcomeMember[]
   prerequisites      OutcomeDependency[]      @relation("DependentOutcome")
@@ -455,15 +463,15 @@ model Outcome {
   @@map("outcomes")
 }
 
-model OutcomeDepartment {
-  outcomeId    String     @map("outcome_id") @db.Uuid
-  departmentId String     @map("department_id") @db.Uuid
-  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  outcome      Outcome    @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
-  department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+model OutcomeVenture {
+  outcomeId String   @map("outcome_id") @db.Uuid
+  ventureId String   @map("department_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  outcome   Outcome  @relation(fields: [outcomeId], references: [id], onDelete: Cascade)
+  venture   Venture  @relation(fields: [ventureId], references: [id], onDelete: Restrict)
 
-  @@id([outcomeId, departmentId])
-  @@index([departmentId])
+  @@id([outcomeId, ventureId])
+  @@index([ventureId])
   @@map("outcome_departments")
 }
 
@@ -838,4 +846,40 @@ model ProjectVaultAuditEvent {
   @@index([projectId, createdAt, id])
   @@index([actorMemberId])
   @@map("project_vault_audit_events")
+}
+
+enum VentureStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+model VentureMembership {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ventureId   String    @map("venture_id") @db.Uuid
+  memberId    String    @map("member_id") @db.Uuid
+  founder     Boolean   @default(false)
+  roles       String[]  @default([])
+  permissions String[]  @default([])
+  joinedAt    DateTime  @default(now()) @map("joined_at") @db.Timestamptz(6)
+  endedAt     DateTime? @map("ended_at") @db.Timestamptz(6)
+  venture     Venture   @relation(fields: [ventureId], references: [id], onDelete: Restrict)
+  member      Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([ventureId, memberId])
+  @@index([memberId, endedAt])
+  @@map("venture_memberships")
+}
+
+model VentureAuditEvent {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ventureId     String   @map("venture_id") @db.Uuid
+  actorMemberId String?  @map("actor_member_id") @db.Uuid
+  action        String
+  metadata      Json
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  venture       Venture  @relation(fields: [ventureId], references: [id], onDelete: Restrict)
+  actor         Member?  @relation(fields: [actorMemberId], references: [id], onDelete: Restrict)
+
+  @@index([ventureId, createdAt])
+  @@map("venture_audit_events")
 }

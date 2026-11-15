@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { MemberStatusSchema, WorkspaceRoleSchema } from './member';
 
-export const RegistryDepartmentSchema = z.object({
+export const RegistryVentureSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   shortLabel: z.string().min(1).max(12),
@@ -13,11 +13,11 @@ export const RegistryDepartmentSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
-export const RegistryDepartmentsResponseSchema = z.array(
-  RegistryDepartmentSchema,
+export const RegistryVenturesResponseSchema = z.array(
+  RegistryVentureSchema,
 );
 
-export const DeleteDepartmentResponseSchema = z.object({
+export const DeleteVentureResponseSchema = z.object({
   id: z.string().uuid(),
 });
 
@@ -34,8 +34,8 @@ export const CompleteAccountSetupResponseSchema = z.object({
   readyToSignIn: z.literal(true),
 });
 
-const DepartmentDetailsRequestSchema = z.object({
-  name: z.string().trim().min(1, 'Enter a department name.'),
+const VentureDetailsRequestSchema = z.object({
+  name: z.string().trim().min(1, 'Enter a venture name.'),
   shortLabel: z
     .string()
     .trim()
@@ -50,12 +50,12 @@ const DepartmentDetailsRequestSchema = z.object({
     .transform((value) => (value ? value : null)),
 });
 
-export const CreateDepartmentRequestSchema = DepartmentDetailsRequestSchema;
-export const UpdateDepartmentRequestSchema = DepartmentDetailsRequestSchema;
+export const CreateVentureRequestSchema = VentureDetailsRequestSchema;
+export const UpdateVentureRequestSchema = VentureDetailsRequestSchema;
 
-export type RegistryDepartment = z.infer<typeof RegistryDepartmentSchema>;
-export type DeleteDepartmentResponse = z.infer<
-  typeof DeleteDepartmentResponseSchema
+export type RegistryVenture = z.infer<typeof RegistryVentureSchema>;
+export type DeleteVentureResponse = z.infer<
+  typeof DeleteVentureResponseSchema
 >;
 export type RemoveMemberResponse = z.infer<typeof RemoveMemberResponseSchema>;
 export type CompleteAccountSetupRequest = z.infer<
@@ -64,14 +64,14 @@ export type CompleteAccountSetupRequest = z.infer<
 export type CompleteAccountSetupResponse = z.infer<
   typeof CompleteAccountSetupResponseSchema
 >;
-export type CreateDepartmentRequest = z.infer<
-  typeof CreateDepartmentRequestSchema
+export type CreateVentureRequest = z.infer<
+  typeof CreateVentureRequestSchema
 >;
-export type UpdateDepartmentRequest = z.infer<
-  typeof UpdateDepartmentRequestSchema
+export type UpdateVentureRequest = z.infer<
+  typeof UpdateVentureRequestSchema
 >;
-export type DepartmentFormValues = z.input<
-  typeof DepartmentDetailsRequestSchema
+export type VentureFormValues = z.input<
+  typeof VentureDetailsRequestSchema
 >;
 
 export const RegistryAuthenticationStatusSchema = z.enum([
@@ -85,16 +85,17 @@ export const RegistryInvitationDeliveryStatusSchema = z.enum([
 ]);
 
 export const RegistryMemberSchema = z.object({
+  ventures: z.array(z.object({ id: z.string().uuid(), name: z.string(), shortLabel: z.string() })).optional(),
   id: z.string().uuid(),
   email: z.string().email(),
   fullName: z.string().min(1),
   profileImagePath: z.string().nullable(),
-  departmentId: z.string().uuid(),
-  department: z.object({
+  ventureId: z.string().uuid().nullable(),
+  venture: z.object({
     id: z.string().uuid(),
     name: z.string(),
     shortLabel: z.string().min(1).max(12),
-  }),
+  }).nullable(),
   position: z.string().nullable(),
   workspaceRole: WorkspaceRoleSchema,
   status: MemberStatusSchema,
@@ -108,14 +109,14 @@ export const RegistryMemberSchema = z.object({
 export const RegistryMembersResponseSchema = z.array(RegistryMemberSchema);
 
 export const RegistryOverviewResponseSchema = z.object({
-  departments: RegistryDepartmentsResponseSchema,
+  ventures: RegistryVenturesResponseSchema,
   members: RegistryMembersResponseSchema,
 });
 
 const MemberDetailsRequestSchema = z.object({
   fullName: z.string().trim().min(1, "Enter the member's full name."),
   email: z.string().trim().toLowerCase().email('Enter a valid email address.'),
-  departmentId: z.string().uuid('Choose a department.'),
+  ventureId: z.string().uuid('Choose a venture.').nullable().default(null),
   position: z.string().trim().min(1, "Enter the member's position."),
   workspaceRole: WorkspaceRoleSchema,
   status: MemberStatusSchema,

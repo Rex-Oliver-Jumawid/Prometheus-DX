@@ -54,7 +54,7 @@ export const NotificationSchema = z.object({
   visiworkMention: z
     .object({
       messageId: z.string().uuid(),
-      departmentId: z.string().uuid().nullable(),
+      ventureId: z.string().uuid().nullable(),
       roomLabel: z.string().min(1),
       preview: z.string(),
     })
@@ -115,8 +115,8 @@ export const ChatPushChannelKeySchema = z.union([
   z
     .string()
     .regex(
-      /^visiwork:department:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-      'Invalid VisiWork department notification channel.',
+      /^visiwork:venture:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      'Invalid VisiWork venture notification channel.',
     ),
   z
     .string()
@@ -146,7 +146,7 @@ export const ChatPushPreferenceResponseSchema = z.object({
 
 export const ChatPushMutedChatSchema = z.object({
   channelKey: ChatPushChannelKeySchema,
-  kind: z.enum(['visiwork', 'department', 'project']),
+  kind: z.enum(['visiwork', 'venture', 'project']),
   label: z.string().min(1),
   path: z.string().min(1),
 });

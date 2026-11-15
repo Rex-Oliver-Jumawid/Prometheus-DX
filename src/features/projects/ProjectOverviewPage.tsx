@@ -13,6 +13,7 @@ import {
 } from '../../../shared/contracts/project';
 import { useAuth } from '../auth/auth-context';
 import { ApiRequestError, apiFetch } from '../../lib/api';
+import { ProjectVenturesPanel } from './ProjectVenturesPanel';
 import { ProjectMembersPanel } from './ProjectMembersPanel';
 import { ProjectVaultPanel } from './ProjectVaultPanel';
 import { ProjectActivityPanel } from './ProjectActivityPanel';
@@ -606,6 +607,7 @@ export function ProjectOverviewPage() {
             </div>
           </div>
 
+          {value.lead.id === member?.id && value.status !== 'ARCHIVED' && <ProjectVenturesPanel key={value.id + value.updatedAt} project={value} accessToken={accessToken} />}
           <div className="pw-project-meta-card">
             <span>State</span>
             <div id="pwProjectStateControl">

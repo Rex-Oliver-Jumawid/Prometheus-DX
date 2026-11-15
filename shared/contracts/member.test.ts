@@ -28,7 +28,7 @@ describe('member contracts', () => {
       phoneNumber: null,
       about: null,
       profileImagePath: null,
-      department: {
+      venture: {
         id: '66666666-6666-4666-8666-666666666666',
         name: 'Research and Development',
         shortLabel: 'R&D',

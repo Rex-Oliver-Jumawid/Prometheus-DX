@@ -391,11 +391,11 @@ export function ProfileDrawer({ member }: { member: CurrentMember }) {
 
               <label className="profile-settings-field">
                 <span>
-                  Department
+                  Venture
                   <small>Organization-managed</small>
                 </span>
                 <input
-                  value={member.department.name}
+                  value={(member.venture?.name ?? 'No venture')}
                   readOnly
                   aria-readonly="true"
                 />

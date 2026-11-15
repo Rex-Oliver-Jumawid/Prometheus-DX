@@ -10,7 +10,7 @@ const runId = 'collaboration-' + Date.now();
 let projectId = '';
 let otherProjectId = '';
 let rootAuthorId = '';
-let departmentId = '';
+let ventureId = '';
 let memberId = '';
 let rootMessageId = '';
 let outcomeId = '';
@@ -39,10 +39,10 @@ test.beforeAll(async () => {
     },
   });
   memberId = member.id;
-  const department = await prisma.department.create({
+  const venture = await prisma.venture.create({
     data: { name: runId, shortLabel: 'COLLAB' },
   });
-  departmentId = department.id;
+  ventureId = venture.id;
   const projects = await Promise.all(
     ['main', 'foreign'].map((suffix) =>
       prisma.project.create({
@@ -51,7 +51,7 @@ test.beforeAll(async () => {
           description: 'Focused collaboration browser acceptance.',
           createdByMemberId: memberId,
           leadMemberId: memberId,
-          departments: { create: { departmentId } },
+          ventures: { create: { ventureId } },
         },
       }),
     ),
@@ -67,7 +67,7 @@ test.beforeAll(async () => {
       title: 'Collaboration outcome',
       position: 0,
       createdByMemberId: memberId,
-      departments: { create: { departmentId } },
+      ventures: { create: { ventureId } },
       acceptanceCriteria: { create: { description: 'Approved', position: 0 } },
     },
   });
@@ -76,7 +76,7 @@ test.beforeAll(async () => {
     data: {
       email: runId + '-author@example.com',
       fullName: 'Collaboration teammate',
-      departmentId,
+      ventureId,
       status: 'ACTIVE',
     },
   });
@@ -125,8 +125,8 @@ test.afterAll(async () => {
     await prisma.project.deleteMany({ where: { id: { in: ids } } });
   }
   if (rootAuthorId) await prisma.member.delete({ where: { id: rootAuthorId } });
-  if (departmentId)
-    await prisma.department.delete({ where: { id: departmentId } });
+  if (ventureId)
+    await prisma.venture.delete({ where: { id: ventureId } });
   await prisma.$disconnect();
 }, 30_000);
 

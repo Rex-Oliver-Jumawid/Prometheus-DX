@@ -427,3 +427,15 @@ Current formula ownership is concentrated in:
 - WorkSession and Team services/contracts for scheduled and actual time
 
 Changes to those formulas should update this document in the same change.
+
+
+## Venture grouping amendment
+
+Department grouping is now presented as Ventures.
+Member capacity and Schedule filters include all active venture memberships, with the optional primary venture retained as a compatibility grouping preference.
+A member is counted once within a filtered view even when assigned to several ventures.
+Unfiltered capacity totals count each workspace member once.
+These are member attendance/capacity totals, not venture-attributed billable or equity-eligible hours.
+Do not sum overlapping venture filters to claim a workspace total.
+Work attribution remains a later feature.
+VisiWork focus continues to represent the current working room rather than equity participation.

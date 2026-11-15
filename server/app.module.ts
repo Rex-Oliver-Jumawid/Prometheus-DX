@@ -1,3 +1,4 @@
+import { VenturesModule } from './ventures/ventures.module';
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
@@ -14,6 +15,7 @@ import { VisiWorkModule } from './visiwork/visiwork.module';
 @Module({
   imports: [
     DatabaseModule,
+    VenturesModule,
     HealthModule,
     AuthModule,
     RegistryModule,

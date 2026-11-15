@@ -9,8 +9,8 @@ const member = (overrides: Partial<Member> = {}): Member => ({
   authUserId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   email: 'member@example.com',
   fullName: 'Member One',
-  departmentId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
-  visiworkDepartmentId: null,
+  ventureId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+  visiworkVentureId: null,
   workspaceRole: 'MEMBER',
   status: 'ACTIVE',
   position: null,
@@ -125,7 +125,7 @@ describe('ScheduleService', () => {
         id: '11111111-1111-4111-8111-111111111111',
         fullName: 'Alpha Member',
         position: 'Designer',
-        department: {
+        venture: {
           id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
           name: 'Creatives',
           shortLabel: 'CRT',
@@ -144,12 +144,13 @@ describe('ScheduleService', () => {
           id: '11111111-1111-4111-8111-111111111111',
           fullName: 'Alpha Member',
           position: 'Designer',
-          department: {
+          venture: {
             id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
             name: 'Creatives',
             shortLabel: 'CRT',
           },
           schedule: null,
+          ventures: [],
         },
       ],
     });

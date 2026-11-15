@@ -27,9 +27,9 @@ const outcomeInclude = {
   _count: {
     select: { submissions: { where: { reviewStatus: 'FOR_REVIEW' as const } } },
   },
-  departments: {
+  ventures: {
     include: {
-      department: { select: { id: true, name: true, shortLabel: true } },
+      venture: { select: { id: true, name: true, shortLabel: true } },
     },
   },
   acceptanceCriteria: {
@@ -309,9 +309,9 @@ export class ProjectWorkflowService {
           description: input.description || null,
           position: (lastOutcome?.position ?? -1) + 1,
           createdByMemberId: currentMember.id,
-          departments: {
-            create: input.departmentIds.map((departmentId) => ({
-              departmentId,
+          ventures: {
+            create: input.ventureIds.map((ventureId) => ({
+              ventureId,
             })),
           },
           acceptanceCriteria: {
@@ -409,7 +409,7 @@ export class ProjectWorkflowService {
       await transaction.acceptanceCriterion.deleteMany({
         where: { outcomeId },
       });
-      await transaction.outcomeDepartment.deleteMany({
+      await transaction.outcomeVenture.deleteMany({
         where: { outcomeId },
       });
       let newlyAssignedMemberIds: string[] = [];
@@ -442,9 +442,9 @@ export class ProjectWorkflowService {
         data: {
           title: input.title,
           description: input.description || null,
-          departments: {
-            create: input.departmentIds.map((departmentId) => ({
-              departmentId,
+          ventures: {
+            create: input.ventureIds.map((ventureId) => ({
+              ventureId,
             })),
           },
           acceptanceCriteria: {
@@ -1042,9 +1042,9 @@ export class ProjectWorkflowService {
     if (outcomeId && input.prerequisiteOutcomeIds.includes(outcomeId)) {
       throw new BadRequestException('An Outcome cannot depend on itself.');
     }
-    const [departments, prerequisites] = await Promise.all([
-      transaction.department.findMany({
-        where: { id: { in: input.departmentIds } },
+    const [ventures, prerequisites] = await Promise.all([
+      transaction.venture.findMany({
+        where: { id: { in: input.ventureIds } },
         select: { id: true },
       }),
       transaction.outcome.findMany({
@@ -1052,8 +1052,8 @@ export class ProjectWorkflowService {
         select: { id: true, stage: { select: { projectId: true } } },
       }),
     ]);
-    if (departments.length !== input.departmentIds.length) {
-      throw new BadRequestException('Choose only existing departments.');
+    if (ventures.length !== input.ventureIds.length) {
+      throw new BadRequestException('Choose only existing ventures.');
     }
     if (prerequisites.length !== input.prerequisiteOutcomeIds.length) {
       throw new BadRequestException(
@@ -1149,7 +1149,7 @@ export class ProjectWorkflowService {
       description: outcome.description,
       lifecycleStatus: outcome.lifecycleStatus,
       position: outcome.position,
-      departments: outcome.departments.map(({ department }) => department),
+      ventures: outcome.ventures.map(({ venture }) => venture),
       acceptanceCriteria: outcome.acceptanceCriteria.map((criterion) => ({
         id: criterion.id,
         description: criterion.description,

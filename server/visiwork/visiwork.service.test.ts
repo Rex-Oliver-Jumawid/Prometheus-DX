@@ -5,8 +5,8 @@ import type { PrismaService } from '../database/prisma.service';
 import { VisiWorkService } from './visiwork.service';
 
 const memberId = '11111111-1111-4111-8111-111111111111';
-const homeDepartmentId = '22222222-2222-4222-8222-222222222222';
-const joinedDepartmentId = '33333333-3333-4333-8333-333333333333';
+const homeVentureId = '22222222-2222-4222-8222-222222222222';
+const joinedVentureId = '33333333-3333-4333-8333-333333333333';
 const mentionedMemberId = '66666666-6666-4666-8666-666666666666';
 
 function member(overrides: Partial<Member> = {}): Member {
@@ -15,8 +15,8 @@ function member(overrides: Partial<Member> = {}): Member {
     authUserId: null,
     email: 'member@example.com',
     fullName: 'Member One',
-    departmentId: homeDepartmentId,
-    visiworkDepartmentId: null,
+    ventureId: homeVentureId,
+    visiworkVentureId: null,
     workspaceRole: 'MEMBER',
     status: 'ACTIVE',
     position: 'Developer',
@@ -35,7 +35,7 @@ function member(overrides: Partial<Member> = {}): Member {
 function storedMessage(overrides: Record<string, unknown> = {}) {
   return {
     id: '44444444-4444-4444-8444-444444444444',
-    departmentId: null,
+    ventureId: null,
     memberId,
     body: 'Morning team',
     editedAt: null,
@@ -48,11 +48,12 @@ function storedMessage(overrides: Record<string, unknown> = {}) {
 }
 
 describe('VisiWorkService', () => {
-  it('moves the current member focus to the joined department', async () => {
+  it('moves the current member focus to the joined venture', async () => {
     const prisma = {
-      department: {
+      ventureMembership: { count: vi.fn().mockResolvedValue(0) },
+      venture: {
         findUnique: vi.fn().mockResolvedValue({
-          id: joinedDepartmentId,
+          id: joinedVentureId,
           shortLabel: 'R&D',
         }),
       },
@@ -61,15 +62,16 @@ describe('VisiWorkService', () => {
       },
     } as unknown as PrismaService;
 
-    const result = await new VisiWorkService(prisma).joinDepartment(member(), {
-      departmentId: joinedDepartmentId,
+    const result = await new VisiWorkService(prisma).joinVenture(member(), {
+      ventureId: joinedVentureId,
     });
 
-    expect(result).toEqual({ memberId, departmentId: joinedDepartmentId });
+    expect(result).toEqual({ memberId, ventureId: joinedVentureId });
   });
 
   it('returns persisted general-room messages with mentions', async () => {
     const prisma = {
+      ventureMembership: { count: vi.fn().mockResolvedValue(0) },
       visiWorkMessage: {
         findMany: vi.fn().mockResolvedValue([
           storedMessage({
@@ -107,6 +109,7 @@ describe('VisiWorkService', () => {
     const createMessage = vi.fn().mockResolvedValue(message);
     const createMany = vi.fn().mockResolvedValue({ count: 1 });
     const prisma = {
+      ventureMembership: { count: vi.fn().mockResolvedValue(0) },
       member: {
         findMany: vi.fn().mockResolvedValue([
           { id: mentionedMemberId, fullName: 'Oliver' },
@@ -155,6 +158,7 @@ describe('VisiWorkService', () => {
     const createMessage = vi.fn().mockResolvedValue(storedMessage({ body: 'Hello team' }));
     const createMany = vi.fn();
     const prisma = {
+      ventureMembership: { count: vi.fn().mockResolvedValue(0) },
       member: {
         findMany: vi.fn().mockResolvedValue([{ id: otherMemberId, fullName: 'Other Member' }]),
       },
@@ -194,6 +198,7 @@ describe('VisiWorkService', () => {
       storedMessage({ body: 'The quotation workflow is ready.' }),
     ]);
     const prisma = {
+      ventureMembership: { count: vi.fn().mockResolvedValue(0) },
       visiWorkMessage: { findMany },
     } as unknown as PrismaService;
 
@@ -204,7 +209,7 @@ describe('VisiWorkService', () => {
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          departmentId: null,
+          ventureId: null,
           deletedAt: null,
           body: { contains: 'quotation', mode: 'insensitive' },
         },
@@ -226,6 +231,7 @@ describe('VisiWorkService', () => {
       body: 'After',
     });
     const prisma = {
+      ventureMembership: { count: vi.fn().mockResolvedValue(0) },
       visiWorkMessage: {
         findUnique: vi.fn().mockResolvedValue(target),
         findMany: vi
@@ -259,6 +265,7 @@ describe('VisiWorkService', () => {
       ),
     );
     const prisma = {
+      ventureMembership: { count: vi.fn().mockResolvedValue(0) },
       visiWorkMessage: {
         findUnique: vi.fn().mockResolvedValue(existing),
       },
@@ -317,6 +324,7 @@ describe('VisiWorkService', () => {
       ),
     );
     const prisma = {
+      ventureMembership: { count: vi.fn().mockResolvedValue(0) },
       visiWorkMessage: {
         findUnique: vi.fn().mockResolvedValue(existing),
       },
@@ -346,6 +354,7 @@ describe('VisiWorkService', () => {
   it('does not allow another member to edit or delete someone else’s message', async () => {
     const existing = storedMessage();
     const prisma = {
+      ventureMembership: { count: vi.fn().mockResolvedValue(0) },
       visiWorkMessage: {
         findUnique: vi.fn().mockResolvedValue(existing),
       },
@@ -366,11 +375,12 @@ describe('VisiWorkService', () => {
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
-  it('blocks department-room sending until the member belongs to or joins it', async () => {
+  it('blocks venture-room sending until the member belongs to or joins it', async () => {
     const prisma = {
-      department: {
+      ventureMembership: { count: vi.fn().mockResolvedValue(0) },
+      venture: {
         findUnique: vi.fn().mockResolvedValue({
-          id: joinedDepartmentId,
+          id: joinedVentureId,
           shortLabel: 'R&D',
         }),
       },
@@ -380,7 +390,7 @@ describe('VisiWorkService', () => {
       new VisiWorkService(prisma).sendMessage(
         member(),
         { body: 'Should not send', mentionMemberIds: [] },
-        joinedDepartmentId,
+        joinedVentureId,
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });

@@ -9,8 +9,8 @@ const runId = `phase4-slice2-${Date.now()}`;
 let currentMemberId = '';
 let originalWorkspaceRole: 'ADMINISTRATOR' | 'MEMBER' = 'MEMBER';
 let alternateLeadId = '';
-let firstDepartmentId = '';
-let secondDepartmentId = '';
+let firstVentureId = '';
+let secondVentureId = '';
 let leadProjectId = '';
 let nonLeadProjectId = '';
 let firstStageId = '';
@@ -73,19 +73,19 @@ test.beforeAll(async () => {
   });
   currentMemberId = currentMember.id;
   originalWorkspaceRole = currentMember.workspaceRole;
-  const firstDepartment = await prisma.department.create({
+  const firstVenture = await prisma.venture.create({
     data: { name: `${runId} Research`, shortLabel: 'P4RES' },
   });
-  const secondDepartment = await prisma.department.create({
+  const secondVenture = await prisma.venture.create({
     data: { name: `${runId} Design`, shortLabel: 'P4DES' },
   });
-  firstDepartmentId = firstDepartment.id;
-  secondDepartmentId = secondDepartment.id;
+  firstVentureId = firstVenture.id;
+  secondVentureId = secondVenture.id;
   const alternateLead = await prisma.member.create({
     data: {
       email: `${runId}@example.com`,
       fullName: 'Phase Four Alternate Lead',
-      departmentId: firstDepartment.id,
+      ventureId: firstVenture.id,
       status: 'ACTIVE',
       workspaceRole: 'MEMBER',
     },
@@ -97,10 +97,10 @@ test.beforeAll(async () => {
       description: 'Focused Phase 4 Stage and Outcome browser acceptance.',
       createdByMemberId: alternateLead.id,
       leadMemberId: currentMember.id,
-      departments: {
+      ventures: {
         create: [
-          { departmentId: firstDepartment.id },
-          { departmentId: secondDepartment.id },
+          { ventureId: firstVenture.id },
+          { ventureId: secondVenture.id },
         ],
       },
     },
@@ -112,7 +112,7 @@ test.beforeAll(async () => {
       description: 'Creator and Administrator authority regression fixture.',
       createdByMemberId: currentMember.id,
       leadMemberId: alternateLead.id,
-      departments: { create: { departmentId: firstDepartment.id } },
+      ventures: { create: { ventureId: firstVenture.id } },
     },
   });
   nonLeadProjectId = nonLeadProject.id;
@@ -157,10 +157,10 @@ test.afterAll(async () => {
   if (alternateLeadId) {
     await prisma.member.delete({ where: { id: alternateLeadId } });
   }
-  if (firstDepartmentId || secondDepartmentId) {
-    await prisma.department.deleteMany({
+  if (firstVentureId || secondVentureId) {
+    await prisma.venture.deleteMany({
       where: {
-        id: { in: [firstDepartmentId, secondDepartmentId].filter(Boolean) },
+        id: { in: [firstVentureId, secondVentureId].filter(Boolean) },
       },
     });
   }
@@ -246,7 +246,7 @@ test('F4-07 through F4-10: Lead creates, links, and edits persistent Outcomes', 
   await expect(createDialog).toBeVisible();
   await createDialog.getByRole('button', { name: 'Create outcome' }).click();
   await expect(
-    createDialog.getByText('Choose at least one responsible department.'),
+    createDialog.getByText('Choose at least one responsible venture.'),
   ).toBeVisible();
   await createDialog
     .getByLabel('Outcome title')
@@ -254,7 +254,7 @@ test('F4-07 through F4-10: Lead creates, links, and edits persistent Outcomes', 
   await createDialog
     .getByLabel('Outcome description Optional')
     .fill('Interview evidence confirms the opportunity.');
-  await createDialog.locator(`input[value="${firstDepartmentId}"]`).check();
+  await createDialog.locator(`input[value="${firstVentureId}"]`).check();
   await createDialog
     .getByRole('textbox', { name: 'Acceptance criterion 1', exact: true })
     .fill('Five interviews are documented.');
@@ -268,12 +268,12 @@ test('F4-07 through F4-10: Lead creates, links, and edits persistent Outcomes', 
   ).toBeVisible();
   const firstOutcome = await prisma.outcome.findFirstOrThrow({
     where: { stageId: firstStageId, title: 'Customer evidence collected' },
-    include: { departments: true, acceptanceCriteria: true },
+    include: { ventures: true, acceptanceCriteria: true },
   });
   firstOutcomeId = firstOutcome.id;
   expect(
-    firstOutcome.departments.map(({ departmentId }) => departmentId),
-  ).toEqual([firstDepartmentId]);
+    firstOutcome.ventures.map(({ ventureId }) => ventureId),
+  ).toEqual([firstVentureId]);
   expect(
     firstOutcome.acceptanceCriteria.map(({ description }) => description),
   ).toEqual([
@@ -291,7 +291,7 @@ test('F4-07 through F4-10: Lead creates, links, and edits persistent Outcomes', 
   await dependentDialog
     .getByLabel('Outcome description Optional')
     .fill('Decide whether to proceed with the opportunity.');
-  await dependentDialog.locator(`input[value="${secondDepartmentId}"]`).check();
+  await dependentDialog.locator(`input[value="${secondVentureId}"]`).check();
   await dependentDialog
     .getByRole('textbox', { name: 'Acceptance criterion 1', exact: true })
     .fill('A decision is recorded.');
@@ -412,7 +412,7 @@ test('F4-04 F4-05 F4-11 F4-12: viewer, creator, and Admin non-Lead cannot mutate
     'POST',
     {
       title: 'Forbidden Outcome',
-      departmentIds: [firstDepartmentId],
+      ventureIds: [firstVentureId],
       acceptanceCriteria: ['Should never persist.'],
       prerequisiteOutcomeIds: [],
     },
@@ -436,7 +436,7 @@ test('F4-04 F4-05 F4-11 F4-12: viewer, creator, and Admin non-Lead cannot mutate
     'POST',
     {
       title: 'Admin Forbidden Outcome',
-      departmentIds: [firstDepartmentId],
+      ventureIds: [firstVentureId],
       acceptanceCriteria: ['Should never persist.'],
       prerequisiteOutcomeIds: [],
     },

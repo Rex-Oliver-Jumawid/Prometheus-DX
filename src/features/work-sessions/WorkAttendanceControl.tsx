@@ -432,7 +432,7 @@ export function WorkAttendanceControl() {
                   </span>
                   <span className="attendance-people-member-copy">
                     <strong>{member.fullName}</strong>
-                    <small>{member.position || member.department.name}</small>
+                    <small>{member.position || (member.venture?.name ?? 'No venture')}</small>
                   </span>
                   <span className="attendance-people-status"><i aria-hidden="true" />Working</span>
                 </li>

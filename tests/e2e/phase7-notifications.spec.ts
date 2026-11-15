@@ -37,7 +37,7 @@ test('submission notification opens Outcome and persists read state', async ({
   const outcomeTitle = `Review output ${runId}`;
   const accounts: Awaited<ReturnType<typeof createAuthFixture>>[] = [];
   const memberIds: string[] = [];
-  let departmentId: string | undefined;
+  let ventureId: string | undefined;
   let projectId: string | undefined;
   const contexts: BrowserContext[] = [];
 
@@ -45,20 +45,20 @@ test('submission notification opens Outcome and persists read state', async ({
     accounts.push(await createAuthFixture(prisma, `${runId}-lead`));
     accounts.push(await createAuthFixture(prisma, `${runId}-worker`));
 
-    const department = await prisma.department.create({
+    const venture = await prisma.venture.create({
       data: {
         name: `Notifications ${runId}`,
         shortLabel: 'P7N',
       },
     });
-    departmentId = department.id;
+    ventureId = venture.id;
 
     const lead = await prisma.member.create({
       data: {
         authUserId: accounts[0].id,
         email: accounts[0].email,
         fullName: `Lead ${runId}`,
-        departmentId,
+        ventureId,
         status: 'ACTIVE',
       },
     });
@@ -68,7 +68,7 @@ test('submission notification opens Outcome and persists read state', async ({
         authUserId: accounts[1].id,
         email: accounts[1].email,
         fullName: `Worker ${runId}`,
-        departmentId,
+        ventureId,
         status: 'ACTIVE',
       },
     });
@@ -80,7 +80,7 @@ test('submission notification opens Outcome and persists read state', async ({
         description: 'Isolated Project for the notification browser journey.',
         createdByMemberId: lead.id,
         leadMemberId: lead.id,
-        departments: { create: { departmentId } },
+        ventures: { create: { ventureId } },
         stages: {
           create: {
             name: 'Delivery',
@@ -90,7 +90,7 @@ test('submission notification opens Outcome and persists read state', async ({
                 title: outcomeTitle,
                 position: 0,
                 createdByMemberId: lead.id,
-                departments: { create: { departmentId } },
+                ventures: { create: { ventureId } },
                 members: { create: { memberId: worker.id } },
                 acceptanceCriteria: {
                   create: {
@@ -177,7 +177,7 @@ test('submission notification opens Outcome and persists read state', async ({
     if (memberIds.length > 0)
       await prisma.member.deleteMany({ where: { id: { in: memberIds } } });
     for (const account of accounts) await deleteAuthFixture(prisma, account);
-    if (departmentId)
-      await prisma.department.delete({ where: { id: departmentId } });
+    if (ventureId)
+      await prisma.venture.delete({ where: { id: ventureId } });
   }
 });

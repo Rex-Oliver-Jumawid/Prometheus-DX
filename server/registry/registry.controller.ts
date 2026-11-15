@@ -14,9 +14,9 @@ import {
 import type { Member } from '@prisma/client';
 import {
   CompleteAccountSetupRequestSchema,
-  CreateDepartmentRequestSchema,
+  CreateVentureRequestSchema,
   CreateMemberRequestSchema,
-  UpdateDepartmentRequestSchema,
+  UpdateVentureRequestSchema,
   UpdateMemberRequestSchema,
 } from '../../shared/contracts/registry';
 import { CurrentMember } from '../auth/current-member.decorator';
@@ -57,53 +57,55 @@ export class RegistryController {
     return { allowed: true as const, phase: 1 as const };
   }
 
-  @Get('departments')
+  @Get('ventures')
   @UseGuards(SupabaseAuthGuard, RolesGuard)
   @WorkspaceRoles('ADMINISTRATOR')
-  listDepartments() {
-    return this.registryService.listDepartments();
+  listVentures() {
+    return this.registryService.listVentures();
   }
 
-  @Post('departments')
+  @Post('ventures')
   @UseGuards(SupabaseAuthGuard, RolesGuard)
   @WorkspaceRoles('ADMINISTRATOR')
-  createDepartment(@Body() body: unknown) {
-    const parsed = CreateDepartmentRequestSchema.safeParse(body);
+  createVenture(@CurrentMember() actor: Member, @Body() body: unknown) {
+    const parsed = CreateVentureRequestSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException(
-        parsed.error.issues[0]?.message ?? 'Invalid department data.',
+        parsed.error.issues[0]?.message ?? 'Invalid venture data.',
       );
     }
 
-    return this.registryService.createDepartment(parsed.data);
+    return this.registryService.createVenture(parsed.data, actor.id);
   }
 
-  @Patch('departments/:departmentId')
+  @Patch('ventures/:ventureId')
   @UseGuards(SupabaseAuthGuard, RolesGuard)
   @WorkspaceRoles('ADMINISTRATOR')
-  updateDepartment(
-    @Param('departmentId', new ParseUUIDPipe({ version: '4' }))
-    departmentId: string,
+  updateVenture(
+    @CurrentMember() actor: Member,
+    @Param('ventureId', new ParseUUIDPipe({ version: '4' }))
+    ventureId: string,
     @Body() body: unknown,
   ) {
-    const parsed = UpdateDepartmentRequestSchema.safeParse(body);
+    const parsed = UpdateVentureRequestSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException(
-        parsed.error.issues[0]?.message ?? 'Invalid department data.',
+        parsed.error.issues[0]?.message ?? 'Invalid venture data.',
       );
     }
 
-    return this.registryService.updateDepartment(departmentId, parsed.data);
+    return this.registryService.updateVenture(ventureId, parsed.data, actor.id);
   }
 
-  @Delete('departments/:departmentId')
+  @Delete('ventures/:ventureId')
   @UseGuards(SupabaseAuthGuard, RolesGuard)
   @WorkspaceRoles('ADMINISTRATOR')
-  deleteDepartment(
-    @Param('departmentId', new ParseUUIDPipe({ version: '4' }))
-    departmentId: string,
+  deleteVenture(
+    @CurrentMember() actor: Member,
+    @Param('ventureId', new ParseUUIDPipe({ version: '4' }))
+    ventureId: string,
   ) {
-    return this.registryService.deleteDepartment(departmentId);
+    return this.registryService.deleteVenture(ventureId, actor.id);
   }
 
   @Get('members')

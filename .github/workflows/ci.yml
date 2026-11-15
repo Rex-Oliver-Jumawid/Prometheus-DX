@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, fix/security-ci-push-maintenance]
+    branches: [main, fix/security-ci-push-maintenance, feat/venture-foundation]
   pull_request:
 
 permissions:

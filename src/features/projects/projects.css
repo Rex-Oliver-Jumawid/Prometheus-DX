@@ -2669,12 +2669,12 @@
   font-size: 12px;
   line-height: 1.5;
 }
-.project-detail-departments {
+.project-detail-ventures {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
-.project-detail-departments span {
+.project-detail-ventures span {
   min-width: 0;
   padding: 7px 9px;
   border: 1px solid #eaecf0;
@@ -2684,7 +2684,7 @@
   font-size: 12px;
   overflow-wrap: anywhere;
 }
-.project-detail-departments small {
+.project-detail-ventures small {
   margin-left: 3px;
   color: #98a2b3;
   font:
@@ -2785,7 +2785,7 @@
   padding: 20px;
 }
 .projects-field,
-.projects-department-field {
+.projects-venture-field {
   display: grid;
   gap: 6px;
   color: #344054;
@@ -2816,26 +2816,26 @@
   font-size: 12px;
   font-weight: 500;
 }
-.projects-department-field {
+.projects-venture-field {
   margin: 0;
   border: 0;
   padding: 0;
 }
-.projects-department-field legend {
+.projects-venture-field legend {
   padding: 0;
 }
-.projects-department-field > p {
+.projects-venture-field > p {
   margin: 0;
   color: #667085;
   font-size: 12px;
   font-weight: 400;
 }
-.projects-department-options {
+.projects-venture-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
-.projects-department-options label {
+.projects-venture-options label {
   min-width: 0;
   display: flex;
   align-items: center;
@@ -2846,14 +2846,14 @@
   cursor: pointer;
   font-weight: 500;
 }
-.projects-department-options input {
+.projects-venture-options input {
   accent-color: #f4511e;
 }
-.projects-department-options span {
+.projects-venture-options span {
   min-width: 0;
   overflow-wrap: anywhere;
 }
-.projects-department-options small {
+.projects-venture-options small {
   display: block;
   margin-top: 2px;
   color: #98a2b3;
@@ -2932,7 +2932,7 @@
     max-height: 92vh;
     border-radius: 16px 16px 0 0;
   }
-  .projects-department-options {
+  .projects-venture-options {
     grid-template-columns: 1fr;
   }
 }
@@ -3127,13 +3127,13 @@
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
-.workflow-outcome-departments {
+.workflow-outcome-ventures {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   margin-top: 10px;
 }
-.workflow-outcome-departments span {
+.workflow-outcome-ventures span {
   border-radius: 999px;
   padding: 4px 6px;
   background: #f2f4f7;

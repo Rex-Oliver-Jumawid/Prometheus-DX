@@ -12,12 +12,12 @@ import { createClient } from '@supabase/supabase-js';
 import type {
   CompleteAccountSetupRequest,
   CompleteAccountSetupResponse,
-  CreateDepartmentRequest,
+  CreateVentureRequest,
   CreateMemberRequest,
-  RegistryDepartment,
+  RegistryVenture,
   RegistryMember,
   RegistryOverviewResponse,
-  UpdateDepartmentRequest,
+  UpdateVentureRequest,
   UpdateMemberRequest,
 } from '../../shared/contracts/registry';
 import { serverEnvironment } from '../config/env';
@@ -116,15 +116,16 @@ export class RegistryService {
   }
 
   async getOverview(): Promise<RegistryOverviewResponse> {
-    const [departments, members] = await Promise.all([
-      this.listDepartments(),
+    const [ventures, members] = await Promise.all([
+      this.listVentures(),
       this.listMembers(),
     ]);
-    return { departments, members };
+    return { ventures, members };
   }
 
-  async listDepartments(): Promise<RegistryDepartment[]> {
-    const departments = await this.prisma.department.findMany({
+  async listVentures(): Promise<RegistryVenture[]> {
+    const ventures = await this.prisma.venture.findMany({
+      where: { status: 'ACTIVE' },
       include: {
         _count: {
           select: {
@@ -137,6 +138,7 @@ export class RegistryService {
                 },
               },
             },
+            memberships: { where: { endedAt: null } },
             projects: true,
             outcomes: true,
           },
@@ -145,17 +147,19 @@ export class RegistryService {
       orderBy: [{ name: 'asc' }, { createdAt: 'asc' }],
     });
 
-    return departments.map((department) => this.toDepartment(department));
+    return ventures.map((venture) => this.toVenture(venture));
   }
 
-  async createDepartment(
-    input: CreateDepartmentRequest,
-  ): Promise<RegistryDepartment> {
-    const department = await this.prisma.department.create({
+  async createVenture(
+    input: CreateVentureRequest,
+    actorMemberId?: string,
+  ): Promise<RegistryVenture> {
+    const venture = await this.prisma.venture.create({
       data: {
         name: input.name,
         shortLabel: input.shortLabel || input.name.slice(0, 8),
         description: input.description,
+        auditEvents: { create: { actorMemberId, action: 'VENTURE_DETAILS_SAVED', metadata: { name: input.name, description: input.description } } },
       },
       include: {
         _count: {
@@ -164,25 +168,27 @@ export class RegistryService {
       },
     });
 
-    return this.toDepartment(department);
+    return this.toVenture(venture);
   }
 
-  async updateDepartment(
-    departmentId: string,
-    input: UpdateDepartmentRequest,
-  ): Promise<RegistryDepartment> {
-    const department = await this.prisma.department.findUnique({
-      where: { id: departmentId },
+  async updateVenture(
+    ventureId: string,
+    input: UpdateVentureRequest,
+    actorMemberId?: string,
+  ): Promise<RegistryVenture> {
+    const venture = await this.prisma.venture.findUnique({
+      where: { id: ventureId },
       select: { id: true },
     });
-    if (!department) throw new NotFoundException('Department not found.');
+    if (!venture) throw new NotFoundException('Venture not found.');
 
-    const updated = await this.prisma.department.update({
-      where: { id: departmentId },
+    const updated = await this.prisma.venture.update({
+      where: { id: ventureId },
       data: {
         name: input.name,
         shortLabel: input.shortLabel || input.name.slice(0, 8),
         description: input.description,
+        auditEvents: { create: { actorMemberId, action: 'VENTURE_DETAILS_SAVED', metadata: { name: input.name, description: input.description } } },
       },
       include: {
         _count: {
@@ -191,12 +197,12 @@ export class RegistryService {
       },
     });
 
-    return this.toDepartment(updated);
+    return this.toVenture(updated);
   }
 
-  async deleteDepartment(departmentId: string): Promise<{ id: string }> {
-    const department = await this.prisma.department.findUnique({
-      where: { id: departmentId },
+  async deleteVenture(ventureId: string, actorMemberId?: string): Promise<{ id: string }> {
+    const venture = await this.prisma.venture.findUnique({
+      where: { id: ventureId },
       select: {
         id: true,
         _count: {
@@ -208,44 +214,44 @@ export class RegistryService {
         },
       },
     });
-    if (!department) throw new NotFoundException('Department not found.');
+    if (!venture) throw new NotFoundException('Venture not found.');
 
     if (
-      department._count.members > 0 ||
-      department._count.projects > 0 ||
-      department._count.outcomes > 0
+      venture._count.members > 0 ||
+      venture._count.projects > 0 ||
+      venture._count.outcomes > 0
     ) {
       const references: string[] = [];
-      if (department._count.members > 0) {
+      if (venture._count.members > 0) {
         references.push(
-          `${department._count.members} ${department._count.members === 1 ? 'member' : 'members'}`,
+          `${venture._count.members} ${venture._count.members === 1 ? 'member' : 'members'}`,
         );
       }
-      if (department._count.projects > 0) {
+      if (venture._count.projects > 0) {
         references.push(
-          `${department._count.projects} ${department._count.projects === 1 ? 'project' : 'projects'}`,
+          `${venture._count.projects} ${venture._count.projects === 1 ? 'project' : 'projects'}`,
         );
       }
-      if (department._count.outcomes > 0) {
+      if (venture._count.outcomes > 0) {
         references.push(
-          `${department._count.outcomes} ${department._count.outcomes === 1 ? 'outcome' : 'outcomes'}`,
+          `${venture._count.outcomes} ${venture._count.outcomes === 1 ? 'outcome' : 'outcomes'}`,
         );
       }
       throw new ConflictException(
-        `This department is still in use: ${references.join(', ')}. Reassign or remove these references before deleting it.`,
+        `This venture is still in use: ${references.join(', ')}. Reassign or remove these references before deleting it.`,
       );
     }
 
     try {
-      await this.prisma.department.delete({ where: { id: departmentId } });
-      return { id: departmentId };
+      await this.prisma.venture.update({ where: { id: ventureId }, data: { status: 'ARCHIVED', auditEvents: { create: { actorMemberId, action: 'VENTURE_ARCHIVED', metadata: {} } } } });
+      return { id: ventureId };
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2003'
       ) {
         throw new ConflictException(
-          'This department is still in use. Remove its references before deleting it.',
+          'This venture is still in use. Remove its references before deleting it.',
         );
       }
       throw error;
@@ -261,7 +267,7 @@ export class RegistryService {
           invitationSentAt: null,
         },
       },
-      include: { department: true },
+      include: { venture: true, ventureMemberships: { where: { endedAt: null }, select: { venture: { select: { id: true, name: true, shortLabel: true } } } } },
       orderBy: [{ fullName: 'asc' }, { createdAt: 'asc' }],
     });
 
@@ -269,7 +275,7 @@ export class RegistryService {
   }
 
   async createMember(input: CreateMemberRequest): Promise<RegistryMember> {
-    await this.assertDepartmentExists(input.departmentId);
+    await this.assertVentureExists(input.ventureId);
 
     const removedMember = await this.prisma.member.findFirst({
       where: {
@@ -287,14 +293,14 @@ export class RegistryService {
         data: {
           email: input.email,
           fullName: input.fullName,
-          departmentId: input.departmentId,
+          ventureId: input.ventureId,
           position: input.position,
           workspaceRole: input.workspaceRole,
           status: 'INVITED',
           deactivatedAt: null,
           invitationSentAt: null,
         },
-        include: { department: true },
+        include: { venture: true, ventureMemberships: { where: { endedAt: null }, select: { venture: { select: { id: true, name: true, shortLabel: true } } } } },
       });
 
       try {
@@ -314,19 +320,19 @@ export class RegistryService {
         data: {
           email: input.email,
           fullName: input.fullName,
-          departmentId: input.departmentId,
+          ventureId: input.ventureId,
           position: input.position,
           workspaceRole: input.workspaceRole,
           status: input.status,
           deactivatedAt: null,
         },
-        include: { department: true },
+        include: { venture: true, ventureMemberships: { where: { endedAt: null }, select: { venture: { select: { id: true, name: true, shortLabel: true } } } } },
       });
 
       const created = this.toMember({
         ...member,
-        department: member.department,
-        departmentId: member.departmentId,
+        venture: member.venture,
+        ventureId: member.ventureId,
         position: member.position,
       });
 
@@ -362,7 +368,7 @@ export class RegistryService {
       );
     }
 
-    await this.assertDepartmentExists(input.departmentId);
+    await this.assertVentureExists(input.ventureId);
     await this.assertEmailAvailable(input.email, memberId);
 
     try {
@@ -371,7 +377,7 @@ export class RegistryService {
         data: {
           email: input.email,
           fullName: input.fullName,
-          departmentId: input.departmentId,
+          ventureId: input.ventureId,
           position: input.position,
           workspaceRole: input.workspaceRole,
           status: input.status,
@@ -381,13 +387,13 @@ export class RegistryService {
               : null,
           deactivatedAt: input.status === 'DEACTIVATED' ? new Date() : null,
         },
-        include: { department: true },
+        include: { venture: true, ventureMemberships: { where: { endedAt: null }, select: { venture: { select: { id: true, name: true, shortLabel: true } } } } },
       });
 
       return this.toMember({
         ...member,
-        department: member.department,
-        departmentId: member.departmentId,
+        venture: member.venture,
+        ventureId: member.ventureId,
         position: member.position,
       });
     } catch (error) {
@@ -445,7 +451,7 @@ export class RegistryService {
         status: 'DEACTIVATED',
         invitationSentAt: null,
         deactivatedAt: new Date(),
-        visiworkDepartmentId: null,
+        visiworkVentureId: null,
       },
     });
 
@@ -475,7 +481,7 @@ export class RegistryService {
   private async deliverInvitation(memberId: string): Promise<RegistryMember> {
     const member = await this.prisma.member.findUnique({
       where: { id: memberId },
-      include: { department: true },
+      include: { venture: true, ventureMemberships: { where: { endedAt: null }, select: { venture: { select: { id: true, name: true, shortLabel: true } } } } },
     });
     if (!member) throw new NotFoundException('Member not found.');
 
@@ -487,7 +493,7 @@ export class RegistryService {
     const updated = await this.prisma.member.update({
       where: { id: member.id },
       data: { invitationSentAt: new Date() },
-      include: { department: true },
+      include: { venture: true, ventureMemberships: { where: { endedAt: null }, select: { venture: { select: { id: true, name: true, shortLabel: true } } } } },
     });
     return this.toMember(updated);
   }
@@ -510,13 +516,14 @@ export class RegistryService {
     }
   }
 
-  private async assertDepartmentExists(departmentId: string): Promise<void> {
-    const department = await this.prisma.department.findUnique({
-      where: { id: departmentId },
+  private async assertVentureExists(ventureId: string | null): Promise<void> {
+    if (!ventureId) return;
+    const venture = await this.prisma.venture.findUnique({
+      where: { id: ventureId },
       select: { id: true },
     });
-    if (!department) {
-      throw new BadRequestException('Choose an existing department.');
+    if (!venture) {
+      throw new BadRequestException('Choose an existing venture.');
     }
   }
 
@@ -532,25 +539,25 @@ export class RegistryService {
     throw error;
   }
 
-  private toDepartment(department: {
+  private toVenture(venture: {
     id: string;
     name: string;
     shortLabel: string;
     description: string | null;
     createdAt: Date;
     updatedAt: Date;
-    _count: { members: number; projects: number; outcomes: number };
-  }): RegistryDepartment {
+    _count: { members: number; memberships?: number; projects: number; outcomes: number };
+  }): RegistryVenture {
     return {
-      id: department.id,
-      name: department.name,
-      shortLabel: department.shortLabel,
-      description: department.description,
-      memberCount: department._count.members,
-      projectCount: department._count.projects,
-      outcomeCount: department._count.outcomes,
-      createdAt: department.createdAt.toISOString(),
-      updatedAt: department.updatedAt.toISOString(),
+      id: venture.id,
+      name: venture.name,
+      shortLabel: venture.shortLabel,
+      description: venture.description,
+      memberCount: venture._count.memberships ?? venture._count.members,
+      projectCount: venture._count.projects,
+      outcomeCount: venture._count.outcomes,
+      createdAt: venture.createdAt.toISOString(),
+      updatedAt: venture.updatedAt.toISOString(),
     };
   }
 
@@ -560,8 +567,9 @@ export class RegistryService {
     email: string;
     fullName: string;
     profileImagePath: string | null;
-    departmentId: string;
-    department: { id: string; name: string; shortLabel: string };
+    ventureMemberships?: { venture: { id: string; name: string; shortLabel: string } }[];
+    ventureId: string | null;
+    venture: { id: string; name: string; shortLabel: string } | null;
     position: string | null;
     workspaceRole: 'ADMINISTRATOR' | 'MEMBER';
     status: 'INVITED' | 'ACTIVE' | 'DEACTIVATED';
@@ -574,8 +582,9 @@ export class RegistryService {
       email: member.email,
       fullName: member.fullName,
       profileImagePath: member.profileImagePath,
-      departmentId: member.departmentId,
-      department: member.department,
+      ventures: member.ventureMemberships?.map(m => m.venture) ?? (member.venture ? [member.venture] : []),
+      ventureId: member.ventureId,
+      venture: member.venture,
       position: member.position,
       workspaceRole: member.workspaceRole,
       status: member.status,

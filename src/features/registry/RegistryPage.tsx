@@ -1,19 +1,20 @@
+import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  CreateDepartmentRequestSchema,
+  CreateVentureRequestSchema,
   CreateMemberRequestSchema,
-  DeleteDepartmentResponseSchema,
+  DeleteVentureResponseSchema,
   RemoveMemberResponseSchema,
-  RegistryDepartmentSchema,
+  RegistryVentureSchema,
   RegistryMemberSchema,
   UpdateMemberRequestSchema,
-  type CreateDepartmentRequest,
-  type DepartmentFormValues,
+  type CreateVentureRequest,
+  type VentureFormValues,
   type MemberFormValues,
-  type RegistryDepartment,
+  type RegistryVenture,
   type RegistryMember,
   type RegistryOverviewResponse,
   type UpdateMemberRequest,
@@ -28,12 +29,12 @@ import {
 import './registry.css';
 import './member-name-combobox.css';
 
-type DepartmentDialogState =
-  { mode: 'create' } | { mode: 'edit'; department: RegistryDepartment };
+type VentureDialogState =
+  { mode: 'create' } | { mode: 'edit'; venture: RegistryVenture };
 
-type SaveDepartmentInput = {
-  departmentId?: string;
-  request: CreateDepartmentRequest;
+type SaveVentureInput = {
+  ventureId?: string;
+  request: CreateVentureRequest;
 };
 
 type MemberDialogState =
@@ -50,27 +51,27 @@ function messageFromError(error: unknown): string {
     : 'Something went wrong. Please try again.';
 }
 
-function sortDepartments(
-  departments: RegistryDepartment[],
-): RegistryDepartment[] {
-  return [...departments].sort((left, right) =>
+function sortVentures(
+  ventures: RegistryVenture[],
+): RegistryVenture[] {
+  return [...ventures].sort((left, right) =>
     left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }),
   );
 }
 
 function withMemberCounts(
-  departments: RegistryDepartment[],
+  ventures: RegistryVenture[],
   members: RegistryMember[],
-): RegistryDepartment[] {
-  return departments.map((department) => ({
-    ...department,
+): RegistryVenture[] {
+  return ventures.map((venture) => ({
+    ...venture,
     memberCount: members.filter(
-      (member) => member.departmentId === department.id,
+      (member) => (member.ventures?.some(v => v.id === venture.id) || member.ventureId === venture.id),
     ).length,
   }));
 }
 
-function DepartmentDialog({
+function VentureDialog({
   state,
   members,
   isSaving,
@@ -78,16 +79,16 @@ function DepartmentDialog({
   onClose,
   onSave,
 }: {
-  state: DepartmentDialogState;
+  state: VentureDialogState;
   members: RegistryMember[];
   isSaving: boolean;
   saveError: unknown;
   onClose: () => void;
-  onSave: (input: CreateDepartmentRequest) => Promise<void>;
+  onSave: (input: CreateVentureRequest) => Promise<void>;
 }) {
-  const department = state.mode === 'edit' ? state.department : undefined;
-  const departmentMembers = department
-    ? members.filter((member) => member.departmentId === department.id)
+  const venture = state.mode === 'edit' ? state.venture : undefined;
+  const ventureMembers = venture
+    ? members.filter((member) => (member.ventures?.some(v => v.id === venture.id) || member.ventureId === venture.id))
     : [];
   const dialogRef = useRef<HTMLElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(
@@ -103,11 +104,11 @@ function DepartmentDialog({
     reset,
     setError,
     setFocus,
-  } = useForm<DepartmentFormValues>({
+  } = useForm<VentureFormValues>({
     defaultValues: {
-      name: department?.name ?? '',
-      shortLabel: department?.shortLabel ?? '',
-      description: department?.description ?? '',
+      name: venture?.name ?? '',
+      shortLabel: venture?.shortLabel ?? '',
+      description: venture?.description ?? '',
     },
   });
 
@@ -124,13 +125,13 @@ function DepartmentDialog({
 
   useEffect(() => {
     reset({
-      name: department?.name ?? '',
-      shortLabel: department?.shortLabel ?? '',
-      description: department?.description ?? '',
+      name: venture?.name ?? '',
+      shortLabel: venture?.shortLabel ?? '',
+      description: venture?.description ?? '',
     });
     const focusFrame = window.requestAnimationFrame(() => setFocus('name'));
     return () => window.cancelAnimationFrame(focusFrame);
-  }, [department, reset, setFocus]);
+  }, [venture, reset, setFocus]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -164,7 +165,7 @@ function DepartmentDialog({
 
   const submit = handleSubmit(async (values) => {
     clearErrors();
-    const parsed = CreateDepartmentRequestSchema.safeParse(values);
+    const parsed = CreateVentureRequestSchema.safeParse(values);
     if (!parsed.success) {
       for (const issue of parsed.error.issues) {
         const field = issue.path[0];
@@ -199,7 +200,7 @@ function DepartmentDialog({
         className="registry-dialog"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="department-dialog-title"
+        aria-labelledby="venture-dialog-title"
       >
         <header className="registry-dialog-header">
           <div>
@@ -208,15 +209,15 @@ function DepartmentDialog({
                 ? 'NEW ORGANIZATION UNIT'
                 : 'ORGANIZATION UNIT'}
             </p>
-            <h2 id="department-dialog-title">
-              {state.mode === 'create' ? 'Add department' : 'Edit department'}
+            <h2 id="venture-dialog-title">
+              {state.mode === 'create' ? 'Add venture' : 'Edit venture'}
             </h2>
             <p>Define the organization unit used to group members and work.</p>
           </div>
           <button
             type="button"
             className="registry-icon-button"
-            aria-label="Close department dialog"
+            aria-label="Close venture dialog"
             onClick={onClose}
             disabled={isSaving}
           >
@@ -227,7 +228,7 @@ function DepartmentDialog({
         <form className="registry-form" onSubmit={submit} noValidate>
           <div className="registry-form-row">
             <label className="registry-field">
-              <span>Department name</span>
+              <span>Venture name</span>
               <input
                 {...register('name')}
                 aria-invalid={Boolean(errors.name)}
@@ -258,7 +259,7 @@ function DepartmentDialog({
             <input
               {...register('description')}
               aria-invalid={Boolean(errors.description)}
-              placeholder="What this department is responsible for"
+              placeholder="What this venture is responsible for"
             />
             {errors.description?.message && (
               <small>{errors.description.message}</small>
@@ -269,16 +270,16 @@ function DepartmentDialog({
             <section className="registry-edit-members" aria-labelledby="registry-edit-members-title">
               <div className="registry-edit-members-heading">
                 <div>
-                  <p className="registry-kicker">DEPARTMENT MEMBERS</p>
+                  <p className="registry-kicker">VENTURE MEMBERS</p>
                   <h3 id="registry-edit-members-title">
-                    {departmentMembers.length} {departmentMembers.length === 1 ? 'member' : 'members'}
+                    {ventureMembers.length} {ventureMembers.length === 1 ? 'member' : 'members'}
                   </h3>
                 </div>
               </div>
               <div className="registry-edit-members-list">
-                {departmentMembers.length ? (
-                  departmentMembers.map((member) => (
-                    <div className="registry-department-member" key={member.id}>
+                {ventureMembers.length ? (
+                  ventureMembers.map((member) => (
+                    <div className="registry-venture-member" key={member.id}>
                       <MemberAvatar name={member.fullName} profileImagePath={member.profileImagePath} />
                       <div>
                         <strong>{member.fullName}</strong>
@@ -290,7 +291,7 @@ function DepartmentDialog({
                     </div>
                   ))
                 ) : (
-                  <p className="registry-form-note">No members are assigned to this department.</p>
+                  <p className="registry-form-note">No members are assigned to this venture.</p>
                 )}
               </div>
             </section>
@@ -319,7 +320,7 @@ function DepartmentDialog({
               {isSaving
                 ? 'Saving...'
                 : state.mode === 'create'
-                  ? 'Create department'
+                  ? 'Create venture'
                   : 'Save changes'}
             </button>
           </footer>
@@ -330,14 +331,14 @@ function DepartmentDialog({
   );
 }
 
-function RemoveDepartmentDialog({
-  department,
+function RemoveVentureDialog({
+  venture,
   isRemoving,
   removeError,
   onClose,
   onConfirm,
 }: {
-  department: RegistryDepartment;
+  venture: RegistryVenture;
   isRemoving: boolean;
   removeError: unknown;
   onClose: () => void;
@@ -397,9 +398,9 @@ function RemoveDepartmentDialog({
   }, [isRemoving, onClose]);
 
   const hasBlockingReferences =
-    department.memberCount > 0 ||
-    department.projectCount > 0 ||
-    department.outcomeCount > 0;
+    venture.memberCount > 0 ||
+    venture.projectCount > 0 ||
+    venture.outcomeCount > 0;
 
   return createPortal(
     <div
@@ -414,20 +415,20 @@ function RemoveDepartmentDialog({
         className="registry-dialog registry-remove-dialog"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="remove-department-dialog-title"
+        aria-labelledby="remove-venture-dialog-title"
       >
         <header className="registry-dialog-header">
           <div>
             <p className="registry-kicker">REMOVE ORGANIZATION UNIT</p>
-            <h2 id="remove-department-dialog-title">Remove department</h2>
+            <h2 id="remove-venture-dialog-title">Archive venture</h2>
             <p>
-              Remove <strong>{department.name}</strong> from the Registry?
+              Remove <strong>{venture.name}</strong> from the Registry?
             </p>
           </div>
           <button
             type="button"
             className="registry-icon-button"
-            aria-label="Close remove department dialog"
+            aria-label="Close remove venture dialog"
             onClick={onClose}
             disabled={isRemoving}
           >
@@ -436,32 +437,32 @@ function RemoveDepartmentDialog({
         </header>
 
         <p className="registry-remove-copy">
-          This is permanent. These are the references currently attached to this
-          department.
+          Archiving preserves history. These are the references currently attached to this
+          venture.
         </p>
 
         <div
           className="registry-reference-summary"
-          aria-label={`References for ${department.name}`}
+          aria-label={`References for ${venture.name}`}
         >
-          <span className={department.memberCount > 0 ? 'is-blocking' : ''}>
-            <strong>{department.memberCount}</strong>
-            {department.memberCount === 1 ? 'member' : 'members'}
+          <span className={venture.memberCount > 0 ? 'is-blocking' : ''}>
+            <strong>{venture.memberCount}</strong>
+            {venture.memberCount === 1 ? 'member' : 'members'}
           </span>
-          <span className={department.projectCount > 0 ? 'is-blocking' : ''}>
-            <strong>{department.projectCount}</strong>
-            {department.projectCount === 1 ? 'project' : 'projects'}
+          <span className={venture.projectCount > 0 ? 'is-blocking' : ''}>
+            <strong>{venture.projectCount}</strong>
+            {venture.projectCount === 1 ? 'project' : 'projects'}
           </span>
-          <span className={department.outcomeCount > 0 ? 'is-blocking' : ''}>
-            <strong>{department.outcomeCount}</strong>
-            {department.outcomeCount === 1 ? 'outcome' : 'outcomes'}
+          <span className={venture.outcomeCount > 0 ? 'is-blocking' : ''}>
+            <strong>{venture.outcomeCount}</strong>
+            {venture.outcomeCount === 1 ? 'outcome' : 'outcomes'}
           </span>
         </div>
 
         {hasBlockingReferences && (
           <p className="registry-remove-guidance">
             Non-zero references block deletion. Reassign members and remove the
-            department from the listed projects or outcomes first.
+            venture from the listed projects or outcomes first.
           </p>
         )}
 
@@ -487,7 +488,7 @@ function RemoveDepartmentDialog({
             onClick={() => void onConfirm()}
             disabled={isRemoving}
           >
-            {isRemoving ? 'Removing...' : 'Remove department'}
+            {isRemoving ? 'Removing...' : 'Archive venture'}
           </button>
         </footer>
       </section>
@@ -498,7 +499,7 @@ function RemoveDepartmentDialog({
 
 function MemberDialog({
   state,
-  departments,
+  ventures,
   members,
   isSaving,
   saveError,
@@ -507,7 +508,7 @@ function MemberDialog({
   onSelectExistingMember,
 }: {
   state: MemberDialogState;
-  departments: RegistryDepartment[];
+  ventures: RegistryVenture[];
   members: RegistryMember[];
   isSaving: boolean;
   saveError: unknown;
@@ -516,12 +517,12 @@ function MemberDialog({
   onSelectExistingMember: (member: RegistryMember) => void;
 }) {
   const member = state.mode === 'edit' ? state.member : undefined;
-  const defaultDepartmentId = member?.departmentId ?? departments[0]?.id ?? '';
-  const defaultDepartmentName =
-    departments.find((department) => department.id === defaultDepartmentId)
+  const defaultVentureId = member?.ventureId ?? '';
+  const defaultVentureName =
+    ventures.find((venture) => venture.id === defaultVentureId)
       ?.name ?? '';
-  const [departmentSearch, setDepartmentSearch] = useState(
-    defaultDepartmentName,
+  const [ventureSearch, setVentureSearch] = useState(
+    defaultVentureName,
   );
   const [fullNameSuggestionsOpen, setFullNameSuggestionsOpen] = useState(false);
   const [activeMemberSuggestion, setActiveMemberSuggestion] = useState(0);
@@ -544,7 +545,7 @@ function MemberDialog({
     defaultValues: {
       fullName: member?.fullName ?? '',
       email: member?.email ?? '',
-      departmentId: defaultDepartmentId,
+      ventureId: defaultVentureId,
       position: member?.position ?? '',
       workspaceRole: member?.workspaceRole ?? 'MEMBER',
       status: member?.status ?? 'INVITED',
@@ -577,26 +578,26 @@ function MemberDialog({
   }, []);
 
   useEffect(() => {
-    const nextDepartmentId = member?.departmentId ?? departments[0]?.id ?? '';
-    const nextDepartmentName =
-      departments.find((department) => department.id === nextDepartmentId)
+    const nextVentureId = member?.ventureId ?? '';
+    const nextVentureName =
+      ventures.find((venture) => venture.id === nextVentureId)
         ?.name ?? '';
     reset({
       fullName: member?.fullName ?? '',
       email: member?.email ?? '',
-      departmentId: nextDepartmentId,
+      ventureId: nextVentureId,
       position: member?.position ?? '',
       workspaceRole: member?.workspaceRole ?? 'MEMBER',
       status: member?.status ?? 'INVITED',
     });
-    setDepartmentSearch(nextDepartmentName);
+    setVentureSearch(nextVentureName);
     setFullNameSuggestionsOpen(false);
     setActiveMemberSuggestion(0);
     const focusFrame = window.requestAnimationFrame(() =>
       dialogRef.current?.focus(),
     );
     return () => window.cancelAnimationFrame(focusFrame);
-  }, [departments, member, reset]);
+  }, [ventures, member, reset]);
 
   useEffect(() => {
     setActiveMemberSuggestion(0);
@@ -641,14 +642,14 @@ function MemberDialog({
       state.mode === 'create'
         ? CreateMemberRequestSchema
         : UpdateMemberRequestSchema
-    ).safeParse(values);
+    ).safeParse({ ...values, ventureId: values.ventureId || null });
     if (!parsed.success) {
       for (const issue of parsed.error.issues) {
         const field = issue.path[0];
         if (
           field === 'fullName' ||
           field === 'email' ||
-          field === 'departmentId' ||
+          field === 'ventureId' ||
           field === 'position' ||
           field === 'workspaceRole' ||
           field === 'status'
@@ -826,17 +827,17 @@ function MemberDialog({
               {errors.email?.message && <small>{errors.email.message}</small>}
             </label>
             <label className="registry-field">
-              <span>Department</span>
+              <span>Primary venture (optional)</span>
               <input
                 type="search"
-                list="registry-department-options"
-                value={departmentSearch}
+                list="registry-venture-options"
+                value={ventureSearch}
                 onChange={(event) => {
                   const nextSearch = event.target.value;
-                  setDepartmentSearch(nextSearch);
-                  const selectedDepartment = departments.find(
-                    (department) =>
-                      department.name.localeCompare(
+                  setVentureSearch(nextSearch);
+                  const selectedVenture = ventures.find(
+                    (venture) =>
+                      venture.name.localeCompare(
                         nextSearch.trim(),
                         undefined,
                         {
@@ -844,25 +845,25 @@ function MemberDialog({
                         },
                       ) === 0,
                   );
-                  setValue('departmentId', selectedDepartment?.id ?? '', {
+                  setValue('ventureId', selectedVenture?.id ?? '', {
                     shouldDirty: true,
                     shouldValidate: true,
                   });
                 }}
-                placeholder="Search departments"
+                placeholder="Search ventures"
                 autoComplete="off"
-                aria-invalid={Boolean(errors.departmentId)}
+                aria-invalid={Boolean(errors.ventureId)}
               />
-              <datalist id="registry-department-options">
-                {departments.map((department) => (
-                  <option key={department.id} value={department.name}>
-                    {department.shortLabel}
+              <datalist id="registry-venture-options">
+                {ventures.map((venture) => (
+                  <option key={venture.id} value={venture.name}>
+                    {venture.shortLabel}
                   </option>
                 ))}
               </datalist>
-              <input type="hidden" {...register('departmentId')} />
-              {errors.departmentId?.message && (
-                <small>{errors.departmentId.message}</small>
+              <input type="hidden" {...register('ventureId')} />
+              {errors.ventureId?.message && (
+                <small>{errors.ventureId.message}</small>
               )}
             </label>
             <label className="registry-field">
@@ -919,7 +920,7 @@ function MemberDialog({
             <button
               type="submit"
               className="registry-primary-button"
-              disabled={isSaving || departments.length === 0}
+              disabled={isSaving}
             >
               {isSaving
                 ? 'Saving...'
@@ -982,15 +983,15 @@ function RemoveMemberDialog({
 
 export function RegistryPage({ accessToken }: { accessToken?: string }) {
   const queryClient = useQueryClient();
-  const [dialogState, setDialogState] = useState<DepartmentDialogState | null>(
+  const [dialogState, setDialogState] = useState<VentureDialogState | null>(
     null,
   );
   const [memberDialogState, setMemberDialogState] =
     useState<MemberDialogState | null>(null);
-  const [departmentToRemove, setDepartmentToRemove] =
-    useState<RegistryDepartment | null>(null);
+  const [ventureToRemove, setVentureToRemove] =
+    useState<RegistryVenture | null>(null);
   const [memberToRemove, setMemberToRemove] = useState<RegistryMember | null>(null);
-  const [departmentSearch, setDepartmentSearch] = useState('');
+  const [ventureSearch, setVentureSearch] = useState('');
   const [memberSearch, setMemberSearch] = useState('');
   const [memberRoleFilter, setMemberRoleFilter] = useState<
     'ALL' | 'ADMINISTRATOR' | 'MEMBER'
@@ -999,7 +1000,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
   const overview = useQuery({
     ...registryOverviewQuery(accessToken),
   });
-  const departments = { ...overview, data: overview.data?.departments ?? [] };
+  const ventures = { ...overview, data: overview.data?.ventures ?? [] };
   const members = { ...overview, data: overview.data?.members ?? [] };
 
   const refreshProjectCreateOptions = () => {
@@ -1010,31 +1011,31 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
     });
   };
 
-  const saveDepartment = useMutation({
-    mutationFn: ({ departmentId, request }: SaveDepartmentInput) =>
+  const saveVenture = useMutation({
+    mutationFn: ({ ventureId, request }: SaveVentureInput) =>
       apiFetch(
-        departmentId
-          ? `/registry/departments/${departmentId}`
-          : '/registry/departments',
-        RegistryDepartmentSchema,
+        ventureId
+          ? `/registry/ventures/${ventureId}`
+          : '/registry/ventures',
+        RegistryVentureSchema,
         {
           accessToken,
-          method: departmentId ? 'PATCH' : 'POST',
+          method: ventureId ? 'PATCH' : 'POST',
           body: request,
         },
       ),
-    onSuccess: (savedDepartment) => {
+    onSuccess: (savedVenture) => {
       queryClient.setQueryData<RegistryOverviewResponse>(
         registryOverviewQueryKey,
         (current) =>
           current
             ? {
                 ...current,
-                departments: sortDepartments([
-                  ...current.departments.filter(
-                    (department) => department.id !== savedDepartment.id,
+                ventures: sortVentures([
+                  ...current.ventures.filter(
+                    (venture) => venture.id !== savedVenture.id,
                   ),
-                  savedDepartment,
+                  savedVenture,
                 ]),
               }
             : current,
@@ -1044,11 +1045,11 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
     },
   });
 
-  const deleteDepartment = useMutation({
-    mutationFn: (departmentId: string) =>
+  const deleteVenture = useMutation({
+    mutationFn: (ventureId: string) =>
       apiFetch(
-        `/registry/departments/${departmentId}`,
-        DeleteDepartmentResponseSchema,
+        `/registry/ventures/${ventureId}`,
+        DeleteVentureResponseSchema,
         {
           accessToken,
           method: 'DELETE',
@@ -1061,14 +1062,14 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
           current
             ? {
                 ...current,
-                departments: current.departments.filter(
-                  (department) => department.id !== id,
+                ventures: current.ventures.filter(
+                  (venture) => venture.id !== id,
                 ),
               }
             : current,
       );
       refreshProjectCreateOptions();
-      setDepartmentToRemove(null);
+      setVentureToRemove(null);
     },
   });
 
@@ -1097,7 +1098,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
             }),
           );
           return {
-            departments: withMemberCounts(current.departments, nextMembers),
+            ventures: withMemberCounts(current.ventures, nextMembers),
             members: nextMembers,
           };
         },
@@ -1123,7 +1124,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
             (member) => member.id !== id,
           );
           return {
-            departments: withMemberCounts(current.departments, nextMembers),
+            ventures: withMemberCounts(current.ventures, nextMembers),
             members: nextMembers,
           };
         },
@@ -1156,33 +1157,33 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
     },
   });
 
-  const departmentCount = departments.data?.length ?? 0;
+  const ventureCount = ventures.data?.length ?? 0;
   const totalAssignedMembers = useMemo(
     () =>
-      departments.data?.reduce(
-        (total, department) => total + department.memberCount,
+      ventures.data?.reduce(
+        (total, venture) => total + venture.memberCount,
         0,
       ) ?? 0,
-    [departments.data],
+    [ventures.data],
   );
   const administratorCount =
     members.data?.filter((member) => member.workspaceRole === 'ADMINISTRATOR')
       .length ?? 0;
-  const filteredDepartments = useMemo(() => {
-    const query = departmentSearch.trim().toLocaleLowerCase();
-    if (!query) return departments.data ?? [];
+  const filteredVentures = useMemo(() => {
+    const query = ventureSearch.trim().toLocaleLowerCase();
+    if (!query) return ventures.data ?? [];
 
-    return (departments.data ?? []).filter((department) =>
+    return (ventures.data ?? []).filter((venture) =>
       [
-        department.name,
-        department.shortLabel,
-        department.description ?? '',
+        venture.name,
+        venture.shortLabel,
+        venture.description ?? '',
       ]
         .join(' ')
         .toLocaleLowerCase()
         .includes(query),
     );
-  }, [departmentSearch, departments.data]);
+  }, [ventureSearch, ventures.data]);
 
   const filteredMembers = useMemo(() => {
     const query = memberSearch.trim().toLocaleLowerCase();
@@ -1200,8 +1201,8 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
       return [
         member.fullName,
         member.email,
-        member.department.name,
-        member.department.shortLabel,
+        (member.venture?.name ?? 'No venture'),
+        (member.venture?.shortLabel ?? 'Unassigned'),
         member.position ?? '',
         member.status,
         member.authenticationStatus,
@@ -1213,45 +1214,45 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
   }, [memberRoleFilter, memberSearch, members.data]);
 
   const openCreate = () => {
-    saveDepartment.reset();
+    saveVenture.reset();
     setDialogState({ mode: 'create' });
   };
 
-  const openEdit = (department: RegistryDepartment) => {
-    saveDepartment.reset();
-    setDialogState({ mode: 'edit', department });
+  const openEdit = (venture: RegistryVenture) => {
+    saveVenture.reset();
+    setDialogState({ mode: 'edit', venture });
   };
 
   const closeDialog = () => {
-    if (saveDepartment.isPending) return;
-    saveDepartment.reset();
+    if (saveVenture.isPending) return;
+    saveVenture.reset();
     setDialogState(null);
   };
 
-  const openRemoveDepartment = (department: RegistryDepartment) => {
-    deleteDepartment.reset();
-    setDepartmentToRemove(department);
+  const openRemoveVenture = (venture: RegistryVenture) => {
+    deleteVenture.reset();
+    setVentureToRemove(venture);
   };
 
-  const closeRemoveDepartment = () => {
-    if (deleteDepartment.isPending) return;
-    deleteDepartment.reset();
-    setDepartmentToRemove(null);
+  const closeRemoveVenture = () => {
+    if (deleteVenture.isPending) return;
+    deleteVenture.reset();
+    setVentureToRemove(null);
   };
 
-  const confirmRemoveDepartment = async () => {
-    if (!departmentToRemove) return;
+  const confirmRemoveVenture = async () => {
+    if (!ventureToRemove) return;
     try {
-      await deleteDepartment.mutateAsync(departmentToRemove.id);
+      await deleteVenture.mutateAsync(ventureToRemove.id);
     } catch {
       // The mutation error remains visible inside the confirmation dialog.
     }
   };
 
-  const save = async (request: CreateDepartmentRequest) => {
-    const departmentId =
-      dialogState?.mode === 'edit' ? dialogState.department.id : undefined;
-    await saveDepartment.mutateAsync({ departmentId, request });
+  const save = async (request: CreateVentureRequest) => {
+    const ventureId =
+      dialogState?.mode === 'edit' ? dialogState.venture.id : undefined;
+    await saveVenture.mutateAsync({ ventureId, request });
   };
 
   const openCreateMember = () => {
@@ -1284,8 +1285,9 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
         <div>
           <p className="registry-kicker">WORKSPACE REGISTRY</p>
           <h1 id="registry-title">Registry</h1>
+          <Link to="/ventures">Manage venture memberships and roles</Link>
           <p>
-            Maintain departments, member records, roles, and workspace
+            Maintain ventures, member records, roles, and workspace
             authorization.
           </p>
         </div>
@@ -1297,16 +1299,16 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
 
       <div className="registry-summary-grid" aria-label="Registry summary">
         <article className="registry-summary-card">
-          <span>Departments</span>
-          <strong>{departments.isPending ? '...' : departmentCount}</strong>
-          <small>Organization units</small>
+          <span>Ventures</span>
+          <strong>{ventures.isPending ? '...' : ventureCount}</strong>
+          <small>Businesses and startups</small>
         </article>
         <article className="registry-summary-card">
           <span>Authorized members</span>
           <strong>
             {members.isPending ? '...' : (members.data?.length ?? 0)}
           </strong>
-          <small>{totalAssignedMembers} assigned to a department</small>
+          <small>{totalAssignedMembers} assigned to a venture</small>
         </article>
         <article className="registry-summary-card registry-summary-context">
           <span>Registry authority</span>
@@ -1316,122 +1318,122 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
       </div>
 
       <div className="registry-content-grid">
-        <section className="registry-panel" aria-labelledby="departments-title">
+        <section className="registry-panel" aria-labelledby="ventures-title">
           <header className="registry-panel-header">
             <div>
               <p className="registry-kicker">STRUCTURE</p>
-              <h2 id="departments-title">Departments</h2>
-              <p>Create organization units that can own members and work.</p>
+              <h2 id="ventures-title">Ventures</h2>
+              <p>Manage the ventures your team builds and operates.</p>
             </div>
             <button
               type="button"
               className="registry-primary-button registry-add-button"
               onClick={openCreate}
             >
-              + Add department
+              + Add venture
             </button>
           </header>
 
-          <label className="registry-department-search">
-            <span className="sr-only">Search departments</span>
+          <label className="registry-venture-search">
+            <span className="sr-only">Search ventures</span>
             <input
               type="search"
-              aria-label="Search departments"
-              placeholder="Search departments"
-              value={departmentSearch}
-              onChange={(event) => setDepartmentSearch(event.target.value)}
-              disabled={!departments.isSuccess || departments.data.length === 0}
+              aria-label="Search ventures"
+              placeholder="Search ventures"
+              value={ventureSearch}
+              onChange={(event) => setVentureSearch(event.target.value)}
+              disabled={!ventures.isSuccess || ventures.data.length === 0}
             />
           </label>
 
-          {departments.isPending && (
+          {ventures.isPending && (
             <div
-              className="registry-department-list"
-              aria-label="Loading departments"
+              className="registry-venture-list"
+              aria-label="Loading ventures"
             >
               {[0, 1, 2].map((item) => (
-                <div className="registry-department-skeleton" key={item} />
+                <div className="registry-venture-skeleton" key={item} />
               ))}
             </div>
           )}
 
-          {departments.isError && (
+          {ventures.isError && (
             <div className="registry-state-card" role="alert">
-              <strong>Departments could not be loaded.</strong>
-              <p>{messageFromError(departments.error)}</p>
+              <strong>Ventures could not be loaded.</strong>
+              <p>{messageFromError(ventures.error)}</p>
               <button
                 type="button"
                 className="registry-secondary-button"
-                onClick={() => void departments.refetch()}
+                onClick={() => void ventures.refetch()}
               >
                 Try again
               </button>
             </div>
           )}
 
-          {departments.isSuccess && departments.data.length === 0 && (
+          {ventures.isSuccess && ventures.data.length === 0 && (
             <div className="registry-state-card registry-empty-state">
               <span aria-hidden="true">⌁</span>
-              <strong>No departments yet</strong>
+              <strong>No ventures yet</strong>
               <p>Create the first organization unit for your workspace.</p>
               <button
                 type="button"
                 className="registry-secondary-button"
                 onClick={openCreate}
               >
-                Add department
+                Add venture
               </button>
             </div>
           )}
 
-          {departments.isSuccess &&
-            departments.data.length > 0 &&
-            filteredDepartments.length === 0 && (
+          {ventures.isSuccess &&
+            ventures.data.length > 0 &&
+            filteredVentures.length === 0 && (
               <div className="registry-state-card registry-filtered-empty">
-                <strong>No matching departments</strong>
-                <p>Try a different department search.</p>
+                <strong>No matching ventures</strong>
+                <p>Try a different venture search.</p>
               </div>
             )}
 
-          {departments.isSuccess && filteredDepartments.length > 0 && (
-            <div className="registry-department-list">
-              {filteredDepartments.map((department) => (
+          {ventures.isSuccess && filteredVentures.length > 0 && (
+            <div className="registry-venture-list">
+              {filteredVentures.map((venture) => (
                 <article
-                  className="registry-department-card"
-                  key={department.id}
+                  className="registry-venture-card"
+                  key={venture.id}
                 >
                   <button
                     type="button"
-                    className="registry-department-main"
-                    onClick={() => openEdit(department)}
-                    aria-label={`View ${department.name} members`}
+                    className="registry-venture-main"
+                    onClick={() => openEdit(venture)}
+                    aria-label={`View ${venture.name} members`}
                   >
                     <span
-                      className="registry-department-icon"
+                      className="registry-venture-icon"
                       aria-hidden="true"
                     >
                       ⌁
                     </span>
-                    <span className="registry-department-copy">
-                      <strong>{department.shortLabel}</strong>
-                      <span className="registry-department-references">
+                    <span className="registry-venture-copy">
+                      <strong>{venture.shortLabel}</strong>
+                      <span className="registry-venture-references">
                         <span
-                          className={department.memberCount > 0 ? 'is-blocking' : ''}
+                          className={venture.memberCount > 0 ? 'is-blocking' : ''}
                         >
-                          {department.memberCount}{' '}
-                          {department.memberCount === 1 ? 'member' : 'members'}
+                          {venture.memberCount}{' '}
+                          {venture.memberCount === 1 ? 'member' : 'members'}
                         </span>
                         <span
-                          className={department.projectCount > 0 ? 'is-blocking' : ''}
+                          className={venture.projectCount > 0 ? 'is-blocking' : ''}
                         >
-                          {department.projectCount}{' '}
-                          {department.projectCount === 1 ? 'project' : 'projects'}
+                          {venture.projectCount}{' '}
+                          {venture.projectCount === 1 ? 'project' : 'projects'}
                         </span>
                         <span
-                          className={department.outcomeCount > 0 ? 'is-blocking' : ''}
+                          className={venture.outcomeCount > 0 ? 'is-blocking' : ''}
                         >
-                          {department.outcomeCount}{' '}
-                          {department.outcomeCount === 1 ? 'outcome' : 'outcomes'}
+                          {venture.outcomeCount}{' '}
+                          {venture.outcomeCount === 1 ? 'outcome' : 'outcomes'}
                         </span>
                       </span>
                     </span>
@@ -1439,9 +1441,9 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
                   <button
                     type="button"
                     className="registry-remove-button"
-                    onClick={() => openRemoveDepartment(department)}
-                    aria-label={`Remove ${department.name}`}
-                    title={`Remove ${department.name}`}
+                    onClick={() => openRemoveVenture(venture)}
+                    aria-label={`Remove ${venture.name}`}
+                    title={`Remove ${venture.name}`}
                   >
                     ×
                   </button>
@@ -1495,7 +1497,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
               type="button"
               className="registry-primary-button registry-add-button"
               onClick={openCreateMember}
-              disabled={!departments.data?.length}
+              disabled={!ventures.data?.length}
             >
               + Add member
             </button>
@@ -1507,7 +1509,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
               aria-label="Loading members"
             >
               {[0, 1, 2, 3].map((item) => (
-                <div className="registry-department-skeleton" key={item} />
+                <div className="registry-venture-skeleton" key={item} />
               ))}
             </div>
           )}
@@ -1553,7 +1555,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
                     <thead>
                       <tr>
                         <th>Member</th>
-                        <th>Department</th>
+                        <th>Venture</th>
                         <th>Access</th>
                         <th>Authentication</th>
                         <th>Actions</th>
@@ -1585,10 +1587,10 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
                           </td>
                           <td>
                             <span
-                              className="registry-department-short-label"
-                              title={member.department.name}
+                              className="registry-venture-short-label"
+                              title={(member.venture?.name ?? 'No venture')}
                             >
-                              {member.department.shortLabel}
+                              {(member.venture?.shortLabel ?? 'Unassigned')}
                             </span>
                           </td>
                           <td>
@@ -1675,22 +1677,22 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
       </div>
 
       {dialogState && (
-        <DepartmentDialog
+        <VentureDialog
           state={dialogState}
           members={members.data ?? []}
-          isSaving={saveDepartment.isPending}
-          saveError={saveDepartment.error}
+          isSaving={saveVenture.isPending}
+          saveError={saveVenture.error}
           onClose={closeDialog}
           onSave={save}
         />
       )}
-      {departmentToRemove && (
-        <RemoveDepartmentDialog
-          department={departmentToRemove}
-          isRemoving={deleteDepartment.isPending}
-          removeError={deleteDepartment.error}
-          onClose={closeRemoveDepartment}
-          onConfirm={confirmRemoveDepartment}
+      {ventureToRemove && (
+        <RemoveVentureDialog
+          venture={ventureToRemove}
+          isRemoving={deleteVenture.isPending}
+          removeError={deleteVenture.error}
+          onClose={closeRemoveVenture}
+          onConfirm={confirmRemoveVenture}
         />
       )}
       {memberToRemove && (
@@ -1710,7 +1712,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
       {memberDialogState && (
         <MemberDialog
           state={memberDialogState}
-          departments={departments.data ?? []}
+          ventures={ventures.data ?? []}
           members={members.data ?? []}
           isSaving={saveMember.isPending}
           saveError={saveMember.error}

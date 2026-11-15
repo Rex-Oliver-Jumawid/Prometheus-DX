@@ -19,6 +19,7 @@ const navigation: NavigationItem[] = [
   { label: 'Projects', path: '/projects', icon: 'projects' },
   { label: 'VisiWork', path: '/visiwork', icon: 'visiwork' },
   { label: 'Schedule', path: '/schedule', icon: 'schedule' },
+  { label: 'Ventures', path: '/ventures', icon: 'registry' },
   { label: 'Team', path: '/team', icon: 'team' },
   { label: 'Reports & Analytics', path: '/reports', icon: 'reports' },
 ];

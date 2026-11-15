@@ -15,7 +15,8 @@ test.describe.configure({ mode: 'serial' });
 
 test.afterEach(async () => {
   if (!hasRegistryCredentials || createdNames.size === 0) return;
-  await prisma.department.deleteMany({
+  await prisma.ventureAuditEvent.deleteMany({ where: { venture: { name: { in: [...createdNames] } } } });
+  await prisma.venture.deleteMany({
     where: { name: { in: [...createdNames] } },
   });
   createdNames.clear();
@@ -38,7 +39,7 @@ async function signIn(page: Page) {
   await expect(page).not.toHaveURL(/\/login$/);
 }
 
-test('administrator creates and edits a department with persistence', async ({
+test('administrator creates and edits a venture with persistence', async ({
   page,
 }) => {
   test.skip(
@@ -53,7 +54,7 @@ test('administrator creates and edits a department with persistence', async ({
   if (!member) throw new Error('E2E member record was not found.');
   test.skip(
     member.workspaceRole !== 'ADMINISTRATOR',
-    'Registry department acceptance requires an Administrator E2E member.',
+    'Registry venture acceptance requires an Administrator E2E member.',
   );
 
   const suffix = Date.now().toString(36);
@@ -72,56 +73,56 @@ test('administrator creates and edits a department with persistence', async ({
     page.getByRole('heading', { name: 'Registry', exact: true }),
   ).toBeVisible();
 
-  const addDepartmentButton = page
-    .getByRole('button', { name: /Add department/ })
+  const addVentureButton = page
+    .getByRole('button', { name: /Add venture/ })
     .first();
-  await addDepartmentButton.click();
+  await addVentureButton.click();
   await expect(
-    page.getByRole('dialog', { name: 'Add department' }),
+    page.getByRole('dialog', { name: 'Add venture' }),
   ).toBeVisible();
-  await expect(page.getByLabel('Department name')).toBeFocused();
+  await expect(page.getByLabel('Venture name')).toBeFocused();
 
   await page.keyboard.press('Escape');
   await expect(
-    page.getByRole('dialog', { name: 'Add department' }),
+    page.getByRole('dialog', { name: 'Add venture' }),
   ).toHaveCount(0);
-  await expect(addDepartmentButton).toBeFocused();
+  await expect(addVentureButton).toBeFocused();
 
-  await addDepartmentButton.click();
+  await addVentureButton.click();
   await page
     .locator('.registry-dialog-backdrop')
     .click({ position: { x: 4, y: 4 } });
   await expect(
-    page.getByRole('dialog', { name: 'Add department' }),
+    page.getByRole('dialog', { name: 'Add venture' }),
   ).toHaveCount(0);
-  await expect(addDepartmentButton).toBeFocused();
+  await expect(addVentureButton).toBeFocused();
 
-  await addDepartmentButton.click();
+  await addVentureButton.click();
 
   await page
-    .getByRole('button', { name: 'Create department', exact: true })
+    .getByRole('button', { name: 'Create venture', exact: true })
     .click();
-  await expect(page.getByText('Enter a department name.')).toBeVisible();
+  await expect(page.getByText('Enter a venture name.')).toBeVisible();
 
-  await page.getByLabel('Department name').fill(originalName);
+  await page.getByLabel('Venture name').fill(originalName);
   await page.getByLabel('Short label').fill(originalShortLabel);
   await page.getByLabel('Description').fill(originalDescription);
   await page
-    .getByRole('button', { name: 'Create department', exact: true })
+    .getByRole('button', { name: 'Create venture', exact: true })
     .click();
 
-  const createdDepartment = page.getByRole('button', {
+  const createdVenture = page.getByRole('button', {
     name: `View ${originalName} members`,
   });
-  await expect(createdDepartment).toBeVisible();
+  await expect(createdVenture).toBeVisible();
   await expect(
-    createdDepartment.getByText('0 members', { exact: true }),
+    createdVenture.getByText('0 members', { exact: true }),
   ).toBeVisible();
   await expect(
-    createdDepartment.getByText('0 projects', { exact: true }),
+    createdVenture.getByText('0 projects', { exact: true }),
   ).toBeVisible();
   await expect(
-    createdDepartment.getByText('0 outcomes', { exact: true }),
+    createdVenture.getByText('0 outcomes', { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText(originalShortLabel, { exact: true }),
@@ -140,9 +141,9 @@ test('administrator creates and edits a department with persistence', async ({
     .getByRole('button', { name: `View ${originalName} members` })
     .click();
   await expect(
-    page.getByRole('dialog', { name: 'Edit department' }),
+    page.getByRole('dialog', { name: 'Edit venture' }),
   ).toBeVisible();
-  await page.getByLabel('Department name').fill(updatedName);
+  await page.getByLabel('Venture name').fill(updatedName);
   await page.getByLabel('Short label').fill(updatedShortLabel);
   await page.getByLabel('Description').fill(updatedDescription);
   await page.getByRole('button', { name: 'Save changes', exact: true }).click();
@@ -167,7 +168,7 @@ test('administrator creates and edits a department with persistence', async ({
   ).toBeVisible();
 
   await page.getByRole('button', { name: `Remove ${updatedName}` }).click();
-  const removeDialog = page.getByRole('dialog', { name: 'Remove department' });
+  const removeDialog = page.getByRole('dialog', { name: 'Archive venture' });
   await expect(removeDialog).toBeVisible();
   await expect(
     removeDialog.locator('.registry-reference-summary > span').nth(0),
@@ -186,17 +187,17 @@ test('administrator creates and edits a department with persistence', async ({
   await page.getByRole('button', { name: `Remove ${updatedName}` }).click();
   const deleteResponse = page.waitForResponse(
     (response) =>
-      response.url().includes('/api/registry/departments/') &&
+      response.url().includes('/api/registry/ventures/') &&
       response.request().method() === 'DELETE',
   );
   await page
-    .getByRole('button', { name: 'Remove department', exact: true })
+    .getByRole('button', { name: 'Archive venture', exact: true })
     .click();
   expect((await deleteResponse).status()).toBe(200);
   await expect(
     page.getByRole('button', { name: `View ${updatedName} members` }),
   ).toHaveCount(0);
   await expect(
-    prisma.department.count({ where: { name: updatedName } }),
-  ).resolves.toBe(0);
+    prisma.venture.count({ where: { name: updatedName, status: 'ARCHIVED' } }),
+  ).resolves.toBe(1);
 });

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useFieldArray, useForm } from 'react-hook-form';
 import type {
-  ProjectDepartmentSummary,
+  ProjectVentureSummary,
   ProjectMemberSummary,
 } from '../../../shared/contracts/project';
 import {
@@ -364,7 +364,7 @@ export function OutcomeDialog({
   stage,
   stages,
   outcome,
-  departments,
+  ventures,
   members,
   availablePrerequisites,
   isSaving,
@@ -375,7 +375,7 @@ export function OutcomeDialog({
   stage: Stage;
   stages?: Stage[];
   outcome?: Outcome;
-  departments: ProjectDepartmentSummary[];
+  ventures: ProjectVentureSummary[];
   members: ProjectMemberSummary[];
   availablePrerequisites: Outcome[];
   isSaving: boolean;
@@ -401,7 +401,7 @@ export function OutcomeDialog({
     defaultValues: {
       title: outcome?.title ?? '',
       description: outcome?.description ?? '',
-      departmentIds: outcome?.departments.map(({ id }) => id) ?? [],
+      ventureIds: outcome?.ventures.map(({ id }) => id) ?? [],
       memberIds: outcome?.members?.map(({ id }) => id) ?? [],
       acceptanceCriteria: outcome?.acceptanceCriteria.map(
         ({ description }) => ({
@@ -428,7 +428,7 @@ export function OutcomeDialog({
         if (
           field === 'title' ||
           field === 'description' ||
-          field === 'departmentIds' ||
+          field === 'ventureIds' ||
           field === 'memberIds' ||
           field === 'acceptanceCriteria' ||
           field === 'prerequisiteOutcomeIds'
@@ -510,23 +510,23 @@ export function OutcomeDialog({
 
             <div className="vw-add-project-field">
               <label>
-                Departments{' '}
+                Ventures{' '}
                 <span className="pw-field-hint">Select one or more</span>
               </label>
               <div
-                className="pw-multi-check-grid pw-department-check-grid"
+                className="pw-multi-check-grid pw-venture-check-grid"
                 role="group"
-                aria-label="Departments involved"
+                aria-label="Ventures involved"
               >
-                {departments.map((department) => (
-                  <label key={department.id}>
+                {ventures.map((venture) => (
+                  <label key={venture.id}>
                     <input
                       type="checkbox"
-                      value={department.id}
-                      {...register('departmentIds')}
+                      value={venture.id}
+                      {...register('ventureIds')}
                     />
                     <span>
-                      {department.name}{' '}
+                      {venture.name}{' '}
                       <small
                         style={{
                           opacity: 0.65,
@@ -534,15 +534,15 @@ export function OutcomeDialog({
                           marginLeft: 4,
                         }}
                       >
-                        {department.shortLabel}
+                        {venture.shortLabel}
                       </small>
                     </span>
                   </label>
                 ))}
               </div>
-              {errors.departmentIds?.message && (
+              {errors.ventureIds?.message && (
                 <small className="projects-field-error">
-                  {errors.departmentIds.message}
+                  {errors.ventureIds.message}
                 </small>
               )}
             </div>

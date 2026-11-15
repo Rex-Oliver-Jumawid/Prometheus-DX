@@ -189,7 +189,7 @@
   height: 429px;
 }
 
-.reports-departments {
+.reports-ventures {
   height: 304px;
 }
 
@@ -461,7 +461,7 @@
   .reports-project-health,
   .reports-pipeline,
   .reports-capacity,
-  .reports-departments {
+  .reports-ventures {
     height: auto;
     min-height: 280px;
   }
