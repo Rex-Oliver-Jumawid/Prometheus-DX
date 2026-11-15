@@ -156,6 +156,8 @@ describe('venture authorization and history', () => {
         }),
       }),
     );
+    const candidate = db.ventureMembership.upsert.mock.calls[0][0].create;
+    expect(candidate.joinedAt).toEqual(candidate.endedAt);
     expect(db.member.updateMany).toHaveBeenCalledWith({
       where: { id: memberId, visiworkVentureId: ventureId },
       data: { visiworkVentureId: null },

@@ -177,21 +177,25 @@ export class VenturesService {
         throw new ForbiddenException(
           'Only workspace administrators may change venture management grants.',
         );
+      // PostgreSQL checks the candidate INSERT before resolving ON CONFLICT.
+      // Use one timestamp for its join/end fields, including an existing membership update.
+      const writeTime = new Date(Math.max(Date.now(), previous?.joinedAt?.getTime() ?? 0));
       const result = await db.ventureMembership.upsert({
         where: { ventureId_memberId: { ventureId, memberId: member.id } },
         create: {
           ventureId,
           memberId: member.id,
+          joinedAt: writeTime,
           roles: input.roles,
           founder: input.founder,
           permissions: input.active ? input.permissions : [],
-          endedAt: input.active ? null : new Date(),
+          endedAt: input.active ? null : writeTime,
         },
         update: {
           roles: input.roles,
           founder: input.founder,
           permissions: input.active ? input.permissions : [],
-          endedAt: input.active ? null : new Date(),
+          endedAt: input.active ? null : writeTime,
         },
       });
       if (!input.active) {

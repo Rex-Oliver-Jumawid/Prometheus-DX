@@ -138,7 +138,7 @@ export class RegistryService {
                 },
               },
             },
-            memberships: { where: { endedAt: null } },
+            memberships: { where: { endedAt: null, member: { NOT: { status: 'DEACTIVATED', authUserId: null, invitationSentAt: null } } } },
             projects: true,
             outcomes: true,
           },

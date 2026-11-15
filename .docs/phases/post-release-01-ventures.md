@@ -30,3 +30,13 @@ Pending implementation and focused tests.
 ## Remaining phases
 
 Work attribution, contribution verification, wallets, equity rates/calculations, closing/freezing, and governance are outside this phase.
+
+
+## Verification progress
+
+Local Prisma validation, project doctor, TypeScript checks, ESLint (one existing hook warning), production web/API builds, 322 unit/service tests, and 181 component tests passed.
+GitHub CI applied the new migration successfully and passed 36 of 37 database integration checks on the first run.
+V1-D05: The real database caught a membership-ending upsert candidate whose implicit joinedAt was one millisecond after endedAt.
+PostgreSQL validates CHECK constraints before resolving an INSERT conflict, so an existing-row update can still fail its candidate INSERT.
+The fix supplies a single explicit timestamp for joinedAt/endedAt in the candidate and clamps it to existing join time; the constraint remains enforced.
+Authenticated browser CI and final integration confirmation remain pending.
