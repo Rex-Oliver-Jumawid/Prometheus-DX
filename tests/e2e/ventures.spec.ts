@@ -16,7 +16,7 @@ test('administrator creates ventures, assigns multiple roles, and preserves them
     await page.getByLabel('Password', { exact: true }).fill(process.env.E2E_MEMBER_PASSWORD!);
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await expect(page).not.toHaveURL(/\/login$/);
-    await page.goto('/ventures');
+    await page.goto('/registry');
     for (const label of ['Parent', 'Child']) {
       const name = `${prefix} ${label}`;
       await page.getByRole('button', { name: 'Create venture', exact: true }).click();

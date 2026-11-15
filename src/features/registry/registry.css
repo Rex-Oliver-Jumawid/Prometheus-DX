@@ -1404,3 +1404,15 @@
     transition: none;
   }
 }
+
+
+.registry-settings { grid-template-rows: auto auto minmax(0, 1fr); }
+.registry-settings-tabs { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 8px; }
+.registry-settings-tabs a { padding: 10px 18px; border-radius: 14px; text-decoration: none; color: inherit; border: 1px solid rgba(255,255,255,.65); }
+.registry-settings-tabs a[aria-current="page"] { background: rgba(255,255,255,.7); font-weight: 700; }
+.registry-settings-content { min-height: 0; overflow: auto; padding-right: 8px; }
+.registry-settings-content .registry-embedded { display: block; height: auto; max-height: none; overflow: visible; }
+.registry-members-only { display: block; }
+.registry-members-only .registry-content-grid { height: 100%; grid-template-columns: minmax(0, 1fr); }
+.registry-embedded .venture-form { width: 100%; box-sizing: border-box; }
+.registry-embedded .registry-page-header h2 { margin: 0; }

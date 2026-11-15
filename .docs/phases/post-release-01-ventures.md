@@ -67,3 +67,17 @@ Remaining acceptance work is the final authenticated browser gate and human visu
 The final dependency review also removed the old mandatory Outcome grouping requirement.
 A real PostgreSQL integration journey creates an ungrouped Project, Stage, and Outcome, protecting the existing delivery workflow when no venture is assigned.
 Projects and Outcomes retain independent optional grouping links, matching the former independent grouping relationships without requiring Departments to exist.
+
+
+## Registry consolidation (15 November 2026)
+
+Venture settings, memberships, operational roles, and management grants live under Registry, not a separate primary navigation page.
+Registry has Ventures and Workspace members sections; workspace member administration remains Administrator-only.
+An explicitly authorized venture manager can open only the scoped venture configuration section, without requesting the administrative Registry overview or workspace member directory.
+The former /ventures browser route redirects to /registry for existing bookmarks.
+Venture API authorization is unchanged.
+
+
+Registry consolidation was checked against the running local preview: old /ventures redirect, one Registry heading, no primary Ventures link, configuration/roles/permissions, workspace members, and a 390px viewport without horizontal overflow.
+Focused Registry access tests cover administrators, scoped managers, unauthorized members, and failed capability lookups.
+No backend permissions or database schema changed for this UI consolidation.

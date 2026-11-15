@@ -184,3 +184,12 @@ For substantial user-facing work:
 9. Treat unexplained visual differences from Figma as defects or unresolved product conflicts.
 
 The objective is to implement the approved Prometheus Figma interface as a real, secure, persistent application rather than to preserve an older prototype layout.
+
+
+## Registry consolidation (15 November 2026)
+
+Venture settings, memberships, operational roles, and management grants live under Registry, not a separate primary navigation page.
+Registry has Ventures and Workspace members sections; workspace member administration remains Administrator-only.
+An explicitly authorized venture manager can open only the scoped venture configuration section, without requesting the administrative Registry overview or workspace member directory.
+The former /ventures browser route redirects to /registry for existing bookmarks.
+Venture API authorization is unchanged.

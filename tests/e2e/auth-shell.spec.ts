@@ -438,7 +438,7 @@ test('non-admin Project Lead cannot see or open Registry', async ({ page }) => {
     await page.goto('/registry');
     await expect(
       page.getByRole('heading', {
-        name: 'Registry is for administrators',
+        name: 'Registry access required',
         exact: true,
       }),
     ).toBeVisible();
@@ -527,7 +527,7 @@ test('confirmed first sign-in links the existing invited Member without duplicat
     await page.goto('/registry');
     await expect(
       page.getByRole('heading', {
-        name: 'Registry is for administrators',
+        name: 'Registry access required',
         exact: true,
       }),
     ).toBeVisible();
@@ -577,7 +577,7 @@ test('administrator role downgrade takes effect after refresh and at the API', a
     await page.reload();
     await expect(
       page.getByRole('heading', {
-        name: 'Registry is for administrators',
+        name: 'Registry access required',
         exact: true,
       }),
     ).toBeVisible();

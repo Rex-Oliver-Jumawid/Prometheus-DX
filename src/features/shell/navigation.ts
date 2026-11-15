@@ -19,7 +19,6 @@ const navigation: NavigationItem[] = [
   { label: 'Projects', path: '/projects', icon: 'projects' },
   { label: 'VisiWork', path: '/visiwork', icon: 'visiwork' },
   { label: 'Schedule', path: '/schedule', icon: 'schedule' },
-  { label: 'Ventures', path: '/ventures', icon: 'registry' },
   { label: 'Team', path: '/team', icon: 'team' },
   { label: 'Reports & Analytics', path: '/reports', icon: 'reports' },
 ];
@@ -31,9 +30,10 @@ export function navigationForRole(role: WorkspaceRole): NavigationItem[] {
 
 export function utilityNavigationForRole(
   role: WorkspaceRole,
+  canManageVentures = false,
 ): NavigationItem[] {
   return [
-    ...(role === 'ADMINISTRATOR'
+    ...(role === 'ADMINISTRATOR' || canManageVentures
       ? [{ label: 'Registry', path: '/registry', icon: 'registry' as const }]
       : []),
     {

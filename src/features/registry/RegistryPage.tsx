@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
@@ -984,7 +983,7 @@ function RemoveMemberDialog({
   );
 }
 
-export function RegistryPage({ accessToken }: { accessToken?: string }) {
+export function RegistryPage({ accessToken, membersOnly = false }: { accessToken?: string; membersOnly?: boolean }) {
   const queryClient = useQueryClient();
   const [dialogState, setDialogState] = useState<VentureDialogState | null>(
     null,
@@ -1283,12 +1282,12 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
   };
 
   return (
-    <section className="registry-page" aria-labelledby="registry-title">
+    <section className={`registry-page${membersOnly ? " registry-members-only" : ""}`} aria-label={membersOnly ? "Workspace members" : undefined} aria-labelledby={membersOnly ? undefined : "registry-title"}>
+      {!membersOnly && <>
       <header className="registry-page-header">
         <div>
           <p className="registry-kicker">WORKSPACE REGISTRY</p>
           <h1 id="registry-title">Registry</h1>
-          <Link to="/ventures">Manage venture memberships and roles</Link>
           <p>
             Maintain ventures, member records, roles, and workspace
             authorization.
@@ -1320,8 +1319,9 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
         </article>
       </div>
 
+      </>}
       <div className="registry-content-grid">
-        <section className="registry-panel" aria-labelledby="ventures-title">
+        {!membersOnly && <section className="registry-panel" aria-labelledby="ventures-title">
           <header className="registry-panel-header">
             <div>
               <p className="registry-kicker">STRUCTURE</p>
@@ -1454,7 +1454,7 @@ export function RegistryPage({ accessToken }: { accessToken?: string }) {
               ))}
             </div>
           )}
-        </section>
+        </section>}
 
         <section
           className="registry-panel registry-members-panel"

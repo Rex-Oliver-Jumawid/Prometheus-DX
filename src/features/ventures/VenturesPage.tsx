@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   VentureDetailSchema,
-  VentureListSchema,
   VentureWriteResponseSchema,
   VentureMembershipRequestSchema,
   VentureSettingsSchema,
@@ -10,19 +9,19 @@ import {
   type VentureSettings,
 } from '../../../shared/contracts/venture';
 import { apiFetch } from '../../lib/api';
+import { venturesQuery } from './venture-queries';
 import { useAuth } from '../auth/auth-context';
 import '../registry/registry.css';
 import './ventures.css';
 
-export function VenturesPage() {
+export function VenturesPage({ embedded = false, managementOnly = false }: { embedded?: boolean; managementOnly?: boolean }) {
   const { session, member } = useAuth();
   const accessToken = session?.access_token;
   const client = useQueryClient();
   const [selected, setSelected] = useState('');
   const [creating, setCreating] = useState(false);
   const list = useQuery({
-    queryKey: ['ventures', member?.id],
-    queryFn: () => apiFetch('/ventures', VentureListSchema, { accessToken }),
+    ...venturesQuery(member?.id, accessToken),
   });
   const detail = useQuery({
     queryKey: ['venture', selected, member?.id],
@@ -34,11 +33,11 @@ export function VenturesPage() {
     await client.invalidateQueries();
   };
   return (
-    <section className="registry-page venture-page">
+    <section className={embedded ? "venture-page registry-embedded" : "registry-page venture-page"}>
       <header className="registry-page-header">
         <div>
-          <p className="registry-kicker">WORKSPACE REGISTRY</p>
-          <h1>Ventures</h1>
+          {!embedded && <p className="registry-kicker">WORKSPACE REGISTRY</p>}
+          {embedded ? <h2>Ventures</h2> : <h1>Ventures</h1>}
           <p>
             Businesses, people, and operational roles. Roles do not grant
             financial or equity rights.
@@ -69,7 +68,7 @@ export function VenturesPage() {
         </p>
       )}
       <nav className="venture-list" aria-label="Choose venture">
-        {list.data?.map((v) => (
+        {list.data?.filter(v => !managementOnly || v.canManage || v.canManageMembers).map((v) => (
           <button
             key={v.id}
             className="registry-secondary-button"

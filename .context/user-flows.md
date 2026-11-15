@@ -1124,3 +1124,12 @@ Operational titles and founder designation do not grant financial, equity, Proje
 Existing project visibility and workflow permissions remain unchanged.
 Projects and Outcomes retain their existing grouping links, now exposed as ventures; no mandatory venture assignment is introduced.
 Implementation evidence and pending verification live in .docs/phases/post-release-01-ventures.md.
+
+
+## Registry consolidation (15 November 2026)
+
+Venture settings, memberships, operational roles, and management grants live under Registry, not a separate primary navigation page.
+Registry has Ventures and Workspace members sections; workspace member administration remains Administrator-only.
+An explicitly authorized venture manager can open only the scoped venture configuration section, without requesting the administrative Registry overview or workspace member directory.
+The former /ventures browser route redirects to /registry for existing bookmarks.
+Venture API authorization is unchanged.

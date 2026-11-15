@@ -30,6 +30,12 @@ describe('shell navigation', () => {
     ).toMatchObject({ path: '/reports' });
   });
 
+  it('keeps venture configuration in Registry and permits explicitly scoped managers', () => {
+    expect(navigationForRole('ADMINISTRATOR').some(item => item.path === '/ventures')).toBe(false);
+    expect(utilityNavigationForRole('MEMBER', true).map(item => item.label)).toContain('Registry');
+    expect(utilityNavigationForRole('MEMBER', false).map(item => item.label)).not.toContain('Registry');
+  });
+
   it('only creates breadcrumbs for deeper routes', () => {
     expect(breadcrumbsForPath('/projects')).toEqual([]);
     expect(breadcrumbsForPath('/projects/example-project')).toEqual([

@@ -119,7 +119,7 @@ test('administrator adds and edits a member with duplicate-email protection', as
   page.on('pageerror', (error) => browserErrors.push(error.message));
 
   await signIn(page);
-  await page.goto('/registry');
+  await page.goto('/registry?tab=members');
   const addMemberButton = page.getByRole('button', { name: /Add member/ });
   await expect(memberRow(page, existingSuggestionName)).toBeVisible();
   await addMemberButton.click();
