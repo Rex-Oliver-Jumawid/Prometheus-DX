@@ -179,7 +179,9 @@ export class VenturesService {
         );
       // PostgreSQL checks the candidate INSERT before resolving ON CONFLICT.
       // Use one timestamp for its join/end fields, including an existing membership update.
-      const writeTime = new Date(Math.max(Date.now(), previous?.joinedAt?.getTime() ?? 0));
+      const writeTime = new Date(
+        Math.max(Date.now(), previous?.joinedAt?.getTime() ?? 0),
+      );
       const result = await db.ventureMembership.upsert({
         where: { ventureId_memberId: { ventureId, memberId: member.id } },
         create: {

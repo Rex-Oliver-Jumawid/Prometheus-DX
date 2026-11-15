@@ -45,13 +45,11 @@ function setup(
   const db = {
     $queryRaw: vi.fn().mockResolvedValue([]),
     venture: {
-      findUnique: vi
-        .fn()
-        .mockResolvedValue({
-          id: ventureId,
-          ...settings,
-          status: options.archived ? 'ARCHIVED' : 'ACTIVE',
-        }),
+      findUnique: vi.fn().mockResolvedValue({
+        id: ventureId,
+        ...settings,
+        status: options.archived ? 'ARCHIVED' : 'ACTIVE',
+      }),
       findMany: vi.fn().mockResolvedValue([]),
       create: vi.fn().mockResolvedValue({ id: ventureId }),
       update: vi.fn().mockResolvedValue({ id: ventureId }),
