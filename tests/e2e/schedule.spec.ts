@@ -284,16 +284,33 @@ test('planned Schedule flows through persisted Time In, Team Working Now, Time O
   await expect(memberCard.getByText('6h')).toBeVisible();
 
   await attendance.getByRole('button', { name: /Time Out/ }).click();
-  await page.getByRole('textbox', { name: 'Work summary' }).fill('Reviewed schedule and completed planned tasks.');
+  await page
+    .getByRole('textbox', { name: 'Work summary' })
+    .fill('Reviewed schedule and completed planned tasks.');
   await page.getByRole('button', { name: 'Submit summary & Time Out' }).click();
   await expect(memberCard.getByText('Timed Out')).toBeVisible();
   await expect(
     prisma.workSession.findUnique({ where: { id: openSession.id } }),
-  ).resolves.toMatchObject({ status: 'COMPLETED', summary: 'Reviewed schedule and completed planned tasks.' });
+  ).resolves.toMatchObject({
+    status: 'COMPLETED',
+    summary: 'Reviewed schedule and completed planned tasks.',
+  });
 
   await page.goto('/schedule');
   await page.getByRole('tab', { name: 'Shifts' }).click();
   await expect(page.getByText('Weekly work history')).toBeVisible();
-  await expect(page.getByText('COMPLETED').first()).toBeVisible();
+  await page
+    .getByRole('button', {
+      name: new RegExp('^' + currentManilaWeekday(), 'i'),
+    })
+    .click();
+  await expect(
+    page.locator('.day-inspector').getByText(/Completed/),
+  ).toBeVisible();
+  await expect(
+    page
+      .locator('.day-inspector')
+      .getByText('Summary: Reviewed schedule and completed planned tasks.'),
+  ).toBeVisible();
   await expect(page.getByText('6h').first()).toBeVisible();
 });

@@ -22,7 +22,6 @@ import type {
 } from '../../shared/contracts/project-workflow';
 import { PrismaService } from '../database/prisma.service';
 import { writeNotifications } from '../notifications/notification-writer';
-import { PushDeliveryService } from '../notifications/push-delivery.service';
 
 const outcomeInclude = {
   _count: {
@@ -51,7 +50,14 @@ const outcomeInclude = {
   },
   members: {
     include: {
-      member: { select: { id: true, fullName: true, email: true, profileImagePath: true } },
+      member: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          profileImagePath: true,
+        },
+      },
     },
     orderBy: { joinedAt: 'asc' as const },
   },
@@ -71,13 +77,7 @@ type StageRecord = Prisma.StageGetPayload<{ include: typeof stageInclude }>;
 
 @Injectable()
 export class ProjectWorkflowService {
-  constructor(
-    @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(PushDeliveryService)
-    private readonly pushDeliveries: PushDeliveryService = {
-      flushAfterCommit: async () => undefined,
-    } as PushDeliveryService,
-  ) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async getWorkflow(
     currentMember: Member,
@@ -211,7 +211,6 @@ export class ProjectWorkflowService {
         data: { accessLevel: input.accessLevel },
       });
     });
-    await this.pushDeliveries.flushAfterCommit();
     const response = await this.getProjectMembers(currentMember, projectId);
     const updated = response.members.find(
       ({ member }) => member.id === memberId,
@@ -362,7 +361,6 @@ export class ProjectWorkflowService {
       });
       return created;
     });
-    await this.pushDeliveries.flushAfterCommit();
     return this.toOutcome(outcome, currentMember.id);
   }
 
@@ -492,7 +490,6 @@ export class ProjectWorkflowService {
       });
       return updated;
     });
-    await this.pushDeliveries.flushAfterCommit();
     return this.toOutcome(outcome, currentMember.id);
   }
 
@@ -555,10 +552,7 @@ export class ProjectWorkflowService {
         targetWithoutOutcome.length,
       );
 
-      if (
-        outcome.stageId === input.stageId &&
-        sourceIndex === targetPosition
-      ) {
+      if (outcome.stageId === input.stageId && sourceIndex === targetPosition) {
         return;
       }
 
@@ -701,7 +695,6 @@ export class ProjectWorkflowService {
         });
       }
     });
-    await this.pushDeliveries.flushAfterCommit();
     const outcome = await this.prisma.outcome.findUniqueOrThrow({
       where: { id: outcomeId },
       include: outcomeInclude,
@@ -1125,7 +1118,9 @@ export class ProjectWorkflowService {
 
   private toOutcome(outcome: OutcomeRecord, currentMemberId: string): Outcome {
     const tasks = (outcome.features ?? []).flatMap((feature) => feature.tasks);
-    const completedTasks = tasks.filter((task) => task.status === 'DONE').length;
+    const completedTasks = tasks.filter(
+      (task) => task.status === 'DONE',
+    ).length;
     const workProgress =
       outcome.lifecycleStatus === 'ACCEPTED'
         ? 100

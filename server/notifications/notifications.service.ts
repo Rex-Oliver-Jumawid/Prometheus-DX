@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
@@ -6,6 +7,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { isAllowedPushEndpoint } from '../../shared/push-endpoint';
 import {
   ProjectAccessLevelSchema,
   type ProjectAccessLevel,
@@ -58,8 +60,7 @@ function visiworkMentionData(
     data.departmentId === null || typeof data.departmentId === 'string'
       ? data.departmentId
       : null;
-  const roomLabel =
-    typeof data.roomLabel === 'string' ? data.roomLabel : null;
+  const roomLabel = typeof data.roomLabel === 'string' ? data.roomLabel : null;
   const preview = typeof data.preview === 'string' ? data.preview : null;
   if (!messageId || !roomLabel || preview === null) return null;
   return { messageId, departmentId, roomLabel, preview };
@@ -109,9 +110,7 @@ export class NotificationsService {
     };
   }
 
-  async listMutedChats(
-    memberId: string,
-  ): Promise<ChatPushMutedChatsResponse> {
+  async listMutedChats(memberId: string): Promise<ChatPushMutedChatsResponse> {
     const mutes = await this.prisma.chatPushMute.findMany({
       where: { memberId },
       select: { channelKey: true, createdAt: true },
@@ -152,10 +151,7 @@ export class NotificationsService {
       projects.map((project) => [project.id, project.name]),
     );
     const departmentsById = new Map(
-      departments.map((department) => [
-        department.id,
-        department.shortLabel,
-      ]),
+      departments.map((department) => [department.id, department.shortLabel]),
     );
 
     return {
@@ -171,9 +167,7 @@ export class NotificationsService {
         }
 
         if (channelKey.startsWith('visiwork:department:')) {
-          const departmentId = channelKey.slice(
-            'visiwork:department:'.length,
-          );
+          const departmentId = channelKey.slice('visiwork:department:'.length);
           return {
             channelKey,
             kind: 'department' as const,
@@ -242,6 +236,8 @@ export class NotificationsService {
         'Device notifications are not configured for this environment.',
       );
     }
+    if (!isAllowedPushEndpoint(input.endpoint))
+      throw new BadRequestException('Unsupported push service endpoint.');
     await this.prisma.$transaction(async (db) => {
       await db.pushSubscription.deleteMany({
         where: {

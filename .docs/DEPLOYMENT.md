@@ -314,3 +314,20 @@ pnpm verify:release
 
 Credential-gated browser tests are not evidence when they are skipped.
 Record the identities/environment used for a signed-in release smoke separately.
+
+## Background push worker rollout
+
+Apply migration `20261112000000_background_push` before deploying this maintenance update.
+Configure `CRON_SECRET`, then configure an external trusted scheduler to call `GET /api/notifications/push/run` every minute with `Authorization: Bearer <CRON_SECRET>`.
+Reuse the idle-reminder scheduler's secret handling and HTTPS deployment origin.
+This scheduler is required: ordinary user requests no longer dispatch queued push deliveries.
+Do not configure minute-frequency Vercel Cron on a Hobby deployment.
+The worker handles up to 100 deliveries per call with atomic leases and retry backoff; increase invocation frequency or worker capacity if backlog grows.
+Validate scheduler authorization, pending-row drain, successful delivery, retry behavior, and provider availability during rollout.
+Existing unsupported endpoint rows are rejected before network access and pruned as invalid subscriptions.
+Supported providers are FCM, Mozilla Autopush, Apple Web Push, and Windows notification subdomains.
+Other push providers require an explicit policy addition and regression coverage.
+
+Rollback requires retaining the compatible database migration and restoring the previous dispatching application version.
+Drain pending chat-only deliveries before restoring an older dispatcher that assumes every delivery has a Notification.
+Do not remove outbox columns while queued chat deliveries exist.

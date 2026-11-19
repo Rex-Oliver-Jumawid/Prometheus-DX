@@ -1,3 +1,4 @@
+import { isAllowedPushEndpoint } from '../../shared/push-endpoint';
 import {
   createCipheriv,
   createECDH,
@@ -7,8 +8,16 @@ import {
   sign,
 } from 'node:crypto';
 
-export type VapidConfig = { subject: string; publicKey: string; privateKey: string };
-export type WebPushSubscription = { endpoint: string; p256dh: string; auth: string };
+export type VapidConfig = {
+  subject: string;
+  publicKey: string;
+  privateKey: string;
+};
+export type WebPushSubscription = {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+};
 export type WebPushPayload = {
   notificationId: string;
   title: string;
@@ -50,12 +59,16 @@ export function createVapidAuthorization(
   config: VapidConfig,
   now = Date.now(),
 ) {
-  const header = Buffer.from(JSON.stringify({ typ: 'JWT', alg: 'ES256' })).toString('base64url');
-  const claims = Buffer.from(JSON.stringify({
-    aud: new URL(endpoint).origin,
-    exp: Math.floor(now / 1000) + 12 * 60 * 60,
-    sub: config.subject,
-  })).toString('base64url');
+  const header = Buffer.from(
+    JSON.stringify({ typ: 'JWT', alg: 'ES256' }),
+  ).toString('base64url');
+  const claims = Buffer.from(
+    JSON.stringify({
+      aud: new URL(endpoint).origin,
+      exp: Math.floor(now / 1000) + 12 * 60 * 60,
+      sub: config.subject,
+    }),
+  ).toString('base64url');
   const unsigned = `${header}.${claims}`;
   const signature = sign('sha256', Buffer.from(unsigned), {
     key: vapidKey(config),
@@ -86,20 +99,30 @@ export function encryptWebPushPayload(
     receiver,
     senderPublic,
   ]);
-  const ikm = hmac(hmac(auth, shared), Buffer.concat([keyInfo, Buffer.from([1])]));
+  const ikm = hmac(
+    hmac(auth, shared),
+    Buffer.concat([keyInfo, Buffer.from([1])]),
+  );
   const salt = options.salt ?? randomBytes(16);
   if (salt.length !== 16) throw new Error('Web Push salt must be 16 bytes.');
   const prk = hmac(salt, ikm);
-  const cek = hmac(prk, Buffer.concat([
-    Buffer.from('Content-Encoding: aes128gcm'),
-    Buffer.from([0, 1]),
-  ])).subarray(0, 16);
-  const nonce = hmac(prk, Buffer.concat([
-    Buffer.from('Content-Encoding: nonce'),
-    Buffer.from([0, 1]),
-  ])).subarray(0, 12);
+  const cek = hmac(
+    prk,
+    Buffer.concat([
+      Buffer.from('Content-Encoding: aes128gcm'),
+      Buffer.from([0, 1]),
+    ]),
+  ).subarray(0, 16);
+  const nonce = hmac(
+    prk,
+    Buffer.concat([
+      Buffer.from('Content-Encoding: nonce'),
+      Buffer.from([0, 1]),
+    ]),
+  ).subarray(0, 12);
   const plaintext = Buffer.concat([Buffer.from(payload), Buffer.from([2])]);
-  if (plaintext.length + 16 >= 4096) throw new Error('Web Push payload is too large.');
+  if (plaintext.length + 16 >= 4096)
+    throw new Error('Web Push payload is too large.');
 
   const cipher = createCipheriv('aes-128-gcm', cek, nonce);
   const encrypted = Buffer.concat([
@@ -119,6 +142,9 @@ export async function sendWebPush(
   payload: WebPushPayload,
   config: VapidConfig,
 ) {
+  if (!isAllowedPushEndpoint(subscription.endpoint)) {
+    return { ok: false, stale: true, error: 'Unsupported push endpoint.' };
+  }
   let body: Buffer;
   let authorization: string;
   try {
@@ -127,14 +153,16 @@ export async function sendWebPush(
   } catch (error) {
     return {
       ok: false,
-      stale: true,
-      error: error instanceof Error ? error.message : 'Invalid push subscription.',
+      stale: false,
+      error:
+        error instanceof Error ? error.message : 'Invalid push subscription.',
     };
   }
 
   try {
     const response = await fetch(subscription.endpoint, {
       method: 'POST',
+      redirect: 'error',
       headers: {
         Authorization: authorization,
         'Content-Encoding': 'aes128gcm',

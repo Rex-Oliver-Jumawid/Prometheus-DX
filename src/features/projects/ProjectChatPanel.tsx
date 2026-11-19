@@ -112,7 +112,13 @@ export function ProjectChatPanel({
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const pinnedToBottom = useRef(true);
   const initiallyScrolled = useRef(false);
-  const olderScroll = useRef<{ top: number; height: number; pageCount: number } | null>(null);
+  const olderScroll = useRef<{
+    top: number;
+    height: number;
+    pageCount: number;
+    anchorId: string | null;
+    anchorTop: number | null;
+  } | null>(null);
   const broadcastChatChange = useRealtimeInvalidation({
     topic: 'project-chat:' + projectId,
     onEvent: () => {
@@ -365,7 +371,7 @@ export function ProjectChatPanel({
 
   useLayoutEffect(() => {
     const thread = threadRef.current;
-    if (!thread || ordered.length === 0) return;
+    if (!thread || !firstMessageId) return;
     const previous = olderScroll.current;
     if (previous) {
       if (pageCount <= previous.pageCount) {
@@ -373,7 +379,16 @@ export function ProjectChatPanel({
         previous.height = thread.scrollHeight;
         return;
       }
-      thread.scrollTop = previous.top + thread.scrollHeight - previous.height;
+      const anchor = previous.anchorId
+        ? thread.querySelector<HTMLElement>(`[data-message-id="${previous.anchorId}"]`)
+        : null;
+      if (anchor && previous.anchorTop !== null) {
+        // Preserve the viewport position when the final page removes the
+        // load button above the thread as well as when rows are prepended.
+        thread.scrollTop += anchor.getBoundingClientRect().top - previous.anchorTop;
+      } else {
+        thread.scrollTop = previous.top + thread.scrollHeight - previous.height;
+      }
       olderScroll.current = null;
       pinnedToBottom.current =
         thread.scrollHeight - thread.scrollTop - thread.clientHeight < 80;
@@ -626,10 +641,13 @@ export function ProjectChatPanel({
               onClick={() => {
                 const thread = threadRef.current;
                 if (thread) {
+                  const anchor = thread.querySelector<HTMLElement>('[data-message-id]');
                   olderScroll.current = {
                     top: thread.scrollTop,
                     height: thread.scrollHeight,
                     pageCount,
+                    anchorId: anchor?.dataset.messageId ?? null,
+                    anchorTop: anchor?.getBoundingClientRect().top ?? null,
                   };
                 }
                 pinnedToBottom.current = false;

@@ -201,7 +201,7 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
 
   const profile = page.getByRole('dialog', { name: 'Profile settings' });
   await expect(profile).toBeVisible();
-  await expect(profile).toContainText(email!);
+  await expect(profile.getByLabel(/Email address/)).toHaveValue(email!);
   await expect(profile.getByLabel('Full name')).toHaveValue(/.+/);
   await expect(profile.getByLabel(/Email address/)).toHaveAttribute('readonly');
   await expect(profile.getByLabel(/Department/)).toHaveAttribute('readonly');
@@ -224,9 +224,7 @@ test('authorized member exercises the shell, refreshes, and signs out', async ({
   await expect(
     profile.getByRole('button', { name: 'Sign out', exact: true }),
   ).toHaveCount(0);
-  await profile
-    .getByRole('button', { name: 'Close profile settings' })
-    .click();
+  await profile.getByRole('button', { name: 'Close profile settings' }).click();
 
   await page.getByRole('button', { name: 'Open account menu' }).click();
   const accountMenu = page.getByRole('menu', { name: 'Account menu' });
@@ -417,6 +415,8 @@ test('non-admin Project Lead cannot see or open Registry', async ({ page }) => {
 
     await signIn(page);
     await expect(page).not.toHaveURL(/\/login$/);
+    // Revalidate the workspace after changing the shared identity's role.
+    await page.reload();
     await expect(page.getByRole('link', { name: 'Registry' })).toHaveCount(0);
     const registryApiStatus = await page.evaluate(async () => {
       const storageKey = Object.keys(localStorage).find(
@@ -642,7 +642,7 @@ test('deactivated Prometheus member is denied after authentication', async ({
       data: { status: 'ACTIVE', deactivatedAt: null },
     });
     await page.reload();
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/workspace$/);
     await expect(
       page.getByRole('navigation', { name: 'Primary navigation' }),
     ).toBeVisible();

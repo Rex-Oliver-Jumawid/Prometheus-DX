@@ -1984,3 +1984,12 @@ Dependency state
 ```
 
 This separation must remain intact throughout PostgreSQL, Prisma, NestJS, and the React frontend.
+
+## Background device push outbox (maintenance, 2026-11-12)
+
+PushDelivery has exactly one source: a Notification foreign key, or a queued chat payload with its channel key.
+Notification inserts continue to enqueue deliveries transactionally through the existing database trigger.
+Non-mention chat sends persist per-device payloads rather than contacting providers during the HTTP mutation.
+The scheduler claims batches with the existing lease, retry, and backoff fields.
+Chat mute preferences and Department focus are rechecked at dispatch.
+A database check constraint rejects missing or ambiguous delivery sources.

@@ -842,3 +842,11 @@ Authorization and workflow rules belong in NestJS.
 The frontend should render the permissions returned by the system rather than inventing them independently.
 
 The canonical `.context/data-model.md`, `prisma/schema.prisma`, and tracked migrations must remain synchronized as the system evolves.
+
+## Background device push delivery
+
+Device push endpoints are restricted to HTTPS origins owned by supported browser push providers.
+The same endpoint policy runs at subscription registration and immediately before outbound delivery, including existing database records.
+Provider redirects are rejected.
+Notification and chat provider calls run through the PostgreSQL PushDelivery outbox and a trusted scheduler, rather than a global mutation interceptor.
+The API does not rely on detached promises that may be terminated by serverless suspension.

@@ -75,6 +75,8 @@ test('Phase 6 visual, responsive, route, console, and network audit', async ({
     }
   });
   page.on('requestfailed', (request) => {
+    // Full navigations deliberately cancel pending query refetches.
+    if (request.failure()?.errorText === 'net::ERR_ABORTED') return;
     failedRequests.push(
       `${request.method()} ${request.url()} ${request.failure()?.errorText}`,
     );
@@ -90,13 +92,16 @@ test('Phase 6 visual, responsive, route, console, and network audit', async ({
   await page.setViewportSize({ width: 1440, height: 1000 });
   await signIn(page);
   await page.goto('/schedule');
-  await expect(page.locator('.schedule-panel.team-panel:not(.schedule-skeleton-panel)')).toBeVisible();
+  await expect(
+    page.locator('.schedule-panel.team-panel:not(.schedule-skeleton-panel)'),
+  ).toBeVisible();
   const panelFrame = await page.locator('.workspace-content').boundingBox();
   const pageFrame = await page.locator('.schedule-page').boundingBox();
   expect(panelFrame).not.toBeNull();
   expect(pageFrame).not.toBeNull();
   const leftGutter = pageFrame!.x - panelFrame!.x;
-  const rightGutter = panelFrame!.x + panelFrame!.width - pageFrame!.x - pageFrame!.width;
+  const rightGutter =
+    panelFrame!.x + panelFrame!.width - pageFrame!.x - pageFrame!.width;
   // Figma uses approximately 40px of spacing inside the right glass panel.
   // The page must not add another nested 28px route gutter.
   expect(leftGutter).toBeGreaterThan(28);
@@ -129,14 +134,18 @@ test('Phase 6 visual, responsive, route, console, and network audit', async ({
 
   await page.setViewportSize({ width: 900, height: 900 });
   await page.goto('/schedule');
-  await expect(page.locator('.schedule-panel.team-panel:not(.schedule-skeleton-panel)')).toBeVisible();
+  await expect(
+    page.locator('.schedule-panel.team-panel:not(.schedule-skeleton-panel)'),
+  ).toBeVisible();
   await capture(page, testInfo, 'tablet-schedule', '.schedule-page');
   await page.goto('/team');
   await capture(page, testInfo, 'tablet-team', '.team-page');
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/schedule');
-  await expect(page.locator('.schedule-panel.team-panel:not(.schedule-skeleton-panel)')).toBeVisible();
+  await expect(
+    page.locator('.schedule-panel.team-panel:not(.schedule-skeleton-panel)'),
+  ).toBeVisible();
   await capture(page, testInfo, 'mobile-schedule', '.schedule-page');
   await page.getByRole('button', { name: 'Open navigation' }).click();
   await expect(page.locator('.app-sidebar')).toBeVisible();
@@ -150,6 +159,14 @@ test('Phase 6 visual, responsive, route, console, and network audit', async ({
 
   const attendance = page.getByLabel('Time attendance');
   await expect(attendance).toBeVisible();
+  // The edge widget is intentionally collapsed offscreen until hovered or opened.
+  await attendance.locator('.attendance-edge-handle').hover();
+  await expect
+    .poll(async () => {
+      const box = await attendance.boundingBox();
+      return (box?.x ?? 0) + (box?.width ?? 0);
+    })
+    .toBeLessThanOrEqual(390);
   const attendanceBox = await attendance.boundingBox();
   expect(attendanceBox).not.toBeNull();
   expect(
@@ -186,7 +203,9 @@ test('Phase 6 loading, error, long-content, and correction visual states', async
     await route.continue();
   });
   await page.goto('/schedule');
-  await expect(page.getByRole('status', { name: 'Loading Team Schedule' })).toBeVisible();
+  await expect(
+    page.getByRole('status', { name: 'Loading Team Schedule' }),
+  ).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('schedule-loading.png'),
     fullPage: false,
@@ -275,15 +294,17 @@ test('Phase 6 loading, error, long-content, and correction visual states', async
   const lastRowIndex = (await editorRows.count()) - 1;
   const earlierRow = editorRows.nth(lastRowIndex - 1);
   const lastRow = editorRows.nth(lastRowIndex);
-  await lastRow.locator('select').selectOption(
-    await earlierRow.locator('select').inputValue(),
-  );
-  await lastRow.locator('input[type="time"]').nth(0).fill(
-    await earlierRow.locator('input[type="time"]').nth(0).inputValue(),
-  );
-  await lastRow.locator('input[type="time"]').nth(1).fill(
-    await earlierRow.locator('input[type="time"]').nth(1).inputValue(),
-  );
+  await lastRow
+    .locator('select')
+    .selectOption(await earlierRow.locator('select').inputValue());
+  await lastRow
+    .locator('input[type="time"]')
+    .nth(0)
+    .fill(await earlierRow.locator('input[type="time"]').nth(0).inputValue());
+  await lastRow
+    .locator('input[type="time"]')
+    .nth(1)
+    .fill(await earlierRow.locator('input[type="time"]').nth(1).inputValue());
   await page.getByRole('button', { name: 'Done configuring' }).click();
   await expect(page.getByRole('alert')).toContainText(
     'Schedule blocks on the same day cannot overlap',
@@ -293,7 +314,9 @@ test('Phase 6 loading, error, long-content, and correction visual states', async
     fullPage: false,
   });
 
-  await page.getByRole('button', { name: `Remove block ${lastRowIndex + 1}` }).click();
+  await page
+    .getByRole('button', { name: `Remove block ${lastRowIndex + 1}` })
+    .click();
   let releaseScheduleSave: (() => void) | undefined;
   const scheduleSaveReleased = new Promise<void>((resolve) => {
     releaseScheduleSave = resolve;
@@ -424,7 +447,9 @@ test('Phase 6 loading, error, long-content, and correction visual states', async
   });
   await page.reload();
   const correction = page.getByLabel('Time attendance');
-  await expect(correction.getByText('Correction required')).toBeVisible();
+  await expect(
+    correction.getByText('Correction required', { exact: true }),
+  ).toBeVisible();
   await correction.getByLabel('Correct Time In').focus();
   const correctedTimeOut = correction.getByLabel('Correct Time Out');
   for (let index = 0; index < 8; index += 1) {
@@ -502,7 +527,9 @@ test('Phase 6 loading, error, long-content, and correction visual states', async
     name: /Time Out/,
   });
   await timeOutButton.click();
-  await page.getByRole('textbox', { name: 'Work summary' }).fill('Completed mobile attendance verification.');
+  await page
+    .getByRole('textbox', { name: 'Work summary' })
+    .fill('Completed mobile attendance verification.');
   await page.getByRole('button', { name: 'Submit summary & Time Out' }).click();
   await expect(page.getByRole('button', { name: 'Saving...' })).toBeDisabled();
   await page.screenshot({

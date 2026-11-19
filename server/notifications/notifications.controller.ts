@@ -21,7 +21,6 @@ import {
 import { CurrentMember } from '../auth/current-member.decorator';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { NotificationsService } from './notifications.service';
-import { PushDeliveryService } from './push-delivery.service';
 
 @Controller('notifications')
 @UseGuards(SupabaseAuthGuard)
@@ -29,8 +28,6 @@ export class NotificationsController {
   constructor(
     @Inject(NotificationsService)
     private readonly notifications: NotificationsService,
-    @Inject(PushDeliveryService)
-    private readonly pushDeliveries: PushDeliveryService,
   ) {}
 
   @Get()
@@ -59,10 +56,7 @@ export class NotificationsController {
   }
 
   @Get('push/chat-preference')
-  chatPushPreference(
-    @CurrentMember() member: Member,
-    @Query() query: unknown,
-  ) {
+  chatPushPreference(@CurrentMember() member: Member, @Query() query: unknown) {
     const parsed = ChatPushPreferenceQuerySchema.safeParse(query);
     if (!parsed.success) {
       throw new BadRequestException(
@@ -83,7 +77,8 @@ export class NotificationsController {
     const parsed = ChatPushPreferenceRequestSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException(
-        parsed.error.issues[0]?.message ?? 'Invalid chat notification preference.',
+        parsed.error.issues[0]?.message ??
+          'Invalid chat notification preference.',
       );
     }
     return this.notifications.setChatPushPreference(member.id, parsed.data);
@@ -114,7 +109,6 @@ export class NotificationsController {
   @Put('read-all')
   async markAllRead(@CurrentMember() member: Member) {
     const response = await this.notifications.markAllRead(member.id);
-    await this.pushDeliveries.flushAfterCommit();
     return response;
   }
 
@@ -124,7 +118,6 @@ export class NotificationsController {
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ) {
     const response = await this.notifications.markRead(member.id, id);
-    await this.pushDeliveries.flushAfterCommit();
     return response;
   }
 }

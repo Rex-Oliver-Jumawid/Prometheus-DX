@@ -107,3 +107,9 @@ Do not infer phase completion from passing focused tests alone.
 Update this file whenever the active phase state changes, a major blocker changes the next action, or a session ends at a materially different point.
 
 Keep this file concise.
+
+## Maintenance branch: security, CI, and push delivery
+
+The 2026-11-12 maintenance change restricts push endpoints, rejects provider redirects, introduces scheduler-driven durable push delivery, expands CI to all database integration suites and disposable authenticated Supabase journeys, and extracts Project Workflow dialogs.
+The current release boundary is unchanged.
+Apply the new migration and configure the push worker scheduler as documented in DEPLOYMENT.md before rollout.

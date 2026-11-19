@@ -21,11 +21,14 @@ import type {
 } from '../../shared/contracts/project';
 import { PrismaService } from '../database/prisma.service';
 import { writeNotifications } from '../notifications/notification-writer';
-import { PushDeliveryService } from '../notifications/push-delivery.service';
 
 const projectInclude = {
-  createdByMember: { select: { id: true, fullName: true, email: true, profileImagePath: true } },
-  leadMember: { select: { id: true, fullName: true, email: true, profileImagePath: true } },
+  createdByMember: {
+    select: { id: true, fullName: true, email: true, profileImagePath: true },
+  },
+  leadMember: {
+    select: { id: true, fullName: true, email: true, profileImagePath: true },
+  },
   departments: {
     include: {
       department: { select: { id: true, name: true, shortLabel: true } },
@@ -66,7 +69,9 @@ function projectListSelect(currentMemberId: string) {
     createdByMember: {
       select: { id: true, fullName: true, email: true, profileImagePath: true },
     },
-    leadMember: { select: { id: true, fullName: true, email: true, profileImagePath: true } },
+    leadMember: {
+      select: { id: true, fullName: true, email: true, profileImagePath: true },
+    },
     departments: {
       include: {
         department: { select: { id: true, name: true, shortLabel: true } },
@@ -105,13 +110,7 @@ type ProjectStatusRow = {
 
 @Injectable()
 export class ProjectsService {
-  constructor(
-    @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(PushDeliveryService)
-    private readonly pushDeliveries: PushDeliveryService = {
-      flushAfterCommit: async () => undefined,
-    } as PushDeliveryService,
-  ) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async listProjects(currentMember: Member): Promise<Project[]> {
     const projects = await this.prisma.project.findMany({
@@ -128,7 +127,12 @@ export class ProjectsService {
     const [leads, departments] = await Promise.all([
       this.prisma.member.findMany({
         where: { status: MemberStatus.ACTIVE },
-        select: { id: true, fullName: true, email: true, profileImagePath: true },
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          profileImagePath: true,
+        },
         orderBy: [{ fullName: 'asc' }, { id: 'asc' }],
       }),
       this.prisma.department.findMany({
@@ -223,7 +227,6 @@ export class ProjectsService {
       });
     });
 
-    await this.pushDeliveries.flushAfterCommit();
     return this.toProject(project, currentMember.id);
   }
 

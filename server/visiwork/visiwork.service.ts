@@ -26,7 +26,9 @@ const DELETED_MESSAGE_BODY = '[deleted]';
 const messageInclude = {
   member: { select: { id: true, fullName: true, profileImagePath: true } },
   mentions: {
-    include: { member: { select: { id: true, fullName: true, profileImagePath: true } } },
+    include: {
+      member: { select: { id: true, fullName: true, profileImagePath: true } },
+    },
   },
 } satisfies Prisma.VisiWorkMessageInclude;
 
@@ -45,7 +47,6 @@ export class VisiWorkService {
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(PushDeliveryService)
     private readonly pushDeliveries: PushDeliveryService = {
-      flushAfterCommit: async () => undefined,
       sendChatMessage: async () => undefined,
     } as unknown as PushDeliveryService,
   ) {}
@@ -117,10 +118,7 @@ export class VisiWorkService {
         status: 'ACTIVE',
         ...(departmentId
           ? {
-              OR: [
-                { departmentId },
-                { visiworkDepartmentId: departmentId },
-              ],
+              OR: [{ departmentId }, { visiworkDepartmentId: departmentId }],
             }
           : {}),
       },
@@ -260,9 +258,7 @@ export class VisiWorkService {
       where: {
         status: 'ACTIVE',
         id: { notIn: excludedMemberIds },
-        ...(departmentId
-          ? { visiworkDepartmentId: departmentId }
-          : {}),
+        ...(departmentId ? { visiworkDepartmentId: departmentId } : {}),
       },
       select: { id: true },
     });
@@ -271,7 +267,6 @@ export class VisiWorkService {
     if (departmentId) params.set('department', departmentId);
 
     await Promise.all([
-      this.pushDeliveries.flushAfterCommit(),
       ...(recipients.length
         ? [
             this.pushDeliveries.sendChatMessage({
@@ -392,7 +387,6 @@ export class VisiWorkService {
       return record;
     });
 
-    await this.pushDeliveries.flushAfterCommit();
     return this.toMessage(updated);
   }
 

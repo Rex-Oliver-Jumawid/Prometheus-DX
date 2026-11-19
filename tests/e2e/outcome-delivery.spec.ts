@@ -249,16 +249,20 @@ test('F5-09 F5-12 F5-13: submission appends attributed history and clears the sa
     page.getByRole('button', { name: /v1.*https:\/\/example.com\/delivery/ }),
   ).toBeVisible();
   await openDelivery(page, true);
-  await expect(
-    page.locator('.outcome-submission-card.latest'),
-  ).toHaveCount(1);
+  await expect(page.locator('.outcome-submission-card.latest')).toHaveCount(1);
   await page
     .getByRole('button', { name: /v1.*https:\/\/example.com\/delivery/ })
     .click();
   const dialog = page.getByRole('dialog', { name: 'Submission record' });
-  await expect(dialog.getByText('Member submission', { exact: true })).toBeVisible();
-  await expect(dialog.getByText('Outcome-level review', { exact: true })).toBeVisible();
-  await expect(dialog.getByText('Submission status', { exact: true })).toBeVisible();
+  await expect(
+    dialog.getByText('Member submission', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByText('Outcome-level review', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByText('Submission status', { exact: true }),
+  ).toBeVisible();
   await expect(
     dialog.getByRole('link', { name: 'https://example.com/delivery' }),
   ).toHaveAttribute('rel', 'noopener noreferrer');
@@ -375,9 +379,7 @@ test('F5-17 F5-20: Lead reviews combined history and requests revision with requ
 }) => {
   await signIn(page);
   await openDelivery(page);
-  const teamSubmissionsHeader = page.locator(
-    '.pw-submission-history-head',
-  );
+  const teamSubmissionsHeader = page.locator('.pw-submission-history-head');
   await expect(
     teamSubmissionsHeader.getByRole('button', {
       name: 'Review outcome',
@@ -396,7 +398,7 @@ test('F5-17 F5-20: Lead reviews combined history and requests revision with requ
     .click();
   const dialog = page.getByRole('dialog', { name: 'Review Outcome' });
   await expect(
-    dialog.getByText('Project Lead verification', { exact: true }),
+    dialog.getByText('Project review', { exact: true }),
   ).toBeVisible();
   await expect(
     dialog.getByText('1. Outcome to satisfy', { exact: true }),
@@ -514,10 +516,10 @@ test('F5-26 F5-27: accepted state survives refresh and denies submission, work a
   await expect(
     page.getByRole('region', { name: 'Review history' }),
   ).toBeVisible();
-  await expect(page.getByText('Accepted Outcome', { exact: true })).toBeVisible();
   await expect(
-    page.getByText(/This outcome is final\./),
+    page.getByText('Accepted Outcome', { exact: true }),
   ).toBeVisible();
+  await expect(page.getByText(/This outcome is final\./)).toBeVisible();
   await expect(
     page.locator('.outcome-submission-card.latest.accepted-evidence'),
   ).toHaveCount(1);
